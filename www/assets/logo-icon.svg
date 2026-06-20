@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Turtle body -->
+  <ellipse cx="50" cy="65" rx="28" ry="14" fill="#2563eb" opacity="0.15"/>
+  <!-- Turtle head -->
+  <ellipse cx="77" cy="55" rx="10" ry="8" fill="#2563eb"/>
+  <!-- Turtle eye -->
+  <circle cx="80" cy="53" r="2.5" fill="white"/>
+  <circle cx="81" cy="53" r="1.5" fill="#1e3a5f"/>
+  <!-- Turtle leg back -->
+  <ellipse cx="32" cy="72" rx="6" ry="4" fill="#2563eb" transform="rotate(-15 32 72)"/>
+  <!-- Turtle leg front -->
+  <ellipse cx="52" cy="74" rx="6" ry="4" fill="#2563eb" transform="rotate(10 52 74)"/>
+  <!-- Turtle shell (house roof shape) -->
+  <path d="M50 22 L22 52 L78 52 Z" fill="#2563eb"/>
+  <!-- Roof ridge line -->
+  <line x1="50" y1="22" x2="50" y2="52" stroke="#1d4ed8" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Chimney -->
+  <rect x="56" y="26" width="6" height="10" rx="1" fill="#1d4ed8"/>
+  <!-- Smoke puffs -->
+  <circle cx="59" cy="22" r="2.5" fill="#93c5fd" opacity="0.6"/>
+  <circle cx="62" cy="17" r="2" fill="#93c5fd" opacity="0.4"/>
+  <circle cx="58" cy="13" r="1.5" fill="#93c5fd" opacity="0.3"/>
+  <!-- Shell detail lines -->
+  <path d="M36 52 Q50 58 64 52" stroke="#1d4ed8" stroke-width="1" fill="none" opacity="0.5"/>
+</svg>

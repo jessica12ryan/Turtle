@@ -3,30 +3,52 @@ set -e
 
 cd /var/www/html
 
-# Generate app key if not set
-if ! grep -q "APP_KEY=base64" .env 2>/dev/null; then
-    echo ">>> Generating app key..."
-    php artisan key:generate --force
-fi
-
-# Install PHP dependencies if missing
-if [ ! -d vendor ]; then
-    echo ">>> Installing PHP dependencies..."
-    composer install --no-interaction --prefer-dist
-fi
-
-# Run migrations and seed if needed
-if ! php artisan migrate:status 2>/dev/null | grep -q "Ran"; then
-    echo ">>> Waiting for database..."
-    until php artisan db:show 2>/dev/null; do
+# Run database setup if schema file exists
+if [ -f database/schema.sql ] && [ ! -f storage/.db_initialized ]; then
+    echo ">>> Waiting for MySQL..."
+    until php -r "new PDO('mysql:host=mysql;port=3306;dbname=turtle', 'turtle', 'turtle');" 2>/dev/null; do
         sleep 1
     done
-    echo ">>> Running migrations and seeding..."
-    php artisan migrate --seed --force
+
+    echo ">>> Setting up database..."
+    mysql -h mysql -u turtle -pturtle turtle --ssl=0 < database/schema.sql 2>/dev/null || {
+        echo ">>> Trying root user..."
+        mysql -h mysql -u root -proot turtle --ssl=0 < database/schema.sql
+    }
+
+    if [ -f database/seed.sql ]; then
+        echo ">>> Seeding database..."
+        mysql -h mysql -u turtle -pturtle turtle --ssl=0 < database/seed.sql 2>/dev/null || {
+            mysql -h mysql -u root -proot turtle --ssl=0 < database/seed.sql
+        }
+    fi
+
+    touch storage/.db_initialized
+    echo ">>> Database ready!"
 fi
 
+# Ensure storage directories exist
+mkdir -p storage/uploads/leases storage/logs storage/framework
+
 # Start queue worker in background
-php artisan queue:work --daemon --quiet &
+php -r "
+require '/var/www/html/www/autoload.php';
+require '/var/www/html/www/functions.php';
+\$running = true;
+while (\$running) {
+    try {
+        \$notifications = \App\Core\Database::fetchAll(
+            'SELECT * FROM notifications WHERE read_at IS NULL AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR) ORDER BY created_at ASC LIMIT 10',
+            []
+        );
+    } catch (\Throwable \$e) {
+        error_log('Queue worker: ' . \$e->getMessage());
+    }
+    sleep(5);
+}
+" &
+QUEUE_PID=$!
+echo ">>> Queue worker started (PID: $QUEUE_PID)"
 
 echo ">>> Turtle is ready!"
 

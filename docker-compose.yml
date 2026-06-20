@@ -7,7 +7,7 @@ services:
       - "80:80"
     volumes:
       - .:/var/www/html
-      - turtle-storage:/var/www/html/storage/app
+      - turtle-storage:/var/www/html/storage/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -27,7 +27,7 @@ services:
       - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      retries: 5
+      retries: 10
       timeout: 5s
     networks:
       - turtle
