@@ -9,12 +9,6 @@ services:
     volumes:
       - .:/var/www/html
       - turtle-storage:/var/www/html/storage/app
-    environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_DATABASE=turtle
-      - DB_USERNAME=turtle
-      - DB_PASSWORD=turtle
     depends_on:
       mysql:
         condition: service_healthy

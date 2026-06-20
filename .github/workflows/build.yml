@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build
 
 on:
   push:
@@ -9,30 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build Docker image
-      run: docker compose build
-
-    - name: Start services
-      run: |
-        docker compose up -d mysql
-        sleep 15
-        docker compose up -d app
-
-    - name: Install dependencies
-      run: docker compose exec -T app composer install --no-interaction --prefer-dist
-
-    - name: Run migrations
-      run: docker compose exec -T app php artisan migrate --force
-
-    - name: Run tests
-      run: docker compose exec -T app php artisan test
-
-    - name: Cleanup
-      run: docker compose down
+      - uses: actions/checkout@v4
+      - run: docker compose build
+      - run: docker compose up -d
+      - run: docker compose exec -T app php artisan test
+      - run: docker compose down
