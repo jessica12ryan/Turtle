@@ -12,22 +12,38 @@ class StaffController
 {
     public function index(): void
     {
-        $companyIds = Database::fetchAll(
-            "SELECT company_id FROM company_user WHERE user_id = ?",
-            [Auth::instance()->id()]
-        );
-        $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+        $auth = Auth::instance();
+        $user = $auth->user();
 
-        $staff = Database::fetchAll(
-            "SELECT u.*, GROUP_CONCAT(c.name SEPARATOR ', ') as company_names
-             FROM users u
-             JOIN company_user cu ON cu.user_id = u.id
-             JOIN companies c ON c.id = cu.company_id
-             WHERE c.id IN ({$companyIdList}) AND u.archived_at IS NULL
-             AND u.role IN ('landlord','property_manager','maintenance')
-             GROUP BY u.id
-             ORDER BY u.name"
-        );
+        if ($user['role'] === 'admin') {
+            $staff = Database::fetchAll(
+                "SELECT u.*, GROUP_CONCAT(c.name SEPARATOR ', ') as company_names
+                 FROM users u
+                 LEFT JOIN company_user cu ON cu.user_id = u.id
+                 LEFT JOIN companies c ON c.id = cu.company_id
+                 WHERE u.archived_at IS NULL
+                 AND u.role IN ('admin','landlord','property_manager','maintenance')
+                 GROUP BY u.id
+                 ORDER BY u.name"
+            );
+        } else {
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [$auth->id()]
+            );
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+
+            $staff = Database::fetchAll(
+                "SELECT u.*, GROUP_CONCAT(c.name SEPARATOR ', ') as company_names
+                 FROM users u
+                 JOIN company_user cu ON cu.user_id = u.id
+                 JOIN companies c ON c.id = cu.company_id
+                 WHERE c.id IN ({$companyIdList}) AND u.archived_at IS NULL
+                 AND u.role IN ('landlord','property_manager','maintenance')
+                 GROUP BY u.id
+                 ORDER BY u.name"
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Staff']);
@@ -36,13 +52,20 @@ class StaffController
 
     public function create(): void
     {
-        $companies = Database::fetchAll(
-            "SELECT c.* FROM companies c
-             JOIN company_user cu ON cu.company_id = c.id
-             WHERE cu.user_id = ? AND c.archived_at IS NULL
-             ORDER BY c.name",
-            [Auth::instance()->id()]
-        );
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
+            );
+        } else {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c
+                 JOIN company_user cu ON cu.company_id = c.id
+                 WHERE cu.user_id = ? AND c.archived_at IS NULL
+                 ORDER BY c.name",
+                [$user['id']]
+            );
+        }
 
         $roles = ['property_manager', 'maintenance'];
 
@@ -94,7 +117,7 @@ class StaffController
     public function show(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL     AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -122,18 +145,25 @@ class StaffController
     public function edit(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        $companies = Database::fetchAll(
-            "SELECT c.* FROM companies c
-             JOIN company_user cu ON cu.company_id = c.id
-             WHERE cu.user_id = ? AND c.archived_at IS NULL
-             ORDER BY c.name",
-            [Auth::instance()->id()]
-        );
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
+            );
+        } else {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c
+                 JOIN company_user cu ON cu.company_id = c.id
+                 WHERE cu.user_id = ? AND c.archived_at IS NULL
+                 ORDER BY c.name",
+                [$user['id']]
+            );
+        }
 
         $assignedCompanyIds = Database::fetchAll(
             "SELECT company_id FROM company_user WHERE user_id = ?",
@@ -151,7 +181,7 @@ class StaffController
     public function update(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT * FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('landlord','property_manager','maintenance')",
+            "SELECT * FROM users WHERE id = ? AND archived_at IS NULL     AND role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -178,7 +208,7 @@ class StaffController
         $params[] = $id;
         Database::execute($sql, $params);
 
-        if (!empty($_POST['company_ids']) && in_array(Auth::instance()->user()['role'], ['landlord'])) {
+        if (!empty($_POST['company_ids']) && in_array(Auth::instance()->user()['role'], ['admin', 'landlord'])) {
             Database::execute("DELETE FROM company_user WHERE user_id = ?", [$id]);
             foreach ($_POST['company_ids'] as $companyId) {
                 Database::execute(

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role ENUM('landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant',
+    role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant',
     must_change_password TINYINT(1) DEFAULT 0,
     remember_token VARCHAR(100) DEFAULT NULL,
     archived_at TIMESTAMP NULL DEFAULT NULL,

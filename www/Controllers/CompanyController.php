@@ -11,14 +11,24 @@ class CompanyController
 {
     public function index(): void
     {
-        $companies = Database::fetchAll(
-            "SELECT c.*, (SELECT COUNT(*) FROM properties WHERE company_id = c.id AND archived_at IS NULL) as properties_count 
-             FROM companies c 
-             JOIN company_user cu ON cu.company_id = c.id 
-             WHERE cu.user_id = ? AND c.archived_at IS NULL 
-             ORDER BY c.name",
-            [Auth::instance()->id()]
-        );
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $companies = Database::fetchAll(
+                "SELECT c.*, (SELECT COUNT(*) FROM properties WHERE company_id = c.id AND archived_at IS NULL) as properties_count 
+                 FROM companies c 
+                 WHERE c.archived_at IS NULL 
+                 ORDER BY c.name"
+            );
+        } else {
+            $companies = Database::fetchAll(
+                "SELECT c.*, (SELECT COUNT(*) FROM properties WHERE company_id = c.id AND archived_at IS NULL) as properties_count 
+                 FROM companies c 
+                 JOIN company_user cu ON cu.company_id = c.id 
+                 WHERE cu.user_id = ? AND c.archived_at IS NULL 
+                 ORDER BY c.name",
+                [Auth::instance()->id()]
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Companies']);

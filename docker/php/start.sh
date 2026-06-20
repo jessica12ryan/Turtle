@@ -3,29 +3,27 @@ set -e
 
 cd /var/www/html
 
-# Run database setup if schema file exists
-if [ -f database/schema.sql ] && [ ! -f storage/.db_initialized ]; then
-    echo ">>> Waiting for MySQL..."
-    until php -r "new PDO('mysql:host=mysql;port=3306;dbname=turtle', 'turtle', 'turtle');" 2>/dev/null; do
-        sleep 1
-    done
+# Wait for MySQL
+echo ">>> Waiting for MySQL..."
+until php -r "new PDO('mysql:host=mysql;port=3306;dbname=turtle', 'turtle', 'turtle');" 2>/dev/null; do
+    sleep 1
+done
 
+# Run schema on first boot only
+if [ -f database/schema.sql ] && [ ! -f storage/.db_initialized ]; then
     echo ">>> Setting up database..."
     mysql -h mysql -u turtle -pturtle turtle --ssl=0 < database/schema.sql 2>/dev/null || {
         echo ">>> Trying root user..."
         mysql -h mysql -u root -proot turtle --ssl=0 < database/schema.sql
     }
 
-    if [ -f database/seed.sql ]; then
-        echo ">>> Seeding database..."
-        mysql -h mysql -u turtle -pturtle turtle --ssl=0 < database/seed.sql 2>/dev/null || {
-            mysql -h mysql -u root -proot turtle --ssl=0 < database/seed.sql
-        }
-    fi
-
     touch storage/.db_initialized
-    echo ">>> Database ready!"
+    echo ">>> Database tables created!"
 fi
+
+# Migrate ENUM to support 'admin' role (always runs, idempotent)
+mysql -h mysql -u turtle -pturtle turtle --ssl=0 -e "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';" 2>/dev/null || \
+mysql -h mysql -u root -proot turtle --ssl=0 -e "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';"
 
 # Ensure storage directories exist
 mkdir -p storage/uploads/leases storage/logs storage/framework

@@ -23,6 +23,16 @@ class LeaseController
                  ORDER BY l.created_at DESC",
                 [$auth->id()]
             );
+        } elseif ($user['role'] === 'admin') {
+            $leases = Database::fetchAll(
+                "SELECT l.*, p.name as property_name, c.name as company_name,
+                 (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count
+                 FROM leases l 
+                 JOIN properties p ON p.id = l.property_id 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE l.archived_at IS NULL 
+                 ORDER BY l.created_at DESC"
+            );
         } else {
             $companyIds = Database::fetchAll(
                 "SELECT company_id FROM company_user WHERE user_id = ?",
@@ -57,18 +67,28 @@ class LeaseController
 
     public function create(): void
     {
-        $companyIds = Database::fetchAll(
-            "SELECT company_id FROM company_user WHERE user_id = ?",
-            [Auth::instance()->id()]
-        );
-        $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        } else {
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [$user['id']]
+            );
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
-        $properties = Database::fetchAll(
-            "SELECT p.*, c.name as company_name FROM properties p 
-             JOIN companies c ON c.id = p.company_id 
-             WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
-             ORDER BY p.name"
-        );
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Upload Lease']);

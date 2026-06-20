@@ -27,7 +27,35 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Redirect root
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($requestUri === '/' || $requestUri === '/index.php') {
+    if (\App\Core\Auth::instance()->check()) {
+        header('Location: /dashboard');
+    } else {
+        header('Location: /login');
+    }
+    exit;
+}
+
+// Boot check: redirect to setup if no admin user exists
+$needsSetup = false;
+try {
+    $adminExists = \App\Core\Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
+    $needsSetup = !$adminExists;
+} catch (\Throwable $e) {
+    $needsSetup = true;
+}
+if ($needsSetup && !str_starts_with($requestUri, '/setup')) {
+    header('Location: /setup');
+    exit;
+}
+
 $router = new \App\Core\Router();
+
+// Setup (no middleware — boot check handles redirects)
+$router->get('/setup', 'SetupController@create');
+$router->post('/setup', 'SetupController@store');
 
 // Auth routes
 $router->get('/login', 'AuthController@login', ['guest']);

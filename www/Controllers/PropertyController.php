@@ -22,6 +22,16 @@ class PropertyController
                  WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
                 [$auth->id()]
             );
+        } elseif ($user['role'] === 'admin') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name,
+                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
+                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count
+                 FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
         } else {
             $companyIds = Database::fetchAll(
                 "SELECT company_id FROM company_user WHERE user_id = ?",
@@ -47,13 +57,21 @@ class PropertyController
 
     public function create(): void
     {
-        $companies = Database::fetchAll(
-            "SELECT c.* FROM companies c 
-             JOIN company_user cu ON cu.company_id = c.id 
-             WHERE cu.user_id = ? AND c.archived_at IS NULL 
-             ORDER BY c.name",
-            [Auth::instance()->id()]
-        );
+        $auth = Auth::instance();
+        $user = $auth->user();
+        if ($user['role'] === 'admin') {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
+            );
+        } else {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c 
+                 JOIN company_user cu ON cu.company_id = c.id 
+                 WHERE cu.user_id = ? AND c.archived_at IS NULL 
+                 ORDER BY c.name",
+                [$auth->id()]
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Add Property']);
@@ -124,10 +142,18 @@ class PropertyController
         $property = Database::fetch("SELECT * FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        $companies = Database::fetchAll(
-            "SELECT c.* FROM companies c JOIN company_user cu ON cu.company_id = c.id WHERE cu.user_id = ? AND c.archived_at IS NULL ORDER BY c.name",
-            [Auth::instance()->id()]
-        );
+        $auth = Auth::instance();
+        $user = $auth->user();
+        if ($user['role'] === 'admin') {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
+            );
+        } else {
+            $companies = Database::fetchAll(
+                "SELECT c.* FROM companies c JOIN company_user cu ON cu.company_id = c.id WHERE cu.user_id = ? AND c.archived_at IS NULL ORDER BY c.name",
+                [$auth->id()]
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Property']);

@@ -22,6 +22,11 @@ function redirectBack(): void
     redirect($url);
 }
 
+function error(string $key, string $default = ''): string
+{
+    return $_SESSION['_errors'][$key] ?? $default;
+}
+
 function flash(string $key, ?string $value = null): ?string
 {
     if ($value !== null) {

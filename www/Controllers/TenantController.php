@@ -12,21 +12,34 @@ class TenantController
 {
     public function index(): void
     {
-        $companyIds = Database::fetchAll(
-            "SELECT company_id FROM company_user WHERE user_id = ?",
-            [Auth::instance()->id()]
-        );
-        $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $tenants = Database::fetchAll(
+                "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
+                 p.name as property_name, p.id as property_id 
+                 FROM users u 
+                 JOIN property_tenant pt ON pt.tenant_id = u.id 
+                 JOIN properties p ON p.id = pt.property_id 
+                 WHERE u.archived_at IS NULL 
+                 ORDER BY u.name"
+            );
+        } else {
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [Auth::instance()->id()]
+            );
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
-        $tenants = Database::fetchAll(
-            "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
-             p.name as property_name, p.id as property_id 
-             FROM users u 
-             JOIN property_tenant pt ON pt.tenant_id = u.id 
-             JOIN properties p ON p.id = pt.property_id 
-             WHERE p.company_id IN ({$companyIdList}) AND u.archived_at IS NULL 
-             ORDER BY u.name"
-        );
+            $tenants = Database::fetchAll(
+                "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
+                 p.name as property_name, p.id as property_id 
+                 FROM users u 
+                 JOIN property_tenant pt ON pt.tenant_id = u.id 
+                 JOIN properties p ON p.id = pt.property_id 
+                 WHERE p.company_id IN ({$companyIdList}) AND u.archived_at IS NULL 
+                 ORDER BY u.name"
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Tenants']);
@@ -35,18 +48,28 @@ class TenantController
 
     public function create(): void
     {
-        $companyIds = Database::fetchAll(
-            "SELECT company_id FROM company_user WHERE user_id = ?",
-            [Auth::instance()->id()]
-        );
-        $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        } else {
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [Auth::instance()->id()]
+            );
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
-        $properties = Database::fetchAll(
-            "SELECT p.*, c.name as company_name FROM properties p 
-             JOIN companies c ON c.id = p.company_id 
-             WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
-             ORDER BY p.name"
-        );
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Invite Tenant']);
@@ -130,18 +153,28 @@ class TenantController
         $tenant = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
         if (!$tenant) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        $companyIds = Database::fetchAll(
-            "SELECT company_id FROM company_user WHERE user_id = ?",
-            [Auth::instance()->id()]
-        );
-        $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        } else {
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [$user['id']]
+            );
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
-        $properties = Database::fetchAll(
-            "SELECT p.*, c.name as company_name FROM properties p 
-             JOIN companies c ON c.id = p.company_id 
-             WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
-             ORDER BY p.name"
-        );
+            $properties = Database::fetchAll(
+                "SELECT p.*, c.name as company_name FROM properties p 
+                 JOIN companies c ON c.id = p.company_id 
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Tenant']);

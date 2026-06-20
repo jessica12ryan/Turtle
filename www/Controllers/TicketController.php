@@ -25,6 +25,8 @@ class TicketController
         if ($user['role'] === 'tenant') {
             $query .= " AND t.tenant_id = ?";
             $params[] = $auth->id();
+        } elseif ($user['role'] === 'admin') {
+            // Admin sees all tickets
         } elseif ($user['role'] === 'maintenance') {
             $companyIds = Database::fetchAll(
                 "SELECT company_id FROM company_user WHERE user_id = ?",
@@ -122,7 +124,7 @@ class TicketController
         );
 
         $staffUsers = [];
-        if (in_array(Auth::instance()->user()['role'], ['landlord', 'property_manager'])) {
+        if (in_array(Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])) {
             $staffUsers = Database::fetchAll(
                 "SELECT u.* FROM users u 
                  JOIN company_user cu ON cu.user_id = u.id 
@@ -203,7 +205,7 @@ class TicketController
             redirect('/tickets/' . $id);
         }
 
-        $isInternal = (!empty($_POST['is_internal']) && in_array(Auth::instance()->user()['role'], ['landlord', 'property_manager', 'maintenance'])) ? 1 : 0;
+        $isInternal = (!empty($_POST['is_internal']) && Auth::instance()->isStaff()) ? 1 : 0;
 
         Database::insert(
             "INSERT INTO ticket_comments (ticket_id, user_id, body, is_internal, created_at) VALUES (?, ?, ?, ?, NOW())",

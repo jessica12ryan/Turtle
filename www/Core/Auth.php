@@ -68,6 +68,6 @@ class Auth
     public function isStaff(): bool
     {
         $user = $this->user();
-        return $user && in_array($user['role'], ['landlord', 'property_manager', 'maintenance']);
+        return $user && in_array($user['role'], ['admin', 'landlord', 'property_manager', 'maintenance']);
     }
 }

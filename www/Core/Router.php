@@ -89,15 +89,22 @@ class Router
                     redirect('/dashboard');
                 }
                 break;
+            case 'role:admin':
+                if (!$auth->check() || $auth->user()['role'] !== 'admin') {
+                    http_response_code(403);
+                    require base_path('www/Views/errors/403.php');
+                    exit;
+                }
+                break;
             case 'role:landlord':
-                if (!$auth->check() || $auth->user()['role'] !== 'landlord') {
+                if (!$auth->check() || !in_array($auth->user()['role'], ['admin', 'landlord'])) {
                     http_response_code(403);
                     require base_path('www/Views/errors/403.php');
                     exit;
                 }
                 break;
             case 'role:landlord,property_manager':
-                if (!$auth->check() || !in_array($auth->user()['role'], ['landlord', 'property_manager'])) {
+                if (!$auth->check() || !in_array($auth->user()['role'], ['admin', 'landlord', 'property_manager'])) {
                     http_response_code(403);
                     require base_path('www/Views/errors/403.php');
                     exit;
@@ -111,7 +118,7 @@ class Router
                 }
                 break;
             case 'role:staff':
-                if (!$auth->check() || !in_array($auth->user()['role'], ['landlord', 'property_manager', 'maintenance'])) {
+                if (!$auth->check() || !in_array($auth->user()['role'], ['admin', 'landlord', 'property_manager', 'maintenance'])) {
                     http_response_code(403);
                     require base_path('www/Views/errors/403.php');
                     exit;

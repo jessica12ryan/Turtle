@@ -46,12 +46,17 @@ class DashboardController
         }
 
         // Staff dashboard
+        $isAdmin = $user['role'] === 'admin';
         $companyIds = Database::fetchAll(
             "SELECT company_id FROM company_user WHERE user_id = ?",
             [$auth->id()]
         );
         $companyIds = array_column($companyIds, 'company_id');
-        $companyIdList = implode(',', array_map('intval', $companyIds)) ?: '0';
+        if ($isAdmin) {
+            $companyIdList = 'SELECT id FROM companies WHERE archived_at IS NULL';
+        } else {
+            $companyIdList = implode(',', array_map('intval', $companyIds)) ?: '0';
+        }
 
         $companies = Database::fetchAll(
             "SELECT c.*, (SELECT COUNT(*) FROM properties WHERE company_id = c.id AND archived_at IS NULL) as properties_count 
