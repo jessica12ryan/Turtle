@@ -32,3 +32,4 @@ Thumbs.db
 
 # Docker
 /.docker
+storage/.db_initialized
