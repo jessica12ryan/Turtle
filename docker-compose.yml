@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    image: turtle-app
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+      - turtle-storage:/var/www/html/storage/app
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=turtle
+      - DB_USERNAME=turtle
+      - DB_PASSWORD=turtle
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - turtle
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=turtle
+      - MYSQL_USER=turtle
+      - MYSQL_PASSWORD=turtle
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      retries: 5
+      timeout: 5s
+    networks:
+      - turtle
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - turtle
+
+volumes:
+  mysql-data:
+  turtle-storage:
+
+networks:
+  turtle:
+    driver: bridge

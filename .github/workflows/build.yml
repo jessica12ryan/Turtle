@@ -21,15 +21,18 @@ jobs:
 
     - name: Start services
       run: |
-        docker compose up -d mysql redis
-        sleep 10
-        docker compose up -d laravel.test
+        docker compose up -d mysql
+        sleep 15
+        docker compose up -d app
+
+    - name: Install dependencies
+      run: docker compose exec -T app composer install --no-interaction --prefer-dist
 
     - name: Run migrations
-      run: docker compose exec -T laravel.test php artisan migrate --force
+      run: docker compose exec -T app php artisan migrate --force
 
     - name: Run tests
-      run: docker compose exec -T laravel.test php artisan test
+      run: docker compose exec -T app php artisan test
 
     - name: Cleanup
       run: docker compose down
