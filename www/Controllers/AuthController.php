@@ -145,6 +145,56 @@ class AuthController
         redirect('/login');
     }
 
+    public function onboarding(): void
+    {
+        $view = new View();
+        $view->layout('layouts/guest', ['title' => 'Tenant Onboarding']);
+        $view->render('auth/onboarding');
+    }
+
+    public function onboardingPost(): void
+    {
+        $validator = new Validator();
+        if (!$validator->validate($_POST, ['email' => 'required|email'])) {
+            $_SESSION['_errors'] = $validator->errors();
+            redirect('/onboarding');
+        }
+
+        $user = Database::fetch(
+            "SELECT id, name, must_change_password FROM users WHERE email = ? AND role = 'tenant' AND archived_at IS NULL",
+            [$_POST['email']]
+        );
+
+        if (!$user) {
+            flash('error', 'No tenant account found with that email.');
+            redirect('/onboarding');
+        }
+
+        if (!$user['must_change_password']) {
+            flash('error', 'This account has already been onboarded. Please use the Forgot Password link if you need to reset your password.');
+            redirect('/onboarding');
+        }
+
+        $password = bin2hex(random_bytes(6));
+        Database::execute(
+            "UPDATE users SET password = ?, must_change_password = 1 WHERE id = ?",
+            [password_hash($password, PASSWORD_DEFAULT), $user['id']]
+        );
+
+        $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+        Mailer::sendTemplate(
+            $_POST['email'],
+            'Welcome to Turtle - Complete Your Onboarding',
+            'Hello ' . h($user['name']) . ',',
+            'Your landlord has invited you to the Turtle Tenant Management Portal.<br><br><strong>Your temporary password is: ' . $password . '</strong><br><br>Please log in with your email and this temporary password. You will be prompted to set a new password.',
+            $loginUrl,
+            'Log In'
+        );
+
+        flash('success', 'Welcome email sent! Please check your inbox for your temporary password.');
+        redirect('/login');
+    }
+
     public function changePassword(): void
     {
         $view = new View();

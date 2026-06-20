@@ -61,6 +61,8 @@ $router->post('/setup', 'SetupController@store');
 $router->get('/login', 'AuthController@login', ['guest']);
 $router->post('/login', 'AuthController@loginPost', ['guest']);
 $router->post('/logout', 'AuthController@logout', ['auth']);
+$router->get('/onboarding', 'AuthController@onboarding', ['guest']);
+$router->post('/onboarding', 'AuthController@onboardingPost', ['guest']);
 $router->get('/forgot-password', 'AuthController@forgotPassword', ['guest']);
 $router->post('/forgot-password', 'AuthController@forgotPasswordPost', ['guest']);
 $router->get('/reset-password/{token}', 'AuthController@resetPassword', ['guest']);
