@@ -11,6 +11,7 @@ $unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications
                 <div class="hidden md:flex space-x-4">
                     <?php if (in_array($user['role'], ['landlord', 'property_manager'])): ?>
                         <a href="/companies" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/companies') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Companies</a>
+                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/staff') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Staff</a>
                     <?php endif; ?>
                     <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/properties') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Properties</a>
                     <?php if (in_array($user['role'], ['landlord', 'property_manager'])): ?>

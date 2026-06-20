@@ -52,6 +52,15 @@ $router->get('/companies/{id}/edit', 'CompanyController@edit', ['auth', 'role:la
 $router->post('/companies/{id}/update', 'CompanyController@update', ['auth', 'role:landlord']);
 $router->post('/companies/{id}/delete', 'CompanyController@destroy', ['auth', 'role:landlord']);
 
+// Staff
+$router->get('/staff', 'StaffController@index', ['auth', 'role:landlord,property_manager']);
+$router->get('/staff/create', 'StaffController@create', ['auth', 'role:landlord']);
+$router->post('/staff', 'StaffController@store', ['auth', 'role:landlord']);
+$router->get('/staff/{id}', 'StaffController@show', ['auth', 'role:landlord,property_manager']);
+$router->get('/staff/{id}/edit', 'StaffController@edit', ['auth', 'role:landlord,property_manager']);
+$router->post('/staff/{id}/update', 'StaffController@update', ['auth', 'role:landlord,property_manager']);
+$router->post('/staff/{id}/delete', 'StaffController@destroy', ['auth', 'role:landlord']);
+
 // Properties
 $router->get('/properties', 'PropertyController@index', ['auth']);
 $router->get('/properties/create', 'PropertyController@create', ['auth', 'role:landlord,property_manager']);
