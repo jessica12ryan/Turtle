@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
+    phone VARCHAR(20) DEFAULT '',
     password VARCHAR(255) NOT NULL,
     role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant',
     must_change_password TINYINT(1) DEFAULT 0,
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS company_user (
 
 CREATE TABLE IF NOT EXISTS properties (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    landlord_id INT NOT NULL,
     company_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255) DEFAULT '',
@@ -45,6 +47,7 @@ CREATE TABLE IF NOT EXISTS properties (
     archived_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (landlord_id) REFERENCES users(id),
     FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS property_tenant (
 CREATE TABLE IF NOT EXISTS leases (
     id INT AUTO_INCREMENT PRIMARY KEY,
     property_id INT NOT NULL,
+    tenant_id INT DEFAULT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     uploaded_by INT NOT NULL,
@@ -72,6 +76,7 @@ CREATE TABLE IF NOT EXISTS leases (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    FOREIGN KEY (tenant_id) REFERENCES users(id),
     FOREIGN KEY (uploaded_by) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

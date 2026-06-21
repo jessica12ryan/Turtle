@@ -27,7 +27,7 @@
         </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Update Profile</button>
-            <a href="/dashboard" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
+            <a href="/home" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
         </div>
     </form>
 </div>

@@ -44,7 +44,7 @@ class AuthController
             redirect('/password/change');
         }
 
-        redirect('/dashboard');
+        redirect('/home');
     }
 
     public function logout(): void
@@ -218,6 +218,6 @@ class AuthController
         );
 
         flash('success', 'Password changed successfully.');
-        redirect('/dashboard');
+        redirect('/home');
     }
 }

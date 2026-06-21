@@ -86,11 +86,18 @@ class Router
                 break;
             case 'guest':
                 if ($auth->check()) {
-                    redirect('/dashboard');
+                    redirect('/home');
                 }
                 break;
             case 'role:admin':
                 if (!$auth->check() || $auth->user()['role'] !== 'admin') {
+                    http_response_code(403);
+                    require base_path('www/Views/errors/403.php');
+                    exit;
+                }
+                break;
+            case 'role:admin,landlord':
+                if (!$auth->check() || !in_array($auth->user()['role'], ['admin', 'landlord'])) {
                     http_response_code(403);
                     require base_path('www/Views/errors/403.php');
                     exit;

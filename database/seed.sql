@@ -11,9 +11,9 @@ INSERT INTO companies (id, name, address, city, province, postal_code, phone) VA
 
 INSERT INTO company_user (company_id, user_id) VALUES (1, 1), (1, 2), (1, 3);
 
-INSERT INTO properties (id, company_id, name, address, city, province, postal_code) VALUES
-(1, 1, 'The Wellington', '45 Wellington St W', 'Toronto', 'Ontario', 'M5V 1E3'),
-(2, 1, 'King Street Lofts', '120 King St E', 'Toronto', 'Ontario', 'M5C 1G6');
+INSERT INTO properties (id, landlord_id, company_id, name, address, city, province, postal_code) VALUES
+(1, 1, 1, 'The Wellington', '45 Wellington St W', 'Toronto', 'Ontario', 'M5V 1E3'),
+(2, 1, 1, 'King Street Lofts', '120 King St E', 'Toronto', 'Ontario', 'M5C 1G6');
 
 INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at) VALUES
 (1, 4, 1, NOW()),

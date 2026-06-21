@@ -1,15 +1,22 @@
 <div class="flex justify-between items-center mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
-        <p class="text-gray-500"><?= h($property['company_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?></p>
+        <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?></p>
     </div>
+    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
-        <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['landlord', 'property_manager'])): ?>
+        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
             <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
             <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Upload Lease</a>
         <?php endif; ?>
-        <?php if (\App\Core\Auth::instance()->user()['role'] === 'tenant'): ?>
+        <?php if (in_array($role, ['admin', 'landlord', 'property_manager', 'tenant'])): ?>
             <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm">New Ticket</a>
+        <?php endif; ?>
+        <?php if (in_array($role, ['admin', 'landlord'])): ?>
+            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this property?')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>
+            </form>
         <?php endif; ?>
     </div>
 </div>
@@ -18,7 +25,7 @@
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b flex justify-between items-center">
                 <h2 class="text-lg font-semibold text-gray-800">Tenants</h2>
-                <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['landlord', 'property_manager'])): ?>
+                <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
                     <a href="/tenants/create?property_id=<?= $property['id'] ?>" class="text-sm text-blue-600 hover:underline">Add Tenant</a>
                 <?php endif; ?>
             </div>

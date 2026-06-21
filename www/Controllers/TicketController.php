@@ -28,25 +28,29 @@ class TicketController
         } elseif ($user['role'] === 'admin') {
             // Admin sees all tickets
         } elseif ($user['role'] === 'maintenance') {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$auth->id()]
+            $userIds = Database::fetchAll(
+                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
+                 AND landlord_id IN (SELECT u.id FROM users u JOIN company_user cu ON cu.user_id = u.id WHERE cu.user_id = ?)
+                 UNION SELECT ?",
+                [$auth->id(), $auth->id()]
             );
-            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $userIdList = implode(',', array_column($userIds, 'landlord_id')) ?: '0';
             $propertyIds = Database::fetchAll(
-                "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL"
+                "SELECT id FROM properties WHERE landlord_id IN ({$userIdList}) AND archived_at IS NULL"
             );
             $propertyIdList = implode(',', array_column($propertyIds, 'id')) ?: '0';
             $query .= " AND (t.assigned_to = ? OR t.property_id IN ({$propertyIdList}))";
             $params[] = $auth->id();
         } else {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$auth->id()]
+            $userIds = Database::fetchAll(
+                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
+                 AND landlord_id IN (SELECT u.id FROM users u JOIN company_user cu ON cu.user_id = u.id WHERE cu.user_id = ?)
+                 UNION SELECT ?",
+                [$auth->id(), $auth->id()]
             );
-            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $userIdList = implode(',', array_column($userIds, 'landlord_id')) ?: '0';
             $propertyIds = Database::fetchAll(
-                "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL"
+                "SELECT id FROM properties WHERE landlord_id IN ({$userIdList}) AND archived_at IS NULL"
             );
             $propertyIdList = implode(',', array_column($propertyIds, 'id')) ?: '0';
             $query .= " AND t.property_id IN ({$propertyIdList})";
@@ -63,13 +67,39 @@ class TicketController
 
     public function create(): void
     {
-        $properties = Database::fetchAll(
-            "SELECT p.*, c.name as company_name FROM properties p 
-             JOIN property_tenant pt ON pt.property_id = p.id 
-             JOIN companies c ON c.id = p.company_id 
-             WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
-            [Auth::instance()->id()]
-        );
+        $auth = Auth::instance();
+        $user = $auth->user();
+
+        if ($user['role'] === 'tenant') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, u.name as landlord_name FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id
+                 JOIN property_tenant pt ON pt.property_id = p.id 
+                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
+                [$auth->id()]
+            );
+        } elseif ($user['role'] === 'admin') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, u.name as landlord_name FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id 
+                 WHERE p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        } else {
+            $userIds = Database::fetchAll(
+                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
+                 AND landlord_id IN (SELECT u.id FROM users u JOIN company_user cu ON cu.user_id = u.id WHERE cu.user_id = ?)
+                 UNION SELECT ?",
+                [$auth->id(), $auth->id()]
+            );
+            $userIdList = implode(',', array_column($userIds, 'landlord_id')) ?: '0';
+            $properties = Database::fetchAll(
+                "SELECT p.*, u.name as landlord_name FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id 
+                 WHERE p.landlord_id IN ({$userIdList}) AND p.archived_at IS NULL 
+                 ORDER BY p.name"
+            );
+        }
 
         $categories = ['plumbing', 'electrical', 'hvac', 'appliances', 'structural', 'pest_control', 'general_repair', 'other'];
         $priorities = ['low', 'medium', 'high', 'emergency'];
@@ -106,7 +136,7 @@ class TicketController
     public function show(int $id): void
     {
         $ticket = Database::fetch(
-            "SELECT t.*, p.name as property_name, p.company_id, u.name as tenant_name, a.name as assignee_name 
+            "SELECT t.*, p.name as property_name, p.landlord_id, u.name as tenant_name, a.name as assignee_name 
              FROM tickets t 
              JOIN properties p ON p.id = t.property_id 
              JOIN users u ON u.id = t.tenant_id 
@@ -128,9 +158,9 @@ class TicketController
             $staffUsers = Database::fetchAll(
                 "SELECT u.* FROM users u 
                  JOIN company_user cu ON cu.user_id = u.id 
-                 WHERE cu.company_id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')
+                 WHERE cu.company_id = (SELECT company_id FROM properties WHERE id = ?) AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')
                  ORDER BY u.name",
-                [$ticket['company_id']]
+                [$ticket['property_id']]
             );
         }
 

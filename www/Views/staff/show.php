@@ -3,8 +3,15 @@
         <h1 class="text-2xl font-bold text-gray-800"><?= h($staff['name']) ?></h1>
         <p class="text-gray-500"><?= h($staff['email']) ?></p>
     </div>
+    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
         <a href="/staff/<?= $staff['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php if (in_array($role, ['admin', 'landlord'])): ?>
+            <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this staff member? They will no longer be able to log in.')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -24,18 +31,6 @@
                 <dd class="text-sm text-gray-600"><?= date('M j, Y', strtotime($staff['created_at'])) ?></dd>
             </div>
         </dl>
-        <div class="mt-6">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Companies</h3>
-            <?php if (empty($companies)): ?>
-                <p class="text-sm text-gray-500">Not assigned to any company.</p>
-            <?php else: ?>
-                <ul class="space-y-1">
-                    <?php foreach ($companies as $c): ?>
-                        <li class="text-sm text-blue-600"><a href="/companies/<?= $c['id'] ?>" class="hover:underline"><?= h($c['name']) ?></a></li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </div>
     </div>
     <div class="bg-white rounded-lg shadow">
         <div class="px-6 py-4 border-b">

@@ -3,23 +3,27 @@ $user = \App\Core\Auth::instance()->user();
 $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL", [$user['id']])['count'] ?? 0;
 $mgmtRoles = ['admin', 'landlord', 'property_manager'];
+
+function navActive(string $prefix, string $currentUri): string {
+    return str_starts_with($currentUri, $prefix) ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900';
+}
 ?>
 <nav class="bg-white shadow-md">
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between h-16">
             <div class="flex items-center space-x-8">
-                <a href="/dashboard"><img src="/assets/logo.svg" alt="Turtle" class="h-8"></a>
+                <a href="/home"><img src="/assets/logo.svg" alt="Turtle" class="h-8"></a>
                 <div class="hidden md:flex space-x-4">
+                    <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
+                    <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
                     <?php if (in_array($user['role'], $mgmtRoles)): ?>
-                        <a href="/companies" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/companies') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Companies</a>
-                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/staff') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Staff</a>
+                        <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
                     <?php endif; ?>
-                    <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/properties') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Properties</a>
+                    <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases</a>
+                    <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
                     <?php if (in_array($user['role'], $mgmtRoles)): ?>
-                        <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/tenants') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Tenants</a>
+                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
                     <?php endif; ?>
-                    <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/leases') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Leases</a>
-                    <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= str_starts_with($currentUri, '/tickets') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900' ?>">Tickets</a>
                 </div>
             </div>
             <div class="flex items-center space-x-4">
@@ -36,6 +40,9 @@ $mgmtRoles = ['admin', 'landlord', 'property_manager'];
                     </button>
                     <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                         <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">Profile</a>
+                        <?php if ($user['role'] === 'admin'): ?>
+                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                        <?php endif; ?>
                         <form method="POST" action="/logout">
                             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                             <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg">Logout</button>

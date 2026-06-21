@@ -15,15 +15,11 @@ class StaffController
         $auth = Auth::instance();
         $user = $auth->user();
 
-        if ($user['role'] === 'admin') {
+        if ($user['role'] === 'admin' || $user['role'] === 'landlord') {
             $staff = Database::fetchAll(
-                "SELECT u.*, GROUP_CONCAT(c.name SEPARATOR ', ') as company_names
-                 FROM users u
-                 LEFT JOIN company_user cu ON cu.user_id = u.id
-                 LEFT JOIN companies c ON c.id = cu.company_id
+                "SELECT u.* FROM users u
                  WHERE u.archived_at IS NULL
-                 AND u.role IN ('admin','landlord','property_manager','maintenance')
-                 GROUP BY u.id
+                 AND u.role IN ('landlord','property_manager','maintenance')
                  ORDER BY u.name"
             );
         } else {
@@ -34,13 +30,10 @@ class StaffController
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $staff = Database::fetchAll(
-                "SELECT u.*, GROUP_CONCAT(c.name SEPARATOR ', ') as company_names
-                 FROM users u
+                "SELECT u.* FROM users u
                  JOIN company_user cu ON cu.user_id = u.id
-                 JOIN companies c ON c.id = cu.company_id
-                 WHERE c.id IN ({$companyIdList}) AND u.archived_at IS NULL
-                 AND u.role IN ('landlord','property_manager','maintenance')
-                 GROUP BY u.id
+                 WHERE cu.company_id IN ({$companyIdList}) AND u.archived_at IS NULL
+                 AND u.role IN ('property_manager','maintenance')
                  ORDER BY u.name"
             );
         }
@@ -52,36 +45,28 @@ class StaffController
 
     public function create(): void
     {
-        $user = Auth::instance()->user();
-        if ($user['role'] === 'admin') {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
-            );
-        } else {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c
-                 JOIN company_user cu ON cu.company_id = c.id
-                 WHERE cu.user_id = ? AND c.archived_at IS NULL
-                 ORDER BY c.name",
-                [$user['id']]
-            );
-        }
-
         $roles = ['property_manager', 'maintenance'];
+        if (Auth::instance()->user()['role'] === 'admin') {
+            $roles[] = 'landlord';
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Invite Staff']);
-        $view->render('staff/create', compact('companies', 'roles'));
+        $view->render('staff/create', compact('roles'));
     }
 
     public function store(): void
     {
+        $allowedRoles = ['property_manager', 'maintenance'];
+        if (Auth::instance()->user()['role'] === 'admin') {
+            $allowedRoles[] = 'landlord';
+        }
+
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
-            'role' => 'required|in:property_manager,maintenance',
-            'company_id' => 'required|exists:companies,id',
+            'role' => 'required|in:' . implode(',', $allowedRoles),
         ])) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
@@ -95,39 +80,29 @@ class StaffController
             [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role']]
         );
 
-        Database::execute(
-            "INSERT INTO company_user (company_id, user_id) VALUES (?, ?)",
-            [$_POST['company_id'], $userId]
-        );
+        if (!empty($_POST['send_welcome_email'])) {
+            $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+            Mailer::sendTemplate(
+                $_POST['email'],
+                'Welcome to Turtle - Your Account Has Been Created',
+                'Hello ' . h($_POST['name']) . ',',
+                'You have been added as a ' . ucfirst(str_replace('_', ' ', $_POST['role'])) . ' on the Turtle portal.<br><br><strong>Your temporary password is: ' . $password . '</strong><br><br>Please log in and change your password immediately.',
+                $loginUrl,
+                'Log In'
+            );
+        }
 
-        $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
-        Mailer::sendTemplate(
-            $_POST['email'],
-            'Welcome to Turtle - Your Account Has Been Created',
-            'Hello ' . h($_POST['name']) . ',',
-            'You have been added as a ' . ucfirst(str_replace('_', ' ', $_POST['role'])) . ' on the Turtle portal.<br><br><strong>Your temporary password is: ' . $password . '</strong><br><br>Please log in and change your password immediately.',
-            $loginUrl,
-            'Log In'
-        );
-
-        flash('success', 'Staff member invited successfully. An email has been sent with their temporary password.');
+        flash('success', 'Staff member added successfully.');
         redirect('/staff');
     }
 
     public function show(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL     AND u.role IN ('admin','landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
-
-        $companies = Database::fetchAll(
-            "SELECT c.* FROM companies c
-             JOIN company_user cu ON cu.company_id = c.id
-             WHERE cu.user_id = ? AND c.archived_at IS NULL",
-            [$id]
-        );
 
         $assignedTickets = Database::fetchAll(
             "SELECT t.*, p.name as property_name FROM tickets t
@@ -139,49 +114,31 @@ class StaffController
 
         $view = new View();
         $view->layout('layouts/main', ['title' => $staff['name']]);
-        $view->render('staff/show', compact('staff', 'companies', 'assignedTickets'));
+        $view->render('staff/show', compact('staff', 'assignedTickets'));
     }
 
     public function edit(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('admin','landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        $user = Auth::instance()->user();
-        if ($user['role'] === 'admin') {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
-            );
-        } else {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c
-                 JOIN company_user cu ON cu.company_id = c.id
-                 WHERE cu.user_id = ? AND c.archived_at IS NULL
-                 ORDER BY c.name",
-                [$user['id']]
-            );
-        }
-
-        $assignedCompanyIds = Database::fetchAll(
-            "SELECT company_id FROM company_user WHERE user_id = ?",
-            [$id]
-        );
-        $assignedCompanyIds = array_column($assignedCompanyIds, 'company_id');
-
         $roles = ['property_manager', 'maintenance'];
+        if ($staff['role'] === 'landlord') {
+            $roles[] = 'landlord';
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Staff']);
-        $view->render('staff/edit', compact('staff', 'companies', 'assignedCompanyIds', 'roles'));
+        $view->render('staff/edit', compact('staff', 'roles'));
     }
 
     public function update(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT * FROM users WHERE id = ? AND archived_at IS NULL     AND role IN ('admin','landlord','property_manager','maintenance')",
+            "SELECT * FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -208,24 +165,44 @@ class StaffController
         $params[] = $id;
         Database::execute($sql, $params);
 
-        if (!empty($_POST['company_ids']) && in_array(Auth::instance()->user()['role'], ['admin', 'landlord'])) {
-            Database::execute("DELETE FROM company_user WHERE user_id = ?", [$id]);
-            foreach ($_POST['company_ids'] as $companyId) {
-                Database::execute(
-                    "INSERT INTO company_user (company_id, user_id) VALUES (?, ?)",
-                    [(int)$companyId, $id]
-                );
-            }
-        }
-
         flash('success', 'Staff updated successfully.');
         redirect('/staff/' . $id);
     }
 
     public function destroy(int $id): void
     {
+        $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        if ($target['role'] === 'admin') {
+            $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
+            if (!$adminCount || $adminCount['cnt'] === 0) {
+                flash('error', 'Cannot archive the only active admin account.');
+                redirect('/staff/' . $id);
+            }
+        }
+
         Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
         flash('success', 'Staff member archived successfully.');
+        redirect('/staff');
+    }
+
+    public function hardDelete(int $id): void
+    {
+        $target = Database::fetch("SELECT * FROM users WHERE id = ?", [$id]);
+        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        if ($target['role'] === 'admin') {
+            $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
+            if (!$adminCount || $adminCount['cnt'] === 0) {
+                flash('error', 'Cannot permanently delete the only active admin account.');
+                redirect('/staff');
+            }
+        }
+
+        Database::execute("DELETE FROM company_user WHERE user_id = ?", [$id]);
+        Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+        flash('success', 'Staff member permanently deleted.');
         redirect('/staff');
     }
 }

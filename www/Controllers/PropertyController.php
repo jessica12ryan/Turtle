@@ -9,6 +9,27 @@ use App\Core\Validator;
 
 class PropertyController
 {
+    private function ensureLandlordCompany(int $landlordId): int
+    {
+        $existing = Database::fetch(
+            "SELECT cu.company_id FROM company_user cu WHERE cu.user_id = ? LIMIT 1",
+            [$landlordId]
+        );
+        if ($existing) {
+            return (int)$existing['company_id'];
+        }
+        $landlord = Database::fetch("SELECT name FROM users WHERE id = ?", [$landlordId]);
+        $companyId = Database::insert(
+            "INSERT INTO companies (name, created_at, updated_at) VALUES (?, NOW(), NOW())",
+            [$landlord ? $landlord['name'] . '\'s Properties' : 'Properties']
+        );
+        Database::execute(
+            "INSERT INTO company_user (company_id, user_id) VALUES (?, ?)",
+            [$companyId, $landlordId]
+        );
+        return $companyId;
+    }
+
     public function index(): void
     {
         $auth = Auth::instance();
@@ -16,19 +37,19 @@ class PropertyController
 
         if ($user['role'] === 'tenant') {
             $properties = Database::fetchAll(
-                "SELECT p.*, c.name as company_name FROM properties p 
+                "SELECT p.*, u.name as landlord_name FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id
                  JOIN property_tenant pt ON pt.property_id = p.id 
-                 JOIN companies c ON c.id = p.company_id 
                  WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
                 [$auth->id()]
             );
         } elseif ($user['role'] === 'admin') {
             $properties = Database::fetchAll(
-                "SELECT p.*, c.name as company_name,
+                "SELECT p.*, u.name as landlord_name,
                  (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
                  (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count
                  FROM properties p 
-                 JOIN companies c ON c.id = p.company_id 
+                 JOIN users u ON u.id = p.landlord_id 
                  WHERE p.archived_at IS NULL 
                  ORDER BY p.name"
             );
@@ -40,11 +61,11 @@ class PropertyController
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $properties = Database::fetchAll(
-                "SELECT p.*, c.name as company_name,
+                "SELECT p.*, u.name as landlord_name,
                  (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
                  (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count
                  FROM properties p 
-                 JOIN companies c ON c.id = p.company_id 
+                 JOIN users u ON u.id = p.landlord_id 
                  WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
                  ORDER BY p.name"
             );
@@ -57,46 +78,36 @@ class PropertyController
 
     public function create(): void
     {
-        $auth = Auth::instance();
-        $user = $auth->user();
-        if ($user['role'] === 'admin') {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
-            );
-        } else {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c 
-                 JOIN company_user cu ON cu.company_id = c.id 
-                 WHERE cu.user_id = ? AND c.archived_at IS NULL 
-                 ORDER BY c.name",
-                [$auth->id()]
-            );
-        }
+        $landlords = Database::fetchAll(
+            "SELECT id, name, email FROM users WHERE role = 'landlord' AND archived_at IS NULL ORDER BY name"
+        );
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Add Property']);
-        $view->render('properties/create', compact('companies'));
+        $view->render('properties/create', compact('landlords'));
     }
 
     public function store(): void
     {
         $validator = new Validator();
         if (!$validator->validate($_POST, [
-            'company_id' => 'required|exists:companies,id',
+            'landlord_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
-            'address' => 'max:255',
-            'city' => 'max:255',
-            'province' => 'max:255',
-            'postal_code' => 'max:20',
+            'address' => 'required|max:255',
+            'city' => 'required|max:255',
+            'province' => 'required|max:255',
+            'postal_code' => 'required|max:20',
         ])) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/properties/create');
         }
 
+        $companyId = $this->ensureLandlordCompany((int)$_POST['landlord_id']);
+
         $propertyId = Database::insert(
-            "INSERT INTO properties (company_id, name, address, city, province, postal_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['company_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '']
+            "INSERT INTO properties (landlord_id, company_id, name, address, city, province, postal_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['landlord_id'], $companyId, $_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '']
         );
 
         flash('success', 'Property created successfully.');
@@ -106,7 +117,7 @@ class PropertyController
     public function show(int $id): void
     {
         $property = Database::fetch(
-            "SELECT p.*, c.name as company_name FROM properties p JOIN companies c ON c.id = p.company_id WHERE p.id = ? AND p.archived_at IS NULL",
+            "SELECT p.*, u.name as landlord_name FROM properties p JOIN users u ON u.id = p.landlord_id WHERE p.id = ? AND p.archived_at IS NULL",
             [$id]
         );
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -142,43 +153,36 @@ class PropertyController
         $property = Database::fetch("SELECT * FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        $auth = Auth::instance();
-        $user = $auth->user();
-        if ($user['role'] === 'admin') {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c WHERE c.archived_at IS NULL ORDER BY c.name"
-            );
-        } else {
-            $companies = Database::fetchAll(
-                "SELECT c.* FROM companies c JOIN company_user cu ON cu.company_id = c.id WHERE cu.user_id = ? AND c.archived_at IS NULL ORDER BY c.name",
-                [$auth->id()]
-            );
-        }
+        $landlords = Database::fetchAll(
+            "SELECT id, name, email FROM users WHERE role = 'landlord' AND archived_at IS NULL ORDER BY name"
+        );
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Property']);
-        $view->render('properties/edit', compact('property', 'companies'));
+        $view->render('properties/edit', compact('property', 'landlords'));
     }
 
     public function update(int $id): void
     {
         $validator = new Validator();
         if (!$validator->validate($_POST, [
-            'company_id' => 'required|exists:companies,id',
+            'landlord_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
-            'address' => 'max:255',
-            'city' => 'max:255',
-            'province' => 'max:255',
-            'postal_code' => 'max:20',
+            'address' => 'required|max:255',
+            'city' => 'required|max:255',
+            'province' => 'required|max:255',
+            'postal_code' => 'required|max:20',
         ])) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/properties/' . $id . '/edit');
         }
 
+        $companyId = $this->ensureLandlordCompany((int)$_POST['landlord_id']);
+
         Database::execute(
-            "UPDATE properties SET company_id = ?, name = ?, address = ?, city = ?, province = ?, postal_code = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['company_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $id]
+            "UPDATE properties SET landlord_id = ?, company_id = ?, name = ?, address = ?, city = ?, province = ?, postal_code = ?, updated_at = NOW() WHERE id = ?",
+            [$_POST['landlord_id'], $companyId, $_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $id]
         );
 
         flash('success', 'Property updated successfully.');

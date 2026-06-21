@@ -3,8 +3,21 @@
         <h1 class="text-2xl font-bold text-gray-800"><?= h($lease['title']) ?></h1>
         <p class="text-gray-500"><?= h($lease['property_name']) ?> — Uploaded by <?= h($lease['uploader_name']) ?> on <?= date('M j, Y', strtotime($lease['created_at'])) ?></p>
     </div>
+    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
         <a href="/properties/<?= $lease['property_id'] ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
+        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this lease?')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
+            </form>
+        <?php endif; ?>
+        <?php if ($role === 'admin'): ?>
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('Permanently delete this lease? This cannot be undone.')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="text-red-800 hover:underline text-sm font-bold">Delete</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 <div class="bg-white rounded-lg shadow p-6">

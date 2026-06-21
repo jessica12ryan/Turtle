@@ -25,11 +25,11 @@ class LeaseController
             );
         } elseif ($user['role'] === 'admin') {
             $leases = Database::fetchAll(
-                "SELECT l.*, p.name as property_name, c.name as company_name,
+                "SELECT l.*, p.name as property_name, u.name as landlord_name,
                  (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count
                  FROM leases l 
                  JOIN properties p ON p.id = l.property_id 
-                 JOIN companies c ON c.id = p.company_id 
+                 JOIN users u ON u.id = p.landlord_id 
                  WHERE l.archived_at IS NULL 
                  ORDER BY l.created_at DESC"
             );
@@ -41,11 +41,11 @@ class LeaseController
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $leases = Database::fetchAll(
-                "SELECT l.*, p.name as property_name, c.name as company_name,
+                "SELECT l.*, p.name as property_name, u.name as landlord_name,
                  (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count
                  FROM leases l 
                  JOIN properties p ON p.id = l.property_id 
-                 JOIN companies c ON c.id = p.company_id 
+                 JOIN users u ON u.id = p.landlord_id 
                  WHERE p.company_id IN ({$companyIdList}) AND l.archived_at IS NULL 
                  ORDER BY l.created_at DESC"
             );
@@ -70,9 +70,12 @@ class LeaseController
         $user = Auth::instance()->user();
         if ($user['role'] === 'admin') {
             $properties = Database::fetchAll(
-                "SELECT p.*, c.name as company_name FROM properties p 
-                 JOIN companies c ON c.id = p.company_id 
-                 WHERE p.archived_at IS NULL 
+                "SELECT p.*, u.name as landlord_name,
+                 (SELECT pt.tenant_id FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL AND pt.is_main_tenant = 1 LIMIT 1) as main_tenant_id
+                 FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id 
+                 WHERE p.archived_at IS NULL
+                 AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
                  ORDER BY p.name"
             );
         } else {
@@ -83,16 +86,58 @@ class LeaseController
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $properties = Database::fetchAll(
-                "SELECT p.*, c.name as company_name FROM properties p 
-                 JOIN companies c ON c.id = p.company_id 
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
+                "SELECT p.*, u.name as landlord_name,
+                 (SELECT pt.tenant_id FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL AND pt.is_main_tenant = 1 LIMIT 1) as main_tenant_id
+                 FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id 
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL
+                 AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
                  ORDER BY p.name"
             );
         }
 
+        // Fetch tenant names for main tenants
+        $tenantNames = [];
+        foreach ($properties as $p) {
+            if (!empty($p['main_tenant_id'])) {
+                $tenant = Database::fetch("SELECT id, name FROM users WHERE id = ?", [$p['main_tenant_id']]);
+                if ($tenant) {
+                    $tenantNames[$p['id']] = $tenant['name'];
+                }
+            }
+        }
+
+        $noTenantProperties = [];
+        if ($user['role'] === 'admin') {
+            $noTenantProperties = Database::fetchAll(
+                "SELECT p.*, u.name as landlord_name FROM properties p 
+                 JOIN users u ON u.id = p.landlord_id
+                 WHERE p.archived_at IS NULL
+                 AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
+                 ORDER BY p.name"
+            );
+        } else {
+            $landlordIds = Database::fetchAll(
+                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
+                 AND landlord_id IN (SELECT cu.user_id FROM company_user cu WHERE cu.user_id = ?)
+                 UNION SELECT ?",
+                [$user['id'], $user['id']]
+            );
+            $landlordIdList = implode(',', array_column($landlordIds, 'landlord_id')) ?: '0';
+            if ($landlordIdList !== '0') {
+                $noTenantProperties = Database::fetchAll(
+                    "SELECT p.*, u.name as landlord_name FROM properties p 
+                     JOIN users u ON u.id = p.landlord_id
+                     WHERE p.landlord_id IN ({$landlordIdList}) AND p.archived_at IS NULL
+                     AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
+                     ORDER BY p.name"
+                );
+            }
+        }
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Upload Lease']);
-        $view->render('leases/create', compact('properties'));
+        $view->render('leases/create', compact('properties', 'tenantNames', 'noTenantProperties'));
     }
 
     public function store(): void
@@ -100,6 +145,7 @@ class LeaseController
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'property_id' => 'required|exists:properties,id',
+            'tenant_id' => 'required|exists:users,id',
             'title' => 'required|max:255',
             'description' => 'max:5000',
         ])) {
@@ -109,8 +155,8 @@ class LeaseController
         }
 
         $leaseId = Database::insert(
-            "INSERT INTO leases (property_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['property_id'], $_POST['title'], $_POST['description'] ?? '', Auth::instance()->id()]
+            "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['property_id'], $_POST['tenant_id'], $_POST['title'], $_POST['description'] ?? '', Auth::instance()->id()]
         );
 
         if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
@@ -142,7 +188,7 @@ class LeaseController
     public function show(int $id): void
     {
         $lease = Database::fetch(
-            "SELECT l.*, p.name as property_name, p.company_id, u.name as uploader_name 
+            "SELECT l.*, p.name as property_name, u.name as uploader_name 
              FROM leases l 
              JOIN properties p ON p.id = l.property_id 
              JOIN users u ON u.id = l.uploaded_by 
@@ -165,6 +211,24 @@ class LeaseController
     {
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
         flash('success', 'Lease archived successfully.');
+        redirect('/leases');
+    }
+
+    public function hardDelete(int $id): void
+    {
+        $documents = Database::fetchAll(
+            "SELECT file_path FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?",
+            [$id]
+        );
+        foreach ($documents as $doc) {
+            $path = base_path($doc['file_path']);
+            if (file_exists($path)) {
+                unlink($path);
+            }
+        }
+        Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$id]);
+        Database::execute("DELETE FROM leases WHERE id = ?", [$id]);
+        flash('success', 'Lease permanently deleted.');
         redirect('/leases');
     }
 }

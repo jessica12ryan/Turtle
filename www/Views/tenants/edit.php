@@ -3,7 +3,7 @@
     <form method="POST" action="/tenants/<?= $tenant['id'] ?>/update">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Name <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name <span class="text-red-500">*</span></label>
             <input type="text" name="name" value="<?= h($tenant['name']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div class="mb-4">
@@ -11,11 +11,15 @@
             <input type="email" value="<?= h($tenant['email']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
             <p class="text-xs text-gray-500 mt-1">Email cannot be changed.</p>
         </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input type="text" name="phone" value="<?= h($tenant['phone'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
+        </div>
         <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-1">Property</label>
             <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <?php foreach ($properties as $p): ?>
-                    <option value="<?= $p['id'] ?>" <?= $p['id'] == ($tenant['property_id'] ?? '') ? 'selected' : '' ?>><?= h($p['name']) ?> (<?= h($p['company_name']) ?>)</option>
+                    <option value="<?= $p['id'] ?>" <?= $p['id'] == ($tenant['property_id'] ?? '') ? 'selected' : '' ?>><?= h($p['name']) ?> (<?= h($p['landlord_name']) ?>)</option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -24,4 +28,13 @@
             <a href="/tenants/<?= $tenant['id'] ?>" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
         </div>
     </form>
+    <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+        <div class="mt-8 pt-6 border-t">
+            <h3 class="text-lg font-medium text-red-600 mb-2">Danger Zone</h3>
+            <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" onsubmit="return confirm('Permanently delete this tenant? This cannot be undone.')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Delete Tenant</button>
+            </form>
+        </div>
+    <?php endif; ?>
 </div>

@@ -1,6 +1,6 @@
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Tickets</h1>
-    <?php if (\App\Core\Auth::instance()->user()['role'] === 'tenant'): ?>
+    <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager', 'tenant'])): ?>
         <a href="/tickets/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">New Ticket</a>
     <?php endif; ?>
 </div>

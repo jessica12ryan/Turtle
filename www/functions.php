@@ -60,3 +60,12 @@ function base_path(string $path = ''): string
 {
     return __DIR__ . '/../' . ltrim($path, '/');
 }
+
+function provinces(): array
+{
+    return [
+        'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick',
+        'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island',
+        'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon',
+    ];
+}

@@ -3,8 +3,15 @@
         <h1 class="text-2xl font-bold text-gray-800"><?= h($tenant['name']) ?></h1>
         <p class="text-gray-500"><?= h($tenant['email']) ?></p>
     </div>
+    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
         <a href="/tenants/<?= $tenant['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+            <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('Archive this tenant? They will be removed from the property and their account disabled.')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -14,6 +21,10 @@
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500">Property</dt>
                 <dd class="text-sm font-medium"><a href="/properties/<?= $tenant['property_id'] ?>" class="text-blue-600 hover:underline"><?= h($tenant['property_name']) ?></a></dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500">Phone</dt>
+                <dd class="text-sm text-gray-600"><?= h($tenant['phone'] ?? 'N/A') ?></dd>
             </div>
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500">Role</dt>

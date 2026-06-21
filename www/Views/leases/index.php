@@ -1,6 +1,6 @@
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Leases</h1>
-    <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['landlord', 'property_manager'])): ?>
+    <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
         <a href="/leases/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Upload Lease</a>
     <?php endif; ?>
 </div>
@@ -25,8 +25,14 @@
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($lease['property_name']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= count($lease['documents']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-500"><?= date('M j, Y', strtotime($lease['created_at'])) ?></td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 space-x-2">
                             <a href="/leases/<?= $lease['id'] ?>" class="text-blue-600 hover:underline text-sm">View</a>
+                            <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
+                                <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this lease?')">
+                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                    <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
+                                </form>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

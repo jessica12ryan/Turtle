@@ -7,31 +7,29 @@ A web application for managing rental properties, tenants, leases, and maintenan
 ```bash
 git clone https://github.com/jessica12ryan/Turtle.git
 cd Turtle
-docker compose up -d
+docker compose up -d --build
 open http://localhost
 ```
 
-That's it. The first build will take a few minutes (installing PHP dependencies, running migrations, seeding data). Subsequent starts are instant.
+The first boot presents a setup wizard where you create your account (Landlord or IT Admin) and optionally load sample data.
 
 **Email testing:** http://localhost:8025 (Mailpit)
 
-## Default Logins
+## Roles
 
-| Email | Password | Role |
-|---|---|---|
-| admin@turtleapp.com | password | Landlord |
-| manager@turtleapp.com | password | Property Manager |
+| Role | Permissions |
+|---|---|
+| **IT Admin** | Full system access: create/edit/archive/delete everything |
+| **Landlord** | Create/edit/archive properties, tenants, leases, tickets, and staff |
+| **Property Manager** | Create/edit/archive properties, tenants, leases, tickets |
+| **Maintenance** | View assigned tickets, update ticket status, add comments |
+| **Tenant** | View assigned properties/leases, create/view tickets for their property |
 
 ## Project Structure
 
 ```
-www/              Apache document root (the only public directory)
-app/              PHP controllers, models, enums, middleware
-config/           Server-side configuration (not web-accessible)
-database/         Migrations and seeders
-routes/           URL definitions
-resources/views/  Blade templates
-storage/          Logs, cache, uploaded files (persistent volume)
+www/              Apache document root — controllers, views, core framework
+database/         Schema and seed data
 docker/php/       Dockerfile + entrypoint + PHP config
 docker-compose.yml
 ```

@@ -1,6 +1,6 @@
 <?php
 $user = \App\Core\Auth::instance()->user();
-$isStaff = in_array($user['role'], ['landlord', 'property_manager', 'maintenance']);
+$isStaff = in_array($user['role'], ['admin', 'landlord', 'property_manager', 'maintenance']);
 $isTenant = $user['role'] === 'tenant';
 ?>
 <div class="mb-6">

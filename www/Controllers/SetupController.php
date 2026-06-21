@@ -15,7 +15,7 @@ class SetupController
         $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
         if ($admin) {
             if (Auth::instance()->check()) {
-                redirect('/dashboard');
+                redirect('/home');
             }
             redirect('/login');
         }
@@ -30,7 +30,7 @@ class SetupController
         $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
         if ($admin) {
             if (Auth::instance()->check()) {
-                redirect('/dashboard');
+                redirect('/home');
             }
             redirect('/login');
         }
@@ -56,21 +56,14 @@ class SetupController
             $seedFile = base_path('database/seed.sql');
             if (file_exists($seedFile)) {
                 $pdo = \App\Core\Database::instance()->getConnection();
-                $statements = explode(';', file_get_contents($seedFile));
-                foreach ($statements as $stmt) {
-                    $stmt = trim($stmt);
-                    if (!empty($stmt)) {
-                        try {
-                            $pdo->exec($stmt);
-                        } catch (\Throwable $e) {
-                            error_log('Setup seed: ' . $e->getMessage());
-                        }
-                    }
-                }
+                $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
+                // Strip comment lines and split by semicolons for multi-statement exec
+                $sql = preg_replace('/^-- .*/m', '', file_get_contents($seedFile));
+                $pdo->exec($sql);
             }
         }
 
-        flash('success', 'Your admin account has been created. Please log in.');
-        redirect('/login');
+        Auth::instance()->login($_POST['email'], $_POST['password']);
+        redirect('/home');
     }
 }

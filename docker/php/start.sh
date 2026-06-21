@@ -12,18 +12,24 @@ done
 # Run schema on first boot only
 if [ -f database/schema.sql ] && [ ! -f storage/.db_initialized ]; then
     echo ">>> Setting up database..."
-    mysql -h mysql -u turtle -pturtle turtle --ssl=0 < database/schema.sql 2>/dev/null || {
+    mysql -h mysql -u turtle -pturtle turtle --skip-ssl < database/schema.sql 2>/dev/null || {
         echo ">>> Trying root user..."
-        mysql -h mysql -u root -proot turtle --ssl=0 < database/schema.sql
+        mysql -h mysql -u root -proot turtle --skip-ssl < database/schema.sql 2>&1
     }
 
     touch storage/.db_initialized
     echo ">>> Database tables created!"
 fi
 
-# Migrate ENUM to support 'admin' role (always runs, idempotent)
-mysql -h mysql -u turtle -pturtle turtle --ssl=0 -e "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';" 2>/dev/null || \
-mysql -h mysql -u root -proot turtle --ssl=0 -e "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';"
+# Migrations (run after schema is guaranteed to exist)
+echo ">>> Running migrations..."
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';" 2>/dev/null || \
+mysql -h mysql -u root -proot turtle --skip-ssl -e "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';" 2>/dev/null || true
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE users ADD COLUMN phone VARCHAR(20) DEFAULT '' AFTER email;" 2>/dev/null || true
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE properties ADD COLUMN landlord_id INT NOT NULL DEFAULT 1 AFTER id;" 2>/dev/null || true
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE properties ADD FOREIGN KEY (landlord_id) REFERENCES users(id);" 2>/dev/null || true
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE leases ADD COLUMN tenant_id INT DEFAULT NULL AFTER property_id;" 2>/dev/null || true
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE leases ADD FOREIGN KEY (tenant_id) REFERENCES users(id);" 2>/dev/null || true
 
 # Ensure storage directories exist
 mkdir -p storage/uploads/leases storage/logs storage/framework
