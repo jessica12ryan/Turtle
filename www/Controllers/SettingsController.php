@@ -310,6 +310,17 @@ class SettingsController
 
         if ($mode === 'default') {
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+        } elseif ($mode === 'custom') {
+            $row = Database::fetch("SELECT COUNT(*) as c FROM role_permissions");
+            if ($row && $row['c'] == 0) {
+                $defaults = defaultPermissions();
+                $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+                foreach ($roles as $role) {
+                    foreach ($defaults[$role] ?? [] as $perm) {
+                        Database::execute("INSERT IGNORE INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+                    }
+                }
+            }
         }
 
         echo json_encode(['success' => true, 'mode' => $mode]);
