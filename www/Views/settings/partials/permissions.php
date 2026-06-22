@@ -144,7 +144,7 @@
                         </tr>
                         <?php foreach ($perms as $perm): ?>
                             <?php $label = $permissionLabels[$perm] ?? $perm; ?>
-                            <tr class="hover:bg-gray-50 <?= $isDefault ? 'opacity-60' : '' ?>">
+                            <tr class="hover:bg-gray-50" :class="{ 'opacity-60': mode === 'default' }">
                                 <td class="py-1.5 pr-4 <?= permColor($perm) ?>"><?= h($label) ?></td>
                                 <?php foreach ($roles as $role): ?>
                                     <?php
@@ -157,8 +157,9 @@
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
                                                <?= $checked ? 'checked' : '' ?>
-                                               <?= $isDefault ? 'disabled' : '' ?>
-                                               class="rounded border-gray-300 <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?> <?= permCheckboxColor($perm) ?>">
+                                               :disabled="mode === 'default'"
+                                               class="rounded border-gray-300 <?= permCheckboxColor($perm) ?>"
+                                               :class="{ 'opacity-50 cursor-not-allowed': mode === 'default' }">
                                     </td>
                                 <?php endforeach; ?>
                             </tr>
