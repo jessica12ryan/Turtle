@@ -308,6 +308,10 @@ class SettingsController
             [$mode, $mode]
         );
 
+        if ($mode === 'default') {
+            Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+        }
+
         echo json_encode(['success' => true, 'mode' => $mode]);
     }
 }
