@@ -158,48 +158,75 @@ class LeaseController
             redirect('/leases/create');
         }
 
-        $leaseId = Database::insert(
-            "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['property_id'], $_POST['tenant_id'], $_POST['title'], $_POST['description'] ?? '', Auth::instance()->id()]
-        );
-
+        $uploadError = null;
         if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
-            $uploadDir = base_path('storage/uploads/leases/' . $leaseId);
+            $uploadDir = base_path('storage/uploads/leases');
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
+            if (!is_writable($uploadDir)) {
+                $uploadError = 'Upload directory is not writable. Check permissions.';
+            }
+        }
 
-            $uploaded = 0;
-            $errors = 0;
-            foreach ($_FILES['documents']['name'] as $i => $name) {
-                if (empty($name)) continue;
-                if ($_FILES['documents']['error'][$i] !== UPLOAD_ERR_OK) {
-                    $errors++;
-                    continue;
+        if ($uploadError) {
+            $_SESSION['_errors'] = ['documents' => [$uploadError]];
+            $_SESSION['_old'] = $_POST;
+            redirect('/leases/create');
+        }
+
+        Database::beginTransaction();
+
+        try {
+            $leaseId = Database::insert(
+                "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
+                [$_POST['property_id'], $_POST['tenant_id'], $_POST['title'], $_POST['description'] ?? '', Auth::instance()->id()]
+            );
+
+            if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
+                $leaseDir = $uploadDir . '/' . $leaseId;
+                if (!is_dir($leaseDir)) {
+                    mkdir($leaseDir, 0755, true);
                 }
 
-                $ext = pathinfo($name, PATHINFO_EXTENSION);
-                $storedName = uniqid() . '.' . $ext;
-                $destPath = $uploadDir . '/' . $storedName;
+                $allOk = true;
+                foreach ($_FILES['documents']['name'] as $i => $name) {
+                    if (empty($name)) continue;
+                    if ($_FILES['documents']['error'][$i] !== UPLOAD_ERR_OK) {
+                        $allOk = false;
+                        break;
+                    }
 
-                if (move_uploaded_file($_FILES['documents']['tmp_name'][$i], $destPath)) {
+                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    $storedName = uniqid() . '.' . $ext;
+                    $destPath = $leaseDir . '/' . $storedName;
+
+                    if (!move_uploaded_file($_FILES['documents']['tmp_name'][$i], $destPath)) {
+                        $allOk = false;
+                        break;
+                    }
+
                     Database::insert(
                         "INSERT INTO documents (documentable_type, documentable_id, file_path, original_name, size, mime_type, uploaded_by, created_at, updated_at) VALUES ('lease', ?, ?, ?, ?, ?, ?, NOW(), NOW())",
                         [$leaseId, 'storage/uploads/leases/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $_FILES['documents']['type'][$i] ?? '', Auth::instance()->id()]
                     );
-                    $uploaded++;
-                } else {
-                    $errors++;
+                }
+
+                if (!$allOk) {
+                    throw new \RuntimeException('File upload failed. Check file size and permissions.');
                 }
             }
 
-            if ($errors > 0) {
-                flash('error', $uploaded > 0 ? "{$uploaded} file(s) uploaded, but {$errors} file(s) failed." : 'File upload failed. Check file size and permissions.');
-            }
+            Database::commit();
+            flash('success', 'Lease uploaded successfully.');
+            redirect('/leases/' . $leaseId);
+        } catch (\Throwable $e) {
+            Database::rollback();
+            error_log('Lease creation failed: ' . $e->getMessage());
+            $_SESSION['_errors'] = ['documents' => [$e->getMessage()]];
+            $_SESSION['_old'] = $_POST;
+            redirect('/leases/create');
         }
-
-        flash('success', 'Lease uploaded successfully.');
-        redirect('/leases/' . $leaseId);
     }
 
     public function show(int $id): void

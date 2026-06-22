@@ -76,39 +76,24 @@ class HomeController
                 $alerts['critical'][] = ['msg' => 'No admin account exists. Create one to maintain system access.', 'link' => '/setup'];
             }
 
-            $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
-            $latestVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
-            $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
             $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
             $channel = $channel['value'] ?? 'stable';
 
-            $checkInterval = 3600;
-            $needsCheck = !$lastCheck || !$lastCheck['value'] || (time() - strtotime($lastCheck['value'])) > $checkInterval;
-
-            if ($needsCheck) {
-                $latestFromGit = \App\Controllers\UpdateController::getLatestVersion($channel);
-                if ($latestFromGit) {
-                    Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$latestFromGit]);
-                    Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
-                    $latestVer = ['value' => $latestFromGit];
-                }
-            }
-
-            $updateMsg = '';
-            if ($latestVer && $latestVer['value']) {
+            $latestFromGit = \App\Controllers\UpdateController::getLatestVersion($channel);
+            if ($latestFromGit) {
+                Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$latestFromGit]);
+                Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
+                $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
                 $current = $currentVer['value'] ?? '0.0.0';
                 if ($channel === 'development') {
-                    if ($latestVer['value'] !== $current) {
-                        $updateMsg = 'Development update (' . h($latestVer['value']) . ') is available.';
+                    if ($latestFromGit !== $current) {
+                        $alerts['warning'][] = ['msg' => 'Development update (' . h($latestFromGit) . ') is available.', 'link' => '/settings?tab=updates'];
                     }
                 } else {
-                    if (version_compare($latestVer['value'], $current, '>')) {
-                        $updateMsg = 'Update v' . h($latestVer['value']) . ' is available.';
+                    if (version_compare($latestFromGit, $current, '>')) {
+                        $alerts['warning'][] = ['msg' => 'Update v' . h($latestFromGit) . ' is available.', 'link' => '/settings?tab=updates'];
                     }
                 }
-            }
-            if ($updateMsg) {
-                $alerts['warning'][] = ['msg' => $updateMsg, 'link' => '/settings?tab=updates'];
             }
 
             $landlordCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'landlord' AND archived_at IS NULL");
