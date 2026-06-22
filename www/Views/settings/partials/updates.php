@@ -140,7 +140,7 @@
             <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <h2 class="text-xl font-bold text-gray-800 mb-2">Update Complete!</h2>
             <p class="text-gray-600 mb-4">The application has been updated successfully.</p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Reload</button>
+            <button onclick="window.location.href='/settings?tab=updates'" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Reload</button>
         </div>
     </div>
 </div>
