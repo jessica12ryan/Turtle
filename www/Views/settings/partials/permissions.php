@@ -2,7 +2,18 @@
     <h2 class="text-lg font-semibold mb-4">Permissions</h2>
     <p class="text-sm text-gray-600 mb-6">Grant or revoke individual permissions for each role. The admin role always has full access.</p>
 
-    <form method="POST" action="/settings/permissions" x-data="{ mode: '<?= $permissionsMode ?? 'default' ?>' }">
+    <form method="POST" action="/settings/permissions" x-data="{
+        mode: '<?= $permissionsMode ?? 'default' ?>',
+        init() {
+            this.$watch('mode', val => this.sync(val));
+            this.$nextTick(() => this.sync(this.mode));
+        },
+        sync(val) {
+            this.$el.querySelectorAll('[data-d]').forEach(el => {
+                el.checked = val === 'default' ? el.dataset.d === 'true' : el.dataset.o === 'true';
+            });
+        }
+    }">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
@@ -153,7 +164,6 @@
                                         <input type="checkbox"
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
-                                               :checked="mode === 'default' ? ($el.dataset.d === 'true') : ($el.dataset.o === 'true')"
                                                :disabled="mode === 'default'"
                                                data-d="<?= $defaultGranted ? 'true' : 'false' ?>"
                                                data-o="<?= ($overridden || $defaultGranted) ? 'true' : 'false' ?>"
