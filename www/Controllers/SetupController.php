@@ -11,7 +11,6 @@ class SetupController
 {
     public function create(): void
     {
-        // If admin already exists, redirect away
         $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
         if ($admin) {
             if (Auth::instance()->check()) {
@@ -20,9 +19,12 @@ class SetupController
             redirect('/login');
         }
 
+        $timezones = \DateTimeZone::listIdentifiers();
+        $selectedTz = 'America/New_York';
+
         $view = new View();
         $view->layout('layouts/guest', ['title' => 'Setup']);
-        $view->render('setup/create');
+        $view->render('setup/create', compact('timezones', 'selectedTz'));
     }
 
     public function store(): void
@@ -46,6 +48,74 @@ class SetupController
             redirect('/setup');
         }
 
+        // Save site name
+        $siteName = trim($_POST['site_name'] ?? '');
+        if ($siteName === '') {
+            $siteName = 'Turtle';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$siteName, $siteName]
+        );
+
+        // Save logo
+        $keepDefault = !empty($_POST['logo_default']);
+        if ($keepDefault) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', '') ON DUPLICATE KEY UPDATE `value` = ''",
+                []
+            );
+        } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
+            $type = $_FILES['logo']['type'];
+            if (in_array($type, $allowed)) {
+                $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+                $filename = 'logo.' . $ext;
+                $uploadDir = base_path('storage/uploads/logo/');
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
+                    Database::execute(
+                        "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                        ['storage/uploads/logo/' . $filename, 'storage/uploads/logo/' . $filename]
+                    );
+                }
+            }
+        }
+
+        // Save timezone
+        $allowedTz = \DateTimeZone::listIdentifiers();
+        $tz = $_POST['timezone'] ?? '';
+        if (!in_array($tz, $allowedTz)) {
+            $tz = 'America/New_York';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('timezone', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$tz, $tz]
+        );
+
+        // Save NTP server
+        $ntpServer = trim($_POST['ntp_server'] ?? '');
+        if ($ntpServer === '') {
+            $ntpServer = 'time.gov';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('ntp_server', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$ntpServer, $ntpServer]
+        );
+
+        // Save mail settings
+        $mailKeys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+        foreach ($mailKeys as $key) {
+            $value = $_POST[$key] ?? '';
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$key, $value, $value]
+            );
+        }
+
+        // Create admin account
         Database::insert(
             "INSERT INTO users (name, email, password, role, must_change_password, created_at, updated_at) VALUES (?, ?, ?, 'admin', 0, NOW(), NOW())",
             [$_POST['name'], $_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT)]
@@ -69,41 +139,6 @@ class SetupController
                             error_log('Seed data exec failed: ' . $e->getMessage());
                         }
                     }
-                }
-            }
-        }
-
-        // Save branding
-        $siteName = trim($_POST['site_name'] ?? '');
-        if ($siteName === '') {
-            $siteName = 'Turtle';
-        }
-        Database::execute(
-            "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-            [$siteName, $siteName]
-        );
-
-        $keepDefault = !empty($_POST['logo_default']);
-        if ($keepDefault) {
-            Database::execute(
-                "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', '') ON DUPLICATE KEY UPDATE `value` = ''",
-                []
-            );
-        } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
-            $type = $_FILES['logo']['type'];
-            if (in_array($type, $allowed)) {
-                $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-                $filename = 'logo.' . $ext;
-                $uploadDir = base_path('storage/uploads/logo/');
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-                if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
-                    Database::execute(
-                        "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-                        ['storage/uploads/logo/' . $filename, 'storage/uploads/logo/' . $filename]
-                    );
                 }
             }
         }

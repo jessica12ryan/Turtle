@@ -11,7 +11,7 @@ docker compose up -d --build
 open http://localhost
 ```
 
-The first boot presents a setup wizard where you create your account (Landlord or IT Admin) and optionally load sample data.
+The first boot presents a multi-step setup wizard where you configure site information (name, logo, timezone, SMTP), create your admin account, and optionally load sample data.
 
 **Email testing:** http://localhost:8025 (Mailpit)
 
