@@ -7,8 +7,11 @@ function navActive(string $prefix, string $currentUri): string {
     return str_starts_with($currentUri, $prefix) ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900';
 }
 ?>
+<style>
+[x-cloak] { display: none !important; }
+</style>
 <nav class="bg-white shadow-md" x-data="{ mobileOpen: false }">
-    <div class="max-w-7xl mx-auto px-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
                 <a href="/home"><img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-8"></a>
@@ -37,8 +40,7 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <!-- Hamburger (mobile) -->
+            <div class="flex items-center space-x-1 sm:space-x-2">
                 <button @click="mobileOpen = !mobileOpen" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none" aria-label="Toggle navigation">
                     <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg x-show="mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -60,7 +62,7 @@ function navActive(string $prefix, string $currentUri): string {
                         <?php if ($user['role'] === 'admin'): ?>
                             <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                         <?php endif; ?>
-                        <form method="POST" action="/logout">
+                        <form method="POST" action="/logout" onsubmit="return confirm('Are you sure you want to log out?')">
                             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                             <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg">Logout</button>
                         </form>
@@ -68,8 +70,7 @@ function navActive(string $prefix, string $currentUri): string {
                 </div>
             </div>
         </div>
-        <!-- Mobile nav panel -->
-        <div x-show="mobileOpen" @click.away="mobileOpen = false" class="md:hidden pb-4 space-y-1">
+        <div x-cloak x-show="mobileOpen" @click.away="mobileOpen = false" class="md:hidden pb-4 space-y-1">
             <a href="/home" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
             <?php if (can('properties.access')): ?>
                 <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
