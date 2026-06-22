@@ -124,7 +124,7 @@ class UpdateController
         $setupCmd = 'git config --global --add safe.directory /var/www/html 2>/dev/null; cd /var/www/html';
 
         $steps = [
-            'Preparing working directory...' => "{$setupCmd} && git reset --hard HEAD 2>&1 && git clean -fd -e www/assets/uploads/logo/ 2>&1",
+            'Preparing working directory...' => "{$setupCmd} && git reset --hard HEAD 2>&1 && git clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
             'Ensuring storage directories...' => "{$setupCmd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/framework storage/logs www/assets/uploads/logo 2>&1",
             'Fetching latest code...' => "{$setupCmd} && git fetch origin 2>&1",
             'Checking for changes...' => "{$setupCmd} && git log HEAD..origin/master --oneline 2>&1",
