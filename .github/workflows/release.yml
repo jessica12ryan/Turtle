@@ -1,0 +1,49 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 1.2.3). Leave empty to auto-increment patch.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VER="${{ inputs.version }}"
+            VER="${VER#v}"
+            echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          else
+            LATEST=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+            LATEST="${LATEST#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$LATEST"
+            : "${MAJOR:=0}" "${MINOR:=0}" "${PATCH:=0}"
+            echo "version=${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ steps.version.outputs.version }}"
+          name: "Release v${{ steps.version.outputs.version }}"
+          generate_release_notes: true
