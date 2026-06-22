@@ -64,30 +64,94 @@ function base_path(string $path = ''): string
 function checkNtpTime(): ?array
 {
     try {
+        $lastCheck = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_ntp_check'");
+        $lastStatus = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_ntp_status'");
+    } catch (\Throwable $e) {
+        $lastCheck = null;
+        $lastStatus = null;
+    }
+
+    $lastTs = $lastCheck['value'] ?? '';
+    $cachedDrift = $lastStatus['value'] ?? '';
+
+    // Return cached result if checked within the last hour
+    if ($lastTs && $cachedDrift !== '' && (strtotime('now') - strtotime($lastTs)) < 3600) {
+        if ($cachedDrift === 'unreachable') return null;
+        return [
+            'ntp_time' => 0,
+            'system_time' => time(),
+            'drift' => (int)$cachedDrift,
+        ];
+    }
+
+    try {
         $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'ntp_server'");
-        $server = $row['value'] ?? 'time.gov';
+        $server = trim($row['value'] ?? '');
     } catch (\Throwable $e) {
         $server = 'time.gov';
     }
 
-    $url = $server === 'time.gov'
-        ? 'https://time.gov/actualtime.cgi'
-        : $server;
+    // Empty server = NTP check disabled
+    if ($server === '') {
+        return ['ntp_time' => time(), 'system_time' => time(), 'drift' => 0];
+    }
 
-    $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-    $response = @file_get_contents($url, false, $ctx);
-    if ($response === false) return null;
+    $now = date('Y-m-d H:i:s');
+    $ntpMs = null;
 
+    // Try multiple methods to get NTP time
     if ($server === 'time.gov') {
-        $xml = @simplexml_load_string($response);
-        if (!$xml || !isset($xml['time'])) return null;
-        $ntpMs = (int)$xml['time'];
+        // Method 1: HTTPS with default context
+        $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+        $response = @file_get_contents('https://time.gov/actualtime.cgi', false, $ctx);
+        if ($response === false) {
+            // Method 2: HTTPS with SSL verification disabled
+            $ctx = stream_context_create(['http' => ['timeout' => 5], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
+            $response = @file_get_contents('https://time.gov/actualtime.cgi', false, $ctx);
+        }
+        if ($response === false) {
+            // Method 3: HTTP (no encryption)
+            $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+            $response = @file_get_contents('http://time.gov/actualtime.cgi', false, $ctx);
+        }
+        if ($response !== false) {
+            $xml = @simplexml_load_string($response);
+            if ($xml && isset($xml['time'])) {
+                $ntpMs = (int)$xml['time'];
+            }
+        }
+    } else {
+        // Custom server - try as-is
+        $ctx = stream_context_create(['http' => ['timeout' => 5], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
+        $response = @file_get_contents($server, false, $ctx);
+        // Try to parse as XML (time.gov format) or just use response time
+        if ($response !== false) {
+            $xml = @simplexml_load_string($response);
+            if ($xml && isset($xml['time'])) {
+                $ntpMs = (int)$xml['time'];
+            }
+        }
+    }
+
+    // Save result to cache
+    if ($ntpMs !== null) {
+        $drift = abs(time() - (int)($ntpMs / 1000));
+        try {
+            \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
+            \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", [(string)$drift, (string)$drift]);
+        } catch (\Throwable $e) {}
         return [
-            'ntp_time' => $ntpMs / 1000,
+            'ntp_time' => (int)($ntpMs / 1000),
             'system_time' => time(),
-            'drift' => abs(time() - ($ntpMs / 1000)),
+            'drift' => $drift,
         ];
     }
+
+    // Cache the failure
+    try {
+        \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
+        \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", ['unreachable', 'unreachable']);
+    } catch (\Throwable $e) {}
 
     return null;
 }

@@ -113,7 +113,7 @@ class HomeController
 
             $ntp = checkNtpTime();
             if ($ntp === null) {
-                $alerts['critical'][] = ['msg' => 'Unable to reach NTP server for time sync. System time may be inaccurate.', 'link' => '/settings?tab=general'];
+                $alerts['warning'][] = ['msg' => 'Cannot reach NTP server for time sync. Check your NTP server setting or network connectivity.', 'link' => '/settings?tab=general'];
             } elseif ($ntp['drift'] > 60) {
                 $alerts['warning'][] = ['msg' => 'System time differs from NTP by ' . $ntp['drift'] . ' seconds. Consider syncing your server clock.', 'link' => '/settings?tab=general'];
             }
