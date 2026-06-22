@@ -218,6 +218,26 @@ class PropertyController
         redirect('/properties/' . $id);
     }
 
+    private function ensurePhotosTable(): void
+    {
+        try {
+            Database::query("SELECT 1 FROM property_photos LIMIT 1");
+        } catch (\Throwable $e) {
+            Database::query("CREATE TABLE IF NOT EXISTS property_photos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                property_id INT NOT NULL,
+                file_path VARCHAR(500) NOT NULL,
+                original_name VARCHAR(255) NOT NULL,
+                mime_type VARCHAR(100) DEFAULT '',
+                is_main TINYINT(1) DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+                INDEX idx_property (property_id),
+                INDEX idx_main (property_id, is_main)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
+    }
+
     private function getPhotoUploadDir(int $propertyId): array
     {
         $primary = base_path('storage/uploads/property_photos/' . $propertyId);
@@ -243,6 +263,7 @@ class PropertyController
 
     public function uploadPhoto(int $id): void
     {
+        $this->ensurePhotosTable();
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) {
             http_response_code(404);
@@ -297,6 +318,7 @@ class PropertyController
 
     public function setMainPhoto(int $id, int $photoId): void
     {
+        $this->ensurePhotosTable();
         Database::execute("UPDATE property_photos SET is_main = 0 WHERE property_id = ?", [$id]);
         Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
         flash('success', 'Main photo updated.');
@@ -305,6 +327,7 @@ class PropertyController
 
     public function deletePhoto(int $id, int $photoId): void
     {
+        $this->ensurePhotosTable();
         $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
         if ($photo) {
             $path = $photo['file_path'];
@@ -320,6 +343,7 @@ class PropertyController
 
     public function servePhoto(int $id, int $photoId): void
     {
+        $this->ensurePhotosTable();
         $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
         if (!$photo) {
             http_response_code(404);

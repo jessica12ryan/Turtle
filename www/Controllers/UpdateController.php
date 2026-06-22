@@ -127,7 +127,7 @@ class UpdateController
             'Fetching latest code...' => "{$setupCmd} && git fetch origin 2>&1",
             'Checking for changes...' => "{$setupCmd} && git log HEAD..origin/master --oneline 2>&1",
             'Pulling updates...' => "{$setupCmd} && git pull origin master 2>&1",
-            'Running migrations...' => "{$setupCmd} && bash docker/php/start.sh 2>&1",
+            'Running migrations...' => "{$setupCmd} && bash database/migrate.sh 2>&1",
         ];
 
         $script = '#!/bin/bash' . "\n";
