@@ -2,13 +2,13 @@
     <!-- Sidebar -->
     <div class="w-56 flex-shrink-0">
         <div class="bg-white rounded-lg shadow divide-y">
-            <a href="/settings" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'reset' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?> rounded-t-lg">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span>Reset</span>
-            </a>
-            <a href="/settings?tab=updates" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'updates' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?> rounded-b-lg">
+            <a href="/settings" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'updates' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?> rounded-t-lg">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 <span>Updates</span>
+            </a>
+            <a href="/settings?tab=reset" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'reset' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?> rounded-b-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Reset</span>
             </a>
         </div>
     </div>

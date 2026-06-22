@@ -10,9 +10,9 @@ class SettingsController
 {
     public function index(): void
     {
-        $tab = $_GET['tab'] ?? 'reset';
-        if (!in_array($tab, ['reset', 'updates'])) {
-            $tab = 'reset';
+        $tab = $_GET['tab'] ?? 'updates';
+        if (!in_array($tab, ['updates', 'reset'])) {
+            $tab = 'updates';
         }
 
         $data = ['tab' => $tab];
