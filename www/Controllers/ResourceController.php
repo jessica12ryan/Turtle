@@ -9,8 +9,27 @@ use App\Core\Validator;
 
 class ResourceController
 {
+    private function ensureTableExists(): void
+    {
+        try {
+            Database::execute("SELECT 1 FROM resources LIMIT 1");
+        } catch (\Throwable $e) {
+            Database::execute("CREATE TABLE IF NOT EXISTS resources (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                url VARCHAR(500) NOT NULL,
+                description TEXT DEFAULT '',
+                created_by INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (created_by) REFERENCES users(id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
+    }
+
     public function index(): void
     {
+        $this->ensureTableExists();
         try {
             $links = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by ORDER BY r.title");
         } catch (\Throwable $e) {
@@ -32,6 +51,7 @@ class ResourceController
 
     public function store(): void
     {
+        $this->ensureTableExists();
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
             flash('error', 'Invalid security token.');
             redirect('/resources/create');
@@ -83,6 +103,7 @@ class ResourceController
 
     public function edit(int $id): void
     {
+        $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
         if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -93,6 +114,7 @@ class ResourceController
 
     public function update(int $id): void
     {
+        $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
         if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -136,6 +158,7 @@ class ResourceController
 
     public function destroy(int $id): void
     {
+        $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
         if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
