@@ -51,6 +51,8 @@ class SettingsController
             }
             $data['roles'] = ['landlord', 'property_manager', 'maintenance', 'tenant'];
             $data['defaults'] = defaultPermissions();
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'permissions_mode'");
+            $data['permissionsMode'] = $row['value'] ?? 'default';
         }
 
         $view = new View();
@@ -268,15 +270,24 @@ class SettingsController
             redirect('/settings?tab=permissions');
         }
 
-        Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+        $mode = $_POST['permissions_mode'] ?? 'default';
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('permissions_mode', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$mode, $mode]
+        );
 
-        $allPerms = $_POST['perms'] ?? [];
-        $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
-        foreach ($roles as $role) {
-            $granted = $allPerms[$role] ?? [];
-            foreach ($granted as $perm) {
-                Database::execute("INSERT INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+        if ($mode === 'custom') {
+            $allPerms = $_POST['perms'] ?? [];
+            $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+            foreach ($roles as $role) {
+                $granted = $allPerms[$role] ?? [];
+                foreach ($granted as $perm) {
+                    Database::execute("INSERT INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+                }
             }
+        } else {
+            Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
         }
 
         flash('success', 'Permissions saved successfully.');

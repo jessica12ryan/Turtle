@@ -2,8 +2,23 @@
     <h2 class="text-lg font-semibold mb-4">Permissions</h2>
     <p class="text-sm text-gray-600 mb-6">Grant or revoke individual permissions for each role. The admin role always has full access.</p>
 
-    <form method="POST" action="/settings/permissions">
+    <?php $isDefault = ($permissionsMode ?? 'default') === 'default'; ?>
+
+    <form method="POST" action="/settings/permissions" x-data="{ mode: '<?= $permissionsMode ?? 'default' ?>' }">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
+            <label class="flex items-center space-x-3">
+                <input type="radio" name="permissions_mode" value="default" x-model="mode" class="text-blue-600 focus:ring-blue-500">
+                <span class="text-sm font-medium text-gray-700">Use default permissions</span>
+            </label>
+            <p class="text-xs text-gray-500 ml-7 mt-1">Permissions will automatically update when the application is updated.</p>
+            <label class="flex items-center space-x-3 mt-2">
+                <input type="radio" name="permissions_mode" value="custom" x-model="mode" class="text-blue-600 focus:ring-blue-500">
+                <span class="text-sm font-medium text-gray-700">Custom permissions</span>
+            </label>
+            <p class="text-xs text-gray-500 ml-7 mt-1">Manually configure each role's permissions. These will be preserved on update.</p>
+        </div>
 
         <?php
         $allPerms = [];
@@ -15,10 +30,15 @@
         $allPerms = array_keys($allPerms);
         sort($allPerms);
 
+        $groupOverrides = [
+            'documents' => 'leases',
+        ];
+
         $groups = [];
         foreach ($allPerms as $p) {
             $parts = explode('.', $p, 2);
             $group = $parts[0] ?? '';
+            $group = $groupOverrides[$group] ?? $group;
             $groups[$group][] = $p;
         }
 
@@ -29,6 +49,7 @@
             'properties.edit' => 'Edit Properties',
             'properties.archive' => 'Archive Properties',
             'properties.restore' => 'Restore Properties',
+            'properties.delete' => 'Delete Properties',
             'photos.create' => 'Upload Photos',
             'photos.edit' => 'Edit Photos',
             'photos.download' => 'Download Photos',
@@ -36,17 +57,23 @@
             'tenants.access' => 'View Tenants',
             'tenants.create' => 'Create Tenants',
             'tenants.edit' => 'Edit Tenants',
+            'tenants.archive' => 'Archive Tenants',
             'tenants.restore' => 'Restore Tenants',
             'tenants.delete' => 'Delete Tenants',
             'leases.access' => 'View Leases',
             'leases.create' => 'Create Leases',
-            'leases.delete' => 'Delete Leases',
+            'leases.archive' => 'Archive Leases',
             'leases.restore' => 'Restore Leases',
+            'leases.delete' => 'Delete Leases',
+            'documents.download' => 'Download Documents',
+            'documents.delete' => 'Delete Documents',
             'tickets.access' => 'View Tickets',
             'tickets.create' => 'Create Tickets',
             'tickets.assign' => 'Assign Tickets',
             'tickets.update_status' => 'Update Ticket Status',
+            'tickets.archive' => 'Archive Tickets',
             'tickets.restore' => 'Restore Tickets',
+            'tickets.delete' => 'Delete Tickets',
             'tickets.comment' => 'Comment on Tickets',
             'staff.access' => 'View Staff',
             'staff.create' => 'Create Staff',
@@ -59,8 +86,6 @@
             'resources.edit' => 'Edit Resources',
             'resources.delete' => 'Delete Resources',
             'calendar.access' => 'View Calendar',
-            'documents.download' => 'Download Documents',
-            'documents.delete' => 'Delete Documents',
         ];
 
         function permColor(string $perm): string
@@ -115,11 +140,11 @@
                 <tbody>
                     <?php foreach ($groups as $group => $perms): ?>
                         <tr class="border-t border-gray-100">
-                            <td colspan="5" class="py-2 font-semibold text-gray-700 capitalize"><?= h($group) ?></td>
+                            <td colspan="5" class="py-2 font-semibold text-gray-700 capitalize"><?= h($group === 'leases' ? 'Leases & Documents' : $group) ?></td>
                         </tr>
                         <?php foreach ($perms as $perm): ?>
                             <?php $label = $permissionLabels[$perm] ?? $perm; ?>
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 <?= $isDefault ? 'opacity-60' : '' ?>">
                                 <td class="py-1.5 pr-4 <?= permColor($perm) ?>"><?= h($label) ?></td>
                                 <?php foreach ($roles as $role): ?>
                                     <?php
@@ -132,7 +157,8 @@
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
                                                <?= $checked ? 'checked' : '' ?>
-                                               class="rounded border-gray-300 <?= permCheckboxColor($perm) ?>">
+                                               <?= $isDefault ? 'disabled' : '' ?>
+                                               class="rounded border-gray-300 <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?> <?= permCheckboxColor($perm) ?>">
                                     </td>
                                 <?php endforeach; ?>
                             </tr>

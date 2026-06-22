@@ -37,7 +37,7 @@
                         <td class="px-6 py-4 text-sm text-gray-500"><?= date('M j, Y', strtotime($lease['created_at'])) ?></td>
                         <td class="px-6 py-4 space-x-2">
                             <a href="/leases/<?= $lease['id'] ?>" class="text-blue-600 hover:underline text-sm">View</a>
-                            <?php if (!$lease['archived_at'] && can('leases.delete')): ?>
+                            <?php if (!$lease['archived_at'] && can('leases.archive')): ?>
                                 <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this lease and is not reversible. Continue?')">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>

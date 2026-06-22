@@ -53,16 +53,16 @@ class ResourceController
             $url = 'https://' . $url;
         }
 
-        try {
-            Database::insert(
-                "INSERT INTO resources (title, url, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())",
-                [$_POST['title'], $url, $_POST['description'] ?? '', Auth::instance()->id()]
-            );
-        } catch (\Throwable $e) {
-            error_log('Resource create failed: ' . $e->getMessage());
-            flash('error', 'Failed to create resource. Please try again.');
-            redirect('/resources/create');
+        $userId = Auth::instance()->id();
+        if (!$userId) {
+            flash('error', 'Your session has expired. Please log in again.');
+            redirect('/login');
         }
+
+        Database::insert(
+            "INSERT INTO resources (title, url, description, created_by) VALUES (?, ?, ?, ?)",
+            [$_POST['title'], $url, $_POST['description'] ?? '', $userId]
+        );
 
         flash('success', 'Resource added successfully.');
         redirect('/resources');

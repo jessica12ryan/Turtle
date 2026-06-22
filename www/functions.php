@@ -274,20 +274,20 @@ function defaultPermissions(): array
             'home.access',
             'properties.access', 'properties.create', 'properties.edit', 'properties.archive', 'properties.restore',
             'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
-            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.restore', 'tenants.delete',
-            'leases.access', 'leases.create', 'leases.delete', 'leases.restore',
-            'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.restore', 'tickets.comment',
-            'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore', 'staff.delete',
+            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.archive', 'tenants.restore',
+            'leases.access', 'leases.create', 'leases.archive', 'leases.restore',
+            'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.archive', 'tickets.restore', 'tickets.comment',
+            'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore',
             'resources.access', 'resources.create', 'resources.edit', 'resources.delete',
             'calendar.access',
             'documents.download', 'documents.delete',
         ],
         'property_manager' => [
             'home.access',
-            'properties.access', 'properties.create', 'properties.edit', 'properties.archive',
+            'properties.access', 'properties.create', 'properties.edit',
             'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
             'tenants.access', 'tenants.create', 'tenants.edit',
-            'leases.access', 'leases.create', 'leases.delete',
+            'leases.access', 'leases.create',
             'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.comment',
             'staff.access',
             'resources.access', 'resources.create', 'resources.edit', 'resources.delete',
@@ -309,6 +309,16 @@ function defaultPermissions(): array
     ];
 }
 
+function permissionsMode(): string
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'permissions_mode'");
+        return $row['value'] ?? 'default';
+    } catch (\Throwable $e) {
+        return 'default';
+    }
+}
+
 function can(string $permission): bool
 {
     try {
@@ -319,13 +329,15 @@ function can(string $permission): bool
     if (!$user) return false;
     if ($user['role'] === 'admin') return true;
 
-    try {
-        $row = \App\Core\Database::fetch(
-            "SELECT 1 FROM role_permissions WHERE role = ? AND permission = ?",
-            [$user['role'], $permission]
-        );
-        if ($row) return true;
-    } catch (\Throwable $e) {}
+    if (permissionsMode() === 'custom') {
+        try {
+            $row = \App\Core\Database::fetch(
+                "SELECT 1 FROM role_permissions WHERE role = ? AND permission = ?",
+                [$user['role'], $permission]
+            );
+            if ($row) return true;
+        } catch (\Throwable $e) {}
+    }
 
     $defaults = defaultPermissions();
     return in_array($permission, $defaults[$user['role']] ?? []);

@@ -174,7 +174,7 @@ $router->post('/tenants', 'TenantController@store', ['auth', 'perm:tenants.creat
 $router->get('/tenants/{id}', 'TenantController@show', ['auth', 'perm:tenants.access']);
 $router->get('/tenants/{id}/edit', 'TenantController@edit', ['auth', 'perm:tenants.edit']);
 $router->post('/tenants/{id}/update', 'TenantController@update', ['auth', 'perm:tenants.edit']);
-$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.edit']);
+$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.archive']);
 $router->post('/tenants/{id}/restore', 'TenantController@restore', ['auth', 'perm:tenants.restore']);
 $router->post('/tenants/{id}/delete', 'TenantController@destroy', ['auth', 'perm:tenants.delete']);
 
@@ -183,7 +183,7 @@ $router->get('/leases', 'LeaseController@index', ['auth', 'perm:leases.access'])
 $router->get('/leases/create', 'LeaseController@create', ['auth', 'perm:leases.create']);
 $router->post('/leases', 'LeaseController@store', ['auth', 'perm:leases.create']);
 $router->get('/leases/{id}', 'LeaseController@show', ['auth', 'perm:leases.access']);
-$router->post('/leases/{id}/delete', 'LeaseController@destroy', ['auth', 'perm:leases.delete']);
+$router->post('/leases/{id}/delete', 'LeaseController@destroy', ['auth', 'perm:leases.archive']);
 $router->post('/leases/{id}/restore', 'LeaseController@restore', ['auth', 'perm:leases.restore']);
 $router->post('/leases/{id}/hard-delete', 'LeaseController@hardDelete', ['auth', 'perm:leases.delete']);
 

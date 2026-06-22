@@ -5,7 +5,7 @@
     </div>
     <div class="flex space-x-3">
         <a href="/properties/<?= $lease['property_id'] ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
-        <?php if (can('leases.delete')): ?>
+        <?php if (can('leases.archive')): ?>
             <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this lease?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
