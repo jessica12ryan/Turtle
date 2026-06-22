@@ -276,7 +276,9 @@ class SettingsController
             [$mode, $mode]
         );
 
-        if ($mode === 'custom') {
+        $fullSave = isset($_POST['full_save']);
+
+        if ($mode === 'custom' && $fullSave) {
             $allPerms = $_POST['perms'] ?? [];
             $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
@@ -286,7 +288,7 @@ class SettingsController
                     Database::execute("INSERT INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
                 }
             }
-        } else {
+        } elseif ($mode === 'default') {
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
         }
 

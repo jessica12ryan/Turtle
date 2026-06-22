@@ -2,28 +2,17 @@
     <h2 class="text-lg font-semibold mb-4">Permissions</h2>
     <p class="text-sm text-gray-600 mb-6">Grant or revoke individual permissions for each role. The admin role always has full access.</p>
 
-    <form method="POST" action="/settings/permissions" x-data="{
-        mode: '<?= $permissionsMode ?? 'default' ?>',
-        init() {
-            this.$watch('mode', val => this.sync(val));
-            this.$nextTick(() => this.sync(this.mode));
-        },
-        sync(val) {
-            this.$el.querySelectorAll('[data-d]').forEach(el => {
-                el.checked = val === 'default' ? el.dataset.d === 'true' : el.dataset.o === 'true';
-            });
-        }
-    }">
+    <form method="POST" action="/settings/permissions">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
             <label class="flex items-center space-x-3">
-                <input type="radio" name="permissions_mode" value="default" x-model="mode" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="permissions_mode" value="default" <?= ($permissionsMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Use default permissions</span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1">Permissions will automatically update when the application is updated.</p>
             <label class="flex items-center space-x-3 mt-2">
-                <input type="radio" name="permissions_mode" value="custom" x-model="mode" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="permissions_mode" value="custom" <?= ($permissionsMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Custom permissions</span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1">Manually configure each role's permissions. These will be preserved on update.</p>
@@ -158,22 +147,22 @@
                         </tr>
                         <?php foreach ($perms as $perm): ?>
                             <?php $label = $permissionLabels[$perm] ?? $perm; ?>
-                            <tr class="hover:bg-gray-50" :class="{ 'opacity-60': mode === 'default' }">
+                            <?php $isDefault = ($permissionsMode ?? 'default') === 'default'; ?>
+                            <tr class="hover:bg-gray-50 <?= $isDefault ? 'opacity-60' : '' ?>">
                                 <td class="py-1.5 pr-4 <?= permColor($perm) ?>"><?= h($label) ?></td>
                                 <?php foreach ($roles as $role): ?>
                                     <?php
                                     $defaultGranted = in_array($perm, $defaults[$role] ?? []);
                                     $overridden = isset($overrides[$role]) && in_array($perm, $overrides[$role]);
+                                    $checked = $isDefault ? $defaultGranted : ($overridden || $defaultGranted);
                                     ?>
                                     <td class="text-center py-1.5 px-3">
                                         <input type="checkbox"
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
-                                               :disabled="mode === 'default'"
-                                               data-d="<?= $defaultGranted ? 'true' : 'false' ?>"
-                                               data-o="<?= ($overridden || $defaultGranted) ? 'true' : 'false' ?>"
-                                               class="rounded border-gray-300 <?= permCheckboxColor($perm) ?>"
-                                               :class="{ 'opacity-50 cursor-not-allowed': mode === 'default' }">
+                                               <?= $checked ? 'checked' : '' ?>
+                                               <?= $isDefault ? 'disabled' : '' ?>
+                                               class="rounded border-gray-300 <?= permCheckboxColor($perm) ?> <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
                                     </td>
                                 <?php endforeach; ?>
                             </tr>
@@ -184,6 +173,7 @@
         </div>
 
         <div class="mt-6">
+            <input type="hidden" name="full_save" value="1">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Save Permissions</button>
         </div>
     </form>
