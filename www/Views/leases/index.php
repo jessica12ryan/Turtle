@@ -4,7 +4,7 @@
         <a href="?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
             <?= $showArchived ? 'Showing archived' : 'Show archived' ?>
         </a>
-        <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
+        <?php if (can('leases.create')): ?>
             <a href="/leases/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Upload Lease</a>
         <?php endif; ?>
     </div>
@@ -37,12 +37,12 @@
                         <td class="px-6 py-4 text-sm text-gray-500"><?= date('M j, Y', strtotime($lease['created_at'])) ?></td>
                         <td class="px-6 py-4 space-x-2">
                             <a href="/leases/<?= $lease['id'] ?>" class="text-blue-600 hover:underline text-sm">View</a>
-                            <?php if (!$lease['archived_at'] && in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
+                            <?php if (!$lease['archived_at'] && can('leases.delete')): ?>
                                 <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this lease and is not reversible. Continue?')">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
                                 </form>
-                            <?php elseif ($lease['archived_at'] && \App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                            <?php elseif ($lease['archived_at'] && can('leases.restore')): ?>
                                 <form method="POST" action="/leases/<?= $lease['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-green-600 hover:underline text-sm">Restore</button>

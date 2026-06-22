@@ -267,6 +267,68 @@ function checkNtpTime(): ?array
     ];
 }
 
+function defaultPermissions(): array
+{
+    return [
+        'landlord' => [
+            'home.access',
+            'properties.access', 'properties.create', 'properties.edit', 'properties.archive', 'properties.restore', 'properties.manage_photos',
+            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.archive', 'tenants.restore', 'tenants.delete',
+            'leases.access', 'leases.create', 'leases.delete', 'leases.restore',
+            'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.restore', 'tickets.comment',
+            'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore', 'staff.delete',
+            'resources.access', 'resources.create', 'resources.edit', 'resources.delete',
+            'calendar.access',
+            'documents.access', 'documents.delete',
+        ],
+        'property_manager' => [
+            'home.access',
+            'properties.access', 'properties.create', 'properties.edit', 'properties.archive', 'properties.manage_photos',
+            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.archive',
+            'leases.access', 'leases.create', 'leases.delete',
+            'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.comment',
+            'staff.access',
+            'resources.access', 'resources.create', 'resources.edit', 'resources.delete',
+            'calendar.access',
+            'documents.access',
+        ],
+        'maintenance' => [
+            'home.access',
+            'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.comment',
+            'documents.access',
+        ],
+        'tenant' => [
+            'home.access',
+            'tickets.access', 'tickets.create', 'tickets.comment',
+            'resources.access',
+            'leases.access',
+            'documents.access',
+        ],
+    ];
+}
+
+function can(string $permission): bool
+{
+    try {
+        $user = \App\Core\Auth::instance()->user();
+    } catch (\Throwable $e) {
+        return false;
+    }
+    if (!$user) return false;
+    if ($user['role'] === 'admin') return true;
+
+    try {
+        $row = \App\Core\Database::fetch(
+            "SELECT 1 FROM role_permissions WHERE role = ? AND permission = ?",
+            [$user['role'], $permission]
+        );
+        if ($row) return true;
+    } catch (\Throwable $e) {}
+
+    $defaults = defaultPermissions();
+    return in_array($permission, $defaults[$user['role']] ?? []);
+}
+
 function provinces(): array
 {
     return [

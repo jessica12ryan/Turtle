@@ -1,8 +1,4 @@
-<?php
-$user = \App\Core\Auth::instance()->user();
-$isStaff = in_array($user['role'], ['admin', 'landlord', 'property_manager', 'maintenance']);
-$isTenant = $user['role'] === 'tenant';
-?>
+<?php $user = \App\Core\Auth::instance()->user(); ?>
 <div class="mb-6">
     <div class="flex justify-between items-start">
         <div>
@@ -54,7 +50,7 @@ $isTenant = $user['role'] === 'tenant';
                 <div class="mb-3">
                     <textarea name="body" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required placeholder="Type your comment..."></textarea>
                 </div>
-                <?php if ($isStaff): ?>
+                <?php if ($user['role'] !== 'tenant'): ?>
                     <div class="mb-3">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_internal" value="1" class="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500">
@@ -67,7 +63,7 @@ $isTenant = $user['role'] === 'tenant';
         </div>
     </div>
     <div class="space-y-6">
-        <?php if ($isStaff): ?>
+        <?php if (can('tickets.assign')): ?>
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4">Assign</h2>
                 <form method="POST" action="/tickets/<?= $ticket['id'] ?>/assign">
@@ -81,6 +77,8 @@ $isTenant = $user['role'] === 'tenant';
                     <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Update</button>
                 </form>
             </div>
+        <?php endif; ?>
+        <?php if (can('tickets.update_status')): ?>
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4">Status</h2>
                 <form method="POST" action="/tickets/<?= $ticket['id'] ?>/status">

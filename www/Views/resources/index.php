@@ -1,7 +1,6 @@
-<?php $role = \App\Core\Auth::instance()->user()['role']; ?>
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Resources</h1>
-    <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+    <?php if (can('resources.create')): ?>
         <a href="/resources/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Add Resource</a>
     <?php endif; ?>
 </div>
@@ -19,13 +18,17 @@
                     <p class="text-sm text-gray-600 mt-2"><?= h($link['description']) ?></p>
                 <?php endif; ?>
                 <p class="text-xs text-gray-400 mt-2">Added by <?= h($link['created_by_name']) ?></p>
-                <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+                <?php if (can('resources.edit') || can('resources.delete')): ?>
                     <div class="mt-3 pt-3 border-t flex space-x-3">
-                        <a href="/resources/<?= $link['id'] ?>/edit" class="text-blue-600 hover:underline text-sm">Edit</a>
-                        <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('Delete this resource?')">
-                            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                            <button type="submit" class="text-red-600 hover:underline text-sm">Delete</button>
-                        </form>
+                        <?php if (can('resources.edit')): ?>
+                            <a href="/resources/<?= $link['id'] ?>/edit" class="text-blue-600 hover:underline text-sm">Edit</a>
+                        <?php endif; ?>
+                        <?php if (can('resources.delete')): ?>
+                            <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('Delete this resource?')">
+                                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                <button type="submit" class="text-red-600 hover:underline text-sm">Delete</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>

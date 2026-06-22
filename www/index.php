@@ -127,79 +127,79 @@ $router->get('/password/change', 'AuthController@changePassword', ['auth']);
 $router->post('/password/change', 'AuthController@changePasswordPost', ['auth']);
 
 // Home
-$router->get('/home', 'HomeController@index', ['auth']);
+$router->get('/home', 'HomeController@index', ['auth', 'perm:home.access']);
 
 // Resources
-$router->get('/resources', 'ResourceController@index', ['auth']);
-$router->get('/resources/create', 'ResourceController@create', ['auth', 'role:admin,landlord,property_manager']);
-$router->post('/resources', 'ResourceController@store', ['auth', 'role:admin,landlord,property_manager']);
-$router->get('/resources/{id}/edit', 'ResourceController@edit', ['auth', 'role:admin,landlord,property_manager']);
-$router->post('/resources/{id}/update', 'ResourceController@update', ['auth', 'role:admin,landlord,property_manager']);
-$router->post('/resources/{id}/delete', 'ResourceController@destroy', ['auth', 'role:admin,landlord,property_manager']);
+$router->get('/resources', 'ResourceController@index', ['auth', 'perm:resources.access']);
+$router->get('/resources/create', 'ResourceController@create', ['auth', 'perm:resources.create']);
+$router->post('/resources', 'ResourceController@store', ['auth', 'perm:resources.create']);
+$router->get('/resources/{id}/edit', 'ResourceController@edit', ['auth', 'perm:resources.edit']);
+$router->post('/resources/{id}/update', 'ResourceController@update', ['auth', 'perm:resources.edit']);
+$router->post('/resources/{id}/delete', 'ResourceController@destroy', ['auth', 'perm:resources.delete']);
 
 // Calendar
-$router->get('/calendar', 'CalendarController@index', ['auth']);
-$router->get('/calendar/events', 'CalendarController@events', ['auth']);
+$router->get('/calendar', 'CalendarController@index', ['auth', 'perm:calendar.access']);
+$router->get('/calendar/events', 'CalendarController@events', ['auth', 'perm:calendar.access']);
 
 // Staff
-$router->get('/staff', 'StaffController@index', ['auth', 'role:landlord,property_manager']);
-$router->get('/staff/create', 'StaffController@create', ['auth', 'role:landlord']);
-$router->post('/staff', 'StaffController@store', ['auth', 'role:landlord']);
-$router->get('/staff/{id}', 'StaffController@show', ['auth', 'role:landlord,property_manager']);
-$router->get('/staff/{id}/edit', 'StaffController@edit', ['auth', 'role:landlord,property_manager']);
-$router->post('/staff/{id}/update', 'StaffController@update', ['auth', 'role:landlord,property_manager']);
-$router->post('/staff/{id}/delete', 'StaffController@destroy', ['auth', 'role:admin,landlord']);
-$router->post('/staff/{id}/restore', 'StaffController@restore', ['auth', 'role:admin']);
-$router->post('/staff/{id}/hard-delete', 'StaffController@hardDelete', ['auth', 'role:admin']);
+$router->get('/staff', 'StaffController@index', ['auth', 'perm:staff.access']);
+$router->get('/staff/create', 'StaffController@create', ['auth', 'perm:staff.create']);
+$router->post('/staff', 'StaffController@store', ['auth', 'perm:staff.create']);
+$router->get('/staff/{id}', 'StaffController@show', ['auth', 'perm:staff.access']);
+$router->get('/staff/{id}/edit', 'StaffController@edit', ['auth', 'perm:staff.edit']);
+$router->post('/staff/{id}/update', 'StaffController@update', ['auth', 'perm:staff.edit']);
+$router->post('/staff/{id}/delete', 'StaffController@destroy', ['auth', 'perm:staff.archive']);
+$router->post('/staff/{id}/restore', 'StaffController@restore', ['auth', 'perm:staff.restore']);
+$router->post('/staff/{id}/hard-delete', 'StaffController@hardDelete', ['auth', 'perm:staff.delete']);
 
 // Properties
-$router->get('/properties', 'PropertyController@index', ['auth']);
-$router->get('/properties/create', 'PropertyController@create', ['auth', 'role:landlord,property_manager']);
-$router->post('/properties', 'PropertyController@store', ['auth', 'role:landlord,property_manager']);
-$router->get('/properties/{id}', 'PropertyController@show', ['auth']);
-$router->get('/properties/{id}/edit', 'PropertyController@edit', ['auth', 'role:landlord,property_manager']);
-$router->post('/properties/{id}/update', 'PropertyController@update', ['auth', 'role:landlord,property_manager']);
-$router->post('/properties/{id}/delete', 'PropertyController@destroy', ['auth', 'role:admin,landlord']);
-$router->post('/properties/{id}/restore', 'PropertyController@restore', ['auth', 'role:admin']);
-$router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'role:admin,landlord,property_manager']);
-$router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'role:admin,landlord,property_manager']);
-$router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'role:admin,landlord,property_manager']);
-$router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth']);
-$router->get('/properties/{id}/photos/{photoId}/download', 'PropertyController@downloadPhoto', ['auth']);
+$router->get('/properties', 'PropertyController@index', ['auth', 'perm:properties.access']);
+$router->get('/properties/create', 'PropertyController@create', ['auth', 'perm:properties.create']);
+$router->post('/properties', 'PropertyController@store', ['auth', 'perm:properties.create']);
+$router->get('/properties/{id}', 'PropertyController@show', ['auth', 'perm:properties.access']);
+$router->get('/properties/{id}/edit', 'PropertyController@edit', ['auth', 'perm:properties.edit']);
+$router->post('/properties/{id}/update', 'PropertyController@update', ['auth', 'perm:properties.edit']);
+$router->post('/properties/{id}/delete', 'PropertyController@destroy', ['auth', 'perm:properties.archive']);
+$router->post('/properties/{id}/restore', 'PropertyController@restore', ['auth', 'perm:properties.restore']);
+$router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'perm:properties.manage_photos']);
+$router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'perm:properties.manage_photos']);
+$router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'perm:properties.manage_photos']);
+$router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth', 'perm:properties.access']);
+$router->get('/properties/{id}/photos/{photoId}/download', 'PropertyController@downloadPhoto', ['auth', 'perm:properties.access']);
 
 // Tenants
-$router->get('/tenants', 'TenantController@index', ['auth', 'role:landlord,property_manager']);
-$router->get('/tenants/create', 'TenantController@create', ['auth', 'role:landlord,property_manager']);
-$router->post('/tenants', 'TenantController@store', ['auth', 'role:landlord,property_manager']);
-$router->get('/tenants/{id}', 'TenantController@show', ['auth', 'role:landlord,property_manager']);
-$router->get('/tenants/{id}/edit', 'TenantController@edit', ['auth', 'role:landlord,property_manager']);
-$router->post('/tenants/{id}/update', 'TenantController@update', ['auth', 'role:landlord,property_manager']);
-$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'role:landlord,property_manager']);
-$router->post('/tenants/{id}/restore', 'TenantController@restore', ['auth', 'role:admin']);
-$router->post('/tenants/{id}/delete', 'TenantController@destroy', ['auth', 'role:admin']);
+$router->get('/tenants', 'TenantController@index', ['auth', 'perm:tenants.access']);
+$router->get('/tenants/create', 'TenantController@create', ['auth', 'perm:tenants.create']);
+$router->post('/tenants', 'TenantController@store', ['auth', 'perm:tenants.create']);
+$router->get('/tenants/{id}', 'TenantController@show', ['auth', 'perm:tenants.access']);
+$router->get('/tenants/{id}/edit', 'TenantController@edit', ['auth', 'perm:tenants.edit']);
+$router->post('/tenants/{id}/update', 'TenantController@update', ['auth', 'perm:tenants.edit']);
+$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.archive']);
+$router->post('/tenants/{id}/restore', 'TenantController@restore', ['auth', 'perm:tenants.restore']);
+$router->post('/tenants/{id}/delete', 'TenantController@destroy', ['auth', 'perm:tenants.delete']);
 
 // Leases
-$router->get('/leases', 'LeaseController@index', ['auth']);
-$router->get('/leases/create', 'LeaseController@create', ['auth', 'role:landlord,property_manager']);
-$router->post('/leases', 'LeaseController@store', ['auth', 'role:landlord,property_manager']);
-$router->get('/leases/{id}', 'LeaseController@show', ['auth']);
-$router->post('/leases/{id}/delete', 'LeaseController@destroy', ['auth', 'role:admin,landlord,property_manager']);
-$router->post('/leases/{id}/restore', 'LeaseController@restore', ['auth', 'role:admin']);
-$router->post('/leases/{id}/hard-delete', 'LeaseController@hardDelete', ['auth', 'role:admin']);
+$router->get('/leases', 'LeaseController@index', ['auth', 'perm:leases.access']);
+$router->get('/leases/create', 'LeaseController@create', ['auth', 'perm:leases.create']);
+$router->post('/leases', 'LeaseController@store', ['auth', 'perm:leases.create']);
+$router->get('/leases/{id}', 'LeaseController@show', ['auth', 'perm:leases.access']);
+$router->post('/leases/{id}/delete', 'LeaseController@destroy', ['auth', 'perm:leases.delete']);
+$router->post('/leases/{id}/restore', 'LeaseController@restore', ['auth', 'perm:leases.restore']);
+$router->post('/leases/{id}/hard-delete', 'LeaseController@hardDelete', ['auth', 'perm:leases.delete']);
 
 // Tickets
-$router->get('/tickets', 'TicketController@index', ['auth']);
-$router->get('/tickets/create', 'TicketController@create', ['auth']);
-$router->post('/tickets', 'TicketController@store', ['auth']);
-$router->get('/tickets/{id}', 'TicketController@show', ['auth']);
-$router->post('/tickets/{id}/assign', 'TicketController@assign', ['auth', 'role:admin,landlord,property_manager,maintenance']);
-$router->post('/tickets/{id}/status', 'TicketController@status', ['auth', 'role:admin,landlord,property_manager,maintenance']);
-$router->post('/tickets/{id}/restore', 'TicketController@restore', ['auth', 'role:admin']);
-$router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth']);
+$router->get('/tickets', 'TicketController@index', ['auth', 'perm:tickets.access']);
+$router->get('/tickets/create', 'TicketController@create', ['auth', 'perm:tickets.create']);
+$router->post('/tickets', 'TicketController@store', ['auth', 'perm:tickets.create']);
+$router->get('/tickets/{id}', 'TicketController@show', ['auth', 'perm:tickets.access']);
+$router->post('/tickets/{id}/assign', 'TicketController@assign', ['auth', 'perm:tickets.assign']);
+$router->post('/tickets/{id}/status', 'TicketController@status', ['auth', 'perm:tickets.update_status']);
+$router->post('/tickets/{id}/restore', 'TicketController@restore', ['auth', 'perm:tickets.restore']);
+$router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth', 'perm:tickets.comment']);
 
 // Documents
-$router->get('/documents/{id}/download', 'DocumentController@download', ['auth']);
-$router->post('/documents/{id}/delete', 'DocumentController@destroy', ['auth', 'role:admin,landlord,property_manager']);
+$router->get('/documents/{id}/download', 'DocumentController@download', ['auth', 'perm:documents.access']);
+$router->post('/documents/{id}/delete', 'DocumentController@destroy', ['auth', 'perm:documents.delete']);
 
 // Notifications
 $router->get('/notifications', 'NotificationController@index', ['auth']);
@@ -217,6 +217,7 @@ $router->post('/settings/general', 'SettingsController@saveGeneral', ['auth', 'r
 $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:admin']);
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
+$router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
 
 // Updates API (admin only)
 $router->post('/updates/check', 'UpdateController@check', ['auth', 'role:admin']);

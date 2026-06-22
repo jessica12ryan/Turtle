@@ -3,10 +3,9 @@
         <h1 class="text-2xl font-bold text-gray-800"><?= h($tenant['name']) ?></h1>
         <p class="text-gray-500"><?= h($tenant['email']) ?></p>
     </div>
-    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
         <a href="/tenants/<?= $tenant['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
-        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+        <?php if (can('tenants.archive')): ?>
             <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('Archive this tenant? They will be removed from the property and their account disabled.')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>

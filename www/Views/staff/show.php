@@ -3,10 +3,9 @@
         <h1 class="text-2xl font-bold text-gray-800"><?= h($staff['name']) ?></h1>
         <p class="text-gray-500"><?= h($staff['email']) ?></p>
     </div>
-    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
         <a href="/staff/<?= $staff['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
-        <?php if (in_array($role, ['admin', 'landlord'])): ?>
+        <?php if (can('staff.archive')): ?>
             <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this staff member? They will no longer be able to log in.')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>

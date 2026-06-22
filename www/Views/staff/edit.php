@@ -29,7 +29,7 @@
             <a href="/staff/<?= $staff['id'] ?>" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
         </div>
     </form>
-    <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+    <?php if (can('staff.delete')): ?>
         <div class="mt-8 pt-6 border-t">
             <h3 class="text-lg font-medium text-red-600 mb-2">Danger Zone</h3>
             <form method="POST" action="/staff/<?= $staff['id'] ?>/hard-delete" onsubmit="return confirm('WARNING: This will permanently delete this staff member and all associated records. This is NOT reversible. Continue?')">

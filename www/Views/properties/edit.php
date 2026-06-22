@@ -90,7 +90,7 @@
     <?php endif; ?>
 </div>
 
-<?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+<?php if (can('properties.archive')): ?>
     <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
         <div class="mt-0 pt-0 border-t-0">
             <h3 class="text-lg font-medium text-red-600 mb-2">Danger Zone</h3>

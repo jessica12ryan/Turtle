@@ -177,6 +177,12 @@ CREATE TABLE IF NOT EXISTS settings (
 
 INSERT IGNORE INTO settings (`key`, `value`) VALUES ('app_version', '0.0.0'), ('last_update_check', ''), ('latest_version', ''), ('update_channel', 'stable'), ('timezone', 'America/New_York'), ('ntp_server', 'time.gov'), ('last_ntp_check', ''), ('last_ntp_status', '');
 
+CREATE TABLE IF NOT EXISTS role_permissions (
+    role VARCHAR(50) NOT NULL,
+    permission VARCHAR(100) NOT NULL,
+    PRIMARY KEY (role, permission)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS sessions (
     id VARCHAR(255) PRIMARY KEY,
     user_id INT DEFAULT NULL,

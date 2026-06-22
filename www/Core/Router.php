@@ -142,6 +142,16 @@ class Router
                     exit;
                 }
                 break;
+            default:
+                if (str_starts_with($middleware, 'perm:')) {
+                    $perm = substr($middleware, 5);
+                    if (!can($perm)) {
+                        http_response_code(403);
+                        require base_path('www/Views/errors/403.php');
+                        exit;
+                    }
+                }
+                break;
         }
     }
 }

@@ -7,18 +7,17 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
         <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?></p>
     </div>
-    <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
-        <?php if (in_array($role, ['admin', 'landlord'])): ?>
+        <?php if (can('properties.edit')): ?>
             <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
         <?php endif; ?>
-        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+        <?php if (can('leases.create')): ?>
             <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Upload Lease</a>
         <?php endif; ?>
-        <?php if (in_array($role, ['admin', 'landlord', 'property_manager', 'tenant'])): ?>
+        <?php if (can('tickets.create')): ?>
             <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm">New Ticket</a>
         <?php endif; ?>
-        <?php if (in_array($role, ['admin', 'landlord'])): ?>
+        <?php if (can('properties.archive')): ?>
             <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this property and all its associated tenants, leases, and tickets. This is not reversible. Continue?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>
@@ -31,7 +30,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b flex justify-between items-center">
                 <h2 class="text-lg font-semibold text-gray-800">Tenants</h2>
-                <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
+                <?php if (can('tenants.create')): ?>
                     <a href="/tenants/create?property_id=<?= $property['id'] ?>" class="text-sm text-blue-600 hover:underline">Add Tenant</a>
                 <?php endif; ?>
             </div>

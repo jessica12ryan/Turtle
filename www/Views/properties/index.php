@@ -4,7 +4,7 @@
         <a href="?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
             <?= $showArchived ? 'Showing archived' : 'Show archived' ?>
         </a>
-        <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
+        <?php if (can('properties.create')): ?>
             <a href="/properties/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Add Property</a>
         <?php endif; ?>
     </div>
@@ -40,7 +40,7 @@
                 <div class="px-4 pb-4 flex items-center space-x-2">
                     <?php if ($property['archived_at']): ?>
                         <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Archived</span>
-                        <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                        <?php if (can('properties.restore')): ?>
                             <form method="POST" action="/properties/<?= $property['id'] ?>/restore" class="inline">
                                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                 <button type="submit" class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded hover:bg-green-200">Restore</button>

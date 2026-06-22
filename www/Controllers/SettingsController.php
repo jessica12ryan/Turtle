@@ -11,7 +11,7 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'reset'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'reset'])) {
             $tab = 'general';
         }
 
@@ -43,6 +43,14 @@ class SettingsController
             $data['latestVersion'] = $latestVersion['value'] ?? '';
             $data['lastCheck'] = $lastCheck['value'] ?? '';
             $data['channel'] = $channel['value'] ?? 'stable';
+        } elseif ($tab === 'permissions') {
+            $rows = Database::fetchAll("SELECT role, permission FROM role_permissions ORDER BY role, permission", []);
+            $data['overrides'] = [];
+            foreach ($rows as $row) {
+                $data['overrides'][$row['role']][] = $row['permission'];
+            }
+            $data['roles'] = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            $data['defaults'] = defaultPermissions();
         }
 
         $view = new View();
@@ -251,5 +259,27 @@ class SettingsController
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'channel' => $channel]);
+    }
+
+    public function savePermissions(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=permissions');
+        }
+
+        Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+
+        $allPerms = $_POST['perms'] ?? [];
+        $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+        foreach ($roles as $role) {
+            $granted = $allPerms[$role] ?? [];
+            foreach ($granted as $perm) {
+                Database::execute("INSERT INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+            }
+        }
+
+        flash('success', 'Permissions saved successfully.');
+        redirect('/settings?tab=permissions');
     }
 }

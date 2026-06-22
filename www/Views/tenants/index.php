@@ -47,13 +47,13 @@
                         <td class="px-6 py-4 space-x-2">
                             <?php if (!$tenant['archived_at']): ?>
                                 <a href="/tenants/<?= $tenant['id'] ?>/edit" class="text-blue-600 hover:underline text-sm">Edit</a>
-                                <?php if (in_array(\App\Core\Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])): ?>
+                                <?php if (can('tenants.archive')): ?>
                                     <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('WARNING: This will archive this tenant and is not reversible. They will be removed from the property and their account disabled. Continue?')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
                                     </form>
                                 <?php endif; ?>
-                            <?php elseif (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                            <?php elseif (can('tenants.restore')): ?>
                                 <form method="POST" action="/tenants/<?= $tenant['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-green-600 hover:underline text-sm">Restore</button>

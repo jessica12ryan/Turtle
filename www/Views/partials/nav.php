@@ -2,7 +2,6 @@
 $user = \App\Core\Auth::instance()->user();
 $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL", [$user['id']])['count'] ?? 0;
-$mgmtRoles = ['admin', 'landlord', 'property_manager'];
 
 function navActive(string $prefix, string $currentUri): string {
     return str_starts_with($currentUri, $prefix) ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900';
@@ -15,17 +14,25 @@ function navActive(string $prefix, string $currentUri): string {
                 <a href="/home"><img src="/assets/logo.svg" alt="Turtle" class="h-8"></a>
                 <div class="hidden md:flex space-x-4">
                     <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
-                    <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
-                    <?php if (in_array($user['role'], $mgmtRoles)): ?>
+                    <?php if (can('properties.access')): ?>
+                        <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
+                    <?php endif; ?>
+                    <?php if (can('tenants.access')): ?>
                         <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
                     <?php endif; ?>
-                    <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases</a>
-                    <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
-                    <?php if (in_array($user['role'], $mgmtRoles)): ?>
+                    <?php if (can('leases.access')): ?>
+                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases</a>
+                    <?php endif; ?>
+                    <?php if (can('tickets.access')): ?>
+                        <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
+                    <?php endif; ?>
+                    <?php if (can('staff.access')): ?>
                         <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
                     <?php endif; ?>
-                    <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
-                    <?php if ($user['role'] !== 'tenant'): ?>
+                    <?php if (can('resources.access')): ?>
+                        <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
+                    <?php endif; ?>
+                    <?php if (can('calendar.access')): ?>
                         <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
                     <?php endif; ?>
                 </div>
