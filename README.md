@@ -15,15 +15,19 @@ The first boot presents a multi-step setup wizard where you configure site infor
 
 **Email testing:** http://localhost:8025 (Mailpit)
 
-## Roles
+## Permissions
 
-| Role | Permissions |
+Access control uses a two-layer system: **route middleware** (which pages a role can reach) and **granular permissions** (what actions a role can take on those pages).
+
+Default permissions are assigned per role, but admins can override them in **Settings → Permissions** by switching from "Use defaults" to "Custom" and toggling individual permissions for each role.
+
+| Role | Typical access |
 |---|---|
-| **IT Admin** | Full system access: create/edit/archive/delete everything |
-| **Landlord** | Create/edit/archive properties, tenants, leases, tickets, and staff |
-| **Property Manager** | Create/edit/archive properties, tenants, leases, tickets |
-| **Maintenance** | View assigned tickets, update ticket status, add comments |
-| **Tenant** | View assigned properties/leases, create/view tickets for their property |
+| **Admin** | Unrestricted — bypasses all permission checks |
+| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar |
+| **Property Manager** | Properties, tenants, leases, tickets, resources, calendar |
+| **Maintenance** | Tickets (view assigned, update status, comment) |
+| **Tenant** | Own tickets, assigned leases/units, resources |
 
 ## Project Structure
 
@@ -65,18 +69,15 @@ MAIL_FROM_NAME=Turtle
 
 **Free SMTP options:** Brevo (300/day), Mailtrap (4k/month), Mailjet (6k/month)
 
-## Role Middleware
+## Route Middleware
 
-The Router supports role-based access control via middleware strings passed to route definitions. The available role middleware cases are:
+Page-level access is enforced by middleware strings on route definitions:
 - `role:admin` — admin only
 - `role:admin,landlord` — admin or landlord
-- `role:admin,landlord,property_manager` — admin, landlord, or property manager (used by resources CRUD)
-- `role:landlord` — admin or landlord
+- `role:admin,landlord,property_manager` — admin, landlord, or property manager
 - `role:landlord,property_manager` — admin, landlord, or property manager
 - `role:tenant` — tenant only
 - `role:staff` — any non-tenant role (admin, landlord, property_manager, maintenance)
-
-Missing middleware cases in the Router will silently skip the role check, allowing any authenticated user access. The `role:admin,landlord,property_manager` case is explicitly handled.
 
 ## Resources
 
