@@ -29,7 +29,7 @@ run_sql "ALTER TABLE property_tenant ADD COLUMN lease_end DATE DEFAULT NULL AFTE
 run_sql "ALTER TABLE users ADD COLUMN timezone VARCHAR(100) DEFAULT NULL AFTER remember_token;"
 run_sql "ALTER TABLE property_tenant ADD COLUMN move_out_date DATE DEFAULT NULL AFTER lease_end;"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('timezone', 'America/New_York'), ('ntp_server', 'time.gov'), ('last_ntp_check', ''), ('last_ntp_status', '');"
-run_sql "CREATE TABLE IF NOT EXISTS resources (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, url VARCHAR(500) NOT NULL, description TEXT DEFAULT '', created_by INT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (created_by) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+run_sql "CREATE TABLE IF NOT EXISTS resources (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, url VARCHAR(500) NOT NULL, description TEXT, created_by INT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (created_by) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "CREATE TABLE IF NOT EXISTS role_permissions (role VARCHAR(50) NOT NULL, permission VARCHAR(100) NOT NULL, PRIMARY KEY (role, permission)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 # Only re-seed permissions if not in custom mode (preserves user customizations on updates)
 PERM_MODE=$($MYSQL_CMD -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || echo "")
