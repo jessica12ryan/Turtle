@@ -7,8 +7,15 @@ function navActive(string $prefix, string $currentUri): string {
     return str_starts_with($currentUri, $prefix) ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900';
 }
 ?>
+<style>
+#menu-toggle:checked ~ .nav-inner .menu-icon-hamburger { display: none !important; }
+#menu-toggle:checked ~ .nav-inner .menu-icon-close { display: block !important; }
+#menu-toggle:checked ~ #mobile-menu { display: block !important; }
+@media (min-width: 768px) { #mobile-menu { display: none !important; } }
+</style>
 <nav class="bg-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4">
+    <input type="checkbox" id="menu-toggle" class="hidden">
+    <div class="nav-inner max-w-7xl mx-auto px-4">
         <div class="flex justify-between h-16">
             <div class="flex items-center space-x-8">
                 <a href="/home"><img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-8"></a>
@@ -37,7 +44,11 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <label for="menu-toggle" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 cursor-pointer" aria-label="Toggle navigation">
+                    <svg class="menu-icon-hamburger w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg class="menu-icon-close w-6 h-6" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </label>
                 <a href="/notifications" class="relative text-gray-600 hover:text-gray-900">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                     <?php if ($unread > 0): ?>
@@ -61,6 +72,32 @@ function navActive(string $prefix, string $currentUri): string {
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden" style="display:none">
+        <div class="max-w-7xl mx-auto px-4 pb-4 space-y-1">
+            <a href="/home" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
+            <?php if (can('properties.access')): ?>
+                <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
+            <?php endif; ?>
+            <?php if (can('tenants.access')): ?>
+                <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
+            <?php endif; ?>
+            <?php if (can('leases.access')): ?>
+                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases</a>
+            <?php endif; ?>
+            <?php if (can('tickets.access')): ?>
+                <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
+            <?php endif; ?>
+            <?php if (can('staff.access')): ?>
+                <a href="/staff" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
+            <?php endif; ?>
+            <?php if (can('resources.access')): ?>
+                <a href="/resources" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
+            <?php endif; ?>
+            <?php if (can('calendar.access')): ?>
+                <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
+            <?php endif; ?>
         </div>
     </div>
 </nav>
