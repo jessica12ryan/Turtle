@@ -16,6 +16,10 @@
             <input type="text" value="<?= ucfirst(str_replace('_', ' ', $user['role'])) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
         </div>
         <hr class="my-6">
+        <div class="mb-6">
+            <?php $currentTimezone = $user['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
+        </div>
+        <hr class="my-6">
         <h3 class="text-lg font-medium text-gray-800 mb-4">Change Password (optional)</h3>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>

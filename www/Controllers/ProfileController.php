@@ -31,8 +31,10 @@ class ProfileController
             redirect('/profile');
         }
 
-        $sql = "UPDATE users SET name = ?, updated_at = NOW()";
-        $params = [$_POST['name']];
+        $timezone = $_POST['timezone'] ?: null;
+
+        $sql = "UPDATE users SET name = ?, timezone = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";

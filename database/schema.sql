@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant',
     must_change_password TINYINT(1) DEFAULT 0,
     remember_token VARCHAR(100) DEFAULT NULL,
+    timezone VARCHAR(100) DEFAULT NULL,
     archived_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -65,6 +65,19 @@ MAIL_FROM_NAME=Turtle
 
 **Free SMTP options:** Brevo (300/day), Mailtrap (4k/month), Mailjet (6k/month)
 
+## Role Middleware
+
+The Router supports role-based access control via middleware strings passed to route definitions. The available role middleware cases are:
+- `role:admin` — admin only
+- `role:admin,landlord` — admin or landlord
+- `role:admin,landlord,property_manager` — admin, landlord, or property manager (used by resources CRUD)
+- `role:landlord` — admin or landlord
+- `role:landlord,property_manager` — admin, landlord, or property manager
+- `role:tenant` — tenant only
+- `role:staff` — any non-tenant role (admin, landlord, property_manager, maintenance)
+
+Missing middleware cases in the Router will silently skip the role check, allowing any authenticated user access. The `role:admin,landlord,property_manager` case is explicitly handled.
+
 ## Resources
 
 A shared links page available to all users. Admins, landlords, and property managers can add, edit, and delete resource links (URLs with optional descriptions). Accessible from the top navigation bar.
@@ -83,7 +96,8 @@ When creating a tenant, Lease Start is required and Lease End is optional (leave
 
 The application maintains its own timezone and NTP configuration for accurate time tracking:
 
-- **Timezone** is configurable in **Settings → General** and is applied via `date_default_timezone_set()` at boot. Default: `America/New_York`.
+- **Timezone** is configurable globally in **Settings → General** (admin only) and is applied via `date_default_timezone_set()` at boot. Default: `America/New_York`.
+- **Per-user timezone override** — All create/edit forms for staff and tenants include a Timezone dropdown with "Use default timezone" as the default option. Users can also set their own timezone on the **Profile** page. When set, the user's timezone overrides the global default for that user. The timezone is applied in the Router's `auth` middleware after login verification.
 - **NTP Server** is checked on the home page for admin users. The default server is `time.gov` (via `https://time.gov/actualtime.cgi`). Results are cached for 1 hour in the `settings` table.
 - The check uses PHP's `curl` extension (preferred) or falls back to `file_get_contents()` if curl is unavailable. Set `timezone` to blank to disable the check entirely.
 - The Dockerfile installs `php-curl` via `docker-php-ext-install curl` for reliable HTTPS requests. After updating the Dockerfile, rebuild the container with `docker compose build php` then `docker compose up -d`.

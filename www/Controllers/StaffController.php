@@ -86,9 +86,11 @@ class StaffController
 
         $password = bin2hex(random_bytes(6));
 
+        $timezone = $_POST['timezone'] ?: null;
+
         $userId = Database::insert(
-            "INSERT INTO users (name, email, password, role, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 1, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role']]
+            "INSERT INTO users (name, email, password, role, timezone, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, NOW(), NOW())",
+            [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone]
         );
 
         if (!empty($_POST['send_welcome_email'])) {
@@ -164,8 +166,10 @@ class StaffController
             redirect('/staff/' . $id . '/edit');
         }
 
-        $sql = "UPDATE users SET name = ?, updated_at = NOW()";
-        $params = [$_POST['name']];
+        $timezone = $_POST['timezone'] ?: null;
+
+        $sql = "UPDATE users SET name = ?, timezone = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";

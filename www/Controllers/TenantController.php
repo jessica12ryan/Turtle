@@ -176,10 +176,11 @@ class TenantController
         }
 
         $password = bin2hex(random_bytes(6));
+        $timezone = $_POST['timezone'] ?: null;
 
         $tenantId = Database::insert(
-            "INSERT INTO users (name, email, phone, password, role, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 1, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT)]
+            "INSERT INTO users (name, email, phone, password, role, timezone, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', ?, 1, NOW(), NOW())",
+            [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone]
         );
 
         $existingMain = Database::fetch(
@@ -317,9 +318,11 @@ class TenantController
             $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
         }
 
+        $timezone = $_POST['timezone'] ?: null;
+
         Database::execute(
-            "UPDATE users SET name = ?, phone = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['name'], $phone, $id]
+            "UPDATE users SET name = ?, phone = ?, timezone = ?, updated_at = NOW() WHERE id = ?",
+            [$_POST['name'], $phone, $timezone, $id]
         );
 
         $pt = $this->getPropertyTenant($id);

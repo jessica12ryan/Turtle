@@ -40,6 +40,9 @@
             </div>
         </div>
         <div class="mb-4">
+            <?php $currentTimezone = old('timezone'); require base_path('www/Views/partials/timezone.php'); ?>
+        </div>
+        <div class="mb-4">
             <label class="flex items-center">
                 <input type="checkbox" name="is_main_tenant" id="is-main-tenant" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                 <span class="ml-2 text-sm text-gray-700">Make this the main tenant</span>

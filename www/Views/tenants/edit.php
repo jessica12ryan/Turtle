@@ -51,6 +51,9 @@
                 <p class="text-xs text-gray-400 mt-1">Optional — tenant auto-archives on this date.</p>
             </div>
         </div>
+        <div class="mb-4">
+            <?php $currentTimezone = $tenant['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
+        </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Update</button>
             <a href="/tenants/<?= $tenant['id'] ?>" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>

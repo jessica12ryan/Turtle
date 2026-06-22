@@ -11,7 +11,12 @@ class ResourceController
 {
     public function index(): void
     {
-        $links = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by ORDER BY r.title");
+        try {
+            $links = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by ORDER BY r.title");
+        } catch (\Throwable $e) {
+            error_log('ResourceController@index query failed: ' . $e->getMessage());
+            $links = [];
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Resources']);

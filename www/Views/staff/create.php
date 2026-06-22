@@ -21,6 +21,9 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <div class="mb-4">
+            <?php $currentTimezone = old('timezone'); require base_path('www/Views/partials/timezone.php'); ?>
+        </div>
         <div class="mb-6">
             <label class="flex items-center">
                 <input type="checkbox" name="send_welcome_email" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">

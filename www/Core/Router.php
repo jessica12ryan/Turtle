@@ -83,6 +83,10 @@ class Router
                     $_SESSION['_flash']['error'] = 'Please log in to continue.';
                     redirect('/login');
                 }
+                $user = $auth->user();
+                if (!empty($user['timezone'])) {
+                    date_default_timezone_set($user['timezone']);
+                }
                 break;
             case 'guest':
                 if ($auth->check()) {
@@ -111,6 +115,13 @@ class Router
                 }
                 break;
             case 'role:landlord,property_manager':
+                if (!$auth->check() || !in_array($auth->user()['role'], ['admin', 'landlord', 'property_manager'])) {
+                    http_response_code(403);
+                    require base_path('www/Views/errors/403.php');
+                    exit;
+                }
+                break;
+            case 'role:admin,landlord,property_manager':
                 if (!$auth->check() || !in_array($auth->user()['role'], ['admin', 'landlord', 'property_manager'])) {
                     http_response_code(403);
                     require base_path('www/Views/errors/403.php');
