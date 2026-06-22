@@ -48,7 +48,54 @@ class SetupController
             redirect('/setup');
         }
 
-        // Save site name
+        // Handle logo upload before seed (file must be uploaded early)
+        $logoPath = '';
+        $keepDefault = !empty($_POST['logo_default']);
+        if (!$keepDefault && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
+            $type = $_FILES['logo']['type'];
+            if (in_array($type, $allowed)) {
+                $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+                $filename = 'logo.' . $ext;
+                $uploadDir = base_path('www/assets/uploads/logo/');
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
+                    $logoPath = 'assets/uploads/logo/' . $filename;
+                }
+            }
+        }
+
+        // Create admin account
+        Database::insert(
+            "INSERT INTO users (name, email, password, role, must_change_password, created_at, updated_at) VALUES (?, ?, ?, 'admin', 0, NOW(), NOW())",
+            [$_POST['name'], $_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT)]
+        );
+
+        // Optionally seed sample data
+        if (!empty($_POST['load_sample_data'])) {
+            $seedFile = base_path('database/seed.sql');
+            if (file_exists($seedFile)) {
+                $pdo = \App\Core\Database::instance()->getConnection();
+                $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
+                $raw = file_get_contents($seedFile);
+                $raw = preg_replace('/^-- .*/m', '', $raw);
+                $statements = explode(';', $raw);
+                foreach ($statements as $stmt) {
+                    $stmt = trim($stmt);
+                    if ($stmt !== '') {
+                        try {
+                            $pdo->exec($stmt);
+                        } catch (\Throwable $e) {
+                            error_log('Seed data exec failed: ' . $e->getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Save site name (after seed to prevent seed data from overwriting)
         $siteName = trim($_POST['site_name'] ?? '');
         if ($siteName === '') {
             $siteName = 'Turtle';
@@ -58,30 +105,17 @@ class SetupController
             [$siteName, $siteName]
         );
 
-        // Save logo
-        $keepDefault = !empty($_POST['logo_default']);
+        // Save logo path
         if ($keepDefault) {
             Database::execute(
                 "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', '') ON DUPLICATE KEY UPDATE `value` = ''",
                 []
             );
-        } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
-            $type = $_FILES['logo']['type'];
-            if (in_array($type, $allowed)) {
-                $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-                $filename = 'logo.' . $ext;
-                $uploadDir = base_path('storage/uploads/logo/');
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-                if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
-                    Database::execute(
-                        "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-                        ['storage/uploads/logo/' . $filename, 'storage/uploads/logo/' . $filename]
-                    );
-                }
-            }
+        } elseif ($logoPath !== '') {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$logoPath, $logoPath]
+            );
         }
 
         // Save timezone
@@ -113,34 +147,6 @@ class SetupController
                 "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
                 [$key, $value, $value]
             );
-        }
-
-        // Create admin account
-        Database::insert(
-            "INSERT INTO users (name, email, password, role, must_change_password, created_at, updated_at) VALUES (?, ?, ?, 'admin', 0, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT)]
-        );
-
-        // Optionally seed sample data
-        if (!empty($_POST['load_sample_data'])) {
-            $seedFile = base_path('database/seed.sql');
-            if (file_exists($seedFile)) {
-                $pdo = \App\Core\Database::instance()->getConnection();
-                $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
-                $raw = file_get_contents($seedFile);
-                $raw = preg_replace('/^-- .*/m', '', $raw);
-                $statements = explode(';', $raw);
-                foreach ($statements as $stmt) {
-                    $stmt = trim($stmt);
-                    if ($stmt !== '') {
-                        try {
-                            $pdo->exec($stmt);
-                        } catch (\Throwable $e) {
-                            error_log('Seed data exec failed: ' . $e->getMessage());
-                        }
-                    }
-                }
-            }
         }
 
         Auth::instance()->login($_POST['email'], $_POST['password']);

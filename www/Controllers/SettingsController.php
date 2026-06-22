@@ -110,7 +110,7 @@ class SettingsController
 
             $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
             $filename = 'logo.' . $ext;
-            $uploadDir = base_path('storage/uploads/logo/');
+            $uploadDir = base_path('www/assets/uploads/logo/');
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
@@ -119,7 +119,7 @@ class SettingsController
             if (move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
                 Database::execute(
                     "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-                    ['storage/uploads/logo/' . $filename, 'storage/uploads/logo/' . $filename]
+                    ['assets/uploads/logo/' . $filename, 'assets/uploads/logo/' . $filename]
                 );
             } else {
                 flash('error', 'Failed to upload logo. Check directory permissions.');
