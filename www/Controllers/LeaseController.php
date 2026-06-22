@@ -158,29 +158,6 @@ class LeaseController
             redirect('/leases/create');
         }
 
-        $uploadError = null;
-        if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
-            $uploadDir = base_path('storage/uploads/leases');
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0755, true);
-            }
-            if (!is_writable($uploadDir)) {
-                @chmod($uploadDir, 0777);
-                @chmod(base_path('storage/uploads'), 0777);
-                exec('chmod -R 777 ' . escapeshellarg(base_path('storage/uploads')) . ' 2>/dev/null');
-                exec('chown -R www-data:www-data ' . escapeshellarg(base_path('storage/uploads')) . ' 2>/dev/null');
-            }
-            if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
-                $uploadError = 'Upload directory is not writable. Check permissions.';
-            }
-        }
-
-        if ($uploadError) {
-            $_SESSION['_errors'] = ['documents' => [$uploadError]];
-            $_SESSION['_old'] = $_POST;
-            redirect('/leases/create');
-        }
-
         Database::beginTransaction();
 
         try {
@@ -190,9 +167,28 @@ class LeaseController
             );
 
             if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
+                $primaryDir = base_path('storage/uploads/leases');
+                $fallbackDir = sys_get_temp_dir() . '/turtle_uploads/leases';
+                $uploadDir = '';
+
+                if (is_dir($primaryDir) && is_writable($primaryDir)) {
+                    $uploadDir = $primaryDir;
+                    $pathPrefix = 'storage/uploads/leases';
+                } else {
+                    @mkdir($fallbackDir, 0777, true);
+                    if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
+                        $uploadDir = $fallbackDir;
+                        $pathPrefix = $fallbackDir;
+                    }
+                }
+
+                if (!$uploadDir) {
+                    throw new \RuntimeException('Upload directory is not writable. Check permissions.');
+                }
+
                 $leaseDir = $uploadDir . '/' . $leaseId;
                 if (!is_dir($leaseDir)) {
-                    mkdir($leaseDir, 0755, true);
+                    mkdir($leaseDir, 0777, true);
                 }
 
                 $allOk = true;
@@ -214,7 +210,7 @@ class LeaseController
 
                     Database::insert(
                         "INSERT INTO documents (documentable_type, documentable_id, file_path, original_name, size, mime_type, uploaded_by, created_at, updated_at) VALUES ('lease', ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-                        [$leaseId, 'storage/uploads/leases/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $_FILES['documents']['type'][$i] ?? '', Auth::instance()->id()]
+                        [$leaseId, $pathPrefix . '/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $_FILES['documents']['type'][$i] ?? '', Auth::instance()->id()]
                     );
                 }
 
@@ -271,9 +267,10 @@ class LeaseController
             [$id]
         );
         foreach ($documents as $doc) {
-            $path = base_path($doc['file_path']);
-            if (file_exists($path)) {
-                unlink($path);
+            $path = $doc['file_path'];
+            $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
             }
         }
         Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$id]);

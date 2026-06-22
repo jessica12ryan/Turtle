@@ -71,8 +71,9 @@ class SettingsController
             foreach ($leases as $lease) {
                 $docs = Database::fetchAll("SELECT file_path FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$lease['id']]);
                 foreach ($docs as $doc) {
-                    $path = base_path($doc['file_path']);
-                    if (file_exists($path)) unlink($path);
+                    $path = $doc['file_path'];
+                    $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
+                    if (file_exists($fullPath)) unlink($fullPath);
                 }
                 Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$lease['id']]);
             }
