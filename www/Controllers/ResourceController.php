@@ -65,10 +65,17 @@ class ResourceController
             redirect('/login');
         }
 
-        Database::insert(
-            "INSERT INTO resources (title, url, description, created_by) VALUES (?, ?, ?, ?)",
-            [$_POST['title'], $url, $_POST['description'] ?? '', $userId]
-        );
+        try {
+            Database::insert(
+                "INSERT INTO resources (title, url, description, created_by) VALUES (?, ?, ?, ?)",
+                [$_POST['title'], $url, $_POST['description'] ?? '', $userId]
+            );
+        } catch (\Throwable $e) {
+            error_log('ResourceController@store insert failed: ' . $e->getMessage());
+            flash('error', 'Failed to add resource: ' . $e->getMessage());
+            $_SESSION['_old'] = $_POST;
+            redirect('/resources/create');
+        }
 
         flash('success', 'Resource added successfully.');
         redirect('/resources');
@@ -111,10 +118,17 @@ class ResourceController
             redirect('/resources/' . $id . '/edit');
         }
 
-        Database::execute(
-            "UPDATE resources SET title = ?, url = ?, description = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['title'], $url, $_POST['description'] ?? '', $id]
-        );
+        try {
+            Database::execute(
+                "UPDATE resources SET title = ?, url = ?, description = ?, updated_at = NOW() WHERE id = ?",
+                [$_POST['title'], $url, $_POST['description'] ?? '', $id]
+            );
+        } catch (\Throwable $e) {
+            error_log('ResourceController@update failed: ' . $e->getMessage());
+            flash('error', 'Failed to update resource: ' . $e->getMessage());
+            $_SESSION['_old'] = $_POST;
+            redirect('/resources/' . $id . '/edit');
+        }
 
         flash('success', 'Resource updated successfully.');
         redirect('/resources');
