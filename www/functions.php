@@ -61,6 +61,120 @@ function base_path(string $path = ''): string
     return __DIR__ . '/../' . ltrim($path, '/');
 }
 
+function httpGet(string $url, int $timeout = 5): ?string
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_USERAGENT => 'Turtle/1.0',
+            CURLOPT_HEADER => false,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode >= 200 && $httpCode < 400 && $body !== false) {
+            return $body;
+        }
+        // Retry with SSL verification disabled
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_USERAGENT => 'Turtle/1.0',
+            CURLOPT_HEADER => false,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($httpCode >= 200 && $httpCode < 400 && $body !== false) {
+            return $body;
+        }
+        return null;
+    }
+
+    if (ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0']]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body !== false) return $body;
+        // Retry with SSL disabled
+        $ctx = stream_context_create([
+            'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0'],
+            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+        ]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body !== false) return $body;
+    }
+
+    return null;
+}
+
+function httpGetWithHeaders(string $url, int $timeout = 5): ?array
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_USERAGENT => 'Turtle/1.0',
+            CURLOPT_HEADER => true,
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        curl_close($ch);
+        if ($response === false) return null;
+        $headerStr = substr($response, 0, $headerSize);
+        $body = substr($response, $headerSize);
+        return [
+            'http_code' => $httpCode,
+            'headers' => $headerStr,
+            'body' => $body,
+        ];
+    }
+
+    if (ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create([
+            'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0'],
+            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+        ]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body !== false) {
+            return ['http_code' => 200, 'headers' => '', 'body' => $body];
+        }
+    }
+
+    return null;
+}
+
+function parseHttpDateHeader(string $headerStr): ?int
+{
+    foreach (explode("\r\n", $headerStr) as $line) {
+        if (stripos($line, 'Date:') === 0) {
+            $dateStr = trim(substr($line, 5));
+            $ts = strtotime($dateStr);
+            if ($ts !== false) return $ts;
+        }
+    }
+    return null;
+}
+
 function checkNtpTime(): ?array
 {
     try {
@@ -74,7 +188,6 @@ function checkNtpTime(): ?array
     $lastTs = $lastCheck['value'] ?? '';
     $cachedDrift = $lastStatus['value'] ?? '';
 
-    // Return cached result if checked within the last hour
     if ($lastTs && $cachedDrift !== '' && (strtotime('now') - strtotime($lastTs)) < 3600) {
         if ($cachedDrift === 'unreachable') return null;
         return [
@@ -91,69 +204,67 @@ function checkNtpTime(): ?array
         $server = 'time.gov';
     }
 
-    // Empty server = NTP check disabled
     if ($server === '') {
         return ['ntp_time' => time(), 'system_time' => time(), 'drift' => 0];
     }
 
     $now = date('Y-m-d H:i:s');
-    $ntpMs = null;
+    $ntpTs = null;
 
-    // Try multiple methods to get NTP time
+    // Try 1: time.gov XML API
     if ($server === 'time.gov') {
-        // Method 1: HTTPS with default context
-        $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-        $response = @file_get_contents('https://time.gov/actualtime.cgi', false, $ctx);
-        if ($response === false) {
-            // Method 2: HTTPS with SSL verification disabled
-            $ctx = stream_context_create(['http' => ['timeout' => 5], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
-            $response = @file_get_contents('https://time.gov/actualtime.cgi', false, $ctx);
+        $body = httpGet('https://time.gov/actualtime.cgi');
+        if ($body === null) {
+            $body = httpGet('http://time.gov/actualtime.cgi');
         }
-        if ($response === false) {
-            // Method 3: HTTP (no encryption)
-            $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-            $response = @file_get_contents('http://time.gov/actualtime.cgi', false, $ctx);
-        }
-        if ($response !== false) {
-            $xml = @simplexml_load_string($response);
+        if ($body !== null) {
+            $xml = @simplexml_load_string($body);
             if ($xml && isset($xml['time'])) {
-                $ntpMs = (int)$xml['time'];
+                $ntpTs = (int)($xml['time']) / 1000;
             }
         }
     } else {
-        // Custom server - try as-is
-        $ctx = stream_context_create(['http' => ['timeout' => 5], 'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
-        $response = @file_get_contents($server, false, $ctx);
-        // Try to parse as XML (time.gov format) or just use response time
-        if ($response !== false) {
-            $xml = @simplexml_load_string($response);
-            if ($xml && isset($xml['time'])) {
-                $ntpMs = (int)$xml['time'];
+        $result = httpGetWithHeaders($server);
+        if ($result !== null) {
+            $ntpTs = parseHttpDateHeader($result['headers']);
+            if ($ntpTs === null) {
+                $xml = @simplexml_load_string($result['body']);
+                if ($xml && isset($xml['time'])) {
+                    $ntpTs = (int)($xml['time']) / 1000;
+                }
             }
         }
     }
 
-    // Save result to cache
-    if ($ntpMs !== null) {
-        $drift = abs(time() - (int)($ntpMs / 1000));
-        try {
-            \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
-            \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", [(string)$drift, (string)$drift]);
-        } catch (\Throwable $e) {}
-        return [
-            'ntp_time' => (int)($ntpMs / 1000),
-            'system_time' => time(),
-            'drift' => $drift,
-        ];
+    // Try 2: Google Date header (most reliable HTTP endpoint)
+    if ($ntpTs === null) {
+        $result = httpGetWithHeaders('https://www.google.com/');
+        if ($result === null) {
+            $result = httpGetWithHeaders('http://www.google.com/');
+        }
+        if ($result !== null) {
+            $ntpTs = parseHttpDateHeader($result['headers']);
+        }
     }
 
-    // Cache the failure
+    if ($ntpTs === null) {
+        try {
+            \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
+            \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", ['unreachable', 'unreachable']);
+        } catch (\Throwable $e) {}
+        return null;
+    }
+
+    $drift = abs(time() - (int)$ntpTs);
     try {
         \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
-        \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", ['unreachable', 'unreachable']);
+        \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", [(string)$drift, (string)$drift]);
     } catch (\Throwable $e) {}
-
-    return null;
+    return [
+        'ntp_time' => (int)$ntpTs,
+        'system_time' => time(),
+        'drift' => $drift,
+    ];
 }
 
 function provinces(): array

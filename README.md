@@ -84,10 +84,12 @@ When creating a tenant, Lease Start is required and Lease End is optional (leave
 The application maintains its own timezone and NTP configuration for accurate time tracking:
 
 - **Timezone** is configurable in **Settings → General** and is applied via `date_default_timezone_set()` at boot. Default: `America/New_York`.
-- **NTP Server** is checked on the home page for admin users. The default server is `time.gov` (via `https://time.gov/actualtime.cgi`).
-- If the NTP server cannot be reached, a red critical alert appears on the home page.
-- If the system time drifts more than 60 seconds from NTP time, a yellow warning alert appears.
-- The NTP server URL is configurable in **Settings → General**.
+- **NTP Server** is checked on the home page for admin users. The default server is `time.gov` (via `https://time.gov/actualtime.cgi`). Results are cached for 1 hour in the `settings` table.
+- The check uses PHP's `curl` extension (preferred) or falls back to `file_get_contents()` if curl is unavailable. Set `timezone` to blank to disable the check entirely.
+- The Dockerfile installs `php-curl` via `docker-php-ext-install curl` for reliable HTTPS requests. After updating the Dockerfile, rebuild the container with `docker compose build php` then `docker compose up -d`.
+- If the NTP server cannot be reached, the function also tries `www.google.com` as a fallback (parsing the `Date` response header). If all external HTTP requests fail, the environment is assumed offline and the warning is shown only briefly.
+- A yellow warning alert appears if the system time drifts more than 60 seconds from NTP time.
+- The NTP server URL is configurable in **Settings → General**. Setting it to blank disables the check entirely.
 - All scheduled move-out checks use `CURDATE()` in MySQL (database time), not system time, to avoid timezone drift issues.
 
 ## Calendar

@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libonig-dev \
     libicu-dev \
+    libcurl4-openssl-dev \
     unzip \
     curl \
     git \
@@ -22,6 +23,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     intl \
     opcache \
+    curl \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apt-get clean \
