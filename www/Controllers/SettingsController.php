@@ -190,7 +190,15 @@ class SettingsController
             Database::execute("DELETE FROM notifications WHERE 1=1", []);
             Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
             Database::execute("DELETE FROM sessions WHERE 1=1", []);
+            Database::execute("DELETE FROM settings WHERE 1=1", []);
             Database::execute("DELETE FROM users WHERE 1=1", []);
+
+            // Remove uploaded logo from filesystem
+            $logoDir = base_path('www/assets/uploads/logo/');
+            if (is_dir($logoDir)) {
+                array_map('unlink', glob($logoDir . '*'));
+                rmdir($logoDir);
+            }
 
             session_unset();
             session_destroy();
