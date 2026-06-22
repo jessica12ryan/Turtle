@@ -6,6 +6,7 @@
     <title><?= h($title ?? 'Home') ?> - Turtle</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <?php require base_path('www/Views/partials/nav.php'); ?>
