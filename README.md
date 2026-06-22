@@ -71,7 +71,18 @@ MAIL_FROM_NAME=Turtle
 - Uploaded documents (leases) → `turtle-storage` Docker volume
 - Property photos → `turtle-storage` Docker volume (falls back to `/tmp` if unwritable)
 
-To reset everything: `docker compose down -v`
+## Restoring Archived Items
+
+Only **IT Admins** can restore archived records.
+- **Property restore** — cascades to tenants, leases, and tickets (reverse of archive cascade)
+- **Individual restore** — tenants, leases, tickets, and staff can be restored one at a time
+- Restore buttons appear on index pages when "Show archived" is active
+
+## Tenant Management
+
+- Adding a tenant requires **Lease Start** (date) and optionally **Lease End** (date)
+- Email addresses are unique across the entire system — even archived records block re-use with a "Email exists in archived tenant/staff member" warning
+- Tenant names on the property detail page link to the tenant's profile
 
 ## Property Photos
 
