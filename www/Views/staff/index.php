@@ -5,7 +5,7 @@
             <?= $showArchived ? 'Showing archived' : 'Show archived' ?>
         </a>
         <?php if (can('staff.create')): ?>
-            <a href="/staff/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Add Staff</a>
+            <a href="/staff/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Add Staff</a>
         <?php endif; ?>
     </div>
 </div>
@@ -43,7 +43,7 @@
                                 <?php if (can('staff.archive')): ?>
                                     <form method="POST" action="/staff/<?= $s['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this staff member and is not reversible. They will no longer be able to log in. Continue?')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
+                                        <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
                                     </form>
                                 <?php endif; ?>
                             <?php elseif (can('staff.restore')): ?>

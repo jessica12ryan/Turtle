@@ -16,7 +16,7 @@
             <textarea name="description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="Optional description of this resource"><?= old('description') ?></textarea>
         </div>
         <div class="flex space-x-3">
-            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Add Resource</button>
+            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium">Add Resource</button>
             <a href="/resources" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
         </div>
     </form>

@@ -8,7 +8,7 @@
         <?php if (can('staff.archive')): ?>
             <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this staff member? They will no longer be able to log in.')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm">Archive</button>
             </form>
         <?php endif; ?>
     </div>

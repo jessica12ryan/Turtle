@@ -4,7 +4,7 @@
         <a href="?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
             <?= $showArchived ? 'Showing archived' : 'Show archived' ?>
         </a>
-        <a href="/tenants/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Add Tenant</a>
+        <a href="/tenants/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Add Tenant</a>
     </div>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -50,7 +50,7 @@
                                 <?php if (can('tenants.archive')): ?>
                                     <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('WARNING: This will archive this tenant and is not reversible. They will be removed from the property and their account disabled. Continue?')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
+                                        <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
                                     </form>
                                 <?php endif; ?>
                             <?php elseif (can('tenants.restore')): ?>

@@ -62,7 +62,7 @@
                 <p class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, images accepted</p>
             </div>
             <div class="flex space-x-3">
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed" x-bind:disabled="selectedProperty && !mainTenantName">Upload Lease</button>
+                <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed" x-bind:disabled="selectedProperty && !mainTenantName">Upload Lease</button>
                 <a href="/leases" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
             </div>
         </form>

@@ -8,7 +8,7 @@
         <?php if (can('leases.delete')): ?>
             <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this lease?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
+                <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
             </form>
         <?php endif; ?>
         <?php if (can('leases.delete')): ?>

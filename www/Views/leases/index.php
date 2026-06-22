@@ -5,7 +5,7 @@
             <?= $showArchived ? 'Showing archived' : 'Show archived' ?>
         </a>
         <?php if (can('leases.create')): ?>
-            <a href="/leases/create" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">Upload Lease</a>
+            <a href="/leases/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Upload Lease</a>
         <?php endif; ?>
     </div>
 </div>
@@ -40,7 +40,7 @@
                             <?php if (!$lease['archived_at'] && can('leases.delete')): ?>
                                 <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this lease and is not reversible. Continue?')">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
+                                    <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
                                 </form>
                             <?php elseif ($lease['archived_at'] && can('leases.restore')): ?>
                                 <form method="POST" action="/leases/<?= $lease['id'] ?>/restore" class="inline">

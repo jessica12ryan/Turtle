@@ -39,7 +39,7 @@
             <input type="text" name="postal_code" value="<?= old('postal_code') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" required oninput="this.value = this.value.toUpperCase()" placeholder="A1A 1A1">
         </div>
         <div class="flex space-x-3">
-            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Create Property</button>
+            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium">Create Property</button>
             <a href="/properties" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
         </div>
     </form>

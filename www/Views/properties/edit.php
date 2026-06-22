@@ -54,7 +54,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">Add Photo</label>
         <div class="flex items-center space-x-3">
             <input type="file" name="photo" accept="image/jpeg,image/png,image/gif,image/webp" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium flex-shrink-0">Upload</button>
+            <button type="submit" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium flex-shrink-0">Upload</button>
         </div>
         <p id="upload-error" class="text-sm text-red-600 mt-1 hidden"></p>
     </form>

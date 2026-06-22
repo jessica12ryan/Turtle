@@ -5,6 +5,117 @@
     <form method="POST" action="/settings/permissions">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
+        <?php
+        $allPerms = [];
+        foreach ($defaults as $role => $perms) {
+            foreach ($perms as $p) {
+                $allPerms[$p] = true;
+            }
+        }
+        $allPerms = array_keys($allPerms);
+        sort($allPerms);
+
+        $groups = [];
+        foreach ($allPerms as $p) {
+            $parts = explode('.', $p, 2);
+            $group = $parts[0] ?? '';
+            $groups[$group][] = $p;
+        }
+
+        $permissionLabels = [
+            'home.access' => 'View Home',
+            'properties.access' => 'View Properties',
+            'properties.create' => 'Create Properties',
+            'properties.edit' => 'Edit Properties',
+            'properties.archive' => 'Archive Properties',
+            'properties.restore' => 'Restore Properties',
+            'properties.manage_photos' => 'Manage Photos',
+            'tenants.access' => 'View Tenants',
+            'tenants.create' => 'Create Tenants',
+            'tenants.edit' => 'Edit Tenants',
+            'tenants.archive' => 'Move Out Tenants',
+            'tenants.restore' => 'Restore Tenants',
+            'tenants.delete' => 'Delete Tenants',
+            'leases.access' => 'View Leases',
+            'leases.create' => 'Create Leases',
+            'leases.delete' => 'Delete Leases',
+            'leases.restore' => 'Restore Leases',
+            'tickets.access' => 'View Tickets',
+            'tickets.create' => 'Create Tickets',
+            'tickets.assign' => 'Assign Tickets',
+            'tickets.update_status' => 'Update Ticket Status',
+            'tickets.restore' => 'Restore Tickets',
+            'tickets.comment' => 'Comment on Tickets',
+            'staff.access' => 'View Staff',
+            'staff.create' => 'Create Staff',
+            'staff.edit' => 'Edit Staff',
+            'staff.archive' => 'Archive Staff',
+            'staff.restore' => 'Restore Staff',
+            'staff.delete' => 'Delete Staff',
+            'resources.access' => 'View Resources',
+            'resources.create' => 'Create Resources',
+            'resources.edit' => 'Edit Resources',
+            'resources.delete' => 'Delete Resources',
+            'calendar.access' => 'View Calendar',
+            'documents.access' => 'Download Documents',
+            'documents.delete' => 'Delete Documents',
+        ];
+
+        $actionColors = [
+            'delete' => 'text-red-600',
+            'archive' => 'text-orange-600',
+            'access' => 'text-green-600',
+            'edit' => 'text-blue-600',
+            'create' => 'text-yellow-600',
+        ];
+
+        $actionCheckboxColors = [
+            'delete' => 'text-red-600 focus:ring-red-500',
+            'archive' => 'text-orange-600 focus:ring-orange-500',
+            'access' => 'text-green-600 focus:ring-green-500',
+            'edit' => 'text-blue-600 focus:ring-blue-500',
+            'create' => 'text-yellow-600 focus:ring-yellow-500',
+        ];
+
+        function permColor(string $perm): string
+        {
+            $parts = explode('.', $perm);
+            $action = end($parts);
+            $map = [
+                'delete' => 'text-red-600',
+                'archive' => 'text-orange-600',
+                'access' => 'text-green-600',
+                'edit' => 'text-blue-600',
+                'create' => 'text-yellow-600',
+                'assign' => 'text-purple-600',
+                'manage_photos' => 'text-indigo-600',
+                'comment' => 'text-gray-600',
+                'restore' => 'text-green-600',
+                'update_status' => 'text-purple-600',
+            ];
+            return $map[$action] ?? 'text-gray-600';
+        }
+
+        function permCheckboxColor(string $perm): string
+        {
+            $parts = explode('.', $perm);
+            $action = end($parts);
+            $map = [
+                'delete' => 'text-red-600 focus:ring-red-500',
+                'archive' => 'text-orange-600 focus:ring-orange-500',
+                'access' => 'text-green-600 focus:ring-green-500',
+                'edit' => 'text-blue-600 focus:ring-blue-500',
+                'create' => 'text-yellow-600 focus:ring-yellow-500',
+                'assign' => 'text-purple-600 focus:ring-purple-500',
+                'manage_photos' => 'text-indigo-600 focus:ring-indigo-500',
+                'comment' => 'text-gray-600 focus:ring-gray-500',
+                'restore' => 'text-green-600 focus:ring-green-500',
+                'update_status' => 'text-purple-600 focus:ring-purple-500',
+            ];
+            return $map[$action] ?? 'text-gray-600 focus:ring-gray-500';
+        }
+        ?>
+
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -16,56 +127,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php
-                    $groups = [];
-                    foreach ($defaults as $role => $perms) {
-                        foreach ($perms as $p) {
-                            $parts = explode('.', $p, 2);
-                            $group = $parts[0] ?? '';
-                            $groups[$group][] = $p;
-                        }
-                    }
-                    ksort($groups);
-                    $groups = array_unique($groups, SORT_REGULAR);
-                    $permissionLabels = [
-                        'home.access' => 'Access Home',
-                        'properties.access' => 'View Properties',
-                        'properties.create' => 'Create Properties',
-                        'properties.edit' => 'Edit Properties',
-                        'properties.archive' => 'Archive Properties',
-                        'properties.restore' => 'Restore Properties',
-                        'properties.manage_photos' => 'Manage Photos',
-                        'tenants.access' => 'View Tenants',
-                        'tenants.create' => 'Create Tenants',
-                        'tenants.edit' => 'Edit Tenants',
-                        'tenants.archive' => 'Move Out Tenants',
-                        'tenants.restore' => 'Restore Tenants',
-                        'tenants.delete' => 'Delete Tenants',
-                        'leases.access' => 'View Leases',
-                        'leases.create' => 'Create Leases',
-                        'leases.delete' => 'Delete Leases',
-                        'leases.restore' => 'Restore Leases',
-                        'tickets.access' => 'View Tickets',
-                        'tickets.create' => 'Create Tickets',
-                        'tickets.assign' => 'Assign Tickets',
-                        'tickets.update_status' => 'Update Ticket Status',
-                        'tickets.restore' => 'Restore Tickets',
-                        'tickets.comment' => 'Comment on Tickets',
-                        'staff.access' => 'View Staff',
-                        'staff.create' => 'Create Staff',
-                        'staff.edit' => 'Edit Staff',
-                        'staff.archive' => 'Archive Staff',
-                        'staff.restore' => 'Restore Staff',
-                        'staff.delete' => 'Delete Staff',
-                        'resources.access' => 'View Resources',
-                        'resources.create' => 'Create Resources',
-                        'resources.edit' => 'Edit Resources',
-                        'resources.delete' => 'Delete Resources',
-                        'calendar.access' => 'Access Calendar',
-                        'documents.access' => 'Download Documents',
-                        'documents.delete' => 'Delete Documents',
-                    ];
-                    ?>
                     <?php foreach ($groups as $group => $perms): ?>
                         <tr class="border-t border-gray-100">
                             <td colspan="5" class="py-2 font-semibold text-gray-700 capitalize"><?= h($group) ?></td>
@@ -73,7 +134,7 @@
                         <?php foreach ($perms as $perm): ?>
                             <?php $label = $permissionLabels[$perm] ?? $perm; ?>
                             <tr class="hover:bg-gray-50">
-                                <td class="py-1.5 pr-4 text-gray-600"><?= h($label) ?></td>
+                                <td class="py-1.5 pr-4 <?= permColor($perm) ?>"><?= h($label) ?></td>
                                 <?php foreach ($roles as $role): ?>
                                     <?php
                                     $defaultGranted = in_array($perm, $defaults[$role] ?? []);
@@ -85,7 +146,7 @@
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
                                                <?= $checked ? 'checked' : '' ?>
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                               class="rounded border-gray-300 <?= permCheckboxColor($perm) ?>">
                                     </td>
                                 <?php endforeach; ?>
                             </tr>
