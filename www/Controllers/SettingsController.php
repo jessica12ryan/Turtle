@@ -276,53 +276,32 @@ class SettingsController
             [$mode, $mode]
         );
 
-        if ($mode === 'custom' && isset($_POST['perms'])) {
-            $allPerms = $_POST['perms'];
-            $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
-            Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
-            foreach ($roles as $role) {
-                $granted = $allPerms[$role] ?? [];
-                foreach ($granted as $perm) {
-                    Database::execute("INSERT INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+        if ($mode === 'custom') {
+            if (isset($_POST['perms'])) {
+                $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+                Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+                foreach ($roles as $role) {
+                    $granted = $_POST['perms'][$role] ?? [];
+                    foreach ($granted as $perm) {
+                        Database::execute("INSERT INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+                    }
+                }
+            } else {
+                $row = Database::fetch("SELECT COUNT(*) as c FROM role_permissions");
+                if ($row && $row['c'] == 0) {
+                    $defaults = defaultPermissions();
+                    foreach ($defaults as $role => $perms) {
+                        foreach ($perms as $perm) {
+                            Database::execute("INSERT IGNORE INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
+                        }
+                    }
                 }
             }
-        } elseif ($mode === 'default') {
+        } else {
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
         }
 
         flash('success', 'Permissions saved successfully.');
         redirect('/settings?tab=permissions');
-    }
-
-    public function setPermissionsMode(): void
-    {
-        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid security token.']);
-            return;
-        }
-
-        $mode = $_POST['permissions_mode'] ?? 'default';
-        Database::execute(
-            "INSERT INTO settings (`key`, `value`) VALUES ('permissions_mode', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-            [$mode, $mode]
-        );
-
-        if ($mode === 'default') {
-            Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
-        } elseif ($mode === 'custom') {
-            $row = Database::fetch("SELECT COUNT(*) as c FROM role_permissions");
-            if ($row && $row['c'] == 0) {
-                $defaults = defaultPermissions();
-                $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
-                foreach ($roles as $role) {
-                    foreach ($defaults[$role] ?? [] as $perm) {
-                        Database::execute("INSERT IGNORE INTO role_permissions (role, permission) VALUES (?, ?)", [$role, $perm]);
-                    }
-                }
-            }
-        }
-
-        echo json_encode(['success' => true, 'mode' => $mode]);
     }
 }
