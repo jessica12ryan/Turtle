@@ -1,50 +1,71 @@
-<h1 class="text-2xl font-bold text-gray-800 mb-6">Settings</h1>
-
-<div class="bg-white rounded-lg shadow p-6 max-w-2xl">
-    <h2 class="text-lg font-semibold text-red-600 mb-4">Reset Data</h2>
-    <p class="text-sm text-gray-600 mb-6">Select the data you want to reset. This action cannot be undone. Your admin account will remain active.</p>
-
-    <form method="POST" action="/settings/reset" x-data="{
-        resetAll: false,
-        toggleAll() {
-            this.resetAll = !this.resetAll;
-            $el.querySelectorAll('.reset-checkbox:not(#reset_all)').forEach(cb => cb.checked = this.resetAll);
-        }
-    }">
-        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-
-        <div class="space-y-3 mb-6">
-            <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input type="checkbox" id="reset_all" name="reset_all" value="1" @change="toggleAll()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-3 font-medium text-gray-800">Everything</span>
-            </label>
-
-            <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
-                <input type="checkbox" name="reset_properties" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-3 text-gray-700">Property Data</span>
-            </label>
-
-            <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
-                <input type="checkbox" name="reset_tenants" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-3 text-gray-700">Tenant Data</span>
-            </label>
-
-            <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
-                <input type="checkbox" name="reset_staff" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-3 text-gray-700">Staff Data (leaves your admin account alone)</span>
-            </label>
-
-            <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
-                <input type="checkbox" name="reset_leases" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-3 text-gray-700">Lease Data</span>
-            </label>
-
-            <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
-                <input type="checkbox" name="reset_tickets" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-3 text-gray-700">Ticket Data</span>
-            </label>
+<div class="flex gap-6">
+    <!-- Sidebar -->
+    <div class="w-56 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow divide-y">
+            <a href="/settings" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'reset' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?> rounded-t-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Reset</span>
+            </a>
+            <a href="/settings?tab=updates" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'updates' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?> rounded-b-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>Updates</span>
+            </a>
         </div>
+    </div>
 
-        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium" onclick="return confirm('Are you sure you want to reset the selected data? This cannot be undone.')">Reset Selected Data</button>
-    </form>
+    <!-- Content -->
+    <div class="flex-1 min-w-0">
+        <?php if ($tab === 'updates'): ?>
+            <?php require base_path('www/Views/settings/partials/updates.php'); ?>
+        <?php else: ?>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-red-600 mb-4">Reset Data</h2>
+                <p class="text-sm text-gray-600 mb-6">Select the data you want to reset. This action cannot be undone. Your admin account will remain active.</p>
+
+                <form method="POST" action="/settings/reset" x-data="{
+                    resetAll: false,
+                    toggleAll() {
+                        this.resetAll = !this.resetAll;
+                        $el.querySelectorAll('.reset-checkbox:not(#reset_all)').forEach(cb => cb.checked = this.resetAll);
+                    }
+                }">
+                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+
+                    <div class="space-y-3 mb-6">
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" id="reset_all" name="reset_all" value="1" @change="toggleAll()" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 font-medium text-gray-800">Everything</span>
+                        </label>
+
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
+                            <input type="checkbox" name="reset_properties" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 text-gray-700">Property Data</span>
+                        </label>
+
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
+                            <input type="checkbox" name="reset_tenants" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 text-gray-700">Tenant Data</span>
+                        </label>
+
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
+                            <input type="checkbox" name="reset_staff" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 text-gray-700">Staff Data (leaves your admin account alone)</span>
+                        </label>
+
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
+                            <input type="checkbox" name="reset_leases" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 text-gray-700">Lease Data</span>
+                        </label>
+
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
+                            <input type="checkbox" name="reset_tickets" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 text-gray-700">Ticket Data</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium" onclick="return confirm('Are you sure you want to reset the selected data? This cannot be undone.')">Reset Selected Data</button>
+                </form>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>

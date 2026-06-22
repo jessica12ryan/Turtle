@@ -10,9 +10,28 @@ class SettingsController
 {
     public function index(): void
     {
+        $tab = $_GET['tab'] ?? 'reset';
+        if (!in_array($tab, ['reset', 'updates'])) {
+            $tab = 'reset';
+        }
+
+        $data = ['tab' => $tab];
+
+        if ($tab === 'updates') {
+            $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+            $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
+            $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
+            $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+
+            $data['currentVersion'] = $currentVersion['value'] ?? '0.0.0';
+            $data['latestVersion'] = $latestVersion['value'] ?? '';
+            $data['lastCheck'] = $lastCheck['value'] ?? '';
+            $data['channel'] = $channel['value'] ?? 'stable';
+        }
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Settings']);
-        $view->render('settings/index');
+        $view->render('settings/index', $data);
     }
 
     public function reset(): void
@@ -95,5 +114,27 @@ class SettingsController
 
         flash('success', 'Reset completed successfully.');
         redirect('/settings');
+    }
+
+    public function setUpdateChannel(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid security token.']);
+            return;
+        }
+
+        $channel = $_POST['channel'] ?? 'stable';
+        if (!in_array($channel, ['stable', 'development'])) {
+            $channel = 'stable';
+        }
+
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('update_channel', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$channel, $channel]
+        );
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'channel' => $channel]);
     }
 }

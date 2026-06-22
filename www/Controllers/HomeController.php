@@ -79,12 +79,14 @@ class HomeController
             $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $latestVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
             $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
+            $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+            $channel = $channel['value'] ?? 'stable';
 
             $checkInterval = 3600;
             $needsCheck = !$lastCheck || !$lastCheck['value'] || (time() - strtotime($lastCheck['value'])) > $checkInterval;
 
             if ($needsCheck) {
-                $latestFromGit = \App\Controllers\UpdateController::getLatestVersion();
+                $latestFromGit = \App\Controllers\UpdateController::getLatestVersion($channel);
                 if ($latestFromGit) {
                     Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$latestFromGit]);
                     Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
@@ -92,8 +94,21 @@ class HomeController
                 }
             }
 
-            if ($latestVer && $latestVer['value'] && version_compare($latestVer['value'], $currentVer['value'] ?? '0.0.0', '>')) {
-                $alerts['warning'][] = ['msg' => 'Update v' . h($latestVer['value']) . ' is available.', 'link' => '/updates'];
+            $updateMsg = '';
+            if ($latestVer && $latestVer['value']) {
+                $current = $currentVer['value'] ?? '0.0.0';
+                if ($channel === 'development') {
+                    if ($latestVer['value'] !== $current) {
+                        $updateMsg = 'Development update (' . h($latestVer['value']) . ') is available.';
+                    }
+                } else {
+                    if (version_compare($latestVer['value'], $current, '>')) {
+                        $updateMsg = 'Update v' . h($latestVer['value']) . ' is available.';
+                    }
+                }
+            }
+            if ($updateMsg) {
+                $alerts['warning'][] = ['msg' => $updateMsg, 'link' => '/settings?tab=updates'];
             }
 
             $landlordCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'landlord' AND archived_at IS NULL");

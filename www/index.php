@@ -135,9 +135,9 @@ $router->post('/profile', 'ProfileController@update', ['auth']);
 // Settings (admin only)
 $router->get('/settings', 'SettingsController@index', ['auth', 'role:admin']);
 $router->post('/settings/reset', 'SettingsController@reset', ['auth', 'role:admin']);
+$router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 
-// Updates (admin only)
-$router->get('/updates', 'UpdateController@index', ['auth', 'role:admin']);
+// Updates API (admin only)
 $router->post('/updates/check', 'UpdateController@check', ['auth', 'role:admin']);
 $router->post('/updates/apply', 'UpdateController@apply', ['auth', 'role:admin']);
 $router->get('/updates/progress', 'UpdateController@progress', ['auth', 'role:admin']);

@@ -8,25 +8,36 @@ use App\Core\View;
 
 class UpdateController
 {
-    public function index(): void
-    {
-        $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
-        $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
-        $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
-
-        $view = new View();
-        $view->layout('layouts/main', ['title' => 'Updates']);
-        $view->render('updates/index', [
-            'currentVersion' => $currentVersion['value'] ?? '0.0.0',
-            'latestVersion' => $latestVersion['value'] ?? '',
-            'lastCheck' => $lastCheck['value'] ?? '',
-        ]);
-    }
-
     public function check(): void
     {
         header('Content-Type: application/json');
 
+        $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+        $channel = $channel['value'] ?? 'stable';
+
+        $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+        $currentVersion = $currentVersion['value'] ?? '0.0.0';
+
+        if ($channel === 'development') {
+            $result = $this->checkDevChannel($currentVersion);
+        } else {
+            $result = $this->checkStableChannel($currentVersion);
+        }
+
+        Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
+
+        if (isset($result['latest_version'])) {
+            Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$result['latest_version']]);
+        }
+
+        echo json_encode(array_merge([
+            'current_version' => $currentVersion,
+            'channel' => $channel,
+        ], $result));
+    }
+
+    private function checkStableChannel(string $currentVersion): array
+    {
         $repo = 'jessica12ryan/Turtle';
         $url = "https://api.github.com/repos/{$repo}/releases/latest";
 
@@ -41,39 +52,65 @@ class UpdateController
         $response = @file_get_contents($url, false, $context);
 
         if ($response === false) {
-            http_response_code(502);
-            echo json_encode(['error' => 'Could not reach GitHub API.']);
-            return;
+            return ['error' => 'Could not reach GitHub API.'];
         }
 
         $release = json_decode($response, true);
 
         if (!$release || !isset($release['tag_name'])) {
-            http_response_code(502);
-            echo json_encode(['error' => 'Invalid response from GitHub.']);
-            return;
+            return ['error' => 'Invalid response from GitHub.'];
         }
 
         $latestVersion = ltrim($release['tag_name'], 'v');
-        $downloadUrl = $release['zipball_url'] ?? '';
-        $releaseUrl = $release['html_url'] ?? '';
-        $releaseBody = $release['body'] ?? '';
-
-        Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$latestVersion]);
-        Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
-
-        $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
-        $currentVersion = $currentVersion['value'] ?? '0.0.0';
-
         $updateAvailable = version_compare($latestVersion, $currentVersion, '>');
 
-        echo json_encode([
-            'current_version' => $currentVersion,
+        return [
             'latest_version' => $latestVersion,
             'update_available' => $updateAvailable,
-            'release_url' => $releaseUrl,
-            'release_body' => $releaseBody,
-        ]);
+            'release_url' => $release['html_url'] ?? '',
+            'release_body' => $release['body'] ?? '',
+        ];
+    }
+
+    private function checkDevChannel(string $currentVersion): array
+    {
+        $setupCmd = 'git config --global --add safe.directory /var/www/html 2>/dev/null; cd /var/www/html';
+        exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
+
+        if ($fetchExitCode !== 0) {
+            return ['error' => 'Failed to fetch from remote.', 'latest_version' => $currentVersion, 'update_available' => false];
+        }
+
+        exec("{$setupCmd} && git rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
+
+        if ($countExitCode !== 0) {
+            exec("{$setupCmd} && git rev-parse --short HEAD 2>&1", $hashOutput);
+            $currentHash = trim($hashOutput[0] ?? $currentVersion);
+            return ['error' => 'Could not check origin/master. Ensure the remote branch exists.', 'latest_version' => $currentHash, 'update_available' => false];
+        }
+
+        $behindCount = (int)trim($countOutput[0] ?? '0');
+
+        exec("{$setupCmd} && git rev-parse --short HEAD 2>&1", $hashOutput);
+        $currentHash = trim($hashOutput[0] ?? $currentVersion);
+
+        if ($behindCount > 0) {
+            exec("{$setupCmd} && git rev-parse --short origin/master 2>&1", $remoteHashOutput);
+            $remoteHash = trim($remoteHashOutput[0] ?? '');
+            return [
+                'latest_version' => $remoteHash ?: "origin/master",
+                'update_available' => true,
+                'behind_count' => $behindCount,
+                'release_body' => "{$behindCount} commit(s) behind origin/master.",
+            ];
+        }
+
+        return [
+            'latest_version' => $currentHash,
+            'update_available' => false,
+            'behind_count' => 0,
+            'release_body' => '',
+        ];
     }
 
     public function apply(): void
@@ -87,8 +124,8 @@ class UpdateController
 
         $steps = [
             'Fetching latest code...' => "{$setupCmd} && git fetch origin 2>&1",
-            'Checking for changes...' => "{$setupCmd} && git log HEAD..origin/main --oneline 2>&1",
-            'Pulling updates...' => "{$setupCmd} && git pull origin main 2>&1",
+            'Checking for changes...' => "{$setupCmd} && git log HEAD..origin/master --oneline 2>&1",
+            'Pulling updates...' => "{$setupCmd} && git pull origin master 2>&1",
             'Running migrations...' => "{$setupCmd} && bash docker/php/start.sh 2>&1",
         ];
 
@@ -187,8 +224,28 @@ class UpdateController
         ]);
     }
 
-    public static function getLatestVersion(): ?string
+    public static function getLatestVersion(?string $channel = null): ?string
     {
+        if ($channel === null) {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+            $channel = $row['value'] ?? 'stable';
+        }
+
+        if ($channel === 'development') {
+            $setupCmd = 'git config --global --add safe.directory /var/www/html 2>/dev/null; cd /var/www/html';
+            exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
+            if ($fetchExitCode !== 0) return null;
+
+            exec("{$setupCmd} && git rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
+            if ($countExitCode !== 0) return null;
+
+            $behindCount = (int)trim($countOutput[0] ?? '0');
+            if ($behindCount <= 0) return null;
+
+            exec("{$setupCmd} && git rev-parse --short origin/master 2>&1", $hashOutput);
+            return trim($hashOutput[0] ?? '');
+        }
+
         try {
             $repo = 'jessica12ryan/Turtle';
             $url = "https://api.github.com/repos/{$repo}/releases/latest";

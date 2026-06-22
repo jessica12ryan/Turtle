@@ -41,7 +41,6 @@ function navActive(string $prefix, string $currentUri): string {
                     <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                         <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">Profile</a>
                         <?php if ($user['role'] === 'admin'): ?>
-                            <a href="/updates" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Updates</a>
                             <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                         <?php endif; ?>
                         <form method="POST" action="/logout">

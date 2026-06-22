@@ -1,9 +1,27 @@
-<div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-800">Software Updates</h1>
-    <p class="text-gray-500 mt-1">Manage application updates and version information.</p>
+<div class="mb-6">
+    <h2 class="text-lg font-semibold text-gray-800">Software Updates</h2>
+    <p class="text-sm text-gray-500 mt-1">Manage application updates and version information.</p>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+<!-- Channel Toggle -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h3 class="text-sm font-medium text-gray-700">Update Channel</h3>
+            <p class="text-xs text-gray-500 mt-1">Stable: latest tagged release &bull; Development: latest master branch</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span class="text-sm font-medium <?= $channel === 'stable' ? 'text-blue-700' : 'text-gray-500' ?>">Stable</span>
+            <button type="button" id="channel-toggle" onclick="toggleChannel()" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 <?= $channel === 'development' ? 'bg-yellow-500' : 'bg-blue-600' ?>">
+                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 <?= $channel === 'development' ? 'translate-x-6' : 'translate-x-1' ?>"></span>
+            </button>
+            <span class="text-sm font-medium <?= $channel === 'development' ? 'text-yellow-700' : 'text-gray-500' ?>">Development</span>
+        </div>
+    </div>
+</div>
+
+<!-- Version Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-6">
         <p class="text-sm text-gray-500 mb-1">Current Version</p>
         <p class="text-2xl font-bold text-gray-800" id="current-version"><?= h($currentVersion) ?></p>
@@ -18,11 +36,12 @@
     </div>
 </div>
 
+<!-- Check Button -->
 <div class="bg-white rounded-lg shadow p-6 mb-6" id="check-section">
     <div class="flex items-center justify-between">
         <div>
             <h2 class="text-lg font-semibold text-gray-800">Check for Updates</h2>
-            <p class="text-sm text-gray-500 mt-1">Check the GitHub repository for new releases.</p>
+            <p class="text-sm text-gray-500 mt-1">Check for new updates on the selected channel.</p>
         </div>
         <button id="check-btn" onclick="checkForUpdates()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center space-x-2">
             <svg id="check-spinner" class="w-4 h-4 hidden animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -32,6 +51,7 @@
     <div id="check-result" class="mt-4 hidden"></div>
 </div>
 
+<!-- Update Available -->
 <div id="update-section" class="hidden">
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <div class="flex items-start space-x-4">
@@ -50,6 +70,7 @@
     </div>
 </div>
 
+<!-- Progress -->
 <div id="progress-section" class="hidden">
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Applying Update...</h2>
@@ -108,6 +129,7 @@
     </div>
 </div>
 
+<!-- Up to Date -->
 <div id="up-to-date-section" class="hidden">
     <div class="bg-white rounded-lg shadow p-6 text-center">
         <svg class="w-16 h-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -119,6 +141,44 @@
 <script>
 let updateId = null;
 let pollTimer = null;
+let currentChannel = '<?= $channel ?>';
+
+function toggleChannel() {
+    const newChannel = currentChannel === 'stable' ? 'development' : 'stable';
+
+    fetch('/settings/update-channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: '_csrf=<?= csrf_token() ?>&channel=' + newChannel
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            currentChannel = data.channel;
+            const toggle = document.getElementById('channel-toggle');
+            const stableLabel = toggle.previousElementSibling;
+            const devLabel = toggle.nextElementSibling;
+
+            if (currentChannel === 'development') {
+                toggle.className = 'relative inline-flex h-6 w-11 items-center rounded-full bg-yellow-500 transition-colors duration-200';
+                toggle.querySelector('span').className = 'inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 translate-x-6';
+                stableLabel.className = 'text-sm font-medium text-gray-500';
+                devLabel.className = 'text-sm font-medium text-yellow-700';
+            } else {
+                toggle.className = 'relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 transition-colors duration-200';
+                toggle.querySelector('span').className = 'inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 translate-x-1';
+                stableLabel.className = 'text-sm font-medium text-blue-700';
+                devLabel.className = 'text-sm font-medium text-gray-500';
+            }
+
+            document.getElementById('latest-version').textContent = '—';
+            document.getElementById('last-check').textContent = 'Never';
+            document.getElementById('update-section').classList.add('hidden');
+            document.getElementById('up-to-date-section').classList.add('hidden');
+        }
+    })
+    .catch(err => console.error('Failed to switch channel:', err));
+}
 
 function checkForUpdates() {
     const btn = document.getElementById('check-btn');
@@ -134,6 +194,12 @@ function checkForUpdates() {
             spinner.classList.add('hidden');
             btn.disabled = false;
 
+            if (data.error) {
+                checkResult.classList.remove('hidden');
+                checkResult.innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">' + escapeHtml(data.error) + '</div>';
+                return;
+            }
+
             document.getElementById('latest-version').textContent = data.latest_version || '—';
             document.getElementById('last-check').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
@@ -142,7 +208,10 @@ function checkForUpdates() {
                 document.getElementById('up-to-date-section').classList.add('hidden');
                 document.getElementById('update-latest-version').textContent = data.latest_version;
 
-                if (data.release_body) {
+                if (data.channel === 'development') {
+                    const behindMsg = data.behind_count ? data.behind_count + ' commit(s) behind.' : '';
+                    document.getElementById('release-notes').innerHTML = '<pre class="text-xs">' + escapeHtml(behindMsg) + '</pre>';
+                } else if (data.release_body) {
                     document.getElementById('release-notes').innerHTML = marked ? marked.parse(data.release_body) : '<pre class="text-xs">' + escapeHtml(data.release_body) + '</pre>';
                 }
             } else {

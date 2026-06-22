@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS settings (
     `value` TEXT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO settings (`key`, `value`) VALUES ('app_version', '0.0.0'), ('last_update_check', ''), ('latest_version', '');
+INSERT IGNORE INTO settings (`key`, `value`) VALUES ('app_version', '0.0.0'), ('last_update_check', ''), ('latest_version', ''), ('update_channel', 'stable');
 
 CREATE TABLE IF NOT EXISTS sessions (
     id VARCHAR(255) PRIMARY KEY,
