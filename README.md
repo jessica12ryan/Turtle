@@ -54,8 +54,15 @@ docker compose up -d --build
 
 ## Email Configuration
 
+The app includes a lightweight SMTP client (no external mail library). Templates use the custom site logo if one has been uploaded via **Settings → General**.
+
+### Default (Docker dev)
+Mail runs through the bundled **Mailpit** container — no configuration needed:
+- Host: `mailpit`, Port: `1025`, no authentication
+- Web UI at http://localhost:8025
+
 ### Via Settings UI (recommended)
-Go to **Settings → General** (admin only) to configure SMTP credentials in the browser. Settings are stored in the database and override `.env` values.
+Go to **Settings → General** (admin only) to configure SMTP credentials in the browser. Settings are stored in the database and override `.env` values. Leave username/password blank to connect without authentication.
 
 ### Via .env (fallback)
 ```

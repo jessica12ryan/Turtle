@@ -4,9 +4,8 @@ namespace App\Core;
 
 class Mailer
 {
-    private static function smtpCommand($socket, string $command, string $expectedCode, string $errorMsg): bool
+    private static function readResponse($socket, string $expectedCode, string $errorMsg): bool
     {
-        fwrite($socket, $command . "\r\n");
         $response = '';
         while (true) {
             $line = fgets($socket, 512);
@@ -20,6 +19,12 @@ class Mailer
             return false;
         }
         return true;
+    }
+
+    private static function smtpCommand($socket, string $command, string $expectedCode, string $errorMsg): bool
+    {
+        fwrite($socket, $command . "\r\n");
+        return self::readResponse($socket, $expectedCode, $errorMsg);
     }
 
     public static function getConfig(string $key, string $default = ''): string
@@ -79,7 +84,7 @@ class Mailer
 
         stream_set_timeout($socket, 10);
 
-        if (!self::smtpCommand($socket, '', '220', 'Connection greeting')) {
+        if (!self::readResponse($socket, '220', 'Connection greeting')) {
             fclose($socket);
             return false;
         }
@@ -157,10 +162,20 @@ class Mailer
             $actionHtml = "<p style=\"text-align: center; margin: 30px 0;\"><a href=\"{$actionUrl}\" style=\"display: inline-block; padding: 12px 24px; background-color: #0d9488; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;\">{$actionText}</a></p>";
         }
 
+        $logoHtml = '<h1 style="color: white; margin: 0; font-size: 24px;">Turtle</h1>';
+        try {
+            $logo = \site_logo();
+            if ($logo && isset($_SERVER['HTTP_HOST'])) {
+                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $logoUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . $logo;
+                $logoHtml = '<img src="' . $logoUrl . '" alt="Logo" style="max-height: 50px; width: auto;">';
+            }
+        } catch (\Throwable $e) {}
+
         $html = "
         <div style=\"max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden;\">
             <div style=\"background: #0d9488; padding: 20px; text-align: center;\">
-                <h1 style=\"color: white; margin: 0; font-size: 24px;\">Turtle</h1>
+                {$logoHtml}
             </div>
             <div style=\"padding: 30px;\">
                 <h2 style=\"color: #1f2937; margin-top: 0;\">{$greeting}</h2>
