@@ -29,11 +29,13 @@
             'properties.edit' => 'Edit Properties',
             'properties.archive' => 'Archive Properties',
             'properties.restore' => 'Restore Properties',
-            'properties.manage_photos' => 'Manage Photos',
+            'photos.create' => 'Upload Photos',
+            'photos.edit' => 'Edit Photos',
+            'photos.download' => 'Download Photos',
+            'photos.delete' => 'Delete Photos',
             'tenants.access' => 'View Tenants',
             'tenants.create' => 'Create Tenants',
             'tenants.edit' => 'Edit Tenants',
-            'tenants.archive' => 'Move Out Tenants',
             'tenants.restore' => 'Restore Tenants',
             'tenants.delete' => 'Delete Tenants',
             'leases.access' => 'View Leases',
@@ -57,24 +59,8 @@
             'resources.edit' => 'Edit Resources',
             'resources.delete' => 'Delete Resources',
             'calendar.access' => 'View Calendar',
-            'documents.access' => 'Download Documents',
+            'documents.download' => 'Download Documents',
             'documents.delete' => 'Delete Documents',
-        ];
-
-        $actionColors = [
-            'delete' => 'text-red-600',
-            'archive' => 'text-orange-600',
-            'access' => 'text-green-600',
-            'edit' => 'text-blue-600',
-            'create' => 'text-yellow-600',
-        ];
-
-        $actionCheckboxColors = [
-            'delete' => 'text-red-600 focus:ring-red-500',
-            'archive' => 'text-orange-600 focus:ring-orange-500',
-            'access' => 'text-green-600 focus:ring-green-500',
-            'edit' => 'text-blue-600 focus:ring-blue-500',
-            'create' => 'text-yellow-600 focus:ring-yellow-500',
         ];
 
         function permColor(string $perm): string
@@ -87,11 +73,11 @@
                 'access' => 'text-green-600',
                 'edit' => 'text-blue-600',
                 'create' => 'text-yellow-600',
-                'assign' => 'text-purple-600',
-                'manage_photos' => 'text-indigo-600',
-                'comment' => 'text-gray-600',
-                'restore' => 'text-green-600',
-                'update_status' => 'text-purple-600',
+                'assign' => 'text-cyan-600',
+                'comment' => 'text-cyan-600',
+                'update_status' => 'text-cyan-600',
+                'restore' => 'text-orange-600',
+                'download' => 'text-purple-600',
             ];
             return $map[$action] ?? 'text-gray-600';
         }
@@ -106,11 +92,11 @@
                 'access' => 'text-green-600 focus:ring-green-500',
                 'edit' => 'text-blue-600 focus:ring-blue-500',
                 'create' => 'text-yellow-600 focus:ring-yellow-500',
-                'assign' => 'text-purple-600 focus:ring-purple-500',
-                'manage_photos' => 'text-indigo-600 focus:ring-indigo-500',
-                'comment' => 'text-gray-600 focus:ring-gray-500',
-                'restore' => 'text-green-600 focus:ring-green-500',
-                'update_status' => 'text-purple-600 focus:ring-purple-500',
+                'assign' => 'text-cyan-600 focus:ring-cyan-500',
+                'comment' => 'text-cyan-600 focus:ring-cyan-500',
+                'update_status' => 'text-cyan-600 focus:ring-cyan-500',
+                'restore' => 'text-orange-600 focus:ring-orange-500',
+                'download' => 'text-purple-600 focus:ring-purple-500',
             ];
             return $map[$action] ?? 'text-gray-600 focus:ring-gray-500';
         }

@@ -161,11 +161,11 @@ $router->get('/properties/{id}/edit', 'PropertyController@edit', ['auth', 'perm:
 $router->post('/properties/{id}/update', 'PropertyController@update', ['auth', 'perm:properties.edit']);
 $router->post('/properties/{id}/delete', 'PropertyController@destroy', ['auth', 'perm:properties.archive']);
 $router->post('/properties/{id}/restore', 'PropertyController@restore', ['auth', 'perm:properties.restore']);
-$router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'perm:properties.manage_photos']);
-$router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'perm:properties.manage_photos']);
-$router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'perm:properties.manage_photos']);
-$router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth', 'perm:properties.access']);
-$router->get('/properties/{id}/photos/{photoId}/download', 'PropertyController@downloadPhoto', ['auth', 'perm:properties.access']);
+$router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'perm:photos.create']);
+$router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'perm:photos.edit']);
+$router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'perm:photos.delete']);
+$router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth', 'perm:photos.download']);
+$router->get('/properties/{id}/photos/{photoId}/download', 'PropertyController@downloadPhoto', ['auth', 'perm:photos.download']);
 
 // Tenants
 $router->get('/tenants', 'TenantController@index', ['auth', 'perm:tenants.access']);
@@ -174,7 +174,7 @@ $router->post('/tenants', 'TenantController@store', ['auth', 'perm:tenants.creat
 $router->get('/tenants/{id}', 'TenantController@show', ['auth', 'perm:tenants.access']);
 $router->get('/tenants/{id}/edit', 'TenantController@edit', ['auth', 'perm:tenants.edit']);
 $router->post('/tenants/{id}/update', 'TenantController@update', ['auth', 'perm:tenants.edit']);
-$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.archive']);
+$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.edit']);
 $router->post('/tenants/{id}/restore', 'TenantController@restore', ['auth', 'perm:tenants.restore']);
 $router->post('/tenants/{id}/delete', 'TenantController@destroy', ['auth', 'perm:tenants.delete']);
 
@@ -198,7 +198,7 @@ $router->post('/tickets/{id}/restore', 'TicketController@restore', ['auth', 'per
 $router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth', 'perm:tickets.comment']);
 
 // Documents
-$router->get('/documents/{id}/download', 'DocumentController@download', ['auth', 'perm:documents.access']);
+$router->get('/documents/{id}/download', 'DocumentController@download', ['auth', 'perm:documents.download']);
 $router->post('/documents/{id}/delete', 'DocumentController@destroy', ['auth', 'perm:documents.delete']);
 
 // Notifications

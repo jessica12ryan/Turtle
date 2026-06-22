@@ -32,6 +32,11 @@ class ResourceController
 
     public function store(): void
     {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/resources/create');
+        }
+
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'title' => 'required|max:255',
@@ -48,10 +53,16 @@ class ResourceController
             $url = 'https://' . $url;
         }
 
-        Database::insert(
-            "INSERT INTO resources (title, url, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['title'], $url, $_POST['description'] ?? '', Auth::instance()->id()]
-        );
+        try {
+            Database::insert(
+                "INSERT INTO resources (title, url, description, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())",
+                [$_POST['title'], $url, $_POST['description'] ?? '', Auth::instance()->id()]
+            );
+        } catch (\Throwable $e) {
+            error_log('Resource create failed: ' . $e->getMessage());
+            flash('error', 'Failed to create resource. Please try again.');
+            redirect('/resources/create');
+        }
 
         flash('success', 'Resource added successfully.');
         redirect('/resources');
