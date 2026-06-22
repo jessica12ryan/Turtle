@@ -274,7 +274,7 @@ function defaultPermissions(): array
             'home.access',
             'properties.access', 'properties.create', 'properties.edit', 'properties.archive', 'properties.restore',
             'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
-            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.restore',
+            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.archive', 'tenants.restore',
             'leases.access', 'leases.create', 'leases.archive', 'leases.restore',
             'tickets.access', 'tickets.create', 'tickets.assign', 'tickets.update_status', 'tickets.archive', 'tickets.restore', 'tickets.comment',
             'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore',
