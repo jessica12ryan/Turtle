@@ -57,9 +57,15 @@ class SetupController
             if (file_exists($seedFile)) {
                 $pdo = \App\Core\Database::instance()->getConnection();
                 $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
-                // Strip comment lines and split by semicolons for multi-statement exec
-                $sql = preg_replace('/^-- .*/m', '', file_get_contents($seedFile));
-                $pdo->exec($sql);
+                $raw = file_get_contents($seedFile);
+                $raw = preg_replace('/^-- .*/m', '', $raw);
+                $statements = explode(';', $raw);
+                foreach ($statements as $stmt) {
+                    $stmt = trim($stmt);
+                    if ($stmt !== '') {
+                        $pdo->exec($stmt);
+                    }
+                }
             }
         }
 
