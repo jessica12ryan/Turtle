@@ -150,13 +150,13 @@
                                     <?php
                                     $defaultGranted = in_array($perm, $defaults[$role] ?? []);
                                     $overridden = isset($overrides[$role]) && in_array($perm, $overrides[$role]);
-                                    $checked = $isDefault ? $defaultGranted : ($overridden || $defaultGranted);
                                     ?>
                                     <td class="text-center py-1.5 px-3">
                                         <input type="checkbox"
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
-                                               <?= $checked ? 'checked' : '' ?>
+                                               x-data="{ d: <?= $defaultGranted ? 'true' : 'false' ?>, o: <?= ($overridden || $defaultGranted) ? 'true' : 'false' ?> }"
+                                               :checked="mode === 'default' ? d : o"
                                                :disabled="mode === 'default'"
                                                class="rounded border-gray-300 <?= permCheckboxColor($perm) ?>"
                                                :class="{ 'opacity-50 cursor-not-allowed': mode === 'default' }">
