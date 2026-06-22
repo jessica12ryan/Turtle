@@ -190,7 +190,12 @@ class SettingsController
             Database::execute("DELETE FROM notifications WHERE 1=1", []);
             Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
             Database::execute("DELETE FROM sessions WHERE 1=1", []);
-            Database::execute("DELETE FROM settings WHERE 1=1", []);
+            // Reset general and permission settings to defaults (leave update/internal settings alone)
+            $generalKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'permissions_mode'];
+            $placeholders = implode(',', array_fill(0, count($generalKeys), '?'));
+            Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $generalKeys);
+            Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
+
             Database::execute("DELETE FROM users WHERE 1=1", []);
 
             // Remove uploaded logo from filesystem
