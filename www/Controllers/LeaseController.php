@@ -253,6 +253,13 @@ class LeaseController
         $view->render('leases/show', compact('lease', 'documents'));
     }
 
+    public function restore(int $id): void
+    {
+        Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
+        flash('success', 'Lease restored successfully.');
+        redirect('/leases');
+    }
+
     public function destroy(int $id): void
     {
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);

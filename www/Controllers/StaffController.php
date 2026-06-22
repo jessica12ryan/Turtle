@@ -64,6 +64,15 @@ class StaffController
             $allowedRoles[] = 'landlord';
         }
 
+        // Check for archived duplicate email
+        $archived = Database::fetch("SELECT id, role FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
+        if ($archived) {
+            $roleLabel = $archived['role'] === 'tenant' ? 'tenant' : 'staff member';
+            flash('error', 'Email exists in archived ' . $roleLabel . '.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/staff/create');
+        }
+
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'name' => 'required|max:255',
@@ -169,6 +178,13 @@ class StaffController
 
         flash('success', 'Staff updated successfully.');
         redirect('/staff/' . $id);
+    }
+
+    public function restore(int $id): void
+    {
+        Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
+        flash('success', 'Staff member restored successfully.');
+        redirect('/staff');
     }
 
     public function destroy(int $id): void

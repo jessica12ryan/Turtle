@@ -22,6 +22,9 @@
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Priority</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Assigned To</th>
+                    <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                        <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -42,6 +45,16 @@
                             <span class="px-2 py-1 text-xs rounded-full <?= $ticket['priority'] === 'emergency' ? 'bg-red-100 text-red-800' : ($ticket['priority'] === 'high' ? 'bg-orange-100 text-orange-800' : ($ticket['priority'] === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')) ?>"><?= ucfirst($ticket['priority']) ?></span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($ticket['assignee_name'] ?? 'Unassigned') ?></td>
+                        <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin' && $ticket['archived_at']): ?>
+                            <td class="px-6 py-4">
+                                <form method="POST" action="/tickets/<?= $ticket['id'] ?>/restore" class="inline">
+                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                    <button type="submit" class="text-green-600 hover:underline text-sm">Restore</button>
+                                </form>
+                            </td>
+                        <?php elseif (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                            <td class="px-6 py-4"></td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

@@ -400,6 +400,23 @@ class PropertyController
         exit;
     }
 
+    public function restore(int $id): void
+    {
+        Database::execute("UPDATE properties SET archived_at = NULL WHERE id = ?", [$id]);
+
+        // Cascade restore tenants, leases, and tickets that were archived with this property
+        $tenantIds = Database::fetchAll("SELECT tenant_id FROM property_tenant WHERE property_id = ? AND moved_out_at IS NOT NULL", [$id]);
+        foreach ($tenantIds as $t) {
+            Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE property_id = ? AND tenant_id = ?", [$id, $t['tenant_id']]);
+            Database::execute("UPDATE users SET archived_at = NULL WHERE id = ?", [$t['tenant_id']]);
+        }
+        Database::execute("UPDATE leases SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
+        Database::execute("UPDATE tickets SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
+
+        flash('success', 'Property restored successfully. Related tenants, leases, and tickets have also been restored.');
+        redirect('/properties');
+    }
+
     public function destroy(int $id): void
     {
         Database::execute("UPDATE properties SET archived_at = NOW() WHERE id = ?", [$id]);

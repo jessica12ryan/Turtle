@@ -81,6 +81,7 @@ $router->get('/staff/{id}', 'StaffController@show', ['auth', 'role:landlord,prop
 $router->get('/staff/{id}/edit', 'StaffController@edit', ['auth', 'role:landlord,property_manager']);
 $router->post('/staff/{id}/update', 'StaffController@update', ['auth', 'role:landlord,property_manager']);
 $router->post('/staff/{id}/delete', 'StaffController@destroy', ['auth', 'role:admin,landlord']);
+$router->post('/staff/{id}/restore', 'StaffController@restore', ['auth', 'role:admin']);
 $router->post('/staff/{id}/hard-delete', 'StaffController@hardDelete', ['auth', 'role:admin']);
 
 // Properties
@@ -91,6 +92,7 @@ $router->get('/properties/{id}', 'PropertyController@show', ['auth']);
 $router->get('/properties/{id}/edit', 'PropertyController@edit', ['auth', 'role:landlord,property_manager']);
 $router->post('/properties/{id}/update', 'PropertyController@update', ['auth', 'role:landlord,property_manager']);
 $router->post('/properties/{id}/delete', 'PropertyController@destroy', ['auth', 'role:admin,landlord']);
+$router->post('/properties/{id}/restore', 'PropertyController@restore', ['auth', 'role:admin']);
 $router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'role:admin,landlord,property_manager']);
 $router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'role:admin,landlord,property_manager']);
 $router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'role:admin,landlord,property_manager']);
@@ -105,6 +107,7 @@ $router->get('/tenants/{id}', 'TenantController@show', ['auth', 'role:landlord,p
 $router->get('/tenants/{id}/edit', 'TenantController@edit', ['auth', 'role:landlord,property_manager']);
 $router->post('/tenants/{id}/update', 'TenantController@update', ['auth', 'role:landlord,property_manager']);
 $router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'role:landlord,property_manager']);
+$router->post('/tenants/{id}/restore', 'TenantController@restore', ['auth', 'role:admin']);
 $router->post('/tenants/{id}/delete', 'TenantController@destroy', ['auth', 'role:admin']);
 
 // Leases
@@ -113,6 +116,7 @@ $router->get('/leases/create', 'LeaseController@create', ['auth', 'role:landlord
 $router->post('/leases', 'LeaseController@store', ['auth', 'role:landlord,property_manager']);
 $router->get('/leases/{id}', 'LeaseController@show', ['auth']);
 $router->post('/leases/{id}/delete', 'LeaseController@destroy', ['auth', 'role:admin,landlord,property_manager']);
+$router->post('/leases/{id}/restore', 'LeaseController@restore', ['auth', 'role:admin']);
 $router->post('/leases/{id}/hard-delete', 'LeaseController@hardDelete', ['auth', 'role:admin']);
 
 // Tickets
@@ -122,6 +126,7 @@ $router->post('/tickets', 'TicketController@store', ['auth']);
 $router->get('/tickets/{id}', 'TicketController@show', ['auth']);
 $router->post('/tickets/{id}/assign', 'TicketController@assign', ['auth', 'role:admin,landlord,property_manager,maintenance']);
 $router->post('/tickets/{id}/status', 'TicketController@status', ['auth', 'role:admin,landlord,property_manager,maintenance']);
+$router->post('/tickets/{id}/restore', 'TicketController@restore', ['auth', 'role:admin']);
 $router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth']);
 
 // Documents

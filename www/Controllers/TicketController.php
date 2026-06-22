@@ -205,6 +205,13 @@ class TicketController
         redirect('/tickets/' . $id);
     }
 
+    public function restore(int $id): void
+    {
+        Database::execute("UPDATE tickets SET archived_at = NULL WHERE id = ?", [$id]);
+        flash('success', 'Ticket restored successfully.');
+        redirect('/tickets');
+    }
+
     public function status(int $id): void
     {
         Database::execute(

@@ -42,6 +42,11 @@
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-red-600 hover:underline text-sm">Archive</button>
                                 </form>
+                            <?php elseif ($lease['archived_at'] && \App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                                <form method="POST" action="/leases/<?= $lease['id'] ?>/restore" class="inline">
+                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                    <button type="submit" class="text-green-600 hover:underline text-sm">Restore</button>
+                                </form>
                             <?php endif; ?>
                         </td>
                     </tr>

@@ -43,7 +43,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                         <?php foreach ($tenants as $t): ?>
                             <li class="py-3 flex justify-between items-center">
                                 <div>
-                                    <span class="font-medium"><?= h($t['name']) ?></span>
+                                    <a href="/tenants/<?= $t['id'] ?>" class="text-blue-600 hover:underline font-medium"><?= h($t['name']) ?></a>
                                     <?php if ($t['is_main_tenant']): ?>
                                         <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-2">Main</span>
                                     <?php endif; ?>

@@ -86,12 +86,21 @@ class TenantController
 
     public function store(): void
     {
+        // Check for archived duplicate email
+        $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
+        if ($archived) {
+            flash('error', 'Email exists in archived tenant.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/tenants/create');
+        }
+
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
             'property_id' => 'required|exists:properties,id',
             'phone' => 'required|max:20',
+            'lease_start' => 'required',
         ])) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
@@ -120,7 +129,6 @@ class TenantController
         );
 
         if ($existingMain && !empty($_POST['is_main_tenant'])) {
-            // Delete the tenant user we just created since the redirect will abort
             Database::execute("DELETE FROM users WHERE id = ?", [$tenantId]);
             flash('error', 'Main tenant already exists for ' . h($existingMain['property_name']) . '. Uncheck "Main tenant" or choose a different property.');
             $_SESSION['_old'] = $_POST;
@@ -129,9 +137,12 @@ class TenantController
 
         $isMain = !$existingMain ? 1 : 0;
 
+        $leaseStart = $_POST['lease_start'] ?? null;
+        $leaseEnd = $_POST['lease_end'] ?: null;
+
         Database::insert(
-            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW(), NOW())",
-            [$_POST['property_id'], $tenantId, $isMain]
+            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, NOW(), NOW())",
+            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd]
         );
 
         if (!empty($_POST['send_welcome_email'])) {
@@ -236,6 +247,15 @@ class TenantController
 
         flash('success', 'Tenant updated successfully.');
         redirect('/tenants/' . $id);
+    }
+
+    public function restore(int $id): void
+    {
+        Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
+        Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE tenant_id = ? AND moved_out_at IS NOT NULL", [$id]);
+
+        flash('success', 'Tenant restored successfully.');
+        redirect('/tenants');
     }
 
     public function moveOut(int $id): void
