@@ -53,6 +53,12 @@
                                         <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
                                     </form>
                                 <?php endif; ?>
+                                <?php if (can('tenants.delete')): ?>
+                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will permanently delete this tenant and all associated data. This action cannot be undone. Continue?')">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" class="text-red-600 hover:underline text-sm">Delete</button>
+                                    </form>
+                                <?php endif; ?>
                             <?php elseif (can('tenants.restore')): ?>
                                 <form method="POST" action="/tenants/<?= $tenant['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">

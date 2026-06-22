@@ -22,9 +22,7 @@
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Priority</th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Assigned To</th>
-                    <?php if (can('tickets.restore')): ?>
-                        <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    <?php endif; ?>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -45,16 +43,27 @@
                             <span class="px-2 py-1 text-xs rounded-full <?= $ticket['priority'] === 'emergency' ? 'bg-red-100 text-red-800' : ($ticket['priority'] === 'high' ? 'bg-orange-100 text-orange-800' : ($ticket['priority'] === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')) ?>"><?= ucfirst($ticket['priority']) ?></span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($ticket['assignee_name'] ?? 'Unassigned') ?></td>
-                        <?php if (can('tickets.restore') && $ticket['archived_at']): ?>
-                            <td class="px-6 py-4">
+                        <td class="px-6 py-4 space-x-2 whitespace-nowrap">
+                            <?php if (!$ticket['archived_at']): ?>
+                                <?php if (can('tickets.archive')): ?>
+                                    <form method="POST" action="/tickets/<?= $ticket['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this ticket. Continue?')">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
+                                    </form>
+                                <?php endif; ?>
+                                <?php if (can('tickets.delete')): ?>
+                                    <form method="POST" action="/tickets/<?= $ticket['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('WARNING: This will permanently delete this ticket and all associated data. This action cannot be undone. Continue?')">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" class="text-red-600 hover:underline text-sm">Delete</button>
+                                    </form>
+                                <?php endif; ?>
+                            <?php elseif (can('tickets.restore')): ?>
                                 <form method="POST" action="/tickets/<?= $ticket['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-green-600 hover:underline text-sm">Restore</button>
                                 </form>
-                            </td>
-                        <?php elseif (can('tickets.restore')): ?>
-                            <td class="px-6 py-4"></td>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

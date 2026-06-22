@@ -353,4 +353,26 @@ class TicketController
             }
         }
     }
+
+    public function archive(int $id): void
+    {
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        Database::execute("UPDATE tickets SET archived_at = NOW() WHERE id = ?", [$id]);
+        flash('success', 'Ticket archived successfully.');
+        redirect('/tickets');
+    }
+
+    public function delete(int $id): void
+    {
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$id]);
+        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        Database::execute("DELETE FROM ticket_files WHERE ticket_id = ?", [$id]);
+        Database::execute("DELETE FROM ticket_comments WHERE ticket_id = ?", [$id]);
+        Database::execute("DELETE FROM tickets WHERE id = ?", [$id]);
+        flash('success', 'Ticket permanently deleted.');
+        redirect('/tickets');
+    }
 }
