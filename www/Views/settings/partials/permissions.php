@@ -19,32 +19,6 @@
         </div>
 
         <?php
-        $allPerms = [];
-        foreach ($defaults as $role => $perms) {
-            foreach ($perms as $p) {
-                $allPerms[$p] = true;
-            }
-        }
-        foreach ($overrides as $role => $perms) {
-            foreach ($perms as $p) {
-                $allPerms[$p] = true;
-            }
-        }
-        $allPerms = array_keys($allPerms);
-        sort($allPerms);
-
-        $groupOverrides = [
-            'documents' => 'leases',
-        ];
-
-        $groups = [];
-        foreach ($allPerms as $p) {
-            $parts = explode('.', $p, 2);
-            $group = $parts[0] ?? '';
-            $group = $groupOverrides[$group] ?? $group;
-            $groups[$group][] = $p;
-        }
-
         $permissionLabels = [
             'home.access' => 'View Home',
             'properties.access' => 'View Properties',
@@ -90,6 +64,18 @@
             'resources.delete' => 'Delete Resources',
             'calendar.access' => 'View Calendar',
         ];
+
+        $groupOverrides = [
+            'documents' => 'leases',
+        ];
+
+        $groups = [];
+        foreach (array_keys($permissionLabels) as $p) {
+            $parts = explode('.', $p, 2);
+            $group = $parts[0] ?? '';
+            $group = $groupOverrides[$group] ?? $group;
+            $groups[$group][] = $p;
+        }
 
         function permColor(string $perm): string
         {
