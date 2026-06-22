@@ -162,9 +162,15 @@ class LeaseController
         if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
             $uploadDir = base_path('storage/uploads/leases');
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+                @mkdir($uploadDir, 0755, true);
             }
             if (!is_writable($uploadDir)) {
+                @chmod($uploadDir, 0777);
+                @chmod(base_path('storage/uploads'), 0777);
+                exec('chmod -R 777 ' . escapeshellarg(base_path('storage/uploads')) . ' 2>/dev/null');
+                exec('chown -R www-data:www-data ' . escapeshellarg(base_path('storage/uploads')) . ' 2>/dev/null');
+            }
+            if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
                 $uploadError = 'Upload directory is not writable. Check permissions.';
             }
         }

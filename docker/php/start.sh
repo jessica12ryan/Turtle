@@ -44,7 +44,7 @@ mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "UPDATE settings SET \`va
 # Ensure storage directories exist and are writable by www-data
 mkdir -p storage/uploads/leases storage/logs storage/framework
 chown -R www-data:www-data storage/uploads storage/logs storage/framework 2>/dev/null || true
-chmod -R 755 storage/uploads storage/logs storage/framework 2>/dev/null || true
+chmod -R 777 storage/uploads storage/logs storage/framework 2>/dev/null || true
 
 # Start queue worker in background
 php -r "
