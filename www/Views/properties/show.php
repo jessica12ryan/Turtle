@@ -1,3 +1,7 @@
+<?php $hasMainPhoto = false;
+$mainPhotoId = null;
+foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhotoId = $ph['id']; break; } } ?>
+
 <div class="flex justify-between items-center mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
@@ -87,3 +91,19 @@
         </div>
     </div>
 </div>
+
+<?php if (!empty($photos)): ?>
+<div class="mb-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-3">Photos</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <?php foreach ($photos as $ph): ?>
+            <div class="relative group border rounded-lg overflow-hidden <?= $ph['is_main'] ? 'ring-2 ring-blue-500' : '' ?>">
+                <img src="/properties/<?= $property['id'] ?>/photos/<?= $ph['id'] ?>" alt="<?= h($ph['original_name']) ?>" class="w-full h-32 object-cover">
+                <?php if ($ph['is_main']): ?>
+                    <span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">Main</span>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>

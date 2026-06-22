@@ -31,6 +31,9 @@ mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE properties A
 mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE leases ADD COLUMN tenant_id INT DEFAULT NULL AFTER property_id;" 2>/dev/null || true
 mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE leases ADD FOREIGN KEY (tenant_id) REFERENCES users(id);" 2>/dev/null || true
 
+# Property photos table
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "CREATE TABLE IF NOT EXISTS property_photos (id INT AUTO_INCREMENT PRIMARY KEY, property_id INT NOT NULL, file_path VARCHAR(500) NOT NULL, original_name VARCHAR(255) NOT NULL, mime_type VARCHAR(100) DEFAULT '', is_main TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE, INDEX idx_property (property_id), INDEX idx_main (property_id, is_main)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" 2>/dev/null || true
+
 # Settings table for version tracking
 mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "CREATE TABLE IF NOT EXISTS settings (\`key\` VARCHAR(100) PRIMARY KEY, \`value\` TEXT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" 2>/dev/null || true
 mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('app_version', '0.0.0'), ('last_update_check', ''), ('latest_version', ''), ('update_channel', 'stable');" 2>/dev/null || true

@@ -36,9 +36,16 @@ class PropertyController
         $user = $auth->user();
         $showArchived = !empty($_GET['show_archived']);
 
+        $baseQuery = "p.*, u.name as landlord_name";
+        if ($user['role'] !== 'tenant') {
+            $baseQuery .= ",
+                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
+                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count";
+        }
+
         if ($user['role'] === 'tenant') {
             $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name FROM properties p 
+                "SELECT {$baseQuery} FROM properties p 
                  JOIN users u ON u.id = p.landlord_id
                  JOIN property_tenant pt ON pt.property_id = p.id 
                  WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
@@ -47,10 +54,7 @@ class PropertyController
         } elseif ($user['role'] === 'admin') {
             $archivedClause = $showArchived ? '' : ' AND p.archived_at IS NULL';
             $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name,
-                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
-                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count,
-                 p.archived_at
+                "SELECT {$baseQuery}, p.archived_at
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
                  WHERE 1=1{$archivedClause}
@@ -65,16 +69,26 @@ class PropertyController
             $archivedClause = $showArchived ? '' : ' AND p.archived_at IS NULL';
 
             $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name,
-                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
-                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count,
-                 p.archived_at
+                "SELECT {$baseQuery}, p.archived_at
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
                  WHERE p.company_id IN ({$companyIdList}){$archivedClause}
                  ORDER BY p.archived_at IS NULL DESC, p.name"
             );
         }
+
+        // Attach main photo to each property
+        $photoIds = Database::fetchAll(
+            "SELECT property_id, id, file_path, original_name, mime_type FROM property_photos WHERE is_main = 1 AND property_id IN (SELECT id FROM properties WHERE 1=1)"
+        );
+        $photoMap = [];
+        foreach ($photoIds as $ph) {
+            $photoMap[$ph['property_id']] = $ph;
+        }
+        foreach ($properties as &$prop) {
+            $prop['main_photo'] = $photoMap[$prop['id']] ?? null;
+        }
+        unset($prop);
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Properties']);
@@ -148,9 +162,14 @@ class PropertyController
             [$id]
         );
 
+        $photos = Database::fetchAll(
+            "SELECT * FROM property_photos WHERE property_id = ? ORDER BY is_main DESC, created_at ASC",
+            [$id]
+        );
+
         $view = new View();
         $view->layout('layouts/main', ['title' => $property['name']]);
-        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets'));
+        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos'));
     }
 
     public function edit(int $id): void
@@ -162,9 +181,14 @@ class PropertyController
             "SELECT id, name, email FROM users WHERE role = 'landlord' AND archived_at IS NULL ORDER BY name"
         );
 
+        $photos = Database::fetchAll(
+            "SELECT * FROM property_photos WHERE property_id = ? ORDER BY is_main DESC, created_at ASC",
+            [$id]
+        );
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Property']);
-        $view->render('properties/edit', compact('property', 'landlords'));
+        $view->render('properties/edit', compact('property', 'landlords', 'photos'));
     }
 
     public function update(int $id): void
@@ -192,6 +216,132 @@ class PropertyController
 
         flash('success', 'Property updated successfully.');
         redirect('/properties/' . $id);
+    }
+
+    private function getPhotoUploadDir(int $propertyId): array
+    {
+        $primary = base_path('storage/uploads/property_photos/' . $propertyId);
+        $fallback = sys_get_temp_dir() . '/turtle_photos/' . $propertyId;
+
+        if (is_dir($primary) && is_writable($primary)) {
+            return ['dir' => $primary, 'prefix' => 'storage/uploads/property_photos'];
+        }
+        if (!is_dir($fallback)) {
+            @mkdir($fallback, 0777, true);
+        }
+        if (is_dir($fallback) && is_writable($fallback)) {
+            return ['dir' => $fallback, 'prefix' => $fallback];
+        }
+        if (!is_dir($primary)) {
+            @mkdir($primary, 0777, true);
+        }
+        if (is_dir($primary) && is_writable($primary)) {
+            return ['dir' => $primary, 'prefix' => 'storage/uploads/property_photos'];
+        }
+        return ['dir' => '', 'prefix' => ''];
+    }
+
+    public function uploadPhoto(int $id): void
+    {
+        $property = Database::fetch("SELECT id, name FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$property) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Property not found.']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        if (empty($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            echo json_encode(['error' => 'No valid photo uploaded.']);
+            return;
+        }
+
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $type = $_FILES['photo']['type'] ?? '';
+        if (!in_array($type, $allowedTypes)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Only JPG, PNG, GIF, and WebP images are allowed.']);
+            return;
+        }
+
+        $loc = $this->getPhotoUploadDir($id);
+        if (!$loc['dir']) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Upload directory is not writable.']);
+            return;
+        }
+
+        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
+        $storedName = uniqid() . '.' . $ext;
+        $destPath = $loc['dir'] . '/' . $storedName;
+
+        if (!move_uploaded_file($_FILES['photo']['tmp_name'], $destPath)) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to save photo.']);
+            return;
+        }
+
+        $photoId = Database::insert(
+            "INSERT INTO property_photos (property_id, file_path, original_name, mime_type, is_main, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
+            [$id, $loc['prefix'] . '/' . $id . '/' . $storedName, $_FILES['photo']['name'], $type, 0]
+        );
+
+        echo json_encode([
+            'id' => $photoId,
+            'original_name' => $_FILES['photo']['name'],
+            'url' => '/properties/' . $id . '/photos/' . $photoId,
+        ]);
+    }
+
+    public function setMainPhoto(int $id, int $photoId): void
+    {
+        Database::execute("UPDATE property_photos SET is_main = 0 WHERE property_id = ?", [$id]);
+        Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
+        flash('success', 'Main photo updated.');
+        redirect('/properties/' . $id . '/edit');
+    }
+
+    public function deletePhoto(int $id, int $photoId): void
+    {
+        $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
+        if ($photo) {
+            $path = $photo['file_path'];
+            $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+            Database::execute("DELETE FROM property_photos WHERE id = ?", [$photoId]);
+        }
+        flash('success', 'Photo deleted.');
+        redirect('/properties/' . $id . '/edit');
+    }
+
+    public function servePhoto(int $id, int $photoId): void
+    {
+        $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
+        if (!$photo) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+
+        $path = $photo['file_path'];
+        $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
+
+        if (!file_exists($fullPath)) {
+            http_response_code(404);
+            echo 'File not found.';
+            return;
+        }
+
+        $mime = $photo['mime_type'] ?: 'application/octet-stream';
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($fullPath));
+        header('Cache-Control: max-age=86400');
+        readfile($fullPath);
+        exit;
     }
 
     public function destroy(int $id): void

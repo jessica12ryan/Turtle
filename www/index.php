@@ -91,6 +91,10 @@ $router->get('/properties/{id}', 'PropertyController@show', ['auth']);
 $router->get('/properties/{id}/edit', 'PropertyController@edit', ['auth', 'role:landlord,property_manager']);
 $router->post('/properties/{id}/update', 'PropertyController@update', ['auth', 'role:landlord,property_manager']);
 $router->post('/properties/{id}/delete', 'PropertyController@destroy', ['auth', 'role:admin,landlord']);
+$router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'role:admin,landlord,property_manager']);
+$router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'role:admin,landlord,property_manager']);
+$router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'role:admin,landlord,property_manager']);
+$router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth']);
 
 // Tenants
 $router->get('/tenants', 'TenantController@index', ['auth', 'role:landlord,property_manager']);
