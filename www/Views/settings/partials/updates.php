@@ -125,6 +125,14 @@
                     <span class="step-label text-sm text-gray-600">Running migrations...</span>
                 </div>
             </div>
+            <div class="step-item" data-step="6">
+                <div class="flex items-center space-x-2">
+                    <span class="step-icon w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3 h-3 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                    </span>
+                    <span class="step-label text-sm text-gray-600">Restarting services...</span>
+                </div>
+            </div>
         </div>
         <div id="error-output" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg hidden">
             <p class="text-sm font-medium text-red-800">Errors encountered:</p>
@@ -262,7 +270,7 @@ function pollProgress() {
     fetch('/updates/progress?update_id=' + updateId)
         .then(r => r.json())
         .then(data => {
-            const totalSteps = 6;
+            const totalSteps = 7;
             const doneSteps = data.steps.filter(s => s.status === 'done').length;
             const pct = Math.min(Math.round((doneSteps / totalSteps) * 100), 99);
 

@@ -36,6 +36,11 @@
                 $allPerms[$p] = true;
             }
         }
+        foreach ($overrides as $role => $perms) {
+            foreach ($perms as $p) {
+                $allPerms[$p] = true;
+            }
+        }
         $allPerms = array_keys($allPerms);
         sort($allPerms);
 

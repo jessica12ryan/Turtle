@@ -129,6 +129,7 @@ class UpdateController
             'Checking for changes...' => "{$setupCmd} && git log HEAD..origin/master --oneline 2>&1",
             'Pulling updates...' => "{$setupCmd} && git pull origin master 2>&1",
             'Running migrations...' => "{$setupCmd} && bash database/migrate.sh 2>&1",
+            'Restarting services...' => "{$setupCmd} && php -r 'opcache_reset();' 2>&1; apachectl graceful 2>&1 || httpd -k graceful 2>&1 || true",
         ];
 
         $script = '#!/bin/bash' . "\n";
