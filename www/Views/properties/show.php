@@ -5,15 +5,17 @@
     </div>
     <?php $role = \App\Core\Auth::instance()->user()['role']; ?>
     <div class="flex space-x-3">
-        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
+        <?php if (in_array($role, ['admin', 'landlord'])): ?>
             <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php endif; ?>
+        <?php if (in_array($role, ['admin', 'landlord', 'property_manager'])): ?>
             <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">Upload Lease</a>
         <?php endif; ?>
         <?php if (in_array($role, ['admin', 'landlord', 'property_manager', 'tenant'])): ?>
             <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm">New Ticket</a>
         <?php endif; ?>
         <?php if (in_array($role, ['admin', 'landlord'])): ?>
-            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this property?')">
+            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this property and all its associated tenants, leases, and tickets. This is not reversible. Continue?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Archive</button>
             </form>

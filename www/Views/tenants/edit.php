@@ -31,7 +31,7 @@
     <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
         <div class="mt-8 pt-6 border-t">
             <h3 class="text-lg font-medium text-red-600 mb-2">Danger Zone</h3>
-            <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" onsubmit="return confirm('Permanently delete this tenant? This cannot be undone.')">
+            <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" onsubmit="return confirm('WARNING: This will permanently delete this tenant and all associated records. This is NOT reversible. Continue?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">Delete Tenant</button>
             </form>

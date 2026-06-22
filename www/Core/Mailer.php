@@ -4,6 +4,24 @@ namespace App\Core;
 
 class Mailer
 {
+    private static function smtpCommand($socket, string $command, string $expectedCode, string $errorMsg): bool
+    {
+        fwrite($socket, $command . "\r\n");
+        $response = '';
+        while (true) {
+            $line = fgets($socket, 512);
+            if ($line === false) break;
+            $response .= $line;
+            if (isset($line[3]) && $line[3] === ' ') break;
+        }
+        $code = substr($response, 0, 3);
+        if ($code !== $expectedCode) {
+            error_log("Mailer: {$errorMsg} — got {$code}, expected {$expectedCode}. Response: " . trim($response));
+            return false;
+        }
+        return true;
+    }
+
     public static function send(string $to, string $subject, string $body): bool
     {
         $host = $_ENV['MAIL_HOST'] ?? 'mailpit';
@@ -34,42 +52,77 @@ class Mailer
         $errstr = '';
         $socket = @fsockopen($host, $port, $errno, $errstr, 10);
         if (!$socket) {
-            error_log("Mailer: Failed to connect to {$host}:{$port} - {$errstr}");
+            error_log("Mailer: Failed to connect to {$host}:{$port} — {$errstr}");
             return false;
         }
 
-        $response = fread($socket, 512);
+        stream_set_timeout($socket, 10);
 
-        fwrite($socket, "EHLO turtle\r\n");
-        $response = fread($socket, 512);
+        if (!self::smtpCommand($socket, '', '220', 'Connection greeting')) {
+            fclose($socket);
+            return false;
+        }
+
+        if (!self::smtpCommand($socket, "EHLO turtle", '250', 'EHLO')) {
+            fclose($socket);
+            return false;
+        }
 
         if ($username !== null) {
             if ($port === 587) {
-                fwrite($socket, "STARTTLS\r\n");
-                $response = fread($socket, 512);
-                if (str_starts_with($response, '220')) {
-                    stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-                    fwrite($socket, "EHLO turtle\r\n");
-                    $response = fread($socket, 512);
+                if (!self::smtpCommand($socket, "STARTTLS", '220', 'STARTTLS')) {
+                    fclose($socket);
+                    return false;
+                }
+                stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                if (!self::smtpCommand($socket, "EHLO turtle", '250', 'EHLO after STARTTLS')) {
+                    fclose($socket);
+                    return false;
                 }
             }
 
-            fwrite($socket, "AUTH LOGIN\r\n");
-            $response = fread($socket, 512);
-            fwrite($socket, base64_encode($username) . "\r\n");
-            $response = fread($socket, 512);
-            fwrite($socket, base64_encode($password) . "\r\n");
-            $response = fread($socket, 512);
+            if (!self::smtpCommand($socket, "AUTH LOGIN", '334', 'AUTH LOGIN')) {
+                fclose($socket);
+                return false;
+            }
+            if (!self::smtpCommand($socket, base64_encode($username), '334', 'AUTH username')) {
+                fclose($socket);
+                return false;
+            }
+            if (!self::smtpCommand($socket, base64_encode($password), '235', 'AUTH password')) {
+                fclose($socket);
+                return false;
+            }
         }
 
-        fwrite($socket, "MAIL FROM:<{$fromAddress}>\r\n");
-        fread($socket, 512);
-        fwrite($socket, "RCPT TO:<{$to}>\r\n");
-        fread($socket, 512);
-        fwrite($socket, "DATA\r\n");
-        fread($socket, 512);
+        if (!self::smtpCommand($socket, "MAIL FROM:<{$fromAddress}>", '250', 'MAIL FROM')) {
+            fclose($socket);
+            return false;
+        }
+        if (!self::smtpCommand($socket, "RCPT TO:<{$to}>", '250', 'RCPT TO')) {
+            fclose($socket);
+            return false;
+        }
+        if (!self::smtpCommand($socket, "DATA", '354', 'DATA')) {
+            fclose($socket);
+            return false;
+        }
+
         fwrite($socket, $mailStr . "\r\n.\r\n");
-        fread($socket, 512);
+        $response = '';
+        while (true) {
+            $line = fgets($socket, 512);
+            if ($line === false) break;
+            $response .= $line;
+            if (isset($line[3]) && $line[3] === ' ') break;
+        }
+        $code = substr($response, 0, 3);
+        if ($code !== '250') {
+            error_log("Mailer: Message delivery failed — got {$code}. Response: " . trim($response));
+            fclose($socket);
+            return false;
+        }
+
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 

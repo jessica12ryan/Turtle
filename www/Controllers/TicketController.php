@@ -14,12 +14,16 @@ class TicketController
     {
         $auth = Auth::instance();
         $user = $auth->user();
-        $query = "SELECT t.*, p.name as property_name, u.name as tenant_name, a.name as assignee_name 
+        $showArchived = !empty($_GET['show_archived']);
+        $archivedClause = $showArchived ? '' : ' AND t.archived_at IS NULL';
+
+        $query = "SELECT t.*, p.name as property_name, u.name as tenant_name, a.name as assignee_name,
+                         t.archived_at
                   FROM tickets t 
                   JOIN properties p ON p.id = t.property_id 
                   JOIN users u ON u.id = t.tenant_id 
                   LEFT JOIN users a ON a.id = t.assigned_to 
-                  WHERE t.archived_at IS NULL";
+                  WHERE 1=1{$archivedClause}";
         $params = [];
 
         if ($user['role'] === 'tenant') {
@@ -56,13 +60,13 @@ class TicketController
             $query .= " AND t.property_id IN ({$propertyIdList})";
         }
 
-        $query .= " ORDER BY t.created_at DESC";
+        $query .= " ORDER BY t.archived_at IS NULL DESC, t.created_at DESC";
 
         $tickets = Database::fetchAll($query, $params);
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Tickets']);
-        $view->render('tickets/index', compact('tickets'));
+        $view->render('tickets/index', compact('tickets', 'showArchived'));
     }
 
     public function create(): void

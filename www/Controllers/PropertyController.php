@@ -34,6 +34,7 @@ class PropertyController
     {
         $auth = Auth::instance();
         $user = $auth->user();
+        $showArchived = !empty($_GET['show_archived']);
 
         if ($user['role'] === 'tenant') {
             $properties = Database::fetchAll(
@@ -44,14 +45,16 @@ class PropertyController
                 [$auth->id()]
             );
         } elseif ($user['role'] === 'admin') {
+            $archivedClause = $showArchived ? '' : ' AND p.archived_at IS NULL';
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
                  (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
-                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count
+                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count,
+                 p.archived_at
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.archived_at IS NULL 
-                 ORDER BY p.name"
+                 WHERE 1=1{$archivedClause}
+                 ORDER BY p.archived_at IS NULL DESC, p.name"
             );
         } else {
             $companyIds = Database::fetchAll(
@@ -59,21 +62,23 @@ class PropertyController
                 [$auth->id()]
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $archivedClause = $showArchived ? '' : ' AND p.archived_at IS NULL';
 
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
                  (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
-                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count
+                 (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count,
+                 p.archived_at
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
-                 ORDER BY p.name"
+                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}
+                 ORDER BY p.archived_at IS NULL DESC, p.name"
             );
         }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Properties']);
-        $view->render('properties/index', compact('properties'));
+        $view->render('properties/index', compact('properties', 'showArchived'));
     }
 
     public function create(): void
@@ -117,7 +122,7 @@ class PropertyController
     public function show(int $id): void
     {
         $property = Database::fetch(
-            "SELECT p.*, u.name as landlord_name FROM properties p JOIN users u ON u.id = p.landlord_id WHERE p.id = ? AND p.archived_at IS NULL",
+            "SELECT p.*, u.name as landlord_name FROM properties p JOIN users u ON u.id = p.landlord_id WHERE p.id = ?",
             [$id]
         );
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -192,7 +197,17 @@ class PropertyController
     public function destroy(int $id): void
     {
         Database::execute("UPDATE properties SET archived_at = NOW() WHERE id = ?", [$id]);
-        flash('success', 'Property archived successfully.');
+
+        // Cascade archive to related records
+        $tenantIds = Database::fetchAll("SELECT tenant_id FROM property_tenant WHERE property_id = ? AND moved_out_at IS NULL", [$id]);
+        foreach ($tenantIds as $t) {
+            Database::execute("UPDATE property_tenant SET moved_out_at = NOW() WHERE property_id = ? AND tenant_id = ?", [$id, $t['tenant_id']]);
+            Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$t['tenant_id']]);
+        }
+        Database::execute("UPDATE leases SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
+        Database::execute("UPDATE tickets SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
+
+        flash('success', 'Property archived successfully. Related tenants, leases, and tickets have also been archived.');
         redirect('/properties');
     }
 }

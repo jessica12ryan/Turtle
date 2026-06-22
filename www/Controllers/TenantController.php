@@ -13,6 +13,10 @@ class TenantController
     public function index(): void
     {
         $user = Auth::instance()->user();
+        $showArchived = !empty($_GET['show_archived']);
+        $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
+        $orderBy = $showArchived ? 'ORDER BY u.archived_at IS NULL DESC, u.name' : 'ORDER BY u.name';
+
         if ($user['role'] === 'admin') {
             $tenants = Database::fetchAll(
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
@@ -20,8 +24,8 @@ class TenantController
                  FROM users u 
                  JOIN property_tenant pt ON pt.tenant_id = u.id 
                  JOIN properties p ON p.id = pt.property_id 
-                 WHERE u.archived_at IS NULL 
-                 ORDER BY u.name"
+                 WHERE 1=1{$archivedClause}
+                 {$orderBy}"
             );
         } else {
             $landlordIds = Database::fetchAll(
@@ -38,14 +42,14 @@ class TenantController
                  FROM users u 
                  JOIN property_tenant pt ON pt.tenant_id = u.id 
                  JOIN properties p ON p.id = pt.property_id 
-                 WHERE p.landlord_id IN ({$landlordIdList}) AND u.archived_at IS NULL 
-                 ORDER BY u.name"
+                 WHERE p.landlord_id IN ({$landlordIdList}){$archivedClause}
+                 {$orderBy}"
             );
         }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Tenants']);
-        $view->render('tenants/index', compact('tenants'));
+        $view->render('tenants/index', compact('tenants', 'showArchived'));
     }
 
     public function create(): void
@@ -116,6 +120,8 @@ class TenantController
         );
 
         if ($existingMain && !empty($_POST['is_main_tenant'])) {
+            // Delete the tenant user we just created since the redirect will abort
+            Database::execute("DELETE FROM users WHERE id = ?", [$tenantId]);
             flash('error', 'Main tenant already exists for ' . h($existingMain['property_name']) . '. Uncheck "Main tenant" or choose a different property.');
             $_SESSION['_old'] = $_POST;
             redirect('/tenants/create');
@@ -251,14 +257,6 @@ class TenantController
     {
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
-
-        if ($target['role'] === 'admin') {
-            $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
-            if (!$adminCount || $adminCount['cnt'] === 0) {
-                flash('error', 'Cannot delete the only active admin account.');
-                redirect('/tenants');
-            }
-        }
 
         Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$id]);
         Database::execute("DELETE FROM users WHERE id = ?", [$id]);

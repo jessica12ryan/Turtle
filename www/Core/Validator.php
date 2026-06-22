@@ -64,6 +64,8 @@ class Validator
             $bindings[] = $except;
         }
 
+        $sql .= " AND archived_at IS NULL";
+
         $exists = Database::fetch($sql, $bindings);
         return $exists ? ucfirst(str_replace('_', ' ', $field)) . ' already exists.' : null;
     }

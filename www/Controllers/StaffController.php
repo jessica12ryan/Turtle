@@ -14,13 +14,15 @@ class StaffController
     {
         $auth = Auth::instance();
         $user = $auth->user();
+        $showArchived = !empty($_GET['show_archived']);
+        $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
 
         if ($user['role'] === 'admin' || $user['role'] === 'landlord') {
             $staff = Database::fetchAll(
                 "SELECT u.* FROM users u
-                 WHERE u.archived_at IS NULL
+                 WHERE 1=1{$archivedClause}
                  AND u.role IN ('landlord','property_manager','maintenance')
-                 ORDER BY u.name"
+                 ORDER BY u.archived_at IS NULL DESC, u.name"
             );
         } else {
             $companyIds = Database::fetchAll(
@@ -32,15 +34,15 @@ class StaffController
             $staff = Database::fetchAll(
                 "SELECT u.* FROM users u
                  JOIN company_user cu ON cu.user_id = u.id
-                 WHERE cu.company_id IN ({$companyIdList}) AND u.archived_at IS NULL
+                 WHERE cu.company_id IN ({$companyIdList}){$archivedClause}
                  AND u.role IN ('property_manager','maintenance')
-                 ORDER BY u.name"
+                 ORDER BY u.archived_at IS NULL DESC, u.name"
             );
         }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Staff']);
-        $view->render('staff/index', compact('staff'));
+        $view->render('staff/index', compact('staff', 'showArchived'));
     }
 
     public function create(): void

@@ -13,25 +13,28 @@ class LeaseController
     {
         $auth = Auth::instance();
         $user = $auth->user();
+        $showArchived = !empty($_GET['show_archived']);
+        $archivedClause = $showArchived ? '' : ' AND l.archived_at IS NULL';
 
         if ($user['role'] === 'tenant') {
             $leases = Database::fetchAll(
                 "SELECT l.*, p.name as property_name FROM leases l 
                  JOIN properties p ON p.id = l.property_id 
                  JOIN property_tenant pt ON pt.property_id = l.property_id 
-                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND l.archived_at IS NULL 
-                 ORDER BY l.created_at DESC",
+                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL{$archivedClause} 
+                 ORDER BY l.archived_at IS NULL DESC, l.created_at DESC",
                 [$auth->id()]
             );
         } elseif ($user['role'] === 'admin') {
             $leases = Database::fetchAll(
                 "SELECT l.*, p.name as property_name, u.name as landlord_name,
-                 (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count
+                 (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count,
+                 l.archived_at
                  FROM leases l 
                  JOIN properties p ON p.id = l.property_id 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE l.archived_at IS NULL 
-                 ORDER BY l.created_at DESC"
+                 WHERE 1=1{$archivedClause}
+                 ORDER BY l.archived_at IS NULL DESC, l.created_at DESC"
             );
         } else {
             $companyIds = Database::fetchAll(
@@ -42,12 +45,13 @@ class LeaseController
 
             $leases = Database::fetchAll(
                 "SELECT l.*, p.name as property_name, u.name as landlord_name,
-                 (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count
+                 (SELECT COUNT(*) FROM documents WHERE documentable_type = 'lease' AND documentable_id = l.id AND archived_at IS NULL) as documents_count,
+                 l.archived_at
                  FROM leases l 
                  JOIN properties p ON p.id = l.property_id 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}) AND l.archived_at IS NULL 
-                 ORDER BY l.created_at DESC"
+                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}
+                 ORDER BY l.archived_at IS NULL DESC, l.created_at DESC"
             );
         }
 
@@ -62,7 +66,7 @@ class LeaseController
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Leases']);
-        $view->render('leases/index', compact('leases'));
+        $view->render('leases/index', compact('leases', 'showArchived'));
     }
 
     public function create(): void
@@ -165,8 +169,14 @@ class LeaseController
                 mkdir($uploadDir, 0755, true);
             }
 
+            $uploaded = 0;
+            $errors = 0;
             foreach ($_FILES['documents']['name'] as $i => $name) {
-                if ($_FILES['documents']['error'][$i] !== UPLOAD_ERR_OK) continue;
+                if (empty($name)) continue;
+                if ($_FILES['documents']['error'][$i] !== UPLOAD_ERR_OK) {
+                    $errors++;
+                    continue;
+                }
 
                 $ext = pathinfo($name, PATHINFO_EXTENSION);
                 $storedName = uniqid() . '.' . $ext;
@@ -177,7 +187,14 @@ class LeaseController
                         "INSERT INTO documents (documentable_type, documentable_id, file_path, original_name, size, mime_type, uploaded_by, created_at, updated_at) VALUES ('lease', ?, ?, ?, ?, ?, ?, NOW(), NOW())",
                         [$leaseId, 'storage/uploads/leases/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $_FILES['documents']['type'][$i] ?? '', Auth::instance()->id()]
                     );
+                    $uploaded++;
+                } else {
+                    $errors++;
                 }
+            }
+
+            if ($errors > 0) {
+                flash('error', $uploaded > 0 ? "{$uploaded} file(s) uploaded, but {$errors} file(s) failed." : 'File upload failed. Check file size and permissions.');
             }
         }
 

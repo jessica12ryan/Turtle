@@ -13,7 +13,7 @@
             </form>
         <?php endif; ?>
         <?php if ($role === 'admin'): ?>
-            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('Permanently delete this lease? This cannot be undone.')">
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('WARNING: This will permanently delete this lease and all associated documents. This is NOT reversible. Continue?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="text-red-800 hover:underline text-sm font-bold">Delete</button>
             </form>
