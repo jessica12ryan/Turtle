@@ -14,23 +14,28 @@ class ResourceController
         try {
             Database::execute("SELECT 1 FROM resources LIMIT 1");
         } catch (\Throwable $e) {
-            Database::execute("CREATE TABLE IF NOT EXISTS resources (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                url VARCHAR(500) NOT NULL,
-                description TEXT DEFAULT '',
-                created_by INT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (created_by) REFERENCES users(id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            try {
+                $pdo = \App\Core\Database::instance()->getConnection();
+                $pdo->exec("CREATE TABLE IF NOT EXISTS resources (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    title VARCHAR(255) NOT NULL,
+                    url VARCHAR(500) NOT NULL,
+                    description TEXT DEFAULT '',
+                    created_by INT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (created_by) REFERENCES users(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            } catch (\Throwable $e2) {
+                error_log('ResourceController failed to create resources table: ' . $e2->getMessage());
+            }
         }
     }
 
     public function index(): void
     {
-        $this->ensureTableExists();
         try {
+            $this->ensureTableExists();
             $links = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by ORDER BY r.title");
         } catch (\Throwable $e) {
             error_log('ResourceController@index query failed: ' . $e->getMessage());
