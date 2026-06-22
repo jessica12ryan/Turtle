@@ -1,6 +1,6 @@
 <h1 class="text-2xl font-bold text-gray-800 mb-6">Create Ticket</h1>
 <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
-    <form method="POST" action="/tickets">
+    <form method="POST" action="/tickets" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Property <span class="text-red-500">*</span></label>
@@ -37,6 +37,13 @@
                 </select>
             </div>
         </div>
+        <?php if (can('tickets.upload_photos')): ?>
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Attachments</label>
+                <input type="file" name="attachments[]" multiple class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <p class="text-xs text-gray-500 mt-1">Optional. Images, PDFs, or documents.</p>
+            </div>
+        <?php endif; ?>
         <div class="flex space-x-3">
             <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700">Submit Ticket</button>
             <a href="/tickets" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>

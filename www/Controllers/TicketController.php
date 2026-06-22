@@ -133,6 +133,8 @@ class TicketController
             [$_POST['property_id'], Auth::instance()->id(), $_POST['subject'], $_POST['description'], $_POST['category'], $_POST['priority']]
         );
 
+        $this->uploadTicketFiles($ticketId, null);
+
         flash('success', 'Ticket created successfully.');
         redirect('/tickets/' . $ticketId);
     }
@@ -167,13 +169,18 @@ class TicketController
             );
         }
 
+        $files = Database::fetchAll(
+            "SELECT * FROM ticket_files WHERE ticket_id = ? ORDER BY created_at ASC",
+            [$id]
+        );
+
         $statuses = ['open', 'in_progress', 'resolved', 'closed'];
         $categories = ['plumbing', 'electrical', 'hvac', 'appliances', 'structural', 'pest_control', 'general_repair', 'other'];
         $priorities = ['low', 'medium', 'high', 'emergency'];
 
         $view = new View();
         $view->layout('layouts/main', ['title' => $ticket['subject']]);
-        $view->render('tickets/show', compact('ticket', 'comments', 'staffUsers', 'statuses', 'categories', 'priorities'));
+        $view->render('tickets/show', compact('ticket', 'comments', 'files', 'staffUsers', 'statuses', 'categories', 'priorities'));
     }
 
     public function assign(int $id): void
@@ -181,13 +188,18 @@ class TicketController
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        $assignedTo = $_POST['assigned_to'] ?? null;
+
         Database::execute(
             "UPDATE tickets SET assigned_to = ?, status = 'in_progress', updated_at = NOW() WHERE id = ?",
-            [$_POST['assigned_to'] ?? null, $id]
+            [$assignedTo, $id]
         );
 
-        if (!empty($_POST['assigned_to'])) {
-            $assignee = Database::fetch("SELECT name, email FROM users WHERE id = ?", [$_POST['assigned_to']]);
+        $user = Auth::instance()->user();
+        if ($assignedTo) {
+            $assignee = Database::fetch("SELECT name, email FROM users WHERE id = ?", [$assignedTo]);
+            $assigneeName = $assignee ? $assignee['name'] : 'Unknown';
+            $commentBody = $user['name'] . ' assigned ticket to ' . $assigneeName;
             if ($assignee) {
                 Mailer::sendTemplate(
                     $assignee['email'],
@@ -198,7 +210,14 @@ class TicketController
                     'View Ticket'
                 );
             }
+        } else {
+            $commentBody = $user['name'] . ' assigned ticket to Unassigned';
         }
+
+        Database::insert(
+            "INSERT INTO ticket_comments (ticket_id, user_id, body, is_system, created_at) VALUES (?, ?, ?, 1, NOW())",
+            [$id, $user['id'], $commentBody]
+        );
 
         flash('success', 'Ticket assigned successfully.');
         redirect('/tickets/' . $id);
@@ -213,24 +232,33 @@ class TicketController
 
     public function status(int $id): void
     {
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $oldStatus = str_replace('_', ' ', $ticket['status']);
+        $newStatus = str_replace('_', ' ', $_POST['status']);
+
         Database::execute(
             "UPDATE tickets SET status = ?, updated_at = NOW() WHERE id = ?",
             [$_POST['status'], $id]
         );
 
-        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$id]);
-        if ($ticket) {
-            $tenant = Database::fetch("SELECT name, email FROM users WHERE id = ?", [$ticket['tenant_id']]);
-            if ($tenant) {
-                Mailer::sendTemplate(
-                    $tenant['email'],
-                    'Ticket Update: ' . $ticket['subject'],
-                    'Hello ' . h($tenant['name']) . ',',
-                    'Your ticket status has been updated.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>New Status:</strong> ' . ucfirst(str_replace('_', ' ', $ticket['status'])),
-                    'http://' . $_SERVER['HTTP_HOST'] . '/tickets/' . $id,
-                    'View Ticket'
-                );
-            }
+        $user = Auth::instance()->user();
+        Database::insert(
+            "INSERT INTO ticket_comments (ticket_id, user_id, body, is_system, created_at) VALUES (?, ?, ?, 1, NOW())",
+            [$id, $user['id'], $user['name'] . ' changed ticket status from ' . $oldStatus . ' to ' . $newStatus]
+        );
+
+        $tenant = Database::fetch("SELECT name, email FROM users WHERE id = ?", [$ticket['tenant_id']]);
+        if ($tenant) {
+            Mailer::sendTemplate(
+                $tenant['email'],
+                'Ticket Update: ' . $ticket['subject'],
+                'Hello ' . h($tenant['name']) . ',',
+                'Your ticket status has been updated.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>New Status:</strong> ' . ucfirst(str_replace('_', ' ', $_POST['status'])),
+                'http://' . $_SERVER['HTTP_HOST'] . '/tickets/' . $id,
+                'View Ticket'
+            );
         }
 
         flash('success', 'Ticket status updated.');
@@ -247,12 +275,82 @@ class TicketController
 
         $isInternal = (!empty($_POST['is_internal']) && Auth::instance()->isStaff()) ? 1 : 0;
 
-        Database::insert(
+        $commentId = Database::insert(
             "INSERT INTO ticket_comments (ticket_id, user_id, body, is_internal, created_at) VALUES (?, ?, ?, ?, NOW())",
             [$id, Auth::instance()->id(), $_POST['body'], $isInternal]
         );
 
+        $this->uploadTicketFiles((int)$id, $commentId);
+
         flash('success', 'Comment added successfully.');
         redirect('/tickets/' . $id);
+    }
+
+    public function downloadFile(int $ticketId, int $fileId): void
+    {
+        $file = Database::fetch("SELECT * FROM ticket_files WHERE id = ? AND ticket_id = ?", [$fileId, $ticketId]);
+        if (!$file) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $fullPath = base_path($file['file_path']);
+        if (!file_exists($fullPath)) {
+            http_response_code(404);
+            echo 'File not found.';
+            return;
+        }
+
+        header('Content-Type: ' . ($file['mime_type'] ?? 'application/octet-stream'));
+        header('Content-Disposition: attachment; filename="' . $file['original_name'] . '"');
+        header('Content-Length: ' . filesize($fullPath));
+        readfile($fullPath);
+        exit;
+    }
+
+    private function uploadTicketFiles(int $ticketId, ?int $commentId): void
+    {
+        if (empty($_FILES['attachments']) || !is_array($_FILES['attachments']['name'])) {
+            return;
+        }
+
+        $hasFiles = false;
+        foreach ($_FILES['attachments']['error'] as $err) {
+            if ($err === UPLOAD_ERR_OK) {
+                $hasFiles = true;
+                break;
+            }
+        }
+        if (!$hasFiles) return;
+
+        $uploadDir = base_path('storage/uploads/ticket_files/' . $ticketId);
+        if (!is_dir($uploadDir)) {
+            if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
+                $uploadDir = sys_get_temp_dir() . '/turtle_ticket_files/' . $ticketId;
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+            }
+        }
+
+        $userId = Auth::instance()->id();
+        foreach ($_FILES['attachments']['error'] as $i => $error) {
+            if ($error !== UPLOAD_ERR_OK) continue;
+
+            $name = $_FILES['attachments']['name'][$i];
+            $tmpName = $_FILES['attachments']['tmp_name'][$i];
+            $size = $_FILES['attachments']['size'][$i];
+            $type = $_FILES['attachments']['type'][$i];
+
+            if ($name === '' || $tmpName === '') continue;
+
+            $ext = pathinfo($name, PATHINFO_EXTENSION);
+            $filename = uniqid() . '.' . $ext;
+            $destPath = $uploadDir . '/' . $filename;
+
+            if (move_uploaded_file($tmpName, $destPath)) {
+                Database::insert(
+                    "INSERT INTO ticket_files (ticket_id, comment_id, file_path, original_name, size, mime_type, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+                    [$ticketId, $commentId, 'storage/uploads/ticket_files/' . $ticketId . '/' . $filename, $name, $size, $type, $userId]
+                );
+            }
+        }
     }
 }

@@ -108,9 +108,27 @@ CREATE TABLE IF NOT EXISTS ticket_comments (
     user_id INT NOT NULL,
     body TEXT NOT NULL,
     is_internal TINYINT(1) DEFAULT 0,
+    is_system TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS ticket_files (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT NOT NULL,
+    comment_id INT DEFAULT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    size INT DEFAULT NULL,
+    mime_type VARCHAR(100) DEFAULT NULL,
+    uploaded_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+    FOREIGN KEY (comment_id) REFERENCES ticket_comments(id) ON DELETE SET NULL,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id),
+    INDEX idx_ticket (ticket_id),
+    INDEX idx_comment (comment_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS documents (

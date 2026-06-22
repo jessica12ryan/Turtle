@@ -53,6 +53,8 @@
             'tickets.delete' => 'Delete Tickets',
             'tickets.comment' => 'Comment on Tickets',
             'tickets.internal_comment' => 'Internal Comments on Tickets',
+            'tickets.upload_photos' => 'Upload Photos/Documents to Tickets',
+            'tickets.download_photos' => 'Download Photos/Documents from Tickets',
             'staff.access' => 'View Staff',
             'staff.create' => 'Create Staff',
             'staff.edit' => 'Edit Staff',
@@ -94,6 +96,8 @@
                 'update_status' => 'text-cyan-600',
                 'restore' => 'text-orange-600',
                 'download' => 'text-purple-600',
+                'upload_photos' => 'text-cyan-600',
+                'download_photos' => 'text-cyan-600',
             ];
             return $map[$action] ?? 'text-gray-600';
         }
@@ -114,6 +118,8 @@
                 'update_status' => 'text-cyan-600 focus:ring-cyan-500',
                 'restore' => 'text-orange-600 focus:ring-orange-500',
                 'download' => 'text-purple-600 focus:ring-purple-500',
+                'upload_photos' => 'text-cyan-600 focus:ring-cyan-500',
+                'download_photos' => 'text-cyan-600 focus:ring-cyan-500',
             ];
             return $map[$action] ?? 'text-gray-600 focus:ring-gray-500';
         }

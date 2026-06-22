@@ -196,6 +196,7 @@ $router->post('/tickets/{id}/assign', 'TicketController@assign', ['auth', 'perm:
 $router->post('/tickets/{id}/status', 'TicketController@status', ['auth', 'perm:tickets.update_status']);
 $router->post('/tickets/{id}/restore', 'TicketController@restore', ['auth', 'perm:tickets.restore']);
 $router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth', 'perm:tickets.comment']);
+$router->get('/tickets/{ticketId}/files/{fileId}/download', 'TicketController@downloadFile', ['auth', 'perm:tickets.download_photos']);
 
 // Documents
 $router->get('/documents/{id}/view', 'DocumentController@view', ['auth', 'perm:leases.access']);
