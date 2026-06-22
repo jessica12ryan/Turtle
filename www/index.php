@@ -38,6 +38,62 @@ if ($requestUri === '/' || $requestUri === '/index.php') {
     exit;
 }
 
+// Set timezone from settings
+try {
+    $tzSetting = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'timezone'");
+    if ($tzSetting && $tzSetting['value']) {
+        date_default_timezone_set($tzSetting['value']);
+    }
+} catch (\Throwable $e) {}
+
+// Process scheduled move-outs (limit: once per hour)
+try {
+    $lastCheck = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_moveout_check'");
+    $lastTs = $lastCheck['value'] ?? '';
+    $now = date('Y-m-d H:i:s');
+    if (!$lastTs || (strtotime($now) - strtotime($lastTs)) > 3600) {
+        $expired = \App\Core\Database::fetchAll(
+            "SELECT pt.* FROM property_tenant pt 
+             WHERE pt.move_out_date IS NOT NULL 
+             AND pt.move_out_date <= CURDATE() 
+             AND pt.moved_out_at IS NULL"
+        );
+        foreach ($expired as $pt) {
+            \App\Core\Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL",
+                [$pt['id']]
+            );
+            \App\Core\Database::execute(
+                "UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL",
+                [$pt['tenant_id']]
+            );
+            \App\Core\Database::execute(
+                "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
+                [$pt['tenant_id']]
+            );
+            // If main tenant, cascade to secondary tenants
+            if (!empty($pt['is_main_tenant'])) {
+                $secondaries = \App\Core\Database::fetchAll(
+                    "SELECT tenant_id FROM property_tenant 
+                     WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NULL",
+                    [$pt['property_id'], $pt['tenant_id']]
+                );
+                foreach ($secondaries as $s) {
+                    \App\Core\Database::execute("UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL", [$s['tenant_id']]);
+                    \App\Core\Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL", [$s['tenant_id']]);
+                    \App\Core\Database::execute("UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL", [$s['tenant_id']]);
+                }
+            }
+        }
+        \App\Core\Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('last_moveout_check', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$now, $now]
+        );
+    }
+} catch (\Throwable $e) {
+    error_log('Scheduled move-out check failed: ' . $e->getMessage());
+}
+
 // Boot check: redirect to setup if no admin or landlord user exists
 $needsSetup = false;
 try {
@@ -157,6 +213,7 @@ $router->post('/profile', 'ProfileController@update', ['auth']);
 // Settings (admin only)
 $router->get('/settings', 'SettingsController@index', ['auth', 'role:admin']);
 $router->post('/settings/reset', 'SettingsController@reset', ['auth', 'role:admin']);
+$router->post('/settings/general', 'SettingsController@saveGeneral', ['auth', 'role:admin']);
 $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:admin']);
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);

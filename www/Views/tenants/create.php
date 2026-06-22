@@ -16,27 +16,32 @@
         </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Property <span class="text-red-500">*</span></label>
-            <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+            <select name="property_id" id="property-select" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 <option value="">Select Property</option>
                 <?php foreach ($properties as $p): ?>
                     <option value="<?= $p['id'] ?>" <?= (old('property_id') == $p['id'] || ($_GET['property_id'] ?? '') == $p['id']) ? 'selected' : '' ?>><?= h($p['name']) ?> (<?= h($p['landlord_name']) ?>)</option>
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Lease Start <span class="text-red-500">*</span></label>
-                <input type="date" name="lease_start" value="<?= old('lease_start') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                <input type="date" name="lease_start" id="lease-start" value="<?= old('lease_start') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Lease End</label>
-                <input type="date" name="lease_end" value="<?= old('lease_end') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <input type="date" name="lease_end" id="lease-end" value="<?= old('lease_end') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <p class="text-xs text-gray-400 mt-1">Optional — leave blank for month-to-month</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled Move Out</label>
+                <input type="date" name="move_out_date" id="move-out-date" value="<?= old('move_out_date') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-400 mt-1">Optional — tenant auto-archives on this date.</p>
             </div>
         </div>
         <div class="mb-4">
             <label class="flex items-center">
-                <input type="checkbox" name="is_main_tenant" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <input type="checkbox" name="is_main_tenant" id="is-main-tenant" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                 <span class="ml-2 text-sm text-gray-700">Make this the main tenant</span>
             </label>
         </div>
@@ -52,3 +57,36 @@
         </div>
     </form>
 </div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function() {
+    document.querySelectorAll('#lease-start, #lease-end').forEach(el => el.removeAttribute('disabled'));
+});
+
+const mainTenants = <?= json_encode($mainTenants) ?>;
+
+function syncLeaseDates() {
+    const isMain = document.getElementById('is-main-tenant').checked;
+    const propId = document.getElementById('property-select').value;
+    const startEl = document.getElementById('lease-start');
+    const endEl = document.getElementById('lease-end');
+    const moveOutEl = document.getElementById('move-out-date');
+
+    if (isMain) {
+        startEl.removeAttribute('disabled');
+        endEl.removeAttribute('disabled');
+        startEl.classList.remove('bg-gray-100');
+        endEl.classList.remove('bg-gray-100');
+    } else if (propId && mainTenants[propId]) {
+        startEl.value = mainTenants[propId].lease_start || '';
+        endEl.value = mainTenants[propId].lease_end || '';
+        startEl.setAttribute('disabled', 'disabled');
+        endEl.setAttribute('disabled', 'disabled');
+        startEl.classList.add('bg-gray-100');
+        endEl.classList.add('bg-gray-100');
+    }
+}
+
+document.getElementById('is-main-tenant').addEventListener('change', syncLeaseDates);
+document.getElementById('property-select').addEventListener('change', syncLeaseDates);
+</script>

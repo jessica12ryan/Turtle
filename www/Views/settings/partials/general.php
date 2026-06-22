@@ -3,6 +3,34 @@
     <p class="text-sm text-gray-500 mt-1">Configure application-wide settings.</p>
 </div>
 
+<!-- Timezone -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Timezone & NTP</h3>
+    <p class="text-sm text-gray-500 mb-4">Set the application timezone and NTP server for accurate time tracking. The NTP server is checked on each page load to ensure time sync.</p>
+
+    <form method="POST" action="/settings/general">
+        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Timezone <span class="text-red-500">*</span></label>
+                <select name="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <?php foreach ($timezones as $tz): ?>
+                        <option value="<?= $tz ?>" <?= $tz === $selectedTz ? 'selected' : '' ?>><?= $tz ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">NTP Server</label>
+                <input type="text" name="ntp_server" value="<?= h($mail['ntp_server'] ?: 'time.gov') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-400 mt-1">Used for time sync verification. Default: time.gov</p>
+            </div>
+        </div>
+
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Save General Settings</button>
+    </form>
+</div>
+
 <!-- Mail Settings -->
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4">Email (SMTP)</h3>

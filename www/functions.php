@@ -61,6 +61,37 @@ function base_path(string $path = ''): string
     return __DIR__ . '/../' . ltrim($path, '/');
 }
 
+function checkNtpTime(): ?array
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'ntp_server'");
+        $server = $row['value'] ?? 'time.gov';
+    } catch (\Throwable $e) {
+        $server = 'time.gov';
+    }
+
+    $url = $server === 'time.gov'
+        ? 'https://time.gov/actualtime.cgi'
+        : $server;
+
+    $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+    $response = @file_get_contents($url, false, $ctx);
+    if ($response === false) return null;
+
+    if ($server === 'time.gov') {
+        $xml = @simplexml_load_string($response);
+        if (!$xml || !isset($xml['time'])) return null;
+        $ntpMs = (int)$xml['time'];
+        return [
+            'ntp_time' => $ntpMs / 1000,
+            'system_time' => time(),
+            'drift' => abs(time() - ($ntpMs / 1000)),
+        ];
+    }
+
+    return null;
+}
+
 function provinces(): array
 {
     return [

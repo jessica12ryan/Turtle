@@ -15,13 +15,41 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
             <input type="text" name="phone" value="<?= h($tenant['phone'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
         </div>
-        <div class="mb-6">
+        <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Property</label>
             <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <?php foreach ($properties as $p): ?>
                     <option value="<?= $p['id'] ?>" <?= $p['id'] == ($tenant['property_id'] ?? '') ? 'selected' : '' ?>><?= h($p['name']) ?> (<?= h($p['landlord_name']) ?>)</option>
                 <?php endforeach; ?>
             </select>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Lease Start</label>
+                <?php if ($tenant['is_main_tenant']): ?>
+                    <input type="date" name="lease_start" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <?php else: ?>
+                    <input type="date" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                    <p class="text-xs text-gray-400 mt-1">Lease dates must be changed on main tenant.</p>
+                <?php endif; ?>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Lease End</label>
+                <?php if ($tenant['is_main_tenant']): ?>
+                    <input type="date" name="lease_end" value="<?= h($tenant['lease_end']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <?php else: ?>
+                    <input type="date" value="<?= h($tenant['lease_end']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                <?php endif; ?>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Scheduled Move Out</label>
+                <?php if ($tenant['is_main_tenant']): ?>
+                    <input type="date" name="move_out_date" value="<?= h($tenant['move_out_date']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <?php else: ?>
+                    <input type="date" value="<?= h($tenant['move_out_date']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                <?php endif; ?>
+                <p class="text-xs text-gray-400 mt-1">Optional — tenant auto-archives on this date.</p>
+            </div>
         </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Update</button>

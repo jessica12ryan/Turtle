@@ -110,6 +110,13 @@ class HomeController
             if ($archivedProperties && $archivedProperties['cnt'] > 0) {
                 $alerts['warning'][] = ['msg' => $archivedProperties['cnt'] . ' archived propert' . ($archivedProperties['cnt'] > 1 ? 'ies' : 'y') . ' exist. Consider permanent cleanup.', 'link' => '/properties'];
             }
+
+            $ntp = checkNtpTime();
+            if ($ntp === null) {
+                $alerts['critical'][] = ['msg' => 'Unable to reach NTP server for time sync. System time may be inaccurate.', 'link' => '/settings?tab=general'];
+            } elseif ($ntp['drift'] > 60) {
+                $alerts['warning'][] = ['msg' => 'System time differs from NTP by ' . $ntp['drift'] . ' seconds. Consider syncing your server clock.', 'link' => '/settings?tab=general'];
+            }
         }
 
         if (in_array($role, ['admin', 'landlord', 'property_manager'])) {

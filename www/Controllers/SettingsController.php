@@ -18,7 +18,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -29,6 +29,10 @@ class SettingsController
                     $data['mail'][$k] = '';
                 }
             }
+
+            $tz = $data['mail']['timezone'] ?: 'America/New_York';
+            $data['timezones'] = \DateTimeZone::listIdentifiers();
+            $data['selectedTz'] = $tz;
         } elseif ($tab === 'updates') {
             $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
@@ -44,6 +48,34 @@ class SettingsController
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Settings']);
         $view->render('settings/index', $data);
+    }
+
+    public function saveGeneral(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=general');
+        }
+
+        $allowedTz = \DateTimeZone::listIdentifiers();
+        $tz = $_POST['timezone'] ?? '';
+        if (!in_array($tz, $allowedTz)) {
+            $tz = 'America/New_York';
+        }
+
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('timezone', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$tz, $tz]
+        );
+
+        $ntpServer = $_POST['ntp_server'] ?? 'time.gov';
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('ntp_server', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$ntpServer, $ntpServer]
+        );
+
+        flash('success', 'General settings saved successfully.');
+        redirect('/settings?tab=general');
     }
 
     public function saveMail(): void

@@ -10,6 +10,53 @@ use App\Core\Mailer;
 
 class TenantController
 {
+    private function getPropertyTenant(int $tenantId): ?array
+    {
+        return Database::fetch(
+            "SELECT * FROM property_tenant WHERE tenant_id = ?", [$tenantId]
+        );
+    }
+
+    private function archiveSecondaryTenants(int $propertyId, int $mainTenantId): void
+    {
+        $secondaries = Database::fetchAll(
+            "SELECT tenant_id FROM property_tenant 
+             WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NULL",
+            [$propertyId, $mainTenantId]
+        );
+        foreach ($secondaries as $s) {
+            Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$s['tenant_id']]);
+            Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
+                [$s['tenant_id']]
+            );
+            Database::execute(
+                "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
+                [$s['tenant_id']]
+            );
+        }
+    }
+
+    private function restoreSecondaryTenants(int $propertyId, int $mainTenantId): void
+    {
+        $secondaries = Database::fetchAll(
+            "SELECT tenant_id FROM property_tenant 
+             WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NOT NULL",
+            [$propertyId, $mainTenantId]
+        );
+        foreach ($secondaries as $s) {
+            Database::execute("UPDATE users SET archived_at = NULL WHERE id = ?", [$s['tenant_id']]);
+            Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NULL, updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NOT NULL",
+                [$s['tenant_id']]
+            );
+            Database::execute(
+                "UPDATE leases SET archived_at = NULL WHERE tenant_id = ? AND archived_at IS NOT NULL",
+                [$s['tenant_id']]
+            );
+        }
+    }
+
     public function index(): void
     {
         $user = Auth::instance()->user();
@@ -79,14 +126,29 @@ class TenantController
             );
         }
 
+        // Fetch main tenant info per property for auto-fill
+        $mainTenants = [];
+        foreach ($properties as $p) {
+            $mt = Database::fetch(
+                "SELECT u.name, pt.lease_start, pt.lease_end 
+                 FROM property_tenant pt 
+                 JOIN users u ON u.id = pt.tenant_id 
+                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL 
+                 LIMIT 1",
+                [$p['id']]
+            );
+            if ($mt) {
+                $mainTenants[$p['id']] = $mt;
+            }
+        }
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Invite Tenant']);
-        $view->render('tenants/create', compact('properties'));
+        $view->render('tenants/create', compact('properties', 'mainTenants'));
     }
 
     public function store(): void
     {
-        // Check for archived duplicate email
         $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
         if ($archived) {
             flash('error', 'Email exists in archived tenant.');
@@ -107,7 +169,6 @@ class TenantController
             redirect('/tenants/create');
         }
 
-        // Format phone number
         $phone = $_POST['phone'] ?? '';
         $phone = preg_replace('/[^0-9]/', '', $phone);
         if (strlen($phone) === 10) {
@@ -122,7 +183,7 @@ class TenantController
         );
 
         $existingMain = Database::fetch(
-            "SELECT pt.id, p.name as property_name FROM property_tenant pt 
+            "SELECT pt.id, pt.lease_start, pt.lease_end, p.name as property_name FROM property_tenant pt 
              JOIN properties p ON p.id = pt.property_id
              WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL",
             [$_POST['property_id']]
@@ -137,12 +198,20 @@ class TenantController
 
         $isMain = !$existingMain ? 1 : 0;
 
-        $leaseStart = $_POST['lease_start'] ?? null;
-        $leaseEnd = $_POST['lease_end'] ?: null;
+        // Secondary tenants inherit lease dates from the main tenant
+        if (!$isMain && $existingMain) {
+            $leaseStart = $existingMain['lease_start'];
+            $leaseEnd = $existingMain['lease_end'];
+        } else {
+            $leaseStart = $_POST['lease_start'] ?? null;
+            $leaseEnd = $_POST['lease_end'] ?: null;
+        }
+
+        $moveOutDate = $_POST['move_out_date'] ?: null;
 
         Database::insert(
-            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, NOW(), NOW())",
-            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd]
+            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, NOW(), NOW())",
+            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate]
         );
 
         if (!empty($_POST['send_welcome_email'])) {
@@ -192,6 +261,8 @@ class TenantController
         $tenant = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
         if (!$tenant) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        $pt = $this->getPropertyTenant($id);
+
         $user = Auth::instance()->user();
         if ($user['role'] === 'admin') {
             $properties = Database::fetchAll(
@@ -216,6 +287,12 @@ class TenantController
                  ORDER BY p.name"
             );
         }
+
+        $tenant['is_main_tenant'] = $pt['is_main_tenant'] ?? 0;
+        $tenant['lease_start'] = $pt['lease_start'] ?? '';
+        $tenant['lease_end'] = $pt['lease_end'] ?? '';
+        $tenant['move_out_date'] = $pt['move_out_date'] ?? '';
+        $tenant['property_id'] = $pt['property_id'] ?? '';
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Tenant']);
@@ -245,6 +322,18 @@ class TenantController
             [$_POST['name'], $phone, $id]
         );
 
+        $pt = $this->getPropertyTenant($id);
+        if ($pt && !empty($pt['is_main_tenant'])) {
+            $leaseStart = $_POST['lease_start'] ?? null;
+            $leaseEnd = $_POST['lease_end'] ?: null;
+            $moveOutDate = $_POST['move_out_date'] ?: null;
+
+            Database::execute(
+                "UPDATE property_tenant SET lease_start = ?, lease_end = ?, move_out_date = ?, updated_at = NOW() WHERE tenant_id = ?",
+                [$leaseStart, $leaseEnd, $moveOutDate, $id]
+            );
+        }
+
         flash('success', 'Tenant updated successfully.');
         redirect('/tenants/' . $id);
     }
@@ -254,20 +343,46 @@ class TenantController
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
         Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE tenant_id = ? AND moved_out_at IS NOT NULL", [$id]);
 
+        // Cascade restore to secondary tenants if this is a main tenant
+        $pt = Database::fetch(
+            "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
+            [$id]
+        );
+        if ($pt) {
+            $this->restoreSecondaryTenants($pt['property_id'], $id);
+        }
+
         flash('success', 'Tenant restored successfully.');
         redirect('/tenants');
     }
 
     public function moveOut(int $id): void
     {
-        Database::execute(
-            "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
+        $pt = Database::fetch(
+            "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
             [$id]
         );
-        Database::execute(
-            "UPDATE users SET archived_at = NOW() WHERE id = ?",
-            [$id]
-        );
+
+        if ($pt) {
+            // Archive the tenant
+            Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
+                [$id]
+            );
+            Database::execute(
+                "UPDATE users SET archived_at = NOW() WHERE id = ?",
+                [$id]
+            );
+            Database::execute(
+                "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
+                [$id]
+            );
+
+            // Cascade archive to secondary tenants if this is a main tenant
+            if (!empty($pt['is_main_tenant'])) {
+                $this->archiveSecondaryTenants($pt['property_id'], $id);
+            }
+        }
 
         flash('success', 'Tenant archived successfully.');
         redirect('/tenants');
@@ -277,6 +392,23 @@ class TenantController
     {
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $pt = Database::fetch(
+            "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
+            [$id]
+        );
+
+        if ($pt) {
+            // Also delete secondary tenants
+            $secondaries = Database::fetchAll(
+                "SELECT tenant_id FROM property_tenant WHERE property_id = ? AND tenant_id != ?",
+                [$pt['property_id'], $id]
+            );
+            foreach ($secondaries as $s) {
+                Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$s['tenant_id']]);
+                Database::execute("DELETE FROM users WHERE id = ?", [$s['tenant_id']]);
+            }
+        }
 
         Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$id]);
         Database::execute("DELETE FROM users WHERE id = ?", [$id]);
