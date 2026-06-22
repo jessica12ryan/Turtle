@@ -127,11 +127,11 @@
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
-                <thead>
+                <thead class="sticky top-0 z-10 bg-white">
                     <tr class="border-b">
-                        <th class="text-left py-2 pr-4 font-medium text-gray-500">Permission</th>
+                        <th class="text-left py-2 pr-4 font-medium text-gray-500 bg-white">Permission</th>
                         <?php foreach ($roles as $role): ?>
-                            <th class="text-center py-2 px-3 font-medium text-gray-500 capitalize"><?= h($role) ?></th>
+                            <th class="text-center py-2 px-3 font-medium text-gray-500 capitalize bg-white"><?= h($role) ?></th>
                         <?php endforeach; ?>
                     </tr>
                 </thead>
