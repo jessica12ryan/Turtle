@@ -276,10 +276,8 @@ class SettingsController
             [$mode, $mode]
         );
 
-        $fullSave = isset($_POST['full_save']);
-
-        if ($mode === 'custom' && $fullSave) {
-            $allPerms = $_POST['perms'] ?? [];
+        if ($mode === 'custom' && isset($_POST['perms'])) {
+            $allPerms = $_POST['perms'];
             $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
             foreach ($roles as $role) {
@@ -294,5 +292,22 @@ class SettingsController
 
         flash('success', 'Permissions saved successfully.');
         redirect('/settings?tab=permissions');
+    }
+
+    public function setPermissionsMode(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid security token.']);
+            return;
+        }
+
+        $mode = $_POST['permissions_mode'] ?? 'default';
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('permissions_mode', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$mode, $mode]
+        );
+
+        echo json_encode(['success' => true, 'mode' => $mode]);
     }
 }

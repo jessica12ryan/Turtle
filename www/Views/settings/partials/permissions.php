@@ -7,12 +7,12 @@
 
         <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
             <label class="flex items-center space-x-3">
-                <input type="radio" name="permissions_mode" value="default" <?= ($permissionsMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="permissions_mode" value="default" <?= ($permissionsMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="setMode(this.value)" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Use default permissions</span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1">Permissions will automatically update when the application is updated.</p>
             <label class="flex items-center space-x-3 mt-2">
-                <input type="radio" name="permissions_mode" value="custom" <?= ($permissionsMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="permissions_mode" value="custom" <?= ($permissionsMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="setMode(this.value)" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Custom permissions</span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1">Manually configure each role's permissions. These will be preserved on update.</p>
@@ -154,7 +154,7 @@
                                     <?php
                                     $defaultGranted = in_array($perm, $defaults[$role] ?? []);
                                     $overridden = isset($overrides[$role]) && in_array($perm, $overrides[$role]);
-                                    $checked = $isDefault ? $defaultGranted : ($overridden || $defaultGranted);
+                                    $checked = $isDefault ? $defaultGranted : $overridden;
                                     ?>
                                     <td class="text-center py-1.5 px-3">
                                         <input type="checkbox"
@@ -173,8 +173,22 @@
         </div>
 
         <div class="mt-6">
-            <input type="hidden" name="full_save" value="1">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Save Permissions</button>
         </div>
     </form>
 </div>
+
+<script>
+function setMode(mode) {
+    fetch('/settings/permissions-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: '_csrf=<?= csrf_token() ?>&permissions_mode=' + mode
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) location.reload();
+    })
+    .catch(() => location.reload());
+}
+</script>

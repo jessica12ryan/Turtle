@@ -218,6 +218,7 @@ $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:ad
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
+$router->post('/settings/permissions-mode', 'SettingsController@setPermissionsMode', ['auth', 'role:admin']);
 
 // Updates API (admin only)
 $router->post('/updates/check', 'UpdateController@check', ['auth', 'role:admin']);
