@@ -84,6 +84,11 @@ class Router
                     redirect('/login');
                 }
                 $user = $auth->user();
+                if (!$user) {
+                    $auth->logout();
+                    $_SESSION['_flash']['error'] = 'Session expired. Please log in again.';
+                    redirect('/login');
+                }
                 if (!empty($user['timezone'])) {
                     date_default_timezone_set($user['timezone']);
                 }
