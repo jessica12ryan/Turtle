@@ -109,11 +109,19 @@ class TenantController
         );
 
         $existingMain = Database::fetch(
-            "SELECT id FROM property_tenant WHERE property_id = ? AND is_main_tenant = 1 AND moved_out_at IS NULL",
+            "SELECT pt.id, p.name as property_name FROM property_tenant pt 
+             JOIN properties p ON p.id = pt.property_id
+             WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL",
             [$_POST['property_id']]
         );
 
-        $isMain = !$existingMain ? 1 : (int)($_POST['is_main_tenant'] ?? 0);
+        if ($existingMain && !empty($_POST['is_main_tenant'])) {
+            flash('error', 'Main tenant already exists for ' . h($existingMain['property_name']) . '. Uncheck "Main tenant" or choose a different property.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/tenants/create');
+        }
+
+        $isMain = !$existingMain ? 1 : 0;
 
         Database::insert(
             "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW(), NOW())",

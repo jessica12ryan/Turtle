@@ -64,8 +64,18 @@ function base_path(string $path = ''): string
 function provinces(): array
 {
     return [
-        'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick',
-        'Newfoundland and Labrador', 'Nova Scotia', 'Ontario', 'Prince Edward Island',
-        'Quebec', 'Saskatchewan', 'Northwest Territories', 'Nunavut', 'Yukon',
+        'AB' => 'Alberta',
+        'BC' => 'British Columbia',
+        'MB' => 'Manitoba',
+        'NB' => 'New Brunswick',
+        'NL' => 'Newfoundland and Labrador',
+        'NS' => 'Nova Scotia',
+        'ON' => 'Ontario',
+        'PE' => 'Prince Edward Island',
+        'QC' => 'Quebec',
+        'SK' => 'Saskatchewan',
+        'NT' => 'Northwest Territories',
+        'NU' => 'Nunavut',
+        'YT' => 'Yukon',
     ];
 }

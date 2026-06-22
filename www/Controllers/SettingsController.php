@@ -23,15 +23,31 @@ class SettingsController
         }
 
         $admin = Auth::instance()->user();
-
         $resetAll = !empty($_POST['reset_all']);
-        $resetProperties = $resetAll || !empty($_POST['reset_properties']);
-        $resetTenants = $resetAll || !empty($_POST['reset_tenants']);
-        $resetStaff = $resetAll || !empty($_POST['reset_staff']);
-        $resetLeases = $resetAll || !empty($_POST['reset_leases']);
-        $resetTickets = $resetAll || !empty($_POST['reset_tickets']);
 
-        if ($resetLeases) {
+        if ($resetAll) {
+            Database::execute("DELETE FROM documents WHERE 1=1", []);
+            Database::execute("DELETE FROM ticket_comments WHERE 1=1", []);
+            Database::execute("DELETE FROM tickets WHERE 1=1", []);
+            Database::execute("DELETE FROM leases WHERE 1=1", []);
+            Database::execute("DELETE FROM property_tenant WHERE 1=1", []);
+            Database::execute("DELETE FROM properties WHERE 1=1", []);
+            Database::execute("DELETE FROM company_user WHERE 1=1", []);
+            Database::execute("DELETE FROM companies WHERE 1=1", []);
+            Database::execute("DELETE FROM notifications WHERE 1=1", []);
+            Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
+            Database::execute("DELETE FROM sessions WHERE 1=1", []);
+            Database::execute("DELETE FROM users WHERE 1=1", []);
+
+            session_unset();
+            session_destroy();
+            $_SESSION = [];
+
+            header('Location: /setup');
+            exit;
+        }
+
+        if (!empty($_POST['reset_leases'])) {
             $leases = Database::fetchAll("SELECT id FROM leases WHERE archived_at IS NULL", []);
             foreach ($leases as $lease) {
                 $docs = Database::fetchAll("SELECT file_path FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$lease['id']]);
@@ -44,16 +60,13 @@ class SettingsController
             Database::execute("DELETE FROM leases WHERE 1=1", []);
         }
 
-        if ($resetTickets) {
+        if (!empty($_POST['reset_tickets'])) {
             Database::execute("DELETE FROM ticket_comments WHERE 1=1", []);
             Database::execute("DELETE FROM tickets WHERE 1=1", []);
         }
 
-        if ($resetTenants) {
-            $tenantIds = Database::fetchAll(
-                "SELECT u.id FROM users u WHERE u.role = 'tenant' AND u.archived_at IS NULL",
-                []
-            );
+        if (!empty($_POST['reset_tenants'])) {
+            $tenantIds = Database::fetchAll("SELECT id FROM users WHERE role = 'tenant' AND archived_at IS NULL", []);
             $idList = array_column($tenantIds, 'id');
             if (!empty($idList)) {
                 $idStr = implode(',', $idList);
@@ -62,14 +75,14 @@ class SettingsController
             }
         }
 
-        if ($resetProperties) {
+        if (!empty($_POST['reset_properties'])) {
             Database::execute("DELETE FROM property_tenant WHERE 1=1", []);
             Database::execute("DELETE FROM properties WHERE 1=1", []);
         }
 
-        if ($resetStaff) {
+        if (!empty($_POST['reset_staff'])) {
             $staffIds = Database::fetchAll(
-                "SELECT u.id FROM users u WHERE u.role IN ('landlord','property_manager','maintenance') AND u.id != ? AND u.archived_at IS NULL",
+                "SELECT id FROM users WHERE role IN ('landlord','property_manager','maintenance') AND id != ? AND archived_at IS NULL",
                 [$admin['id']]
             );
             $idList = array_column($staffIds, 'id');

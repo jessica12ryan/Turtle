@@ -76,6 +76,26 @@ class HomeController
                 $alerts['critical'][] = ['msg' => 'No admin account exists. Create one to maintain system access.', 'link' => '/setup'];
             }
 
+            $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+            $latestVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
+            $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
+
+            $checkInterval = 3600;
+            $needsCheck = !$lastCheck || !$lastCheck['value'] || (time() - strtotime($lastCheck['value'])) > $checkInterval;
+
+            if ($needsCheck) {
+                $latestFromGit = \App\Controllers\UpdateController::getLatestVersion();
+                if ($latestFromGit) {
+                    Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$latestFromGit]);
+                    Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
+                    $latestVer = ['value' => $latestFromGit];
+                }
+            }
+
+            if ($latestVer && $latestVer['value'] && version_compare($latestVer['value'], $currentVer['value'] ?? '0.0.0', '>')) {
+                $alerts['warning'][] = ['msg' => 'Update v' . h($latestVer['value']) . ' is available.', 'link' => '/updates'];
+            }
+
             $landlordCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'landlord' AND archived_at IS NULL");
             if (!$landlordCount || $landlordCount['cnt'] === 0) {
                 $alerts['critical'][] = ['msg' => 'No landlord account exists. Create one to manage properties.', 'link' => '/staff/create'];

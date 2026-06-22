@@ -17,17 +17,17 @@
             <a href="/properties" class="text-blue-600 hover:underline mt-2 inline-block">View Properties</a>
         </div>
     <?php else: ?>
-        <form method="POST" action="/leases" enctype="multipart/form-data" x-data="{
+        <form method="POST" action="/leases" enctype="multipart/form-data" x-data='{
             properties: <?= json_encode(array_map(function($p) {
                 return ['id' => $p['id'], 'name' => $p['name'], 'main_tenant_id' => $p['main_tenant_id'] ?? null];
-            }, $properties)) ?>,
-            tenantNames: <?= json_encode($tenantNames) ?>,
-            selectedProperty: '',
+            }, $properties), JSON_HEX_APOS) ?>,
+            tenantNames: <?= json_encode($tenantNames, JSON_HEX_APOS) ?>,
+            selectedProperty: "",
             get mainTenantName() {
                 const prop = this.properties.find(p => p.id == this.selectedProperty);
-                return prop && prop.main_tenant_id ? (this.tenantNames[prop.id] || 'Unknown') : null;
+                return prop && prop.main_tenant_id ? (this.tenantNames[prop.id] || "Unknown") : null;
             }
-        }">
+        }'>
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Property <span class="text-red-500">*</span></label>

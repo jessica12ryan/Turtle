@@ -8,24 +8,10 @@ class Mailer
     {
         $host = $_ENV['MAIL_HOST'] ?? 'mailpit';
         $port = (int)($_ENV['MAIL_PORT'] ?? 1025);
+        $username = ($_ENV['MAIL_USERNAME'] ?? '') ?: null;
+        $password = ($_ENV['MAIL_PASSWORD'] ?? '') ?: null;
         $fromAddress = $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@turtleapp.com';
         $fromName = $_ENV['MAIL_FROM_NAME'] ?? 'Turtle';
-
-        $headers = [
-            'MIME-Version: 1.0',
-            'Content-Type: text/html; charset=UTF-8',
-            'From: ' . $fromName . ' <' . $fromAddress . '>',
-            'To: ' . $to,
-            'Subject: ' . $subject,
-        ];
-
-        $headerStr = implode("\r\n", $headers) . "\r\n\r\n";
-
-        $socket = @fsockopen($host, $port, $errno, $errstr, 5);
-        if (!$socket) {
-            error_log("Mailer: Failed to connect to {$host}:{$port} - {$errstr}");
-            return false;
-        }
 
         $html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>{$subject}</title></head><body style=\"font-family: Arial, sans-serif; padding: 20px;\">{$body}</body></html>";
 
@@ -44,8 +30,38 @@ class Mailer
         }
         $mailStr .= "\r\n{$html}";
 
+        $errno = 0;
+        $errstr = '';
+        $socket = @fsockopen($host, $port, $errno, $errstr, 10);
+        if (!$socket) {
+            error_log("Mailer: Failed to connect to {$host}:{$port} - {$errstr}");
+            return false;
+        }
+
+        $response = fread($socket, 512);
+
         fwrite($socket, "EHLO turtle\r\n");
-        fread($socket, 512);
+        $response = fread($socket, 512);
+
+        if ($username !== null) {
+            if ($port === 587) {
+                fwrite($socket, "STARTTLS\r\n");
+                $response = fread($socket, 512);
+                if (str_starts_with($response, '220')) {
+                    stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                    fwrite($socket, "EHLO turtle\r\n");
+                    $response = fread($socket, 512);
+                }
+            }
+
+            fwrite($socket, "AUTH LOGIN\r\n");
+            $response = fread($socket, 512);
+            fwrite($socket, base64_encode($username) . "\r\n");
+            $response = fread($socket, 512);
+            fwrite($socket, base64_encode($password) . "\r\n");
+            $response = fread($socket, 512);
+        }
+
         fwrite($socket, "MAIL FROM:<{$fromAddress}>\r\n");
         fread($socket, 512);
         fwrite($socket, "RCPT TO:<{$to}>\r\n");

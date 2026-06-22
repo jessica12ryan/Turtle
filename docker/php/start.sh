@@ -31,6 +31,16 @@ mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE properties A
 mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE leases ADD COLUMN tenant_id INT DEFAULT NULL AFTER property_id;" 2>/dev/null || true
 mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "ALTER TABLE leases ADD FOREIGN KEY (tenant_id) REFERENCES users(id);" 2>/dev/null || true
 
+# Settings table for version tracking
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "CREATE TABLE IF NOT EXISTS settings (\`key\` VARCHAR(100) PRIMARY KEY, \`value\` TEXT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;" 2>/dev/null || true
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('app_version', '0.0.0'), ('last_update_check', ''), ('latest_version', '');" 2>/dev/null || true
+
+# Configure git safe directory for mounted repo
+git config --global --add safe.directory /var/www/html 2>/dev/null || true
+
+APP_VER=$(cd /var/www/html && (git describe --tags 2>/dev/null || git log --oneline -1 --format=%h 2>/dev/null || echo "0.0.0") | sed 's/^v//')
+mysql -h mysql -u turtle -pturtle turtle --skip-ssl -e "UPDATE settings SET \`value\` = '${APP_VER}' WHERE \`key\` = 'app_version';" 2>/dev/null || true
+
 # Ensure storage directories exist
 mkdir -p storage/uploads/leases storage/logs storage/framework
 

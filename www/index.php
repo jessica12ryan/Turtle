@@ -136,6 +136,12 @@ $router->post('/profile', 'ProfileController@update', ['auth']);
 $router->get('/settings', 'SettingsController@index', ['auth', 'role:admin']);
 $router->post('/settings/reset', 'SettingsController@reset', ['auth', 'role:admin']);
 
+// Updates (admin only)
+$router->get('/updates', 'UpdateController@index', ['auth', 'role:admin']);
+$router->post('/updates/check', 'UpdateController@check', ['auth', 'role:admin']);
+$router->post('/updates/apply', 'UpdateController@apply', ['auth', 'role:admin']);
+$router->get('/updates/progress', 'UpdateController@progress', ['auth', 'role:admin']);
+
 try {
     $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
     $uri = $_SERVER['REQUEST_URI'];
