@@ -63,7 +63,11 @@ class SetupController
                 foreach ($statements as $stmt) {
                     $stmt = trim($stmt);
                     if ($stmt !== '') {
-                        $pdo->exec($stmt);
+                        try {
+                            $pdo->exec($stmt);
+                        } catch (\Throwable $e) {
+                            error_log('Seed data exec failed: ' . $e->getMessage());
+                        }
                     }
                 }
             }
