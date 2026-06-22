@@ -33,6 +33,7 @@ class UpdateController
         echo json_encode(array_merge([
             'current_version' => $currentVersion,
             'channel' => $channel,
+            'last_check' => date('M j, Y g:i A'),
         ], $result));
     }
 

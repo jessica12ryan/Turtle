@@ -34,7 +34,7 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($lease['property_name']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= count($lease['documents']) ?></td>
-                        <td class="px-6 py-4 text-sm text-gray-500"><?= date('M j, Y', strtotime($lease['created_at'])) ?></td>
+                        <td class="px-6 py-4 text-sm text-gray-500"><?= display_time($lease['created_at'], 'M j, Y') ?></td>
                         <td class="px-6 py-4 space-x-2">
                             <a href="/leases/<?= $lease['id'] ?>" class="text-blue-600 hover:underline text-sm">View</a>
                             <?php if (!$lease['archived_at'] && can('leases.archive')): ?>

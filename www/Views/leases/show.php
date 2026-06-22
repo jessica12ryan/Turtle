@@ -1,7 +1,7 @@
 <div class="flex justify-between items-center mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800"><?= h($lease['title']) ?></h1>
-        <p class="text-gray-500"><?= h($lease['property_name']) ?> — Uploaded by <?= h($lease['uploader_name']) ?> on <?= date('M j, Y', strtotime($lease['created_at'])) ?></p>
+        <p class="text-gray-500"><?= h($lease['property_name']) ?> — Uploaded by <?= h($lease['uploader_name']) ?> on <?= display_time($lease['created_at'], 'M j, Y') ?></p>
     </div>
     <div class="flex space-x-3">
         <a href="/properties/<?= $lease['property_id'] ?>" class="text-blue-600 hover:underline text-sm">View Property</a>

@@ -18,7 +18,7 @@
                             <p class="text-sm text-gray-600 mt-1"><?= h($n['data']) ?></p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="text-xs text-gray-500"><?= date('M j, Y g:i A', strtotime($n['created_at'])) ?></span>
+                            <span class="text-xs text-gray-500"><?= display_time($n['created_at']) ?></span>
                             <?php if (!$n['read_at']): ?>
                                 <form method="POST" action="/notifications/<?= $n['id'] ?>/read">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">

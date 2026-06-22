@@ -384,3 +384,15 @@ function site_logo(): string
     } catch (\Throwable $e) {}
     return '/assets/logo.svg';
 }
+
+function display_time(?string $datetime, string $format = 'M j, Y g:i A'): string
+{
+    if (!$datetime) return '';
+    try {
+        $dt = new \DateTime($datetime, new \DateTimeZone('UTC'));
+        $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+        return $dt->format($format);
+    } catch (\Throwable $e) {
+        return $datetime;
+    }
+}

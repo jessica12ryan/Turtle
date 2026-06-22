@@ -27,7 +27,7 @@
             </div>
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500">Joined</dt>
-                <dd class="text-sm text-gray-600"><?= date('M j, Y', strtotime($staff['created_at'])) ?></dd>
+                <dd class="text-sm text-gray-600"><?= display_time($staff['created_at'], 'M j, Y') ?></dd>
             </div>
         </dl>
     </div>

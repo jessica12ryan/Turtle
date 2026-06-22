@@ -32,7 +32,7 @@
     </div>
     <div class="bg-white rounded-lg shadow p-6">
         <p class="text-sm text-gray-500 mb-1">Last Checked</p>
-        <p class="text-sm font-medium text-gray-800" id="last-check"><?= h($lastCheck ? date('M j, Y g:i A', strtotime($lastCheck)) : 'Never') ?></p>
+        <p class="text-sm font-medium text-gray-800" id="last-check"><?= h($lastCheck ? display_time($lastCheck) : 'Never') ?></p>
     </div>
 </div>
 
@@ -221,7 +221,7 @@ function checkForUpdates() {
             }
 
             document.getElementById('latest-version').textContent = data.latest_version || '—';
-            document.getElementById('last-check').textContent = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+            document.getElementById('last-check').textContent = data.last_check || 'Never';
 
             if (data.update_available) {
                 document.getElementById('update-section').classList.remove('hidden');
