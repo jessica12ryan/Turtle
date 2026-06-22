@@ -73,6 +73,18 @@ $router->post('/password/change', 'AuthController@changePasswordPost', ['auth'])
 // Home
 $router->get('/home', 'HomeController@index', ['auth']);
 
+// Resources
+$router->get('/resources', 'ResourceController@index', ['auth']);
+$router->get('/resources/create', 'ResourceController@create', ['auth', 'role:admin,landlord,property_manager']);
+$router->post('/resources', 'ResourceController@store', ['auth', 'role:admin,landlord,property_manager']);
+$router->get('/resources/{id}/edit', 'ResourceController@edit', ['auth', 'role:admin,landlord,property_manager']);
+$router->post('/resources/{id}/update', 'ResourceController@update', ['auth', 'role:admin,landlord,property_manager']);
+$router->post('/resources/{id}/delete', 'ResourceController@destroy', ['auth', 'role:admin,landlord,property_manager']);
+
+// Calendar
+$router->get('/calendar', 'CalendarController@index', ['auth']);
+$router->get('/calendar/events', 'CalendarController@events', ['auth']);
+
 // Staff
 $router->get('/staff', 'StaffController@index', ['auth', 'role:landlord,property_manager']);
 $router->get('/staff/create', 'StaffController@create', ['auth', 'role:landlord']);

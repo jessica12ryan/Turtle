@@ -24,6 +24,10 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php if (in_array($user['role'], $mgmtRoles)): ?>
                         <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
                     <?php endif; ?>
+                    <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
+                    <?php if ($user['role'] !== 'tenant'): ?>
+                        <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="flex items-center space-x-4">

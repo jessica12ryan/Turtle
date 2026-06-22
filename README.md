@@ -65,6 +65,14 @@ MAIL_FROM_NAME=Turtle
 
 **Free SMTP options:** Brevo (300/day), Mailtrap (4k/month), Mailjet (6k/month)
 
+## Resources
+
+A shared links page available to all users. Admins, landlords, and property managers can add, edit, and delete resource links (URLs with optional descriptions). Accessible from the top navigation bar.
+
+## Calendar
+
+Shows tenant move-in dates (green), move-out dates (red), and lease end dates (yellow) on an interactive monthly calendar. Not available to tenants. Data is fetched via a JSON API endpoint at `/calendar/events` for extensibility (future notices, evictions, etc.).
+
 ## Persistent Data
 
 - MySQL database → `mysql-data` Docker volume
