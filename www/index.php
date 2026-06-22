@@ -174,7 +174,7 @@ $router->post('/tenants', 'TenantController@store', ['auth', 'perm:tenants.creat
 $router->get('/tenants/{id}', 'TenantController@show', ['auth', 'perm:tenants.access']);
 $router->get('/tenants/{id}/edit', 'TenantController@edit', ['auth', 'perm:tenants.edit']);
 $router->post('/tenants/{id}/update', 'TenantController@update', ['auth', 'perm:tenants.edit']);
-$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.archive']);
+$router->post('/tenants/{id}/move-out', 'TenantController@moveOut', ['auth', 'perm:tenants.edit']);
 $router->post('/tenants/{id}/restore', 'TenantController@restore', ['auth', 'perm:tenants.restore']);
 $router->post('/tenants/{id}/delete', 'TenantController@destroy', ['auth', 'perm:tenants.delete']);
 

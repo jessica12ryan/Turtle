@@ -56,8 +56,7 @@
             'photos.delete' => 'Delete Photos',
             'tenants.access' => 'View Tenants',
             'tenants.create' => 'Create Tenants',
-            'tenants.edit' => 'Edit Tenants',
-            'tenants.archive' => 'Archive Tenants',
+            'tenants.edit' => 'Edit Tenants (Move Out)',
             'tenants.restore' => 'Restore Tenants',
             'tenants.delete' => 'Delete Tenants',
             'leases.access' => 'View Leases',
@@ -150,7 +149,7 @@
                                     <?php
                                     $defaultGranted = in_array($perm, $defaults[$role] ?? []);
                                     $overridden = isset($overrides[$role]) && in_array($perm, $overrides[$role]);
-                                    $checked = $overridden || $defaultGranted;
+                                    $checked = $isDefault ? $defaultGranted : ($overridden || $defaultGranted);
                                     ?>
                                     <td class="text-center py-1.5 px-3">
                                         <input type="checkbox"
