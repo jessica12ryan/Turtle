@@ -40,7 +40,7 @@ class ResourceController
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'title' => 'required|max:255',
-            'url' => 'required|max:500',
+            'url' => 'required',
             'description' => 'max:1000',
         ])) {
             $_SESSION['_errors'] = $validator->errors();
@@ -51,6 +51,12 @@ class ResourceController
         $url = $_POST['url'];
         if (!preg_match('#^https?://#i', $url)) {
             $url = 'https://' . $url;
+        }
+
+        if (strlen($url) > 500) {
+            flash('error', 'URL must not exceed 500 characters.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/resources/create');
         }
 
         $userId = Auth::instance()->id();
@@ -86,7 +92,7 @@ class ResourceController
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'title' => 'required|max:255',
-            'url' => 'required|max:500',
+            'url' => 'required',
             'description' => 'max:1000',
         ])) {
             $_SESSION['_errors'] = $validator->errors();
@@ -97,6 +103,12 @@ class ResourceController
         $url = $_POST['url'];
         if (!preg_match('#^https?://#i', $url)) {
             $url = 'https://' . $url;
+        }
+
+        if (strlen($url) > 500) {
+            flash('error', 'URL must not exceed 500 characters.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/resources/' . $id . '/edit');
         }
 
         Database::execute(

@@ -11,7 +11,7 @@ function navActive(string $prefix, string $currentUri): string {
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between h-16">
             <div class="flex items-center space-x-8">
-                <a href="/home"><img src="/assets/logo.svg" alt="Turtle" class="h-8"></a>
+                <a href="/home"><img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-8"></a>
                 <div class="hidden md:flex space-x-4">
                     <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
                     <?php if (can('properties.access')): ?>

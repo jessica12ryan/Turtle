@@ -18,7 +18,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -33,6 +33,7 @@ class SettingsController
             $tz = $data['mail']['timezone'] ?: 'America/New_York';
             $data['timezones'] = \DateTimeZone::listIdentifiers();
             $data['selectedTz'] = $tz;
+            $data['siteName'] = $data['mail']['site_name'] ?: 'Turtle';
         } elseif ($tab === 'updates') {
             $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
@@ -83,6 +84,48 @@ class SettingsController
             "INSERT INTO settings (`key`, `value`) VALUES ('ntp_server', ?) ON DUPLICATE KEY UPDATE `value` = ?",
             [$ntpServer, $ntpServer]
         );
+
+        $siteName = trim($_POST['site_name'] ?? '');
+        if ($siteName === '') {
+            $siteName = 'Turtle';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$siteName, $siteName]
+        );
+
+        $keepDefault = !empty($_POST['logo_default']);
+        if ($keepDefault) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', '') ON DUPLICATE KEY UPDATE `value` = ''",
+                []
+            );
+        } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
+            $type = $_FILES['logo']['type'];
+            if (!in_array($type, $allowed)) {
+                flash('error', 'Logo must be PNG, JPEG, GIF, or SVG.');
+                redirect('/settings?tab=general');
+            }
+
+            $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+            $filename = 'logo.' . $ext;
+            $uploadDir = base_path('storage/uploads/logo/');
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            $dest = $uploadDir . $filename;
+
+            if (move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
+                Database::execute(
+                    "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                    ['storage/uploads/logo/' . $filename, 'storage/uploads/logo/' . $filename]
+                );
+            } else {
+                flash('error', 'Failed to upload logo. Check directory permissions.');
+                redirect('/settings?tab=general');
+            }
+        }
 
         flash('success', 'General settings saved successfully.');
         redirect('/settings?tab=general');
@@ -143,6 +186,7 @@ class SettingsController
             Database::execute("DELETE FROM properties WHERE 1=1", []);
             Database::execute("DELETE FROM company_user WHERE 1=1", []);
             Database::execute("DELETE FROM companies WHERE 1=1", []);
+            Database::execute("DELETE FROM resources WHERE 1=1", []);
             Database::execute("DELETE FROM notifications WHERE 1=1", []);
             Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
             Database::execute("DELETE FROM sessions WHERE 1=1", []);
@@ -201,6 +245,10 @@ class SettingsController
                 Database::execute("DELETE FROM company_user WHERE user_id IN ({$idStr})", []);
                 Database::execute("DELETE FROM users WHERE id IN ({$idStr})", []);
             }
+        }
+
+        if (!empty($_POST['reset_resources'])) {
+            Database::execute("DELETE FROM resources WHERE 1=1", []);
         }
 
         flash('success', 'Reset completed successfully.');

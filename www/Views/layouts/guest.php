@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= h($title ?? 'Turtle') ?> - Turtle</title>
+    <title><?= h($title ?? site_name()) ?> - <?= h(site_name()) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="w-full max-w-md mx-4">
         <div class="text-center mb-8">
-            <img src="/assets/logo.svg" alt="Turtle" class="h-12 mx-auto">
+            <img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-12 mx-auto">
             <p class="text-gray-500 mt-2">Tenant Management Portal</p>
         </div>
         <div class="bg-white rounded-xl shadow-lg p-8">

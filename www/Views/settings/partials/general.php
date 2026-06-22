@@ -3,6 +3,44 @@
     <p class="text-sm text-gray-500 mt-1">Configure application-wide settings.</p>
 </div>
 
+<!-- Branding -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Branding</h3>
+    <p class="text-sm text-gray-500 mb-4">Customize the site name and logo displayed throughout the application.</p>
+
+    <form method="POST" action="/settings/general" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Site Name</label>
+            <input type="text" name="site_name" value="<?= h($siteName ?? 'Turtle') ?>" class="w-full max-w-md border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            <p class="text-xs text-gray-400 mt-1">Used in page titles and branding. Default: Turtle</p>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+            <div class="flex items-center space-x-4 mb-2">
+                <img src="<?= h(site_logo()) ?>" alt="Current logo" class="h-10">
+                <span class="text-sm text-gray-500">Current logo</span>
+            </div>
+            <div class="space-y-2">
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="logo_default" value="1" <?= site_logo() === '/assets/logo.svg' ? 'checked' : '' ?> class="text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm text-gray-700">Use default logo</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="radio" name="logo_default" value="0" <?= site_logo() !== '/assets/logo.svg' ? 'checked' : '' ?> class="text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm text-gray-700">Upload custom logo</span>
+                </label>
+                <input type="file" name="logo" accept="image/png,image/jpeg,image/gif,image/svg+xml" class="block text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-xs text-gray-400">Recommended: 200x50px PNG, JPEG, GIF, or SVG. Max dimensions: 400x100px.</p>
+            </div>
+        </div>
+
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Save Branding</button>
+    </form>
+</div>
+
 <!-- Timezone -->
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4">Timezone & NTP</h3>

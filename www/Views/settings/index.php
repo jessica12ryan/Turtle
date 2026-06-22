@@ -73,6 +73,11 @@
                             <input type="checkbox" name="reset_tickets" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             <span class="ml-3 text-gray-700">Ticket Data</span>
                         </label>
+
+                        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ml-6">
+                            <input type="checkbox" name="reset_resources" value="1" class="reset-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-3 text-gray-700">Resource Data</span>
+                        </label>
                     </div>
 
                     <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium" onclick="return confirm('Are you sure you want to reset the selected data? This cannot be undone.')">Reset Selected Data</button>

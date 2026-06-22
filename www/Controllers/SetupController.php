@@ -69,6 +69,41 @@ class SetupController
             }
         }
 
+        // Save branding
+        $siteName = trim($_POST['site_name'] ?? '');
+        if ($siteName === '') {
+            $siteName = 'Turtle';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$siteName, $siteName]
+        );
+
+        $keepDefault = !empty($_POST['logo_default']);
+        if ($keepDefault) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', '') ON DUPLICATE KEY UPDATE `value` = ''",
+                []
+            );
+        } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
+            $type = $_FILES['logo']['type'];
+            if (in_array($type, $allowed)) {
+                $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+                $filename = 'logo.' . $ext;
+                $uploadDir = base_path('storage/uploads/logo/');
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
+                    Database::execute(
+                        "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                        ['storage/uploads/logo/' . $filename, 'storage/uploads/logo/' . $filename]
+                    );
+                }
+            }
+        }
+
         Auth::instance()->login($_POST['email'], $_POST['password']);
         redirect('/home');
     }

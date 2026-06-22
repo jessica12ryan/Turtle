@@ -363,3 +363,24 @@ function provinces(): array
         'YT' => 'Yukon',
     ];
 }
+
+function site_name(): string
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'site_name'");
+        return $row['value'] ?? 'Turtle';
+    } catch (\Throwable $e) {
+        return 'Turtle';
+    }
+}
+
+function site_logo(): string
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'logo_path'");
+        if ($row && $row['value'] !== '') {
+            return '/' . ltrim($row['value'], '/');
+        }
+    } catch (\Throwable $e) {}
+    return '/assets/logo.svg';
+}
