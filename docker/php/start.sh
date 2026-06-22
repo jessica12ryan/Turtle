@@ -21,7 +21,7 @@ fi
 git config --global --add safe.directory /var/www/html 2>/dev/null || true
 
 # Ensure storage directories exist and are writable by www-data
-mkdir -p storage/uploads/leases storage/logs storage/framework
+mkdir -p storage/uploads/leases storage/uploads/property_photos storage/logs storage/framework
 chown -R www-data:www-data storage/uploads storage/logs storage/framework 2>/dev/null || true
 chmod -R 777 storage/uploads storage/logs storage/framework 2>/dev/null || true
 

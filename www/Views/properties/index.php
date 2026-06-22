@@ -17,7 +17,7 @@
             <a href="/properties/<?= $property['id'] ?>" class="bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden <?= $property['archived_at'] ? 'opacity-60' : '' ?>">
                 <?php if ($property['main_photo']): ?>
                     <div class="h-40 bg-gray-100 overflow-hidden">
-                        <img src="/properties/<?= $property['id'] ?>/photos/<?= $property['main_photo']['id'] ?>" alt="" class="w-full h-full object-cover">
+                        <img src="/properties/<?= $property['id'] ?>/photos/<?= $property['main_photo']['id'] ?>" alt="<?= h($property['main_photo']['original_name']) ?>" class="w-full h-full object-cover">
                     </div>
                 <?php else: ?>
                     <div class="h-40 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">

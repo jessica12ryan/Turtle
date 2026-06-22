@@ -32,6 +32,7 @@ class PropertyController
 
     public function index(): void
     {
+        $this->ensurePhotosTable();
         $auth = Auth::instance();
         $user = $auth->user();
         $showArchived = !empty($_GET['show_archived']);
@@ -240,23 +241,27 @@ class PropertyController
 
     private function getPhotoUploadDir(int $propertyId): array
     {
-        $primary = base_path('storage/uploads/property_photos/' . $propertyId);
-        $fallback = sys_get_temp_dir() . '/turtle_photos/' . $propertyId;
+        $primaryDir = base_path('storage/uploads/property_photos/' . $propertyId);
+        $fallbackBase = sys_get_temp_dir() . '/turtle_photos';
+        $fallbackDir = $fallbackBase . '/' . $propertyId;
 
-        if (is_dir($primary) && is_writable($primary)) {
-            return ['dir' => $primary, 'prefix' => 'storage/uploads/property_photos'];
+        if (is_dir($primaryDir) && is_writable($primaryDir)) {
+            return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
         }
-        if (!is_dir($fallback)) {
-            @mkdir($fallback, 0777, true);
+        if (!is_dir($fallbackDir)) {
+            @mkdir($fallbackDir, 0777, true);
         }
-        if (is_dir($fallback) && is_writable($fallback)) {
-            return ['dir' => $fallback, 'prefix' => $fallback];
+        if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
+            return ['dir' => $fallbackDir, 'prefix' => $fallbackBase];
         }
-        if (!is_dir($primary)) {
-            @mkdir($primary, 0777, true);
+        if (!is_dir($primaryDir)) {
+            @mkdir($primaryDir, 0777, true);
+            @chmod($primaryDir, 0777);
+            $escaped = escapeshellarg($primaryDir);
+            exec("chmod -R 777 {$escaped} 2>/dev/null; chown -R www-data:www-data {$escaped} 2>/dev/null");
         }
-        if (is_dir($primary) && is_writable($primary)) {
-            return ['dir' => $primary, 'prefix' => 'storage/uploads/property_photos'];
+        if (is_dir($primaryDir) && is_writable($primaryDir)) {
+            return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
         }
         return ['dir' => '', 'prefix' => ''];
     }
@@ -364,6 +369,33 @@ class PropertyController
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . filesize($fullPath));
         header('Cache-Control: max-age=86400');
+        readfile($fullPath);
+        exit;
+    }
+
+    public function downloadPhoto(int $id, int $photoId): void
+    {
+        $this->ensurePhotosTable();
+        $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
+        if (!$photo) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+
+        $path = $photo['file_path'];
+        $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
+
+        if (!file_exists($fullPath)) {
+            http_response_code(404);
+            echo 'File not found.';
+            return;
+        }
+
+        $mime = $photo['mime_type'] ?: 'application/octet-stream';
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: attachment; filename="' . $photo['original_name'] . '"');
+        header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
         exit;
     }

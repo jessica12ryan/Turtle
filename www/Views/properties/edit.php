@@ -70,13 +70,16 @@
                         <span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">Main</span>
                     <?php endif; ?>
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100">
+                        <a href="/properties/<?= $property['id'] ?>/photos/<?= $photo['id'] ?>/download" class="bg-white text-gray-800 p-1.5 rounded-full hover:bg-gray-100" title="Download">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </a>
                         <?php if (!$photo['is_main']): ?>
-                            <form method="POST" action="/properties/<?= $property['id'] ?>/photos/<?= $photo['id'] ?>/main">
+                            <form method="POST" action="/properties/<?= $property['id'] ?>/photos/<?= $photo['id'] ?>/main" class="inline">
                                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                 <button type="submit" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded hover:bg-blue-700">Set as Main</button>
                             </form>
                         <?php endif; ?>
-                        <form method="POST" action="/properties/<?= $property['id'] ?>/photos/<?= $photo['id'] ?>/delete" onsubmit="return confirm('Delete this photo?')">
+                        <form method="POST" action="/properties/<?= $property['id'] ?>/photos/<?= $photo['id'] ?>/delete" class="inline" onsubmit="return confirm('Delete this photo?')">
                             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                             <button type="submit" class="bg-red-600 text-white text-xs px-3 py-1.5 rounded hover:bg-red-700">Delete</button>
                         </form>

@@ -95,6 +95,7 @@ $router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['aut
 $router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'role:admin,landlord,property_manager']);
 $router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'role:admin,landlord,property_manager']);
 $router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth']);
+$router->get('/properties/{id}/photos/{photoId}/download', 'PropertyController@downloadPhoto', ['auth']);
 
 // Tenants
 $router->get('/tenants', 'TenantController@index', ['auth', 'role:landlord,property_manager']);
