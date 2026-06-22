@@ -36,20 +36,16 @@
     </div>
 </div>
 
-<!-- Check Button -->
-<div class="bg-white rounded-lg shadow p-6 mb-6" id="check-section">
-    <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-lg font-semibold text-gray-800">Check for Updates</h2>
-            <p class="text-sm text-gray-500 mt-1">Check for new updates on the selected channel.</p>
-        </div>
-        <button id="check-btn" onclick="checkForUpdates()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center space-x-2">
-            <svg id="check-spinner" class="w-4 h-4 hidden animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span>Check Now</span>
-        </button>
+<!-- Loading -->
+<div id="checking-section" class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-center space-x-3 py-4">
+        <svg class="w-5 h-5 animate-spin text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span class="text-gray-600 text-sm">Checking for updates...</span>
     </div>
-    <div id="check-result" class="mt-4 hidden"></div>
 </div>
+
+<!-- Error -->
+<div id="check-result" class="hidden mb-6"></div>
 
 <!-- Update Available -->
 <div id="update-section" class="hidden">
@@ -191,28 +187,28 @@ function toggleChannel() {
             document.getElementById('last-check').textContent = 'Never';
             document.getElementById('update-section').classList.add('hidden');
             document.getElementById('up-to-date-section').classList.add('hidden');
+            document.getElementById('checking-section').classList.remove('hidden');
+            document.getElementById('check-result').classList.add('hidden');
+            checkForUpdates();
         }
     })
     .catch(err => console.error('Failed to switch channel:', err));
 }
 
 function checkForUpdates() {
-    const btn = document.getElementById('check-btn');
-    const spinner = document.getElementById('check-spinner');
-    const checkResult = document.getElementById('check-result');
-
-    btn.disabled = true;
-    spinner.classList.remove('hidden');
+    document.getElementById('checking-section').classList.remove('hidden');
+    document.getElementById('check-result').classList.add('hidden');
+    document.getElementById('update-section').classList.add('hidden');
+    document.getElementById('up-to-date-section').classList.add('hidden');
 
     fetch('/updates/check', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
-            spinner.classList.add('hidden');
-            btn.disabled = false;
+            document.getElementById('checking-section').classList.add('hidden');
 
             if (data.error) {
-                checkResult.classList.remove('hidden');
-                checkResult.innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">' + escapeHtml(data.error) + '</div>';
+                document.getElementById('check-result').classList.remove('hidden');
+                document.getElementById('check-result').innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">' + escapeHtml(data.error) + '</div>';
                 return;
             }
 
@@ -238,15 +234,13 @@ function checkForUpdates() {
             document.getElementById('current-version').textContent = data.current_version;
         })
         .catch(err => {
-            spinner.classList.add('hidden');
-            btn.disabled = false;
-            checkResult.classList.remove('hidden');
-            checkResult.innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">Failed to check for updates. Error: ' + err.message + '</div>';
+            document.getElementById('checking-section').classList.add('hidden');
+            document.getElementById('check-result').classList.remove('hidden');
+            document.getElementById('check-result').innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">Failed to check for updates. Error: ' + err.message + '</div>';
         });
 }
 
 function applyUpdate() {
-    document.getElementById('check-section').classList.add('hidden');
     document.getElementById('update-section').classList.add('hidden');
     document.getElementById('progress-section').classList.remove('hidden');
     document.getElementById('apply-btn').disabled = true;
@@ -270,7 +264,6 @@ function pollProgress() {
         .then(data => {
             const totalSteps = 6;
             const doneSteps = data.steps.filter(s => s.status === 'done').length;
-            const inProgress = data.steps.filter(s => s.status === 'in_progress').length;
             const pct = Math.min(Math.round((doneSteps / totalSteps) * 100), 99);
 
             document.getElementById('progress-bar').style.width = pct + '%';
@@ -325,4 +318,6 @@ function escapeHtml(str) {
     div.textContent = str;
     return div.innerHTML;
 }
+
+checkForUpdates();
 </script>

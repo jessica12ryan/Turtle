@@ -37,9 +37,9 @@ docker-compose.yml
 ## Updating
 
 ### In-app (recommended)
-1. Go to **Settings → Updates** (admin only)
-2. Click **Check Now** to see available updates
-3. Click **Apply Update** — runs `git pull` + migrations automatically
+1. Go to **Settings → Updates** (admin only) — the page auto-checks for updates on load
+2. If an update is available, click **Apply Update** — runs `git pull` + migrations automatically
+3. Each step tracks its exit code; only non-zero exit codes produce error output in the progress view
 4. Reload the page when complete
 
 ### Manual

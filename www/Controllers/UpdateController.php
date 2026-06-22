@@ -135,6 +135,8 @@ class UpdateController
         foreach ($steps as $label => $cmd) {
             $script .= "echo '[TURTLE_STEP] {$label}'\n";
             $script .= "{$cmd}\n";
+            $script .= "EXITCODE=\$?\n";
+            $script .= "echo \"[TURTLE_EXIT: \${EXITCODE}]\"\n";
             $script .= "echo '[TURTLE_DONE]'\n";
         }
         $script .= "echo '[TURTLE_COMPLETE]'\n";
@@ -189,20 +191,27 @@ class UpdateController
 
         $steps = [];
         $currentStep = '';
+        $currentOutput = '';
         $error = '';
 
         foreach ($lines as $line) {
             if (str_starts_with($line, '[TURTLE_STEP]')) {
                 $currentStep = trim(substr($line, strlen('[TURTLE_STEP]')));
+                $currentOutput = '';
                 $steps[] = ['label' => $currentStep, 'status' => 'in_progress'];
+            } elseif (str_starts_with($line, '[TURTLE_EXIT:')) {
+                $exitCode = (int)trim(substr($line, strlen('[TURTLE_EXIT:'), -1));
+                if ($exitCode !== 0 && $currentOutput !== '') {
+                    $error .= "Step '{$currentStep}' failed (exit code {$exitCode}):\n{$currentOutput}\n";
+                }
             } elseif (str_starts_with($line, '[TURTLE_DONE]')) {
                 if (!empty($steps)) {
                     $steps[count($steps) - 1]['status'] = 'done';
                 }
             } elseif (str_starts_with($line, '[TURTLE_COMPLETE]')) {
                 $done = true;
-            } elseif (stripos($line, 'error') !== false || stripos($line, 'fatal') !== false) {
-                $error .= $line . "\n";
+            } else {
+                $currentOutput .= $line . "\n";
             }
         }
 
