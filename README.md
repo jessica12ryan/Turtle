@@ -50,8 +50,10 @@ docker compose up -d --build
 
 ## Email Configuration
 
-Set SMTP credentials in `.env` (development uses Mailpit on port 1025):
+### Via Settings UI (recommended)
+Go to **Settings → General** (admin only) to configure SMTP credentials in the browser. Settings are stored in the database and override `.env` values.
 
+### Via .env (fallback)
 ```
 MAIL_HOST=smtp.domain.com
 MAIL_PORT=587

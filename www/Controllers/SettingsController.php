@@ -10,14 +10,26 @@ class SettingsController
 {
     public function index(): void
     {
-        $tab = $_GET['tab'] ?? 'updates';
-        if (!in_array($tab, ['updates', 'reset'])) {
-            $tab = 'updates';
+        $tab = $_GET['tab'] ?? 'general';
+        if (!in_array($tab, ['general', 'updates', 'reset'])) {
+            $tab = 'general';
         }
 
         $data = ['tab' => $tab];
 
-        if ($tab === 'updates') {
+        if ($tab === 'general') {
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
+            $data['mail'] = [];
+            foreach ($rows as $row) {
+                $data['mail'][$row['key']] = $row['value'];
+            }
+            foreach ($keys as $k) {
+                if (!isset($data['mail'][$k])) {
+                    $data['mail'][$k] = '';
+                }
+            }
+        } elseif ($tab === 'updates') {
             $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
             $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
@@ -32,6 +44,42 @@ class SettingsController
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Settings']);
         $view->render('settings/index', $data);
+    }
+
+    public function saveMail(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=general');
+        }
+
+        $fields = [
+            'mail_host' => 'required|max:255',
+            'mail_port' => 'required|numeric|max:65535',
+            'mail_username' => 'max:255',
+            'mail_password' => 'max:255',
+            'mail_from_address' => 'required|max:255',
+            'mail_from_name' => 'required|max:255',
+        ];
+
+        $validator = new \App\Core\Validator();
+        if (!$validator->validate($_POST, $fields)) {
+            $_SESSION['_errors'] = $validator->errors();
+            $_SESSION['_old'] = $_POST;
+            redirect('/settings?tab=general');
+        }
+
+        $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+        foreach ($keys as $key) {
+            $value = $_POST[$key] ?? '';
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$key, $value, $value]
+            );
+        }
+
+        flash('success', 'Mail settings saved successfully.');
+        redirect('/settings?tab=general');
     }
 
     public function reset(): void
@@ -115,6 +163,40 @@ class SettingsController
 
         flash('success', 'Reset completed successfully.');
         redirect('/settings');
+    }
+
+    public function testMail(): void
+    {
+        header('Content-Type: application/json');
+
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid security token.']);
+            return;
+        }
+
+        $user = Auth::instance()->user();
+        $to = $user['email'] ?? '';
+
+        if (!$to) {
+            echo json_encode(['error' => 'No email address on your account.']);
+            return;
+        }
+
+        try {
+            $sent = \App\Core\Mailer::send(
+                $to,
+                'Test Email from Turtle',
+                '<p>This is a test email sent from the Turtle settings page.</p><p>If you received this, your SMTP configuration is working correctly.</p>'
+            );
+            if ($sent) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['error' => 'SMTP server rejected the connection. Check the error log for details.']);
+            }
+        } catch (\Throwable $e) {
+            echo json_encode(['error' => 'Exception: ' . $e->getMessage()]);
+        }
     }
 
     public function setUpdateChannel(): void

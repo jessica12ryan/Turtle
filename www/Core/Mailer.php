@@ -22,14 +22,35 @@ class Mailer
         return true;
     }
 
+    public static function getConfig(string $key, string $default = ''): string
+    {
+        $envMap = [
+            'mail_host' => 'MAIL_HOST',
+            'mail_port' => 'MAIL_PORT',
+            'mail_username' => 'MAIL_USERNAME',
+            'mail_password' => 'MAIL_PASSWORD',
+            'mail_from_address' => 'MAIL_FROM_ADDRESS',
+            'mail_from_name' => 'MAIL_FROM_NAME',
+        ];
+        $envKey = $envMap[$key] ?? strtoupper($key);
+        try {
+            $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$key]);
+            if ($row && $row['value'] !== '') {
+                return $row['value'];
+            }
+        } catch (\Throwable $e) {
+        }
+        return $_ENV[$envKey] ?? $default;
+    }
+
     public static function send(string $to, string $subject, string $body): bool
     {
-        $host = $_ENV['MAIL_HOST'] ?? 'mailpit';
-        $port = (int)($_ENV['MAIL_PORT'] ?? 1025);
-        $username = ($_ENV['MAIL_USERNAME'] ?? '') ?: null;
-        $password = ($_ENV['MAIL_PASSWORD'] ?? '') ?: null;
-        $fromAddress = $_ENV['MAIL_FROM_ADDRESS'] ?? 'noreply@turtleapp.com';
-        $fromName = $_ENV['MAIL_FROM_NAME'] ?? 'Turtle';
+        $host = self::getConfig('mail_host', 'mailpit');
+        $port = (int)(self::getConfig('mail_port', '1025'));
+        $username = self::getConfig('mail_username', '') ?: null;
+        $password = self::getConfig('mail_password', '') ?: null;
+        $fromAddress = self::getConfig('mail_from_address', 'noreply@turtleapp.com');
+        $fromName = self::getConfig('mail_from_name', 'Turtle');
 
         $html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>{$subject}</title></head><body style=\"font-family: Arial, sans-serif; padding: 20px;\">{$body}</body></html>";
 

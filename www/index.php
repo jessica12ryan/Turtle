@@ -140,6 +140,8 @@ $router->post('/profile', 'ProfileController@update', ['auth']);
 // Settings (admin only)
 $router->get('/settings', 'SettingsController@index', ['auth', 'role:admin']);
 $router->post('/settings/reset', 'SettingsController@reset', ['auth', 'role:admin']);
+$router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:admin']);
+$router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 
 // Updates API (admin only)

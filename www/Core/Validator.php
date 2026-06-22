@@ -45,6 +45,7 @@ class Validator
             'confirmed' => (($data[$field . '_confirmation'] ?? null) !== $value) ? "{$label} confirmation does not match." : null,
             'unique' => $this->validateUnique($field, $value, $params),
             'exists' => $this->validateExists($field, $value, $params),
+            'numeric' => (!is_numeric($value)) ? "{$label} must be a number." : null,
             'in' => (!in_array((string)$value, $params)) ? "{$label} is invalid." : null,
             default => null,
         };
