@@ -190,10 +190,15 @@ class SettingsController
             Database::execute("DELETE FROM notifications WHERE 1=1", []);
             Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
             Database::execute("DELETE FROM sessions WHERE 1=1", []);
-            // Reset general and permission settings to defaults (leave update/internal settings alone)
-            $generalKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'permissions_mode'];
+            // Reset general settings to defaults (setup re-creates site_name, logo, timezone, ntp, mail)
+            $generalKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($generalKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $generalKeys);
+            // Reset permissions to "Use defaults"
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('permissions_mode', 'default') ON DUPLICATE KEY UPDATE `value` = 'default'",
+                []
+            );
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
 
             Database::execute("DELETE FROM users WHERE 1=1", []);
