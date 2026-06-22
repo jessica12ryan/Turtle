@@ -9,13 +9,16 @@ use App\Core\Validator;
 
 class ResourceController
 {
+    private ?string $tableCreateError = null;
+
     private function ensureTableExists(): void
     {
         try {
             Database::execute("SELECT 1 FROM resources LIMIT 1");
         } catch (\Throwable $e) {
+            $pdo = \App\Core\Database::instance()->getConnection();
+
             try {
-                $pdo = \App\Core\Database::instance()->getConnection();
                 $pdo->exec("CREATE TABLE IF NOT EXISTS resources (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     title VARCHAR(255) NOT NULL,
@@ -23,11 +26,18 @@ class ResourceController
                     description TEXT DEFAULT '',
                     created_by INT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    FOREIGN KEY (created_by) REFERENCES users(id)
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             } catch (\Throwable $e2) {
-                error_log('ResourceController failed to create resources table: ' . $e2->getMessage());
+                $this->tableCreateError = $e2->getMessage();
+                error_log('ResourceController ensureTableExists failed: ' . $e2->getMessage());
+                return;
+            }
+
+            try {
+                $pdo->exec("ALTER TABLE resources ADD CONSTRAINT fk_resources_created_by FOREIGN KEY (created_by) REFERENCES users(id)");
+            } catch (\Throwable $e3) {
+                error_log('ResourceController ensureTableExists FK failed: ' . $e3->getMessage());
             }
         }
     }
@@ -97,7 +107,11 @@ class ResourceController
             );
         } catch (\Throwable $e) {
             error_log('ResourceController@store insert failed: ' . $e->getMessage());
-            flash('error', 'Failed to add resource: ' . $e->getMessage());
+            $msg = 'Failed to add resource: ' . $e->getMessage();
+            if ($this->tableCreateError) {
+                $msg .= ' | Table creation error: ' . $this->tableCreateError;
+            }
+            flash('error', $msg);
             $_SESSION['_old'] = $_POST;
             redirect('/resources/create');
         }
