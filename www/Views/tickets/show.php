@@ -3,7 +3,7 @@
     <div class="flex justify-between items-start">
         <div>
             <h1 class="text-2xl font-bold text-gray-800"><?= h($ticket['subject']) ?></h1>
-            <p class="text-gray-500 mt-1"><?= h($ticket['property_name']) ?> — Opened by <?= h($ticket['tenant_name']) ?> on <?= date('M j, Y', strtotime($ticket['created_at'])) ?></p>
+            <p class="text-gray-500 mt-1"><?= h($ticket['property_name']) ?> — Opened by <?= h($ticket['tenant_name']) ?> on <?= date('M j, Y g:i A', strtotime($ticket['created_at'])) ?></p>
         </div>
         <div class="flex items-center space-x-2">
             <span class="px-3 py-1 text-sm rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : ($ticket['status'] === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
@@ -98,7 +98,7 @@
                 <div class="flex justify-between"><dt class="text-gray-500">Category</dt><dd><?= ucfirst(str_replace('_', ' ', $ticket['category'])) ?></dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Priority</dt><dd><?= ucfirst($ticket['priority']) ?></dd></div>
                 <div class="flex justify-between"><dt class="text-gray-500">Assigned To</dt><dd><?= h($ticket['assignee_name'] ?? 'Unassigned') ?></dd></div>
-                <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd><?= date('M j, Y', strtotime($ticket['created_at'])) ?></dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Created</dt><dd><?= date('M j, Y g:i A', strtotime($ticket['created_at'])) ?></dd></div>
             </dl>
         </div>
     </div>

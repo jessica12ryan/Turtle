@@ -160,9 +160,11 @@ class TicketController
         $staffUsers = [];
         if (in_array(Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])) {
             $staffUsers = Database::fetchAll(
-                "SELECT u.* FROM users u 
-                 JOIN company_user cu ON cu.user_id = u.id 
-                 WHERE cu.company_id = (SELECT company_id FROM properties WHERE id = ?) AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')
+                "SELECT DISTINCT u.* FROM users u 
+                 LEFT JOIN company_user cu ON cu.user_id = u.id 
+                 WHERE u.archived_at IS NULL 
+                   AND u.role IN ('admin','landlord','property_manager','maintenance')
+                   AND (cu.company_id = (SELECT company_id FROM properties WHERE id = ?) OR u.role = 'admin')
                  ORDER BY u.name",
                 [$ticket['property_id']]
             );

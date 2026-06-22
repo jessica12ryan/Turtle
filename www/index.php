@@ -198,6 +198,7 @@ $router->post('/tickets/{id}/restore', 'TicketController@restore', ['auth', 'per
 $router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth', 'perm:tickets.comment']);
 
 // Documents
+$router->get('/documents/{id}/view', 'DocumentController@view', ['auth', 'perm:leases.access']);
 $router->get('/documents/{id}/download', 'DocumentController@download', ['auth', 'perm:documents.download']);
 $router->post('/documents/{id}/delete', 'DocumentController@destroy', ['auth', 'perm:documents.delete']);
 

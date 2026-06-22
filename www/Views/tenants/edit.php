@@ -12,12 +12,12 @@
             <p class="text-xs text-gray-500 mt-1">Email cannot be changed.</p>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input type="text" name="phone" value="<?= h($tenant['phone'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number <span class="text-red-500">*</span></label>
+            <input type="text" name="phone" value="<?= h($tenant['phone'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required placeholder="(555) 555-5555">
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Property</label>
-            <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Property <span class="text-red-500">*</span></label>
+            <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 <?php foreach ($properties as $p): ?>
                     <option value="<?= $p['id'] ?>" <?= $p['id'] == ($tenant['property_id'] ?? '') ? 'selected' : '' ?>><?= h($p['name']) ?> (<?= h($p['landlord_name']) ?>)</option>
                 <?php endforeach; ?>
@@ -25,9 +25,9 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Lease Start</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Lease Start <span class="text-red-500">*</span></label>
                 <?php if ($tenant['is_main_tenant']): ?>
-                    <input type="date" name="lease_start" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <input type="date" name="lease_start" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 <?php else: ?>
                     <input type="date" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
                     <p class="text-xs text-gray-400 mt-1">Lease dates must be changed on main tenant.</p>

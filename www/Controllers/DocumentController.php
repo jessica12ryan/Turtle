@@ -7,6 +7,30 @@ use App\Core\Database;
 
 class DocumentController
 {
+    public function view(int $id): void
+    {
+        $document = Database::fetch("SELECT * FROM documents WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $filePath = $document['file_path'];
+        if (str_starts_with($filePath, '/')) {
+            $fullPath = $filePath;
+        } else {
+            $fullPath = base_path($filePath);
+        }
+        if (!file_exists($fullPath)) {
+            http_response_code(404);
+            echo 'File not found.';
+            return;
+        }
+
+        header('Content-Type: ' . ($document['mime_type'] ?? 'application/octet-stream'));
+        header('Content-Disposition: inline; filename="' . $document['original_name'] . '"');
+        header('Content-Length: ' . filesize($fullPath));
+        readfile($fullPath);
+        exit;
+    }
+
     public function download(int $id): void
     {
         $document = Database::fetch("SELECT * FROM documents WHERE id = ? AND archived_at IS NULL", [$id]);

@@ -130,7 +130,7 @@ class TenantController
         $mainTenants = [];
         foreach ($properties as $p) {
             $mt = Database::fetch(
-                "SELECT u.name, pt.lease_start, pt.lease_end 
+                "SELECT u.name, pt.lease_start, pt.lease_end, pt.move_out_date
                  FROM property_tenant pt 
                  JOIN users u ON u.id = pt.tenant_id 
                  WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL 
@@ -156,14 +156,26 @@ class TenantController
             redirect('/tenants/create');
         }
 
-        $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        $existingMain = Database::fetch(
+            "SELECT pt.id, pt.lease_start, pt.lease_end, p.name as property_name FROM property_tenant pt 
+             JOIN properties p ON p.id = pt.property_id
+             WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL",
+            [$_POST['property_id']]
+        );
+
+        $isMainRequest = !empty($_POST['is_main_tenant']) || !$existingMain;
+        $rules = [
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
             'property_id' => 'required|exists:properties,id',
             'phone' => 'required|max:20',
-            'lease_start' => 'required',
-        ])) {
+        ];
+        if ($isMainRequest) {
+            $rules['lease_start'] = 'required';
+        }
+
+        $validator = new Validator();
+        if (!$validator->validate($_POST, $rules)) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/tenants/create');
@@ -181,13 +193,6 @@ class TenantController
         $tenantId = Database::insert(
             "INSERT INTO users (name, email, phone, password, role, timezone, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', ?, 1, NOW(), NOW())",
             [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone]
-        );
-
-        $existingMain = Database::fetch(
-            "SELECT pt.id, pt.lease_start, pt.lease_end, p.name as property_name FROM property_tenant pt 
-             JOIN properties p ON p.id = pt.property_id
-             WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL",
-            [$_POST['property_id']]
         );
 
         if ($existingMain && !empty($_POST['is_main_tenant'])) {

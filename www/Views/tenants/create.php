@@ -23,6 +23,12 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <div class="mb-4">
+            <label class="flex items-center">
+                <input type="checkbox" name="is_main_tenant" id="is-main-tenant" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="ml-2 text-sm text-gray-700">Make this the main tenant</span>
+            </label>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Lease Start <span class="text-red-500">*</span></label>
@@ -42,12 +48,6 @@
         <div class="mb-4">
             <?php $currentTimezone = old('timezone'); require base_path('www/Views/partials/timezone.php'); ?>
         </div>
-        <div class="mb-4">
-            <label class="flex items-center">
-                <input type="checkbox" name="is_main_tenant" id="is-main-tenant" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                <span class="ml-2 text-sm text-gray-700">Make this the main tenant</span>
-            </label>
-        </div>
         <div class="mb-6">
             <label class="flex items-center">
                 <input type="checkbox" name="send_welcome_email" value="1" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
@@ -63,7 +63,7 @@
 
 <script>
 document.querySelector('form').addEventListener('submit', function() {
-    document.querySelectorAll('#lease-start, #lease-end').forEach(el => el.removeAttribute('disabled'));
+    document.querySelectorAll('#lease-start, #lease-end, #move-out-date').forEach(el => el.removeAttribute('disabled'));
 });
 
 const mainTenants = <?= json_encode($mainTenants) ?>;
@@ -76,17 +76,20 @@ function syncLeaseDates() {
     const moveOutEl = document.getElementById('move-out-date');
 
     if (isMain) {
-        startEl.removeAttribute('disabled');
-        endEl.removeAttribute('disabled');
-        startEl.classList.remove('bg-gray-100');
-        endEl.classList.remove('bg-gray-100');
+        [startEl, endEl, moveOutEl].forEach(el => {
+            el.removeAttribute('disabled');
+            el.classList.remove('bg-gray-100');
+        });
     } else if (propId && mainTenants[propId]) {
         startEl.value = mainTenants[propId].lease_start || '';
         endEl.value = mainTenants[propId].lease_end || '';
-        startEl.setAttribute('disabled', 'disabled');
-        endEl.setAttribute('disabled', 'disabled');
-        startEl.classList.add('bg-gray-100');
-        endEl.classList.add('bg-gray-100');
+        if (mainTenants[propId].move_out_date) {
+            moveOutEl.value = mainTenants[propId].move_out_date;
+        }
+        [startEl, endEl, moveOutEl].forEach(el => {
+            el.setAttribute('disabled', 'disabled');
+            el.classList.add('bg-gray-100');
+        });
     }
 }
 
