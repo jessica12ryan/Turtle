@@ -44,6 +44,9 @@ run_sql "INSERT INTO role_permissions (role, permission) VALUES
 ('tenant','home.access'),('tenant','tickets.access'),('tenant','tickets.create'),('tenant','tickets.comment'),('tenant','tickets.upload_photos'),('tenant','tickets.download_photos'),('tenant','resources.access'),('tenant','leases.access'),('tenant','documents.download');"
 fi
 
+# Backfill company_user for property_manager/maintenance without entries
+run_sql "INSERT IGNORE INTO company_user (company_id, user_id) SELECT c.id, u.id FROM users u CROSS JOIN companies c WHERE u.role IN ('property_manager','maintenance') AND NOT EXISTS (SELECT 1 FROM company_user cu WHERE cu.user_id = u.id);"
+
 # Update version
 APP_VER=$(cd /var/www/html && (git describe --tags 2>/dev/null || git log --oneline -1 --format=%h 2>/dev/null || echo "0.0.0") | sed 's/^v//')
 run_sql "INSERT INTO settings (\`key\`, \`value\`) VALUES ('app_version', '${APP_VER}') ON DUPLICATE KEY UPDATE \`value\` = '${APP_VER}';"
