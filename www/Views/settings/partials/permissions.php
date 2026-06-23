@@ -131,7 +131,7 @@
                     <tr class="border-b">
                         <th class="text-left py-2 pr-4 font-medium text-gray-500 bg-white">Permission</th>
                         <?php foreach ($roles as $role): ?>
-                            <th class="text-center py-2 px-3 font-medium text-gray-500 capitalize bg-white"><?= h($role) ?></th>
+                            <th class="text-center py-2 px-3 font-medium text-gray-500 bg-white"><?= h(ucwords(str_replace('_', ' ', $role))) ?></th>
                         <?php endforeach; ?>
                     </tr>
                 </thead>

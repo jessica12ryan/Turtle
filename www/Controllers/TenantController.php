@@ -75,13 +75,11 @@ class TenantController
                  {$orderBy}"
             );
         } else {
-            $landlordIds = Database::fetchAll(
-                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
-                 AND landlord_id IN (SELECT cu.user_id FROM company_user cu WHERE cu.user_id = ?)
-                 UNION SELECT ?",
-                [Auth::instance()->id(), Auth::instance()->id()]
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [Auth::instance()->id()]
             );
-            $landlordIdList = implode(',', array_column($landlordIds, 'landlord_id')) ?: '0';
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $tenants = Database::fetchAll(
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
@@ -89,7 +87,7 @@ class TenantController
                  FROM users u 
                  JOIN property_tenant pt ON pt.tenant_id = u.id 
                  JOIN properties p ON p.id = pt.property_id 
-                 WHERE p.landlord_id IN ({$landlordIdList}){$archivedClause}
+                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}
                  {$orderBy}"
             );
         }
@@ -110,18 +108,16 @@ class TenantController
                  ORDER BY p.name"
             );
         } else {
-            $landlordIds = Database::fetchAll(
-                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
-                 AND landlord_id IN (SELECT cu.user_id FROM company_user cu WHERE cu.user_id = ?)
-                 UNION SELECT ?",
-                [$user['id'], $user['id']]
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [$user['id']]
             );
-            $landlordIdList = implode(',', array_column($landlordIds, 'landlord_id')) ?: '0';
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.landlord_id IN ({$landlordIdList}) AND p.archived_at IS NULL 
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
                  ORDER BY p.name"
             );
         }
@@ -278,18 +274,16 @@ class TenantController
                  ORDER BY p.name"
             );
         } else {
-            $landlordIds = Database::fetchAll(
-                "SELECT landlord_id FROM properties WHERE archived_at IS NULL
-                 AND landlord_id IN (SELECT cu.user_id FROM company_user cu WHERE cu.user_id = ?)
-                 UNION SELECT ?",
-                [$user['id'], $user['id']]
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [$user['id']]
             );
-            $landlordIdList = implode(',', array_column($landlordIds, 'landlord_id')) ?: '0';
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.landlord_id IN ({$landlordIdList}) AND p.archived_at IS NULL 
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
                  ORDER BY p.name"
             );
         }

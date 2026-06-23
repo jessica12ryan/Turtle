@@ -93,6 +93,17 @@ class StaffController
             [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone]
         );
 
+        $creatorCompanies = Database::fetchAll(
+            "SELECT company_id FROM company_user WHERE user_id = ?",
+            [Auth::instance()->id()]
+        );
+        foreach ($creatorCompanies as $cc) {
+            Database::execute(
+                "INSERT IGNORE INTO company_user (company_id, user_id) VALUES (?, ?)",
+                [$cc['company_id'], $userId]
+            );
+        }
+
         if (!empty($_POST['send_welcome_email'])) {
             $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
             Mailer::sendTemplate(
