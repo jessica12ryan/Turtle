@@ -151,6 +151,8 @@ class StaffController
 
     public function edit(int $id): void
     {
+        if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
+
         $staff = Database::fetch(
             "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
             [$id]
@@ -169,6 +171,8 @@ class StaffController
 
     public function update(int $id): void
     {
+        if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
+
         $staff = Database::fetch(
             "SELECT * FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('landlord','property_manager','maintenance')",
             [$id]

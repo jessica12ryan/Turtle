@@ -4,7 +4,9 @@
         <p class="text-gray-500"><?= h($staff['email']) ?></p>
     </div>
     <div class="flex space-x-3">
-        <a href="/staff/<?= $staff['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php if (can('staff.edit')): ?>
+            <a href="/staff/<?= $staff['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php endif; ?>
         <?php if (can('staff.archive')): ?>
             <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this staff member? They will no longer be able to log in.')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
@@ -43,7 +45,7 @@
                     <?php foreach ($assignedTickets as $t): ?>
                         <li class="py-3">
                             <a href="/tickets/<?= $t['id'] ?>" class="text-blue-600 hover:underline text-sm"><?= h($t['subject']) ?></a>
-                            <span class="text-xs text-gray-500 block"><?= h($t['property_name']) ?> — <?= ucfirst($t['status']) ?></span>
+                            <span class="text-xs text-gray-500 block"><?= h($t['property_name']) ?> — <?= ucfirst(str_replace('_', ' ', $t['status'])) ?></span>
                         </li>
                     <?php endforeach; ?>
                 </ul>
