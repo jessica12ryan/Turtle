@@ -21,7 +21,7 @@
         </div>
         <hr class="my-6">
         <div class="mb-6">
-            <?php $currentTheme = $user['theme'] ?? 'light'; require base_path('www/Views/partials/theme.php'); ?>
+            <?php $currentTheme = $user['theme'] ?? 'system'; require base_path('www/Views/partials/theme.php'); ?>
         </div>
         <hr class="my-6">
         <h3 class="text-lg font-medium text-gray-800 mb-4">Change Password (optional)</h3>

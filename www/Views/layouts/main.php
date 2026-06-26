@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <?php
 $themeUser = \App\Core\Auth::instance()->user();
-$themePref = $themeUser['theme'] ?? 'light';
+$themePref = $themeUser['theme'] ?? 'system';
 ?>
 <html lang="en" data-theme="<?= h($themePref) ?>">
 <head>
