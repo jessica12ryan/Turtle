@@ -27,7 +27,8 @@ class TicketController
         $params = [];
 
         if ($user['role'] === 'tenant') {
-            $query .= " AND t.tenant_id = ?";
+            $query .= " AND (t.tenant_id = ? OR t.property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL))";
+            $params[] = $auth->id();
             $params[] = $auth->id();
         } elseif ($user['role'] === 'admin') {
             // Admin sees all tickets
@@ -146,6 +147,19 @@ class TicketController
         );
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'tenant') {
+            $assigned = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND property_id = ? AND moved_out_at IS NULL",
+                [$user['id'], $ticket['property_id']]
+            );
+            if (!$assigned && $ticket['tenant_id'] != $user['id']) {
+                http_response_code(403);
+                require base_path('www/Views/errors/403.php');
+                return;
+            }
+        }
+
         $comments = Database::fetchAll(
             "SELECT tc.*, u.name as user_name, u.role as user_role FROM ticket_comments tc 
              JOIN users u ON u.id = tc.user_id 
@@ -261,6 +275,22 @@ class TicketController
 
     public function comment(int $id): void
     {
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'tenant') {
+            $assigned = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND property_id = ? AND moved_out_at IS NULL",
+                [$user['id'], $ticket['property_id']]
+            );
+            if (!$assigned && $ticket['tenant_id'] != $user['id']) {
+                http_response_code(403);
+                require base_path('www/Views/errors/403.php');
+                return;
+            }
+        }
+
         $validator = new Validator();
         if (!$validator->validate($_POST, ['body' => 'required'])) {
             flash('error', 'Comment cannot be empty.');
