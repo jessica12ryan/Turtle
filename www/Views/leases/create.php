@@ -1,4 +1,4 @@
-<h1 class="text-2xl font-bold text-gray-800 mb-6">Upload Lease</h1>
+<h1 class="text-2xl font-bold text-gray-800 mb-6">Upload Document</h1>
 <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
     <?php if (!empty($noTenantProperties)): ?>
         <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -62,7 +62,7 @@
                 <p class="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, images accepted</p>
             </div>
             <div class="flex space-x-3">
-                <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed" x-bind:disabled="selectedProperty && !mainTenantName">Upload Lease</button>
+                <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed" x-bind:disabled="selectedProperty && !mainTenantName">Upload Document</button>
                 <a href="/leases" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
             </div>
         </form>

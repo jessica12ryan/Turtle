@@ -51,7 +51,7 @@
     <?php if (isset($stats['leases'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-purple-600"><?= $stats['leases'] ?></p>
-            <p class="text-sm text-gray-500">Leases</p>
+            <p class="text-sm text-gray-500">Documents</p>
         </div>
     <?php endif; ?>
     <?php if (isset($stats['open_tickets'])): ?>

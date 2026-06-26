@@ -7,7 +7,7 @@
             </a>
         <?php endif; ?>
         <?php if (can('leases.create')): ?>
-            <a href="/leases/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Upload Lease</a>
+            <a href="/leases/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Upload Document</a>
         <?php endif; ?>
     </div>
 </div>
