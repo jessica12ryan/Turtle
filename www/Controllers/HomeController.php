@@ -149,9 +149,9 @@ class HomeController
                 $alerts[$isAdmin ? 'warning' : 'critical'][] = ['msg' => 'No tenants exist. Add tenants to your properties.', 'link' => '/tenants/create'];
             }
 
-            $openTickets = Database::fetch("SELECT COUNT(*) as cnt FROM tickets WHERE status IN ('open','in_progress') AND archived_at IS NULL");
+            $openTickets = Database::fetch("SELECT COUNT(*) as cnt FROM tickets WHERE status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL");
             if ($openTickets && $openTickets['cnt'] > 5) {
-                $alerts['warning'][] = ['msg' => $openTickets['cnt'] . ' open/in-progress tickets need attention.', 'link' => '/tickets'];
+                $alerts['warning'][] = ['msg' => $openTickets['cnt'] . ' open tickets need attention.', 'link' => '/tickets'];
             }
         }
 
@@ -188,7 +188,7 @@ class HomeController
                 "SELECT COUNT(*) as count FROM leases WHERE property_id IN ({$propertyIdList}) AND archived_at IS NULL"
             )['count'] ?? 0;
             $stats['open_tickets'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress') AND archived_at IS NULL"
+                "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL"
             )['count'] ?? 0;
 
             $recentTickets = Database::fetchAll(

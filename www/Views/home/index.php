@@ -54,12 +54,6 @@
             <p class="text-sm text-gray-500">Leases</p>
         </div>
     <?php endif; ?>
-    <?php if (isset($stats['tickets'])): ?>
-        <div class="bg-white rounded-lg shadow p-4 text-center">
-            <p class="text-2xl font-bold text-orange-600"><?= $stats['tickets'] ?></p>
-            <p class="text-sm text-gray-500">My Tickets</p>
-        </div>
-    <?php endif; ?>
     <?php if (isset($stats['open_tickets'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-orange-600"><?= $stats['open_tickets'] ?></p>
