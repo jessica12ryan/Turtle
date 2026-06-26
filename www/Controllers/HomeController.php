@@ -37,7 +37,7 @@ class HomeController
             $allTickets = Database::fetch(
                 "SELECT COUNT(*) as cnt FROM tickets 
                  WHERE property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL) 
-                 AND archived_at IS NULL",
+                 AND archived_at IS NULL AND status != 'closed'",
                 [$auth->id()]
             );
 

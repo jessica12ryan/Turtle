@@ -27,7 +27,7 @@ class TicketController
         $params = [];
 
         if ($user['role'] === 'tenant') {
-            $query .= " AND (t.tenant_id = ? OR t.property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL))";
+            $query .= " AND (t.tenant_id = ? OR t.property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL)) AND t.status != 'closed'";
             $params[] = $auth->id();
             $params[] = $auth->id();
         } elseif ($user['role'] === 'admin') {
@@ -149,6 +149,11 @@ class TicketController
 
         $user = Auth::instance()->user();
         if ($user['role'] === 'tenant') {
+            if ($ticket['status'] === 'closed') {
+                http_response_code(403);
+                require base_path('www/Views/errors/403.php');
+                return;
+            }
             $assigned = Database::fetch(
                 "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND property_id = ? AND moved_out_at IS NULL",
                 [$user['id'], $ticket['property_id']]
@@ -280,6 +285,11 @@ class TicketController
 
         $user = Auth::instance()->user();
         if ($user['role'] === 'tenant') {
+            if ($ticket['status'] === 'closed') {
+                http_response_code(403);
+                require base_path('www/Views/errors/403.php');
+                return;
+            }
             $assigned = Database::fetch(
                 "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND property_id = ? AND moved_out_at IS NULL",
                 [$user['id'], $ticket['property_id']]
