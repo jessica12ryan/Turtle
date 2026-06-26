@@ -3,9 +3,14 @@ $mainPhotoId = null;
 foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhotoId = $ph['id']; break; } } ?>
 
 <div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
-        <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
+    <div class="flex items-center space-x-4">
+        <?php if ($hasMainPhoto): ?>
+            <img src="/properties/<?= $property['id'] ?>/photos/<?= $mainPhotoId ?>" alt="Main photo" class="w-16 h-16 rounded-lg object-cover flex-shrink-0">
+        <?php endif; ?>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
+            <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
+        </div>
     </div>
     <div class="flex space-x-3">
         <?php if (can('properties.edit')): ?>

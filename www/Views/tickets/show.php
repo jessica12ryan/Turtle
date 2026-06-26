@@ -42,13 +42,14 @@ foreach ($files ?? [] as $f) {
         </div>
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b">
-                <h2 class="text-lg font-semibold text-gray-800">Comments (<?= count($comments) ?>)</h2>
+                <h2 class="text-lg font-semibold text-gray-800">Comments (<?= count(array_filter($comments, fn($c) => $user['role'] !== 'tenant' || !$c['is_internal'])) ?>)</h2>
             </div>
             <div class="p-6 space-y-4">
                 <?php if (empty($comments)): ?>
                     <p class="text-gray-500 text-sm">No comments yet.</p>
                 <?php else: ?>
                     <?php foreach ($comments as $comment): ?>
+                        <?php if ($comment['is_internal'] && $user['role'] === 'tenant') continue; ?>
                         <?php if ($comment['is_system']): ?>
                             <div class="p-3 border rounded-lg bg-gray-50 border-gray-200">
                                 <div class="flex items-center justify-between mb-1">
