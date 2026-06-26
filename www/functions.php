@@ -303,6 +303,8 @@ function defaultPermissions(): array
         ],
         'tenant' => [
             'home.access',
+            'properties.access',
+            'tenants.access',
             'tickets.access', 'tickets.create', 'tickets.comment', 'tickets.upload_photos', 'tickets.download_photos',
             'resources.access',
             'leases.access',
