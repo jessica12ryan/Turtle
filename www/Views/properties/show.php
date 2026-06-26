@@ -5,7 +5,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
 <div class="flex justify-between items-center mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
-        <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?></p>
+        <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
     </div>
     <div class="flex space-x-3">
         <?php if (can('properties.edit')): ?>

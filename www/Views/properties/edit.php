@@ -25,18 +25,27 @@
                 <input type="text" name="city" value="<?= h($property['city']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Province <span class="text-red-500">*</span></label>
-                <select name="province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
-                    <option value="">Select Province</option>
-                    <?php foreach (provinces() as $code => $name): ?>
-                        <option value="<?= $code ?>" <?= $property['province'] === $code ? 'selected' : '' ?>><?= h($name) ?></option>
-                    <?php endforeach; ?>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Country <span class="text-red-500">*</span></label>
+                <select name="country" id="property_country" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <option value="CA" <?= ($property['country'] ?? 'CA') === 'CA' ? 'selected' : '' ?>>Canada</option>
+                    <option value="US" <?= ($property['country'] ?? 'CA') === 'US' ? 'selected' : '' ?>>United States</option>
                 </select>
             </div>
         </div>
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Postal Code <span class="text-red-500">*</span></label>
-            <input type="text" name="postal_code" value="<?= h($property['postal_code']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" required oninput="this.value = this.value.toUpperCase()" placeholder="A1A 1A1">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="region_label">Province <span class="text-red-500">*</span></label>
+                <select name="province" id="property_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <option value="">Select Province</option>
+                    <?php foreach (regions($property['country'] ?? 'CA') as $code => $name): ?>
+                        <option value="<?= $code ?>" <?= ($property['province'] ?? '') === $code ? 'selected' : '' ?>><?= h($name) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="postal_label">Postal Code <span class="text-red-500">*</span></label>
+                <input type="text" name="postal_code" id="property_postal" value="<?= h($property['postal_code']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500<?= ($property['country'] ?? 'CA') === 'CA' ? ' uppercase' : '' ?>" required placeholder="<?= ($property['country'] ?? 'CA') === 'US' ? '12345' : 'A1A 1A1' ?>">
+            </div>
         </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Update Property</button>
@@ -103,6 +112,40 @@
 <?php endif; ?>
 
 <script>
+var regions = <?= json_encode(['CA' => regions('CA'), 'US' => regions('US')]) ?>;
+var countrySelect = document.getElementById('property_country');
+var provinceSelect = document.getElementById('property_province');
+var regionLabel = document.getElementById('region_label');
+var postalLabel = document.getElementById('postal_label');
+var postalInput = document.getElementById('property_postal');
+
+function updateRegionFields(country) {
+    var opts = regions[country] || regions['CA'];
+    var selected = provinceSelect.value;
+    provinceSelect.innerHTML = '<option value="">Select ' + (country === 'US' ? 'State' : 'Province') + '</option>';
+    Object.keys(opts).forEach(function(code) {
+        var opt = document.createElement('option');
+        opt.value = code;
+        opt.textContent = opts[code];
+        if (code === selected) opt.selected = true;
+        provinceSelect.appendChild(opt);
+    });
+    regionLabel.innerHTML = (country === 'US' ? 'State' : 'Province') + ' <span class="text-red-500">*</span>';
+    postalLabel.innerHTML = (country === 'US' ? 'Zip Code' : 'Postal Code') + ' <span class="text-red-500">*</span>';
+    postalInput.placeholder = country === 'US' ? '12345' : 'A1A 1A1';
+    if (country === 'US') {
+        postalInput.className = postalInput.className.replace('uppercase', '').trim();
+    } else if (postalInput.className.indexOf('uppercase') === -1) {
+        postalInput.className += ' uppercase';
+    }
+}
+
+if (countrySelect) {
+    countrySelect.addEventListener('change', function() {
+        updateRegionFields(this.value);
+    });
+}
+
 document.getElementById('photo-upload-form').addEventListener('submit', function(e) {
     e.preventDefault();
     const form = e.target;

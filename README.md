@@ -11,7 +11,7 @@ docker compose up -d --build
 open http://localhost
 ```
 
-The first boot presents a multi-step setup wizard where you configure site information (name, logo, timezone, SMTP), create your admin account, and optionally load sample data.
+The first boot presents a multi-step setup wizard where you configure site information (name, logo, default country, timezone, SMTP), create your admin account, and optionally load sample data.
 
 **Email testing:** http://localhost:8025 (Mailpit)
 
@@ -102,9 +102,11 @@ When creating a tenant, Lease Start is required and Lease End is optional (leave
 
 ## Timezone & NTP
 
-The application maintains its own timezone and NTP configuration for accurate time tracking:
+The application maintains its own timezone, default country, and NTP configuration for accurate time tracking:
 
-- **Timezone** is configurable globally in **Settings → General** (admin only) and is applied via `date_default_timezone_set()` at boot. Default: `America/New_York`.
+- **Localization** (country + timezone) is configurable globally in **Settings → General** (admin only). The **Default Country** pre-selects Canada or the United States when adding new properties. The **Timezone** is applied via `date_default_timezone_set()` at boot. Default country: `CA`, default timezone: `America/New_York`.
+- **Per-user timezone override** — All create/edit forms for staff and tenants include a Timezone dropdown with "Use default timezone" as the default option. Users can also set their own timezone on the **Profile** page. When set, the user's timezone overrides the global default for that user. The timezone is applied in the Router's `auth` middleware after login verification.
+- Property addresses now support **Canada** (provinces, A1A 1A1 postal codes) and **the United States** (states, 12345 zip codes). Select the country on the property form to switch between region lists and label formats.
 - **Per-user timezone override** — All create/edit forms for staff and tenants include a Timezone dropdown with "Use default timezone" as the default option. Users can also set their own timezone on the **Profile** page. When set, the user's timezone overrides the global default for that user. The timezone is applied in the Router's `auth` middleware after login verification.
 - **NTP Server** is checked on the home page for admin users. The default server is `time.gov` (via `https://time.gov/actualtime.cgi`). Results are cached for 1 hour in the `settings` table.
 - The check uses PHP's `curl` extension (preferred) or falls back to `file_get_contents()` if curl is unavailable. Set `timezone` to blank to disable the check entirely.

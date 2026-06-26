@@ -28,7 +28,7 @@
                     <div class="p-4">
                         <h3 class="text-lg font-semibold text-gray-800"><?= h($property['name']) ?></h3>
                         <p class="text-sm text-gray-500 mt-1"><?= h($property['landlord_name']) ?></p>
-                        <p class="text-sm text-gray-500"><?= h($property['city']) ?>, <?= h($property['province']) ?></p>
+                        <p class="text-sm text-gray-500"><?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
                         <?php if (isset($property['tenants_count'])): ?>
                             <div class="mt-2 flex space-x-4 text-sm text-gray-600">
                                 <span><?= $property['tenants_count'] ?> tenants</span>

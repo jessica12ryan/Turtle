@@ -18,7 +18,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path', 'default_country'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -34,6 +34,13 @@ class SettingsController
             $data['timezones'] = \DateTimeZone::listIdentifiers();
             $data['selectedTz'] = $tz;
             $data['siteName'] = $data['mail']['site_name'] ?: 'Turtle';
+
+            $tzByCountry = [];
+            foreach (['CA', 'US'] as $c) {
+                $tzByCountry[$c] = \DateTimeZone::listIdentifiers(\DateTimeZone::PER_COUNTRY, $c);
+            }
+            $tzByCountry['generic'] = \DateTimeZone::listIdentifiers(\DateTimeZone::UTC);
+            $data['tzByCountry'] = $tzByCountry;
         } elseif ($tab === 'updates') {
             $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
@@ -125,6 +132,14 @@ class SettingsController
                 flash('error', 'Failed to upload logo. Check directory permissions.');
                 redirect('/settings?tab=general');
             }
+        }
+
+        if (isset($_POST['default_country'])) {
+            $country = $_POST['default_country'] === 'US' ? 'US' : 'CA';
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('default_country', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$country, $country]
+            );
         }
 
         flash('success', 'General settings saved successfully.');

@@ -90,6 +90,28 @@
                 </select>
             </div>
 
+            <div class="border-t border-gray-200 pt-4 mb-4">
+                <h3 class="text-md font-semibold text-gray-800 mb-3">Localization</h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="default_country" class="block text-sm font-medium text-gray-700 mb-1">Default Country <span class="text-red-500">*</span></label>
+                        <select name="default_country" id="default_country" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <option value="CA" <?= old('default_country', 'CA') === 'CA' ? 'selected' : '' ?>>Canada</option>
+                            <option value="US" <?= old('default_country', 'CA') === 'US' ? 'selected' : '' ?>>United States</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1">Timezone <span class="text-red-500">*</span></label>
+                        <select name="timezone" id="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <?php foreach ($timezones as $tz): ?>
+                                <option value="<?= $tz ?>" <?= $tz === (old('timezone', $selectedTz)) ? 'selected' : '' ?>><?= $tz ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-4">
                 <label for="ntp_server" class="block text-sm font-medium text-gray-700 mb-1">NTP Server</label>
                 <input type="text" name="ntp_server" id="ntp_server" value="<?= old('ntp_server', 'time.gov') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
@@ -293,4 +315,34 @@ function prevStep() {
         showStep(2);
     }
 })();
+
+// Timezone filtering by country
+var tzByCountry = <?= json_encode($tzByCountry) ?>;
+var tzSelect = document.getElementById('timezone');
+var countrySelect = document.getElementById('default_country');
+
+function filterTimezones(country) {
+    var selected = tzSelect.value;
+    var tzs = tzByCountry[country] || [];
+    var generic = tzByCountry['generic'] || [];
+    var all = tzs.concat(generic.filter(function(t) { return tzs.indexOf(t) === -1; }));
+    tzSelect.innerHTML = '';
+    all.forEach(function(tz) {
+        var opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz;
+        tzSelect.appendChild(opt);
+    });
+    if (all.indexOf(selected) !== -1) {
+        tzSelect.value = selected;
+    } else {
+        tzSelect.value = all[0] || '';
+    }
+}
+
+if (countrySelect) {
+    countrySelect.addEventListener('change', function() {
+        filterTimezones(this.value);
+    });
+}
 </script>

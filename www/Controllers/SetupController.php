@@ -22,9 +22,15 @@ class SetupController
         $timezones = \DateTimeZone::listIdentifiers();
         $selectedTz = 'America/New_York';
 
+        $tzByCountry = [];
+        foreach (['CA', 'US'] as $c) {
+            $tzByCountry[$c] = \DateTimeZone::listIdentifiers(\DateTimeZone::PER_COUNTRY, $c);
+        }
+        $tzByCountry['generic'] = \DateTimeZone::listIdentifiers(\DateTimeZone::UTC);
+
         $view = new View();
         $view->layout('layouts/guest', ['title' => 'Setup']);
-        $view->render('setup/create', compact('timezones', 'selectedTz'));
+        $view->render('setup/create', compact('timezones', 'selectedTz', 'tzByCountry'));
     }
 
     public function store(): void
@@ -127,6 +133,16 @@ class SetupController
         Database::execute(
             "INSERT INTO settings (`key`, `value`) VALUES ('timezone', ?) ON DUPLICATE KEY UPDATE `value` = ?",
             [$tz, $tz]
+        );
+
+        // Save default country
+        $country = $_POST['default_country'] ?? 'CA';
+        if (!in_array($country, ['CA', 'US'])) {
+            $country = 'CA';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('default_country', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$country, $country]
         );
 
         // Save NTP server

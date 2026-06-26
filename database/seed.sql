@@ -21,11 +21,11 @@ INSERT IGNORE INTO company_user (company_id, user_id) VALUES
 (2, 6);
 
 -- Properties
-INSERT IGNORE INTO properties (id, landlord_id, company_id, name, address, city, province, postal_code) VALUES
-(1, 1, 1, 'The Wellington', '45 Wellington St W', 'Toronto', 'Ontario', 'M5V 1E3'),
-(2, 1, 1, 'King Street Lofts', '120 King St E', 'Toronto', 'Ontario', 'M5C 1G6'),
-(3, 6, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'Ontario', 'M5V 1A2'),
-(4, 6, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'Ontario', 'M6A 1A1');
+INSERT IGNORE INTO properties (id, landlord_id, company_id, name, address, city, province, postal_code, country) VALUES
+(1, 1, 1, 'The Wellington', '45 Wellington St W', 'Toronto', 'ON', 'M5V 1E3', 'CA'),
+(2, 1, 1, 'King Street Lofts', '120 King St E', 'Toronto', 'ON', 'M5C 1G6', 'CA'),
+(3, 6, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'ON', 'M5V 1A2', 'CA'),
+(4, 6, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA');
 
 -- Tenant-property assignments
 INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at) VALUES
