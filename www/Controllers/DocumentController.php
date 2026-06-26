@@ -20,7 +20,7 @@ class DocumentController
         }
         if (!file_exists($fullPath)) {
             http_response_code(404);
-            echo 'File not found.';
+            require base_path('www/Views/errors/404.php');
             return;
         }
 
@@ -44,7 +44,7 @@ class DocumentController
         }
         if (!file_exists($fullPath)) {
             http_response_code(404);
-            echo 'File not found.';
+            require base_path('www/Views/errors/404.php');
             return;
         }
 

@@ -288,7 +288,7 @@ class TicketController
         $fullPath = base_path($file['file_path']);
         if (!file_exists($fullPath)) {
             http_response_code(404);
-            echo 'File not found.';
+            require base_path('www/Views/errors/404.php');
             return;
         }
 

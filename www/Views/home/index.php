@@ -3,8 +3,7 @@
     <p class="text-gray-500 mt-1">Welcome back, <?= h(\App\Core\Auth::instance()->user()['name']) ?></p>
 </div>
 
-<?php if (!empty($alerts)): ?>
-    <?php if (!empty($alerts['critical'])): ?>
+<?php if (!empty($alerts['critical'])): ?>
         <div class="space-y-3 mb-6">
             <?php foreach ($alerts['critical'] as $a): ?>
                 <div class="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3">
@@ -35,11 +34,6 @@
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-<?php elseif (\App\Core\Auth::instance()->user()['role'] !== 'tenant'): ?>
-    <div class="p-4 bg-green-50 border border-green-200 rounded-lg mb-6">
-        <p class="text-sm text-green-800 font-medium">All systems look good — no critical issues or warnings.</p>
-    </div>
-<?php endif; ?>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
     <?php if (isset($stats['properties'])): ?>

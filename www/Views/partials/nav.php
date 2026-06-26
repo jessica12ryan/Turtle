@@ -29,19 +29,19 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
                     <?php endif; ?>
-                    <?php if (can('leases.access')): ?>
+                    <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases &amp; Documents</a>
                     <?php endif; ?>
                     <?php if (can('tickets.access')): ?>
                         <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
                     <?php endif; ?>
-                    <?php if (can('staff.access')): ?>
+                    <?php if (can('staff.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
                     <?php endif; ?>
                     <?php if (can('resources.access')): ?>
                         <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
                     <?php endif; ?>
-                    <?php if (can('calendar.access')): ?>
+                    <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
                     <?php endif; ?>
                 </div>
@@ -85,19 +85,19 @@ function navActive(string $prefix, string $currentUri): string {
             <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
             <?php endif; ?>
-            <?php if (can('leases.access')): ?>
+            <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases &amp; Documents</a>
             <?php endif; ?>
             <?php if (can('tickets.access')): ?>
                 <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
             <?php endif; ?>
-            <?php if (can('staff.access')): ?>
+            <?php if (can('staff.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/staff" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
             <?php endif; ?>
             <?php if (can('resources.access')): ?>
                 <a href="/resources" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
             <?php endif; ?>
-            <?php if (can('calendar.access')): ?>
+            <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
             <?php endif; ?>
         </div>
