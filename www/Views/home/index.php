@@ -107,3 +107,25 @@
         </div>
     </div>
 <?php endif; ?>
+
+<?php if ($role === 'tenant' && !empty($openTickets)): ?>
+    <div class="bg-white rounded-lg shadow mt-6">
+        <div class="px-6 py-4 border-b flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">Open Tickets</h2>
+            <a href="/tickets" class="text-sm text-blue-600 hover:underline">View all</a>
+        </div>
+        <div class="p-6 space-y-3">
+            <?php foreach ($openTickets as $ticket): ?>
+                <a href="/tickets/<?= $ticket['id'] ?>" class="block p-4 border rounded-lg hover:bg-gray-50">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-medium text-gray-800"><?= h($ticket['subject']) ?></p>
+                            <p class="text-sm text-gray-500 mt-1"><?= h($ticket['property_name']) ?> - <?= h($ticket['tenant_name']) ?></p>
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800' ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
+                    </div>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>

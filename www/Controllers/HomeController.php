@@ -23,11 +23,21 @@ class HomeController
                 [$auth->id()]
             );
 
-            $tickets = Database::fetchAll(
-                "SELECT t.*, p.name as property_name FROM tickets t 
+            $openTickets = Database::fetchAll(
+                "SELECT t.*, p.name as property_name, u.name as tenant_name FROM tickets t 
                  JOIN properties p ON p.id = t.property_id 
-                 WHERE t.tenant_id = ? AND t.archived_at IS NULL 
-                 ORDER BY t.created_at DESC LIMIT 5",
+                 JOIN users u ON u.id = t.tenant_id 
+                 WHERE t.property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL) 
+                 AND t.archived_at IS NULL 
+                 AND t.status IN ('open', 'in_progress')
+                 ORDER BY t.created_at DESC LIMIT 10",
+                [$auth->id()]
+            );
+
+            $allTickets = Database::fetch(
+                "SELECT COUNT(*) as cnt FROM tickets 
+                 WHERE property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL) 
+                 AND archived_at IS NULL",
                 [$auth->id()]
             );
 
@@ -42,14 +52,11 @@ class HomeController
 
             $stats = [];
             $stats['properties'] = count($properties);
-            $stats['tickets'] = count($tickets);
+            $stats['tickets'] = $allTickets['cnt'] ?? 0;
             $stats['leases'] = count($leases);
+            $stats['open_tickets'] = count($openTickets);
 
             $alerts = [];
-            $myTickets = Database::fetch("SELECT COUNT(*) as cnt FROM tickets WHERE tenant_id = ? AND status IN ('open','in_progress') AND archived_at IS NULL", [$auth->id()]);
-            if ($myTickets && $myTickets['cnt'] > 0) {
-                $alerts['warning'][] = ['msg' => 'You have ' . $myTickets['cnt'] . ' open ticket' . ($myTickets['cnt'] > 1 ? 's' : '') . '.', 'link' => '/tickets'];
-            }
             $myLeases = Database::fetch(
                 "SELECT COUNT(*) as cnt FROM leases l 
                  JOIN property_tenant pt ON pt.property_id = l.property_id 
@@ -64,7 +71,7 @@ class HomeController
 
             $view = new View();
             $view->layout('layouts/main', ['title' => 'Home']);
-            $view->render('home/index', compact('alerts', 'stats', 'role', 'properties', 'tickets', 'leases', 'recentTickets'));
+            $view->render('home/index', compact('alerts', 'stats', 'role', 'properties', 'openTickets', 'leases', 'recentTickets'));
             return;
         }
 
