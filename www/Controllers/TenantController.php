@@ -306,6 +306,9 @@ class TenantController
         if (!empty($_POST['phone'])) {
             $rules['phone'] = 'max:20';
         }
+        if (!empty($_POST['password'])) {
+            $rules['password'] = 'min:8|confirmed';
+        }
         if (!$validator->validate($_POST, $rules)) {
             $_SESSION['_errors'] = $validator->errors();
             redirect('/tenants/' . $id . '/edit');
@@ -319,10 +322,21 @@ class TenantController
 
         $timezone = $_POST['timezone'] ?: null;
 
-        Database::execute(
-            "UPDATE users SET name = ?, phone = ?, timezone = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['name'], $phone, $timezone, $id]
-        );
+        $sql = "UPDATE users SET name = ?, phone = ?, timezone = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $phone, $timezone];
+
+        if (!empty($_POST['password'])) {
+            $sql .= ", password = ?";
+            $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        }
+
+        $mustChange = !empty($_POST['must_change_password']) ? 1 : 0;
+        $sql .= ", must_change_password = ?";
+        $params[] = $mustChange;
+
+        $sql .= " WHERE id = ?";
+        $params[] = $id;
+        Database::execute($sql, $params);
 
         $pt = $this->getPropertyTenant($id);
         if ($pt && !empty($pt['is_main_tenant'])) {

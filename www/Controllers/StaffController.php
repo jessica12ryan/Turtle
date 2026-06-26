@@ -199,6 +199,10 @@ class StaffController
             $params[] = password_hash($_POST['password'], PASSWORD_DEFAULT);
         }
 
+        $mustChange = !empty($_POST['must_change_password']) ? 1 : 0;
+        $sql .= ", must_change_password = ?";
+        $params[] = $mustChange;
+
         $sql .= " WHERE id = ?";
         $params[] = $id;
         Database::execute($sql, $params);

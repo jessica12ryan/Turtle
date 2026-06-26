@@ -54,6 +54,22 @@
         <div class="mb-4">
             <?php $currentTimezone = $tenant['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
         </div>
+        <hr class="my-6">
+        <h3 class="text-lg font-medium text-gray-800 mb-4">Change Password (optional)</h3>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <input type="password" name="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" minlength="8">
+        </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <input type="password" name="password_confirmation" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="mb-6">
+            <label class="flex items-start space-x-3">
+                <input type="checkbox" name="must_change_password" value="1" class="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <span class="text-sm text-gray-600">Require changing password on next login</span>
+            </label>
+        </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Update</button>
             <a href="/tenants/<?= $tenant['id'] ?>" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
