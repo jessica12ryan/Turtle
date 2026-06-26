@@ -4,7 +4,9 @@
         <p class="text-gray-500"><?= h($tenant['email']) ?></p>
     </div>
     <div class="flex space-x-3">
-        <a href="/tenants/<?= $tenant['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php if (can('tenants.edit')): ?>
+            <a href="/tenants/<?= $tenant['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+        <?php endif; ?>
         <?php if (can('tenants.edit')): ?>
             <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('Archive this tenant? They will be removed from the property and their account disabled.')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">

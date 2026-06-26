@@ -20,7 +20,6 @@
 
         <?php
         $permissionLabels = [
-            'home.access' => 'View Home',
             'properties.access' => 'View Properties',
             'properties.create' => 'Create Properties',
             'properties.edit' => 'Edit Properties',
@@ -70,6 +69,18 @@
 
         $groupOverrides = [
             'documents' => 'leases',
+        ];
+
+        $hiddenTenantPerms = [
+            'properties.access', 'properties.create', 'properties.edit', 'properties.archive', 'properties.restore', 'properties.delete',
+            'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
+            'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.archive', 'tenants.restore', 'tenants.delete',
+            'leases.create', 'leases.archive', 'leases.restore', 'leases.delete',
+            'documents.delete',
+            'tickets.archive', 'tickets.restore', 'tickets.delete', 'tickets.internal_comment',
+            'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore', 'staff.delete',
+            'resources.create', 'resources.edit', 'resources.delete',
+            'calendar.access',
         ];
 
         $groups = [];
@@ -146,12 +157,14 @@
                             <tr class="hover:bg-gray-50 <?= $isDefault ? 'opacity-60' : '' ?>">
                                 <td class="py-1.5 pr-4 <?= permColor($perm) ?>"><?= h($label) ?></td>
                                 <?php foreach ($roles as $role): ?>
-                                    <?php
-                                    $defaultGranted = in_array($perm, $defaults[$role] ?? []);
-                                    $overridden = isset($overrides[$role]) && in_array($perm, $overrides[$role]);
-                                    $checked = $isDefault ? $defaultGranted : $overridden;
-                                    ?>
+                                    <?php $defaultGranted = in_array($perm, $defaults[$role] ?? []); ?>
+                                    <?php $overridden = isset($overrides[$role]) && in_array($perm, $overrides[$role]); ?>
+                                    <?php $checked = $isDefault ? $defaultGranted : $overridden; ?>
+                                    <?php $isTenantHidden = $role === 'tenant' && in_array($perm, $hiddenTenantPerms); ?>
                                     <td class="text-center py-1.5 px-3">
+                                        <?php if ($isTenantHidden): ?>
+                                            <span class="text-gray-300">—</span>
+                                        <?php else: ?>
                                         <input type="checkbox"
                                                name="perms[<?= h($role) ?>][]"
                                                value="<?= h($perm) ?>"
@@ -159,6 +172,7 @@
                                                <?= $isDefault ? 'disabled' : '' ?>
                                                onchange="this.form.submit()"
                                                class="rounded border-gray-300 <?= permCheckboxColor($perm) ?> <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                                        <?php endif; ?>
                                     </td>
                                 <?php endforeach; ?>
                             </tr>
