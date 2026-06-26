@@ -29,7 +29,7 @@ class HomeController
                  JOIN users u ON u.id = t.tenant_id 
                  WHERE t.property_id IN (SELECT property_id FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL) 
                  AND t.archived_at IS NULL 
-                 AND t.status IN ('open', 'in_progress')
+                 AND t.status IN ('open', 'in_progress', 'awaiting_parts', 'awaiting_contractor')
                  ORDER BY t.created_at DESC LIMIT 10",
                 [$auth->id()]
             );
