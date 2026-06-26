@@ -48,6 +48,9 @@
         .dark textarea { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #475569 !important; }
 
         .dark .logo-default { filter: brightness(0) invert(0.85); }
+
+        .dark input[type="checkbox"] { accent-color: #60a5fa; }
+        input[type="checkbox"] { accent-color: #2563eb; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">

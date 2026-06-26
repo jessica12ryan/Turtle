@@ -97,6 +97,9 @@ $themePref = $themeUser['theme'] ?? 'system';
         .dark th.bg-gray-50 { background-color: #1e293b !important; }
 
         .dark .logo-default { filter: brightness(0) invert(0.85); }
+
+        .dark input[type="checkbox"] { accent-color: #60a5fa; }
+        input[type="checkbox"] { accent-color: #2563eb; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">

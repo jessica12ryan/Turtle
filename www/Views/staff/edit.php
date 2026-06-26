@@ -18,6 +18,9 @@
             <p class="text-gray-600"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></p>
             <p class="text-xs text-gray-500 mt-1">Role cannot be changed. Archive and re-invite if needed.</p>
         </div>
+        <div class="mb-6">
+            <?php $currentTimezone = $staff['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
+        </div>
         <hr class="my-6">
         <h3 class="text-lg font-medium text-gray-800 mb-4">Change Password (optional)</h3>
         <div class="mb-4">
@@ -33,9 +36,6 @@
                 <input type="checkbox" name="must_change_password" value="1" class="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                 <span class="text-sm text-gray-600">Require changing password on next login</span>
             </label>
-        </div>
-        <div class="mb-6">
-            <?php $currentTimezone = $staff['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
         </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Update</button>

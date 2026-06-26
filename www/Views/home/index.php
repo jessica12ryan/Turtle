@@ -35,7 +35,7 @@
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-<?php else: ?>
+<?php elseif (\App\Core\Auth::instance()->user()['role'] !== 'tenant'): ?>
     <div class="p-4 bg-green-50 border border-green-200 rounded-lg mb-6">
         <p class="text-sm text-green-800 font-medium">All systems look good — no critical issues or warnings.</p>
     </div>

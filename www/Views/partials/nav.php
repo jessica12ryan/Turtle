@@ -26,7 +26,7 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php if (can('properties.access')): ?>
                         <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
                     <?php endif; ?>
-                    <?php if (can('tenants.access')): ?>
+                    <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
                     <?php endif; ?>
                     <?php if (can('leases.access')): ?>
@@ -82,7 +82,7 @@ function navActive(string $prefix, string $currentUri): string {
             <?php if (can('properties.access')): ?>
                 <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
             <?php endif; ?>
-            <?php if (can('tenants.access')): ?>
+            <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
             <?php endif; ?>
             <?php if (can('leases.access')): ?>
