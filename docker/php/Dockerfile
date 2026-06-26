@@ -21,9 +21,14 @@ RUN apt-get update && apt-get install -y \
     bcmath \
     gd \
     zip \
-    intl \
     opcache \
     curl \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl || ( \
+        mkdir -p /usr/src/php/ext/intl/modules \
+        && cp /usr/src/php/ext/intl/.libs/*.so /usr/src/php/ext/intl/modules/ 2>/dev/null \
+        && docker-php-ext-install intl \
+    ) \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apt-get clean \
