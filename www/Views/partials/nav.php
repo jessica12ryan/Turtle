@@ -2,6 +2,8 @@
 $user = \App\Core\Auth::instance()->user();
 $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL", [$user['id']])['count'] ?? 0;
+$logoUrl = site_logo();
+$isDefaultLogo = $logoUrl === '/assets/logo.svg';
 
 function navActive(string $prefix, string $currentUri): string {
     return str_starts_with($currentUri, $prefix) ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900';
@@ -18,7 +20,7 @@ function navActive(string $prefix, string $currentUri): string {
     <div class="nav-inner max-w-7xl mx-auto px-4">
         <div class="flex justify-between h-16">
             <div class="flex items-center space-x-8">
-                <a href="/home"><img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-8"></a>
+                <a href="/home"><img src="<?= h($logoUrl) ?>" alt="<?= h(site_name()) ?>" class="h-8<?= $isDefaultLogo ? ' logo-default' : '' ?>"></a>
                 <div class="hidden md:flex space-x-4">
                     <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
                     <?php if (can('properties.access')): ?>

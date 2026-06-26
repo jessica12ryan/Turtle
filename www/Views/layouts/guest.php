@@ -46,12 +46,14 @@
         .dark input,
         .dark select,
         .dark textarea { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+
+        .dark .logo-default { filter: brightness(0) invert(0.85); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="w-full max-w-md mx-4">
         <div class="text-center mb-8">
-            <img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-12 mx-auto">
+            <img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-12 mx-auto<?= site_logo() === '/assets/logo.svg' ? ' logo-default' : '' ?>">
             <p class="text-gray-500 mt-2">Tenant Management Portal</p>
         </div>
         <div class="bg-white rounded-xl shadow-lg p-8">

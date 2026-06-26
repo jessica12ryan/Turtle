@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS properties (
     company_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255) DEFAULT '',
+    apt_suite VARCHAR(100) DEFAULT '',
     city VARCHAR(255) DEFAULT '',
     province VARCHAR(255) DEFAULT '',
     postal_code VARCHAR(20) DEFAULT '',

@@ -114,6 +114,7 @@ class PropertyController
             'landlord_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
             'address' => 'required|max:255',
+            'apt_suite' => 'max:100',
             'city' => 'required|max:255',
             'province' => 'required|max:255',
             'postal_code' => 'required|max:20',
@@ -127,8 +128,8 @@ class PropertyController
         $companyId = $this->ensureLandlordCompany((int)$_POST['landlord_id']);
 
         $propertyId = Database::insert(
-            "INSERT INTO properties (landlord_id, company_id, name, address, city, province, postal_code, country, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['landlord_id'], $companyId, $_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA']
+            "INSERT INTO properties (landlord_id, company_id, name, address, apt_suite, city, province, postal_code, country, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['landlord_id'], $companyId, $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA']
         );
 
         flash('success', 'Property created successfully.');
@@ -200,6 +201,7 @@ class PropertyController
             'landlord_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
             'address' => 'required|max:255',
+            'apt_suite' => 'max:100',
             'city' => 'required|max:255',
             'province' => 'required|max:255',
             'postal_code' => 'required|max:20',
@@ -213,8 +215,8 @@ class PropertyController
         $companyId = $this->ensureLandlordCompany((int)$_POST['landlord_id']);
 
         Database::execute(
-            "UPDATE properties SET landlord_id = ?, company_id = ?, name = ?, address = ?, city = ?, province = ?, postal_code = ?, country = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['landlord_id'], $companyId, $_POST['name'], $_POST['address'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $id]
+            "UPDATE properties SET landlord_id = ?, company_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, updated_at = NOW() WHERE id = ?",
+            [$_POST['landlord_id'], $companyId, $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $id]
         );
 
         flash('success', 'Property updated successfully.');

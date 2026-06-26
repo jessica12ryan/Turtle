@@ -95,6 +95,8 @@ $themePref = $themeUser['theme'] ?? 'system';
         .dark table.bg-white { background-color: #1e293b !important; }
 
         .dark th.bg-gray-50 { background-color: #1e293b !important; }
+
+        .dark .logo-default { filter: brightness(0) invert(0.85); }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
