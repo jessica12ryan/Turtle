@@ -1,10 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="system">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($title ?? site_name()) ?> - <?= h(site_name()) ?></title>
+    <script>
+        (function() {
+            var theme = document.documentElement.getAttribute('data-theme') || 'light';
+            function apply() {
+                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+            apply();
+            if (theme === 'system') {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', apply);
+            }
+        })();
+    </script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dark,
+        .dark body { background-color: #0f172a; color: #e2e8f0; }
+
+        .dark .bg-white { background-color: #1e293b !important; }
+        .dark .bg-gray-100 { background-color: #0f172a !important; }
+
+        .dark .text-gray-800 { color: #f1f5f9 !important; }
+        .dark .text-gray-700 { color: #e2e8f0 !important; }
+        .dark .text-gray-600 { color: #cbd5e1 !important; }
+        .dark .text-gray-500 { color: #94a3b8 !important; }
+
+        .dark .border-gray-300 { border-color: #475569 !important; }
+
+        .dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5) !important; }
+
+        .dark .bg-red-100 { background-color: #450a0a !important; border-color: #991b1b !important; color: #fecaca !important; }
+        .dark .bg-green-100 { background-color: #052e16 !important; border-color: #15803d !important; color: #bbf7d0 !important; }
+
+        .dark input,
+        .dark select,
+        .dark textarea { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="w-full max-w-md mx-4">

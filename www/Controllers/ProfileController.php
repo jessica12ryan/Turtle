@@ -32,9 +32,10 @@ class ProfileController
         }
 
         $timezone = $_POST['timezone'] ?: null;
+        $theme = $_POST['theme'] ?? 'light';
 
-        $sql = "UPDATE users SET name = ?, timezone = ?, updated_at = NOW()";
-        $params = [$_POST['name'], $timezone];
+        $sql = "UPDATE users SET name = ?, timezone = ?, theme = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone, $theme];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";

@@ -20,6 +20,10 @@
             <?php $currentTimezone = $user['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
         </div>
         <hr class="my-6">
+        <div class="mb-6">
+            <?php $currentTheme = $user['theme'] ?? 'light'; require base_path('www/Views/partials/theme.php'); ?>
+        </div>
+        <hr class="my-6">
         <h3 class="text-lg font-medium text-gray-800 mb-4">Change Password (optional)</h3>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
