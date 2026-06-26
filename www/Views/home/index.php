@@ -83,7 +83,7 @@
                                 <p class="font-medium text-gray-800"><?= h($ticket['subject']) ?></p>
                                 <p class="text-sm text-gray-500 mt-1"><?= h($ticket['property_name']) ?> - <?= h($ticket['tenant_name']) ?></p>
                             </div>
-                            <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800') ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
+                            <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 text-purple-800' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 text-indigo-800' : ($ticket['status'] === 'closed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')))) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
                         </div>
                     </a>
                 <?php endforeach; ?>
@@ -122,7 +122,7 @@
                             <p class="font-medium text-gray-800"><?= h($ticket['subject']) ?></p>
                             <p class="text-sm text-gray-500 mt-1"><?= h($ticket['property_name']) ?> - <?= h($ticket['tenant_name']) ?></p>
                         </div>
-                        <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800' ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
+                        <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 text-purple-800' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'))) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
                     </div>
                 </a>
             <?php endforeach; ?>

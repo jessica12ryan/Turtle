@@ -187,7 +187,7 @@ class TicketController
             [$id]
         );
 
-        $statuses = ['open', 'in_progress', 'resolved', 'closed'];
+        $statuses = ['open', 'in_progress', 'awaiting_parts', 'awaiting_contractor', 'closed'];
         $categories = ['plumbing', 'electrical', 'hvac', 'appliances', 'structural', 'pest_control', 'general_repair', 'other'];
         $priorities = ['low', 'medium', 'high', 'emergency'];
 

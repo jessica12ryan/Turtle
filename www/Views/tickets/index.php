@@ -39,7 +39,7 @@
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($ticket['property_name']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($ticket['tenant_name']) ?></td>
                         <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : ($ticket['status'] === 'resolved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
+                            <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 text-purple-800' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 text-indigo-800' : ($ticket['status'] === 'closed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')))) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
                         </td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-1 text-xs rounded-full <?= $ticket['priority'] === 'emergency' ? 'bg-red-100 text-red-800' : ($ticket['priority'] === 'high' ? 'bg-orange-100 text-orange-800' : ($ticket['priority'] === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')) ?>"><?= ucfirst($ticket['priority']) ?></span>
