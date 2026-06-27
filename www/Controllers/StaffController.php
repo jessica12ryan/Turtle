@@ -78,7 +78,8 @@ class StaffController
         foreach ($roles as $r) {
             $secondaryRoleMap[$r] = $this->validSecondaryRoles($r);
         }
-        $staffSecondaryRoles = old('secondary_roles') ?? [];
+        $oldSecondary = old('secondary_roles');
+        $staffSecondaryRoles = is_array($oldSecondary) ? $oldSecondary : (strlen($oldSecondary) ? [$oldSecondary] : []);
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Invite Staff']);
@@ -190,8 +191,8 @@ class StaffController
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        // Prevent changing own roles
         $editingSelf = $id === Auth::instance()->id();
+        $canChangeOwnRoles = $editingSelf && in_array($staff['role'], ['admin', 'landlord']);
 
         $roles = ['property_manager', 'maintenance'];
         if ($staff['role'] === 'landlord' || $staff['role'] === 'admin') {
@@ -209,7 +210,7 @@ class StaffController
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Staff']);
-        $view->render('staff/edit', compact('staff', 'roles', 'secondaryRoleMap', 'staffSecondaryRoles', 'editingSelf'));
+        $view->render('staff/edit', compact('staff', 'roles', 'secondaryRoleMap', 'staffSecondaryRoles', 'editingSelf', 'canChangeOwnRoles'));
     }
 
     public function update(int $id): void
@@ -222,9 +223,10 @@ class StaffController
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        // Prevent self role changes
+        // Prevent self role changes for property_manager and maintenance
         $editingSelf = $id === Auth::instance()->id();
-        if ($editingSelf && !empty($_POST['secondary_roles'])) {
+        $canChangeOwnRoles = $editingSelf && in_array($staff['role'], ['admin', 'landlord']);
+        if ($editingSelf && !$canChangeOwnRoles && !empty($_POST['secondary_roles'])) {
             flash('error', 'You cannot change your own roles.');
             redirect('/staff/' . $id . '/edit');
         }
@@ -254,8 +256,8 @@ class StaffController
         $sql .= ", must_change_password = ?";
         $params[] = $mustChange;
 
-        // Only allow secondary_roles changes for non-self edits
-        if (!$editingSelf) {
+        // Allow secondary_roles changes for non-self edits or admin/landlord self-edits
+        if (!$editingSelf || $canChangeOwnRoles) {
             $secondaryRoles = $this->parseSecondaryRolesFromUpdate($staff['role']);
             $secondaryRolesStr = !empty($secondaryRoles) ? implode(',', $secondaryRoles) : null;
             $sql .= ", secondary_roles = ?";

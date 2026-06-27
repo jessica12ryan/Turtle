@@ -2,20 +2,25 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Invite Staff Member') ?></h1>
 </div>
 <div class="bg-white rounded-lg shadow p-6 max-w-lg">
-    <form method="POST" action="/staff" x-data="{
-        role: '<?= old('role') ?>',
-        secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
-        checked: <?= json_encode(array_values((array)old('secondary_roles', []))) ?>,
-        get validSecondary() { return this.secondaryRoleMap[this.role] || []; },
-        toggle(sr) {
-            if (this.checked.includes(sr)) {
-                this.checked = this.checked.filter(r => r !== sr);
-            } else {
-                this.checked.push(sr);
-            }
-        },
-        isChecked(sr) { return this.checked.includes(sr); }
-    }">
+    <script>
+    var staffCreateData = function() {
+        return {
+            role: '<?= old('role') ?>',
+            secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
+            checked: <?= json_encode(array_values($staffSecondaryRoles)) ?>,
+            get validSecondary() { return this.secondaryRoleMap[this.role] || []; },
+            toggle(sr) {
+                if (this.checked.includes(sr)) {
+                    this.checked = this.checked.filter(r => r !== sr);
+                } else {
+                    this.checked.push(sr);
+                }
+            },
+            isChecked(sr) { return this.checked.includes(sr); }
+        };
+    };
+    </script>
+    <form method="POST" action="/staff" x-data="staffCreateData()">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>

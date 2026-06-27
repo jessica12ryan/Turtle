@@ -2,19 +2,24 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Edit Staff Member') ?></h1>
 </div>
 <div class="bg-white rounded-lg shadow p-6 max-w-lg">
-    <form method="POST" action="/staff/<?= $staff['id'] ?>/update" x-data="{
-        secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
-        checked: <?= json_encode(array_values($staffSecondaryRoles)) ?>,
-        get validSecondary() { return this.secondaryRoleMap['<?= $staff['role'] ?>'] || []; },
-        toggle(sr) {
-            if (this.checked.includes(sr)) {
-                this.checked = this.checked.filter(r => r !== sr);
-            } else {
-                this.checked.push(sr);
-            }
-        },
-        isChecked(sr) { return this.checked.includes(sr); }
-    }">
+    <script>
+    var staffEditData = function() {
+        return {
+            secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
+            checked: <?= json_encode(array_values($staffSecondaryRoles)) ?>,
+            get validSecondary() { return this.secondaryRoleMap['<?= $staff['role'] ?>'] || []; },
+            toggle(sr) {
+                if (this.checked.includes(sr)) {
+                    this.checked = this.checked.filter(r => r !== sr);
+                } else {
+                    this.checked.push(sr);
+                }
+            },
+            isChecked(sr) { return this.checked.includes(sr); }
+        };
+    };
+    </script>
+    <form method="POST" action="/staff/<?= $staff['id'] ?>/update" x-data="staffEditData()">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>
@@ -30,7 +35,7 @@
             <p class="text-gray-600"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></p>
             <p class="text-xs text-gray-500 mt-1"><?= __('Role cannot be changed. Archive and re-invite if needed.') ?></p>
         </div>
-        <?php if (!$editingSelf && !empty($secondaryRoleMap[$staff['role']])): ?>
+        <?php if ((!$editingSelf || $canChangeOwnRoles) && !empty($secondaryRoleMap[$staff['role']])): ?>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('Secondary Roles') ?></label>
             <?php foreach ($secondaryRoleMap[$staff['role']] as $sr): ?>
