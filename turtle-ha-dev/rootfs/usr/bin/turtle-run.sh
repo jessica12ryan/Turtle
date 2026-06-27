@@ -4,6 +4,10 @@ set -e
 TURTLE_DIR=/var/www/turtle
 DATA_DIR=/data
 
+# ── Pull latest master on every start ─────────────────────────────────────────
+bashio::log.info "Pulling latest master from GitHub..."
+git -C "${TURTLE_DIR}" pull --ff-only origin master || bashio::log.warning "git pull failed, running existing code"
+
 # ── Read HA options ────────────────────────────────────────────────────────────
 DB_PASSWORD=$(bashio::config 'db_password')
 APP_URL=$(bashio::config 'app_url')
