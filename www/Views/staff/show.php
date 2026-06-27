@@ -5,12 +5,12 @@
     </div>
     <div class="flex space-x-3">
         <?php if (can('staff.edit')): ?>
-            <a href="/staff/<?= $staff['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+            <a href="/staff/<?= $staff['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
         <?php endif; ?>
         <?php if (can('staff.archive')): ?>
-            <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this staff member? They will no longer be able to log in.')">
+            <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Archive this staff member? They will no longer be able to log in.') ?>')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm">Archive</button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
             </form>
         <?php endif; ?>
     </div>
@@ -20,7 +20,7 @@
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Details</h2>
         <dl class="space-y-3">
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Role</dt>
+                <dt class="text-sm text-gray-500"><?= __('Role') ?></dt>
                 <dd class="text-sm font-medium"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></dd>
             </div>
             <div class="flex justify-between">

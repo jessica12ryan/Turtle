@@ -30,7 +30,7 @@ class SetupController
 
         $view = new View();
         $view->layout('layouts/guest', ['title' => 'Setup']);
-        $view->render('setup/create', compact('timezones', 'selectedTz', 'tzByCountry'));
+        $view->render('setup/create', compact('timezones', 'selectedTz', 'tzByCountry', 'languages'));
     }
 
     public function store(): void
@@ -153,6 +153,16 @@ class SetupController
         Database::execute(
             "INSERT INTO settings (`key`, `value`) VALUES ('ntp_server', ?) ON DUPLICATE KEY UPDATE `value` = ?",
             [$ntpServer, $ntpServer]
+        );
+
+        // Save default language
+        $lang = $_POST['default_language'] ?? 'en';
+        if (!in_array($lang, ['en', 'fr', 'es'])) {
+            $lang = 'en';
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('default_language', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$lang, $lang]
         );
 
         // Save mail settings

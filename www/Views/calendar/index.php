@@ -1,4 +1,4 @@
-<h1 class="text-2xl font-bold text-gray-800 mb-6">Calendar</h1>
+<h1 class="text-2xl font-bold text-gray-800 mb-6"><?= __('Calendar') ?></h1>
 
 <div class="bg-white rounded-lg shadow p-6" x-data="calendar()">
     <div class="flex items-center justify-between mb-6">
@@ -12,7 +12,7 @@
     </div>
 
     <div class="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
-        <template x-for="day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']" :key="day">
+        <template x-for="day in ['<?= __('Sun') ?>','<?= __('Mon') ?>','<?= __('Tue') ?>','<?= __('Wed') ?>','<?= __('Thu') ?>','<?= __('Fri') ?>','<?= __('Sat') ?>']" :key="day">
             <div class="bg-gray-50 px-3 py-2 text-xs font-medium text-gray-500 text-center uppercase" x-text="day"></div>
         </template>
         <template x-for="(cell, idx) in grid" :key="idx">
@@ -29,7 +29,7 @@
                          :class="ev.className"
                          x-text="ev.title"></div>
                 </template>
-                <div x-show="cell.events.length > 2" class="text-xs text-blue-600 font-medium">+<span x-text="cell.events.length - 2"></span> more</div>
+                <div x-show="cell.events.length > 2" class="text-xs text-blue-600 font-medium">+<span x-text="cell.events.length - 2"></span> <?= __('more') ?></div>
             </div>
         </template>
     </div>
@@ -37,7 +37,7 @@
     <!-- Event details panel -->
     <div x-show="selectedDate" class="mt-6 p-4 bg-gray-50 rounded-lg border">
         <div class="flex justify-between items-center mb-3">
-            <h3 class="font-semibold text-gray-800" x-text="'Events for ' + selectedDate"></h3>
+            <h3 class="font-semibold text-gray-800" x-text="'<?= __("Events for") ?> ' + selectedDate"></h3>
             <button @click="selectedDate = null" class="text-gray-400 hover:text-gray-600">&times;</button>
         </div>
         <template x-for="ev in selectedEvents" :key="ev.id">
@@ -46,14 +46,14 @@
                 <span class="text-sm text-gray-700" x-text="ev.title"></span>
             </div>
         </template>
-        <p x-show="!selectedEvents.length" class="text-sm text-gray-500">No events on this day.</p>
+        <p x-show="!selectedEvents.length" class="text-sm text-gray-500"><?= __('No events on this day.') ?></p>
     </div>
 </div>
 
 <div class="mt-4 flex items-center space-x-6 text-sm text-gray-600">
-    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-green-100 border border-green-300 inline-block"></span><span>Move In</span></div>
-    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-red-100 border border-red-300 inline-block"></span><span>Move Out</span></div>
-    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300 inline-block"></span><span>Lease Ends</span></div>
+    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-green-100 border border-green-300 inline-block"></span><span><?= __('Move In') ?></span></div>
+    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-red-100 border border-red-300 inline-block"></span><span><?= __('Move Out') ?></span></div>
+    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300 inline-block"></span><span><?= __('Lease Ends') ?></span></div>
 </div>
 
 <script>

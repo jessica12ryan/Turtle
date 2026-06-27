@@ -17,24 +17,24 @@
 </style>
 
 <div class="setup-wide" style="margin: 0 auto;">
-    <h1 class="text-2xl font-bold text-gray-800 mb-1 text-center">Welcome to Turtle</h1>
-    <p class="text-gray-500 mb-6 text-center">Let's get your portal set up.</p>
+    <h1 class="text-2xl font-bold text-gray-800 mb-1 text-center"><?= __('Welcome to Turtle') ?></h1>
+    <p class="text-gray-500 mb-6 text-center"><?= __("Let's get your portal set up.") ?></p>
 
     <!-- Step Indicator -->
     <div class="step-indicator">
         <div class="flex flex-col items-center">
             <div class="step-dot active" id="dot-1">1</div>
-            <span class="step-label active" id="label-1">Site Info</span>
+            <span class="step-label active" id="label-1"><?= __('Site Info') ?></span>
         </div>
         <div class="step-line active" id="line-1"></div>
         <div class="flex flex-col items-center">
             <div class="step-dot pending" id="dot-2">2</div>
-            <span class="step-label pending" id="label-2">Account</span>
+            <span class="step-label pending" id="label-2"><?= __('Account') ?></span>
         </div>
         <div class="step-line pending" id="line-2"></div>
         <div class="flex flex-col items-center">
             <div class="step-dot pending" id="dot-3">3</div>
-            <span class="step-label pending" id="label-3">Optional</span>
+            <span class="step-label pending" id="label-3"><?= __('Optional') ?></span>
         </div>
     </div>
 
@@ -59,30 +59,30 @@
 
         <!-- Step 1: Site Information -->
         <div class="step-content active" data-step="1">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Site Information</h2>
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Site Information') ?></h2>
 
             <div class="mb-4">
-                <label for="site_name" class="block text-sm font-medium text-gray-700 mb-1">Site Name</label>
+                <label for="site_name" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Site Name') ?></label>
                 <input type="text" name="site_name" id="site_name" value="<?= old('site_name', 'Turtle') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <p class="text-xs text-gray-400 mt-1">Used in page titles and branding.</p>
+                <p class="text-xs text-gray-400 mt-1"><?= __('Used in page titles and branding.') ?></p>
             </div>
 
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Logo') ?></label>
                 <div class="flex items-center space-x-2 mb-2">
                     <input type="radio" name="logo_default" value="1" <?= old('logo_default', '1') === '1' ? 'checked' : '' ?> class="text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-gray-700">Use default logo</span>
+                    <span class="text-sm text-gray-700"><?= __('Use default logo') ?></span>
                 </div>
                 <div class="flex items-center space-x-2 mb-2">
                     <input type="radio" name="logo_default" value="0" <?= old('logo_default', '1') === '0' ? 'checked' : '' ?> class="text-blue-600 focus:ring-blue-500">
-                    <span class="text-sm text-gray-700">Upload custom logo</span>
+                    <span class="text-sm text-gray-700"><?= __('Upload custom logo') ?></span>
                 </div>
                 <input type="file" name="logo" accept="image/png,image/jpeg,image/gif,image/svg+xml" class="block text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                <p class="text-xs text-gray-400 mt-1">Recommended: 200x50px PNG, JPEG, GIF, or SVG.</p>
+                <p class="text-xs text-gray-400 mt-1"><?= __('Recommended: 200x50px PNG, JPEG, GIF, or SVG.') ?></p>
             </div>
 
             <div class="mb-4">
-                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Timezone') ?></label>
                 <select name="timezone" id="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     <?php foreach ($timezones as $tz): ?>
                         <option value="<?= $tz ?>" <?= $tz === (old('timezone', $selectedTz)) ? 'selected' : '' ?>><?= $tz ?></option>
@@ -91,18 +91,28 @@
             </div>
 
             <div class="border-t border-gray-200 pt-4 mb-4">
-                <h3 class="text-md font-semibold text-gray-800 mb-3">Localization</h3>
+                <h3 class="text-md font-semibold text-gray-800 mb-3"><?= __('Localization') ?></h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="default_country" class="block text-sm font-medium text-gray-700 mb-1">Default Country <span class="text-red-500">*</span></label>
+                        <label for="default_country" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Country') ?> <span class="text-red-500">*</span></label>
                         <select name="default_country" id="default_country" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                             <option value="CA" <?= old('default_country', 'CA') === 'CA' ? 'selected' : '' ?>>Canada</option>
                             <option value="US" <?= old('default_country', 'CA') === 'US' ? 'selected' : '' ?>>United States</option>
                         </select>
                     </div>
                     <div>
-                        <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1">Default Timezone <span class="text-red-500">*</span></label>
+                        <label for="default_language" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Language') ?> <span class="text-red-500">*</span></label>
+                        <select name="default_language" id="default_language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <?php foreach (languages() as $code => $name): ?>
+                                <option value="<?= $code ?>" <?= old('default_language', 'en') === $code ? 'selected' : '' ?>><?= $name ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Timezone') ?> <span class="text-red-500">*</span></label>
                         <select name="timezone" id="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                             <?php foreach ($timezones as $tz): ?>
                                 <option value="<?= $tz ?>" <?= $tz === (old('timezone', $selectedTz)) ? 'selected' : '' ?>><?= $tz ?></option>
@@ -113,109 +123,109 @@
             </div>
 
             <div class="mb-4">
-                <label for="ntp_server" class="block text-sm font-medium text-gray-700 mb-1">NTP Server</label>
+                <label for="ntp_server" class="block text-sm font-medium text-gray-700 mb-1"><?= __('NTP Server') ?></label>
                 <input type="text" name="ntp_server" id="ntp_server" value="<?= old('ntp_server', 'time.gov') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                <p class="text-xs text-gray-400 mt-1">Used for time sync. Default: time.gov</p>
+                <p class="text-xs text-gray-400 mt-1"><?= __('Used for time sync. Default: time.gov') ?></p>
             </div>
 
             <div class="border-t border-gray-200 pt-4 mb-4">
-                <h3 class="text-md font-semibold text-gray-800 mb-3">Email (SMTP) <span class="text-sm font-normal text-gray-500">— optional, can configure later</span></h3>
+                <h3 class="text-md font-semibold text-gray-800 mb-3"><?= __('Email (SMTP)') ?> <span class="text-sm font-normal text-gray-500"><?= __('— optional, can configure later') ?></span></h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="mail_host" class="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
+                        <label for="mail_host" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Host') ?></label>
                         <input type="text" name="mail_host" id="mail_host" value="<?= old('mail_host', 'mailpit') ?>" placeholder="mailpit" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label for="mail_port" class="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
+                        <label for="mail_port" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Port') ?></label>
                         <input type="number" name="mail_port" id="mail_port" value="<?= old('mail_port', '1025') ?>" placeholder="1025" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label for="mail_username" class="block text-sm font-medium text-gray-700 mb-1">SMTP Username</label>
+                        <label for="mail_username" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Username') ?></label>
                         <input type="text" name="mail_username" id="mail_username" value="<?= old('mail_username', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
                     </div>
                     <div>
-                        <label for="mail_password" class="block text-sm font-medium text-gray-700 mb-1">SMTP Password</label>
+                        <label for="mail_password" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Password') ?></label>
                         <input type="password" name="mail_password" id="mail_password" value="<?= old('mail_password', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="mail_from_address" class="block text-sm font-medium text-gray-700 mb-1">From Address</label>
+                        <label for="mail_from_address" class="block text-sm font-medium text-gray-700 mb-1"><?= __('From Address') ?></label>
                         <input type="email" name="mail_from_address" id="mail_from_address" value="<?= old('mail_from_address', 'noreply@turtleapp.com') ?>" placeholder="noreply@turtleapp.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label for="mail_from_name" class="block text-sm font-medium text-gray-700 mb-1">From Name</label>
+                        <label for="mail_from_name" class="block text-sm font-medium text-gray-700 mb-1"><?= __('From Name') ?></label>
                         <input type="text" name="mail_from_name" id="mail_from_name" value="<?= old('mail_from_name', 'Turtle') ?>" placeholder="Turtle" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
             </div>
 
             <div class="flex justify-end mt-6">
-                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium">Next →</button>
+                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
             </div>
         </div>
 
         <!-- Step 2: Create Account -->
         <div class="step-content" data-step="2">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Create Administrator Account</h2>
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Create Administrator Account') ?></h2>
 
             <div class="mb-4">
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Your Name') ?></label>
                 <input type="text" name="name" id="name" value="<?= old('name', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
             </div>
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Email Address') ?></label>
                 <input type="email" name="email" id="email" value="<?= old('email', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
             </div>
             <div class="mb-4">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Password') ?></label>
                 <input type="password" name="password" id="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required minlength="8">
             </div>
             <div class="mb-4">
-                <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Confirm Password') ?></label>
                 <input type="password" name="password_confirmation" id="password_confirmation" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required minlength="8">
             </div>
 
             <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p class="text-sm text-blue-800">
-                    <strong>Administrator Account</strong> — This account will have full system access, including the ability to manage all properties, tenants, leases, tickets, and staff. You can invite additional landlords, property managers, and staff after setup.
+                    <strong><?= __('Administrator Account') ?></strong> — <?= __('This account will have full system access, including the ability to manage all properties, tenants, leases, tickets, and staff. You can invite additional landlords, property managers, and staff after setup.') ?>
                 </p>
             </div>
 
             <div class="flex justify-between mt-6">
-                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">← Back</button>
-                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium">Next →</button>
+                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
             </div>
         </div>
 
         <!-- Step 3: Optional -->
         <div class="step-content" data-step="3">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">Optional Setup</h2>
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Optional Setup') ?></h2>
 
             <div class="mb-6">
                 <label class="flex items-start space-x-3">
                     <input type="checkbox" name="load_sample_data" value="1" class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                     <span class="text-sm text-gray-600">
-                        <strong class="text-gray-800">Load sample data</strong><br>
-                        Creates demo companies, properties, tenants, maintenance tickets, and resources so you can explore the portal immediately.
+                        <strong class="text-gray-800"><?= __('Load sample data') ?></strong><br>
+                        <?= __('Creates demo companies, properties, tenants, maintenance tickets, and resources so you can explore the portal immediately.') ?>
                     </span>
                 </label>
             </div>
 
             <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p class="text-sm text-yellow-800">
-                    <strong>After setup</strong> — You can configure email, permissions, and branding settings at any time from <strong>Settings → General</strong>. Additional staff, tenants, and properties can be added through their respective pages.
+                    <strong><?= __('After setup') ?></strong> — <?= __('You can configure email, permissions, and branding settings at any time from') ?> <strong><?= __('Settings → General') ?></strong>. <?= __('Additional staff, tenants, and properties can be added through their respective pages.') ?>
                 </p>
             </div>
 
             <div class="flex justify-between mt-6">
-                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">← Back</button>
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium">Finish Setup</button>
+                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Finish Setup') ?></button>
             </div>
         </div>
     </form>
@@ -290,7 +300,7 @@ function validateStep(n) {
     }
 
     if (!valid) {
-        alert('Please fill in all required fields before continuing.');
+        alert('<?= __('Please fill in all required fields before continuing.') ?>');
     }
     return valid;
 }

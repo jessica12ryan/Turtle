@@ -1,12 +1,12 @@
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Resources</h1>
+    <h1 class="text-2xl font-bold text-gray-800"><?= __('Resources') ?></h1>
     <?php if (can('resources.create')): ?>
-        <a href="/resources/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Add Resource</a>
+        <a href="/resources/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('Add Resource') ?></a>
     <?php endif; ?>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     <?php if (empty($links)): ?>
-        <div class="col-span-full text-center py-12 text-gray-500">No resources added yet.</div>
+        <div class="col-span-full text-center py-12 text-gray-500"><?= __('No resources added yet.') ?></div>
     <?php else: ?>
         <?php foreach ($links as $link): ?>
             <div class="bg-white rounded-lg shadow p-5 hover:shadow-md transition">
@@ -17,16 +17,16 @@
                 <?php if ($link['description']): ?>
                     <p class="text-sm text-gray-600 mt-2"><?= h($link['description']) ?></p>
                 <?php endif; ?>
-                <p class="text-xs text-gray-400 mt-2">Added by <?= h($link['created_by_name']) ?></p>
+                <p class="text-xs text-gray-400 mt-2"><?= __('Added by') ?> <?= h($link['created_by_name']) ?></p>
                 <?php if (can('resources.edit') || can('resources.delete')): ?>
                     <div class="mt-3 pt-3 border-t flex space-x-3">
                         <?php if (can('resources.edit')): ?>
-                            <a href="/resources/<?= $link['id'] ?>/edit" class="text-blue-600 hover:underline text-sm">Edit</a>
+                            <a href="/resources/<?= $link['id'] ?>/edit" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
                         <?php endif; ?>
                         <?php if (can('resources.delete')): ?>
-                            <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('Delete this resource?')">
+                            <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Delete this resource?') ?>')">
                                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                <button type="submit" class="text-red-600 hover:underline text-sm">Delete</button>
+                                <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                             </form>
                         <?php endif; ?>
                     </div>

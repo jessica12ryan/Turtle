@@ -57,7 +57,7 @@
     <div class="w-full max-w-md mx-4">
         <div class="text-center mb-8">
             <img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-12 mx-auto<?= site_logo() === '/assets/logo.svg' ? ' logo-default' : '' ?>">
-            <p class="text-gray-500 mt-2">Tenant Management Portal</p>
+            <p class="text-gray-500 mt-2"><?= __('Tenant Management Portal') ?></p>
         </div>
         <div class="bg-white rounded-xl shadow-lg p-8">
             <?php if ($msg = flash('error')): ?>

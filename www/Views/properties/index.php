@@ -1,19 +1,19 @@
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Properties</h1>
+    <h1 class="text-2xl font-bold text-gray-800"><?= __('Properties') ?></h1>
     <div class="flex items-center space-x-3">
         <?php if (can('properties.archive') || can('properties.restore')): ?>
             <a href="?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
-                <?= $showArchived ? 'Showing archived' : 'Show archived' ?>
+                <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
             </a>
         <?php endif; ?>
         <?php if (can('properties.create')): ?>
-            <a href="/properties/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium">Add Property</a>
+            <a href="/properties/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('Add Property') ?></a>
         <?php endif; ?>
     </div>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <?php if (empty($properties)): ?>
-        <div class="col-span-full text-center py-12 text-gray-500">No properties found.</div>
+        <div class="col-span-full text-center py-12 text-gray-500"><?= __('No properties found.') ?></div>
     <?php else: ?>
         <?php foreach ($properties as $property): ?>
             <div class="bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden <?= $property['archived_at'] ? 'opacity-60' : '' ?>">
@@ -41,11 +41,11 @@
                 </a>
                 <div class="px-4 pb-4 flex items-center space-x-2">
                     <?php if ($property['archived_at']): ?>
-                        <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Archived</span>
+                        <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded"><?= __('Archived') ?></span>
                         <?php if (can('properties.restore')): ?>
                             <form method="POST" action="/properties/<?= $property['id'] ?>/restore" class="inline">
                                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                <button type="submit" class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded hover:bg-green-200">Restore</button>
+                                <button type="submit" class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded hover:bg-green-200"><?= __('Restore') ?></button>
                             </form>
                         <?php endif; ?>
                     <?php endif; ?>

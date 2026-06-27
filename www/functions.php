@@ -1,5 +1,42 @@
 <?php
 
+function __(string $text): string
+{
+    static $translations = null;
+    if ($translations === null) {
+        $lang = current_language();
+        $path = base_path("www/lang/{$lang}.php");
+        $translations = file_exists($path) ? require $path : [];
+    }
+    return $translations[$text] ?? $text;
+}
+
+function current_language(): string
+{
+    $sessionLang = $_SESSION['_language'] ?? null;
+    if ($sessionLang && in_array($sessionLang, ['en', 'fr', 'es'])) {
+        return $sessionLang;
+    }
+    try {
+        $lang = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'default_language'");
+        if ($lang && in_array($lang['value'], ['en', 'fr', 'es'])) {
+            return $lang['value'];
+        }
+    } catch (\Throwable $e) {
+        // Database not available yet (e.g., during setup)
+    }
+    return 'en';
+}
+
+function languages(): array
+{
+    return [
+        'en' => 'English',
+        'fr' => 'Français',
+        'es' => 'Español',
+    ];
+}
+
 function h($value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

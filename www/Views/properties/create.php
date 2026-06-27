@@ -1,35 +1,35 @@
-<h1 class="text-2xl font-bold text-gray-800 mb-6">Add Property</h1>
+<h1 class="text-2xl font-bold text-gray-800 mb-6"><?= __('Add Property') ?></h1>
 <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
     <form method="POST" action="/properties">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Landlord <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Landlord') ?> <span class="text-red-500">*</span></label>
             <select name="landlord_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
-                <option value="">Select Landlord</option>
+                <option value=""><?= __('Select Landlord') ?></option>
                 <?php foreach ($landlords as $l): ?>
                     <option value="<?= $l['id'] ?>" <?= old('landlord_id') == $l['id'] ? 'selected' : '' ?>><?= h($l['name']) ?> (<?= h($l['email']) ?>)</option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Nickname <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Nickname') ?> <span class="text-red-500">*</span></label>
             <input type="text" name="name" value="<?= old('name') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Address <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Address') ?> <span class="text-red-500">*</span></label>
             <input type="text" name="address" value="<?= old('address') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Apt/Suite <span class="text-gray-400 text-xs">(optional)</span></label>
-            <input type="text" name="apt_suite" value="<?= old('apt_suite') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="e.g., Apt 2B, Suite 300">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Apt/Suite') ?> <span class="text-gray-400 text-xs">(<?= __('optional') ?>)</span></label>
+            <input type="text" name="apt_suite" value="<?= old('apt_suite') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="<?= __('e.g., Apt 2B, Suite 300') ?>">
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">City/Town <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?> <span class="text-red-500">*</span></label>
                 <input type="text" name="city" value="<?= old('city') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Country <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Country') ?> <span class="text-red-500">*</span></label>
                 <select name="country" id="property_country" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                     <option value="CA" <?= old('country', default_country()) === 'CA' ? 'selected' : '' ?>>Canada</option>
                     <option value="US" <?= old('country', default_country()) === 'US' ? 'selected' : '' ?>>United States</option>
@@ -38,22 +38,22 @@
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="region_label">Province <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="region_label"><?= __('Province') ?> <span class="text-red-500">*</span></label>
                 <select name="province" id="property_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
-                    <option value="">Select Province</option>
+                    <option value=""><?= __('Select Province') ?></option>
                     <?php foreach (regions('CA') as $code => $name): ?>
                         <option value="<?= $code ?>" <?= old('province') === $code ? 'selected' : '' ?>><?= h($name) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="postal_label">Postal Code <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="postal_label"><?= __('Postal Code') ?> <span class="text-red-500">*</span></label>
                 <input type="text" name="postal_code" id="property_postal" value="<?= old('postal_code') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required placeholder="A1A 1A1">
             </div>
         </div>
         <div class="flex space-x-3">
-            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium">Create Property</button>
-            <a href="/properties" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
+            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium"><?= __('Add Property') ?></button>
+            <a href="/properties" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50"><?= __('Cancel') ?></a>
         </div>
     </form>
 </div>

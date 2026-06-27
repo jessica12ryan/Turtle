@@ -1,13 +1,13 @@
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Notifications</h1>
+    <h1 class="text-2xl font-bold text-gray-800"><?= __('Notifications') ?></h1>
     <form method="POST" action="/notifications/read-all">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-        <button type="submit" class="text-sm text-blue-600 hover:underline">Mark all as read</button>
+        <button type="submit" class="text-sm text-blue-600 hover:underline"><?= __('Mark all as read') ?></button>
     </form>
 </div>
 <div class="bg-white rounded-lg shadow">
     <?php if (empty($notifications)): ?>
-        <div class="p-6 text-center text-gray-500">No notifications.</div>
+        <div class="p-6 text-center text-gray-500"><?= __('No notifications.') ?></div>
     <?php else: ?>
         <ul class="divide-y">
             <?php foreach ($notifications as $n): ?>
@@ -22,7 +22,7 @@
                             <?php if (!$n['read_at']): ?>
                                 <form method="POST" action="/notifications/<?= $n['id'] ?>/read">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-xs text-blue-600 hover:underline">Mark read</button>
+                                    <button type="submit" class="text-xs text-blue-600 hover:underline"><?= __('Mark read') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>

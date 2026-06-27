@@ -22,32 +22,32 @@ function navActive(string $prefix, string $currentUri): string {
             <div class="flex items-center space-x-8">
                 <a href="/home"><img src="<?= h($logoUrl) ?>" alt="<?= h(site_name()) ?>" class="h-8<?= $isDefaultLogo ? ' logo-default' : '' ?>"></a>
                 <div class="hidden md:flex space-x-4">
-                    <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
+                    <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>"><?= __('Home') ?></a>
                     <?php if (can('properties.access')): ?>
-                        <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
+                        <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>"><?= __('Properties') ?></a>
                     <?php endif; ?>
                     <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
+                        <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>"><?= __('Tenants') ?></a>
                     <?php endif; ?>
                     <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases &amp; Documents</a>
+                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Leases &amp; Documents') ?></a>
                     <?php endif; ?>
                     <?php if (can('tickets.access')): ?>
-                        <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
+                        <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>"><?= __('Tickets') ?></a>
                     <?php endif; ?>
                     <?php if (can('staff.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
+                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>"><?= __('Staff') ?></a>
                     <?php endif; ?>
                     <?php if (can('resources.access')): ?>
-                        <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
+                        <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>"><?= __('Resources') ?></a>
                     <?php endif; ?>
                     <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
+                        <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>"><?= __('Calendar') ?></a>
                     <?php endif; ?>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <label for="menu-toggle" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 cursor-pointer" aria-label="Toggle navigation">
+                <label for="menu-toggle" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 cursor-pointer" aria-label="<?= __('Toggle navigation') ?>">
                     <svg class="menu-icon-hamburger w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg class="menu-icon-close w-6 h-6" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </label>
@@ -63,13 +63,13 @@ function navActive(string $prefix, string $currentUri): string {
                         <span class="hidden md:block text-sm"><?= h($user['name']) ?></span>
                     </button>
                     <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg">Profile</a>
+                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"><?= __('Profile') ?></a>
                         <?php if ($user['role'] === 'admin'): ?>
-                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><?= __('Settings') ?></a>
                         <?php endif; ?>
                         <form method="POST" action="/logout">
                             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg">Logout</button>
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"><?= __('Logout') ?></button>
                         </form>
                     </div>
                 </div>
@@ -78,27 +78,27 @@ function navActive(string $prefix, string $currentUri): string {
     </div>
     <div id="mobile-menu" class="hidden md:hidden" style="display:none">
         <div class="max-w-7xl mx-auto px-4 pb-4 space-y-1">
-            <a href="/home" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>">Home</a>
+            <a href="/home" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>"><?= __('Home') ?></a>
             <?php if (can('properties.access')): ?>
-                <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>">Properties</a>
+                <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>"><?= __('Properties') ?></a>
             <?php endif; ?>
             <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>">Tenants</a>
+                <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>"><?= __('Tenants') ?></a>
             <?php endif; ?>
             <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>">Leases &amp; Documents</a>
+                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Leases &amp; Documents') ?></a>
             <?php endif; ?>
             <?php if (can('tickets.access')): ?>
-                <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>">Tickets</a>
+                <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>"><?= __('Tickets') ?></a>
             <?php endif; ?>
             <?php if (can('staff.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/staff" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>">Staff</a>
+                <a href="/staff" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>"><?= __('Staff') ?></a>
             <?php endif; ?>
             <?php if (can('resources.access')): ?>
-                <a href="/resources" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>">Resources</a>
+                <a href="/resources" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>"><?= __('Resources') ?></a>
             <?php endif; ?>
             <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>">Calendar</a>
+                <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>"><?= __('Calendar') ?></a>
             <?php endif; ?>
         </div>
     </div>

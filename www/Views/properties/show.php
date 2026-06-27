@@ -14,18 +14,18 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     </div>
     <div class="flex space-x-3">
         <?php if (can('properties.edit')): ?>
-            <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">Edit</a>
+            <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
         <?php endif; ?>
         <?php if (can('leases.create')): ?>
-            <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm">Upload Document</a>
+            <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm"><?= __('Upload Document') ?></a>
         <?php endif; ?>
         <?php if (can('tickets.create')): ?>
-            <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm">New Ticket</a>
+            <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm"><?= __('New Ticket') ?></a>
         <?php endif; ?>
         <?php if (can('properties.archive')): ?>
-            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('WARNING: This will archive this property and all its associated tenants, leases, and tickets. This is not reversible. Continue?')">
+            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this property and all its associated tenants, leases, and tickets. This is not reversible. Continue?') ?>')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm">Archive</button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
             </form>
         <?php endif; ?>
     </div>
@@ -34,14 +34,14 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     <div class="lg:col-span-2 space-y-6">
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b flex justify-between items-center">
-                <h2 class="text-lg font-semibold text-gray-800">Tenants</h2>
+                <h2 class="text-lg font-semibold text-gray-800"><?= __('Tenants') ?></h2>
                 <?php if (can('tenants.create')): ?>
-                    <a href="/tenants/create?property_id=<?= $property['id'] ?>" class="text-sm text-blue-600 hover:underline">Add Tenant</a>
+                    <a href="/tenants/create?property_id=<?= $property['id'] ?>" class="text-sm text-blue-600 hover:underline"><?= __('Add Tenant') ?></a>
                 <?php endif; ?>
             </div>
             <div class="p-6">
                 <?php if (empty($tenants)): ?>
-                    <p class="text-gray-500 text-sm">No tenants assigned.</p>
+                    <p class="text-gray-500 text-sm"><?= __('No tenants assigned.') ?></p>
                 <?php else: ?>
                     <ul class="divide-y">
                         <?php foreach ($tenants as $t): ?>
@@ -49,7 +49,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                                 <div>
                                     <a href="/tenants/<?= $t['id'] ?>" class="text-blue-600 hover:underline font-medium"><?= h($t['name']) ?></a>
                                     <?php if ($t['is_main_tenant']): ?>
-                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-2">Main</span>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-2"><?= __('Main') ?></span>
                                     <?php endif; ?>
                                 </div>
                             </li>
@@ -60,11 +60,11 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         </div>
         <div class="bg-white rounded-lg shadow">
             <div class="px-6 py-4 border-b">
-                <h2 class="text-lg font-semibold text-gray-800">Leases &amp; Documents</h2>
+                <h2 class="text-lg font-semibold text-gray-800"><?= __('Leases &amp; Documents') ?></h2>
             </div>
             <div class="p-6">
                 <?php if (empty($leases)): ?>
-                    <p class="text-gray-500 text-sm">No leases uploaded.</p>
+                    <p class="text-gray-500 text-sm"><?= __('No leases uploaded.') ?></p>
                 <?php else: ?>
                     <ul class="divide-y">
                         <?php foreach ($leases as $l): ?>
@@ -77,11 +77,11 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     </div>
     <div class="bg-white rounded-lg shadow">
         <div class="px-6 py-4 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">Recent Tickets</h2>
+            <h2 class="text-lg font-semibold text-gray-800"><?= __('Recent Tickets') ?></h2>
         </div>
         <div class="p-6">
             <?php if (empty($tickets)): ?>
-                <p class="text-gray-500 text-sm">No tickets.</p>
+                <p class="text-gray-500 text-sm"><?= __('No tickets.') ?></p>
             <?php else: ?>
                 <ul class="divide-y">
                     <?php foreach ($tickets as $t): ?>
@@ -98,16 +98,16 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
 
 <?php if (!empty($photos)): ?>
 <div class="mb-6">
-    <h2 class="text-lg font-semibold text-gray-800 mb-3">Photos</h2>
+    <h2 class="text-lg font-semibold text-gray-800 mb-3"><?= __('Photos') ?></h2>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         <?php foreach ($photos as $ph): ?>
             <div class="relative group border rounded-lg overflow-hidden <?= $ph['is_main'] ? 'ring-2 ring-blue-500' : '' ?>">
                 <img src="/properties/<?= $property['id'] ?>/photos/<?= $ph['id'] ?>" alt="<?= h($ph['original_name']) ?>" class="w-full h-32 object-cover">
                 <?php if ($ph['is_main']): ?>
-                    <span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">Main</span>
+                    <span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded"><?= __('Main') ?></span>
                 <?php endif; ?>
                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center space-x-2">
-                    <a href="/properties/<?= $property['id'] ?>/photos/<?= $ph['id'] ?>/download" class="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100" title="Download">
+                    <a href="/properties/<?= $property['id'] ?>/photos/<?= $ph['id'] ?>/download" class="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100" title="<?= __('Download') ?>">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </a>
                 </div>

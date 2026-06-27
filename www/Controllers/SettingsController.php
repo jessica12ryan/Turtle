@@ -18,7 +18,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path', 'default_country'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path', 'default_country', 'default_language'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -142,6 +142,14 @@ class SettingsController
             );
         }
 
+        if (isset($_POST['default_language'])) {
+            $lang = in_array($_POST['default_language'], ['en', 'fr', 'es']) ? $_POST['default_language'] : 'en';
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('default_language', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$lang, $lang]
+            );
+        }
+
         flash('success', 'General settings saved successfully.');
         redirect('/settings?tab=general');
     }
@@ -206,7 +214,7 @@ class SettingsController
             Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
             Database::execute("DELETE FROM sessions WHERE 1=1", []);
             // Reset general settings to defaults (setup re-creates site_name, logo, timezone, ntp, mail)
-            $generalKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $generalKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'default_language', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($generalKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $generalKeys);
             // Reset permissions to "Use defaults"

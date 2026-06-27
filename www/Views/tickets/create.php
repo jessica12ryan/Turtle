@@ -1,27 +1,27 @@
-<h1 class="text-2xl font-bold text-gray-800 mb-6">Create Ticket</h1>
+<h1 class="text-2xl font-bold text-gray-800 mb-6"><?= __('Create Ticket') ?></h1>
 <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
     <form method="POST" action="/tickets" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Property <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Property') ?> <span class="text-red-500">*</span></label>
             <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
-                <option value="">Select Property</option>
+                <option value=""><?= __('Select Property') ?></option>
                 <?php foreach ($properties as $p): ?>
                     <option value="<?= $p['id'] ?>" <?= (old('property_id') == $p['id'] || ($_GET['property_id'] ?? '') == $p['id']) ? 'selected' : '' ?>><?= h($p['name']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Subject <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Subject') ?> <span class="text-red-500">*</span></label>
             <input type="text" name="subject" value="<?= old('subject') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-red-500">*</span></label>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Description') ?> <span class="text-red-500">*</span></label>
             <textarea name="description" rows="5" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required><?= old('description') ?></textarea>
         </div>
         <div class="grid grid-cols-2 gap-4 mb-6">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Category <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Category') ?> <span class="text-red-500">*</span></label>
                 <select name="category" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= $cat ?>" <?= old('category') === $cat ? 'selected' : '' ?>><?= ucfirst(str_replace('_', ' ', $cat)) ?></option>
@@ -29,7 +29,7 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Priority <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Priority') ?> <span class="text-red-500">*</span></label>
                 <select name="priority" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                     <?php foreach ($priorities as $pri): ?>
                         <option value="<?= $pri ?>" <?= old('priority') === $pri ? 'selected' : '' ?>><?= ucfirst($pri) ?></option>
@@ -39,14 +39,14 @@
         </div>
         <?php if (can('tickets.upload_photos')): ?>
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Attachments</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Attachments') ?></label>
                 <input type="file" name="attachments[]" multiple class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                <p class="text-xs text-gray-500 mt-1">Optional. Images, PDFs, or documents.</p>
+                <p class="text-xs text-gray-500 mt-1"><?= __('Optional. Images, PDFs, or documents.') ?></p>
             </div>
         <?php endif; ?>
         <div class="flex space-x-3">
-            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700">Submit Ticket</button>
-            <a href="/tickets" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50">Cancel</a>
+            <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700"><?= __('Submit Ticket') ?></button>
+            <a href="/tickets" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50"><?= __('Cancel') ?></a>
         </div>
     </form>
 </div>

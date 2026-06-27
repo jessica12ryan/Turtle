@@ -1,6 +1,6 @@
 <div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-800">Home</h1>
-    <p class="text-gray-500 mt-1">Welcome back, <?= h(\App\Core\Auth::instance()->user()['name']) ?></p>
+    <h1 class="text-2xl font-bold text-gray-800"><?= __('Home') ?></h1>
+    <p class="text-gray-500 mt-1"><?= __('Welcome back') ?>, <?= h(\App\Core\Auth::instance()->user()['name']) ?></p>
 </div>
 
 <?php if (!empty($alerts['critical'])): ?>
@@ -11,7 +11,7 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-red-800"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['link'])): ?>
-                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 hover:underline mt-1 inline-block">Take action →</a>
+                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 hover:underline mt-1 inline-block"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -27,7 +27,7 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-yellow-800"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['link'])): ?>
-                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 hover:underline mt-1 inline-block">Take action →</a>
+                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 hover:underline mt-1 inline-block"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -39,25 +39,25 @@
     <?php if (isset($stats['properties'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-blue-600"><?= $stats['properties'] ?></p>
-            <p class="text-sm text-gray-500">Properties</p>
+            <p class="text-sm text-gray-500"><?= __('Properties') ?></p>
         </div>
     <?php endif; ?>
     <?php if (isset($stats['tenants'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-green-600"><?= $stats['tenants'] ?></p>
-            <p class="text-sm text-gray-500">Tenants</p>
+            <p class="text-sm text-gray-500"><?= __('Tenants') ?></p>
         </div>
     <?php endif; ?>
     <?php if (isset($stats['leases'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-purple-600"><?= $stats['leases'] ?></p>
-            <p class="text-sm text-gray-500">Documents</p>
+            <p class="text-sm text-gray-500"><?= __('Documents') ?></p>
         </div>
     <?php endif; ?>
     <?php if (isset($stats['open_tickets'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-orange-600"><?= $stats['open_tickets'] ?></p>
-            <p class="text-sm text-gray-500">Open Tickets</p>
+            <p class="text-sm text-gray-500"><?= __('Open Tickets') ?></p>
         </div>
     <?php endif; ?>
 </div>
@@ -65,8 +65,8 @@
 <?php if (isset($recentTickets) && !empty($recentTickets)): ?>
     <div class="bg-white rounded-lg shadow">
         <div class="px-6 py-4 border-b flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-gray-800">Recent Tickets</h2>
-            <a href="/tickets" class="text-sm text-blue-600 hover:underline">View all</a>
+            <h2 class="text-lg font-semibold text-gray-800"><?= __('Recent Tickets') ?></h2>
+            <a href="/tickets" class="text-sm text-blue-600 hover:underline"><?= __('View all') ?></a>
         </div>
         <div class="p-6">
             <div class="space-y-3">
@@ -89,7 +89,7 @@
 <?php if ($role === 'tenant' && !empty($properties)): ?>
     <div class="bg-white rounded-lg shadow mt-6">
         <div class="px-6 py-4 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">My Properties</h2>
+            <h2 class="text-lg font-semibold text-gray-800"><?= __('My Properties') ?></h2>
         </div>
         <div class="p-6 space-y-3">
             <?php foreach ($properties as $property): ?>
@@ -105,8 +105,8 @@
 <?php if ($role === 'tenant' && !empty($openTickets)): ?>
     <div class="bg-white rounded-lg shadow mt-6">
         <div class="px-6 py-4 border-b flex justify-between items-center">
-            <h2 class="text-lg font-semibold text-gray-800">Open Tickets</h2>
-            <a href="/tickets" class="text-sm text-blue-600 hover:underline">View all</a>
+            <h2 class="text-lg font-semibold text-gray-800"><?= __('Open Tickets') ?></h2>
+            <a href="/tickets" class="text-sm text-blue-600 hover:underline"><?= __('View all') ?></a>
         </div>
         <div class="p-6 space-y-3">
             <?php foreach ($openTickets as $ticket): ?>
