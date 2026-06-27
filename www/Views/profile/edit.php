@@ -15,6 +15,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Role') ?></label>
             <input type="text" value="<?= ucfirst(str_replace('_', ' ', $user['role'])) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
         </div>
+        <?php if ($user['role'] !== 'tenant' && !empty($user['secondary_roles'])): ?>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Secondary Roles') ?></label>
+            <input type="text" value="<?= h(implode(', ', array_map(function($r) { return ucfirst(str_replace('_', ' ', $r)); }, explode(',', $user['secondary_roles'])))) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+        </div>
+        <?php endif; ?>
         <hr class="my-6">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
