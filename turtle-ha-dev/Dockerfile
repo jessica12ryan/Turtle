@@ -50,6 +50,7 @@ RUN sed -i 's/^Listen 80$/Listen 8099/' /etc/apache2/httpd.conf \
 RUN printf "upload_max_filesize=64M\npost_max_size=64M\nmemory_limit=256M\n" \
     > /etc/php82/conf.d/turtle.ini
 
+COPY rootfs/etc/apache2/sites-available/turtle.conf /etc/apache2/conf.d/turtle.conf
 COPY rootfs/ /
 
 RUN chmod +x /usr/bin/turtle-run.sh \
