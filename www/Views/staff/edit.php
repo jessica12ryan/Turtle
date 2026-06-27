@@ -2,7 +2,19 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Edit Staff Member') ?></h1>
 </div>
 <div class="bg-white rounded-lg shadow p-6 max-w-lg">
-    <form method="POST" action="/staff/<?= $staff['id'] ?>/update">
+    <form method="POST" action="/staff/<?= $staff['id'] ?>/update" x-data="{
+        secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
+        checked: <?= json_encode(array_values($staffSecondaryRoles)) ?>,
+        get validSecondary() { return this.secondaryRoleMap['<?= $staff['role'] ?>'] || []; },
+        toggle(sr) {
+            if (this.checked.includes(sr)) {
+                this.checked = this.checked.filter(r => r !== sr);
+            } else {
+                this.checked.push(sr);
+            }
+        },
+        isChecked(sr) { return this.checked.includes(sr); }
+    }">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>
@@ -18,6 +30,24 @@
             <p class="text-gray-600"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></p>
             <p class="text-xs text-gray-500 mt-1"><?= __('Role cannot be changed. Archive and re-invite if needed.') ?></p>
         </div>
+        <?php if (!$editingSelf && !empty($secondaryRoleMap[$staff['role']])): ?>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('Secondary Roles') ?></label>
+            <?php foreach ($secondaryRoleMap[$staff['role']] as $sr): ?>
+                <label class="flex items-center space-x-2 mb-1">
+                    <input type="checkbox" name="secondary_roles[]" value="<?= $sr ?>" <?= in_array($sr, $staffSecondaryRoles) ? 'checked' : '' ?> class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span class="text-sm text-gray-700"><?= ucfirst(str_replace('_', ' ', $sr)) ?></span>
+                </label>
+            <?php endforeach; ?>
+        </div>
+        <?php elseif (!empty($staffSecondaryRoles)): ?>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('Secondary Roles') ?></label>
+            <?php foreach ($staffSecondaryRoles as $sr): ?>
+                <span class="text-xs bg-gray-100 px-2 py-1 rounded mr-1"><?= ucfirst(str_replace('_', ' ', $sr)) ?></span>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
             <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">

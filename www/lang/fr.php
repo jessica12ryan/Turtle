@@ -348,4 +348,6 @@ return [
     'Language' => 'Langue',
     'Use default language' => 'Utiliser la langue par défaut',
     'Last updated' => 'Dernière mise à jour',
+    'Secondary Roles' => 'Rôles secondaires',
+    'You cannot change your own roles.' => 'Vous ne pouvez pas modifier vos propres rôles.',
 ];

@@ -16,10 +16,6 @@
             <input type="text" value="<?= ucfirst(str_replace('_', ' ', $user['role'])) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
         </div>
         <hr class="my-6">
-        <div class="mb-6">
-            <?php $currentTimezone = $user['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
-        </div>
-        <hr class="my-6">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
             <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">

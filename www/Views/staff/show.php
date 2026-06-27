@@ -23,6 +23,16 @@
                 <dt class="text-sm text-gray-500"><?= __('Role') ?></dt>
                 <dd class="text-sm font-medium"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></dd>
             </div>
+            <?php if (!empty($staff['secondary_roles'])): ?>
+            <div class="flex justify-between">
+                <dt class="text-sm text-gray-500"><?= __('Secondary Roles') ?></dt>
+                <dd class="text-sm">
+                    <?php foreach (explode(',', $staff['secondary_roles']) as $sr): ?>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded"><?= ucfirst(str_replace('_', ' ', $sr)) ?></span>
+                    <?php endforeach; ?>
+                </dd>
+            </div>
+            <?php endif; ?>
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500">Email</dt>
                 <dd class="text-sm text-gray-600"><?= h($staff['email']) ?></dd>

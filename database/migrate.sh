@@ -29,6 +29,7 @@ run_sql "ALTER TABLE property_tenant ADD COLUMN lease_end DATE DEFAULT NULL AFTE
 run_sql "ALTER TABLE users ADD COLUMN timezone VARCHAR(100) DEFAULT NULL AFTER remember_token;"
 run_sql "ALTER TABLE users ADD COLUMN theme VARCHAR(20) DEFAULT 'light' AFTER timezone;"
 run_sql "ALTER TABLE users ADD COLUMN language VARCHAR(5) DEFAULT NULL AFTER theme;"
+run_sql "ALTER TABLE users ADD COLUMN secondary_roles VARCHAR(255) DEFAULT NULL AFTER language;"
 run_sql "ALTER TABLE properties ADD COLUMN country VARCHAR(2) DEFAULT 'CA' AFTER postal_code;"
 run_sql "ALTER TABLE properties ADD COLUMN apt_suite VARCHAR(100) DEFAULT '' AFTER address;"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('default_country', 'CA');"

@@ -375,20 +375,33 @@ function can(string $permission): bool
         return false;
     }
     if (!$user) return false;
-    if ($user['role'] === 'admin') return true;
 
-    if (permissionsMode() === 'custom') {
-        try {
-            $row = \App\Core\Database::fetch(
-                "SELECT 1 FROM role_permissions WHERE role = ? AND permission = ?",
-                [$user['role'], $permission]
-            );
-            if ($row) return true;
-        } catch (\Throwable $e) {}
+    $rolesToCheck = [$user['role']];
+    if (!empty($user['secondary_roles'])) {
+        $secondary = explode(',', $user['secondary_roles']);
+        $rolesToCheck = array_merge($rolesToCheck, $secondary);
     }
 
-    $defaults = defaultPermissions();
-    return in_array($permission, $defaults[$user['role']] ?? []);
+    foreach ($rolesToCheck as $role) {
+        if ($role === 'admin') return true;
+
+        if (permissionsMode() === 'custom') {
+            try {
+                $row = \App\Core\Database::fetch(
+                    "SELECT 1 FROM role_permissions WHERE role = ? AND permission = ?",
+                    [$role, $permission]
+                );
+                if ($row) return true;
+            } catch (\Throwable $e) {}
+        }
+
+        $defaults = defaultPermissions();
+        if (in_array($permission, $defaults[$role] ?? [])) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function provinces(): array

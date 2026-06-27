@@ -10,6 +10,28 @@ use App\Core\Mailer;
 
 class StaffController
 {
+    private const ROLE_HIERARCHY = ['admin' => 0, 'landlord' => 1, 'property_manager' => 2, 'maintenance' => 3, 'tenant' => 4];
+
+    private function validSecondaryRoles(string $mainRole): array
+    {
+        $level = self::ROLE_HIERARCHY[$mainRole] ?? 99;
+        $valid = [];
+        foreach (self::ROLE_HIERARCHY as $role => $lvl) {
+            if ($role === 'tenant') continue;
+            if ($lvl > $level) {
+                $valid[] = $role;
+            }
+        }
+        return $valid;
+    }
+
+    private function parseSecondaryRoles(): array
+    {
+        $roles = $_POST['secondary_roles'] ?? [];
+        if (!is_array($roles)) return [];
+        $allowed = $this->validSecondaryRoles($_POST['role'] ?? '');
+        return array_values(array_intersect($roles, $allowed));
+    }
     public function index(): void
     {
         $auth = Auth::instance();
@@ -52,9 +74,15 @@ class StaffController
             $roles[] = 'landlord';
         }
 
+        $secondaryRoleMap = [];
+        foreach ($roles as $r) {
+            $secondaryRoleMap[$r] = $this->validSecondaryRoles($r);
+        }
+        $staffSecondaryRoles = old('secondary_roles') ?? [];
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Invite Staff']);
-        $view->render('staff/create', compact('roles'));
+        $view->render('staff/create', compact('roles', 'secondaryRoleMap', 'staffSecondaryRoles'));
     }
 
     public function store(): void
@@ -88,10 +116,12 @@ class StaffController
 
         $timezone = $_POST['timezone'] ?: null;
         $language = $_POST['language'] ?: null;
+        $secondaryRoles = $this->parseSecondaryRoles();
+        $secondaryRolesStr = !empty($secondaryRoles) ? implode(',', $secondaryRoles) : null;
 
         $userId = Database::insert(
-            "INSERT INTO users (name, email, password, role, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone, $language]
+            "INSERT INTO users (name, email, password, role, timezone, language, secondary_roles, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
+            [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone, $language, $secondaryRolesStr]
         );
 
         $creator = Auth::instance()->user();
@@ -132,7 +162,7 @@ class StaffController
     public function show(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -155,19 +185,31 @@ class StaffController
         if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
 
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        // Prevent changing own roles
+        $editingSelf = $id === Auth::instance()->id();
+
         $roles = ['property_manager', 'maintenance'];
-        if ($staff['role'] === 'landlord') {
-            $roles[] = 'landlord';
+        if ($staff['role'] === 'landlord' || $staff['role'] === 'admin') {
+            $roles[] = $staff['role'];
+            if ($staff['role'] === 'admin') {
+                $roles[] = 'landlord';
+            }
         }
+
+        $secondaryRoleMap = [];
+        foreach ($roles as $r) {
+            $secondaryRoleMap[$r] = $this->validSecondaryRoles($r);
+        }
+        $staffSecondaryRoles = !empty($staff['secondary_roles']) ? explode(',', $staff['secondary_roles']) : [];
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Staff']);
-        $view->render('staff/edit', compact('staff', 'roles'));
+        $view->render('staff/edit', compact('staff', 'roles', 'secondaryRoleMap', 'staffSecondaryRoles', 'editingSelf'));
     }
 
     public function update(int $id): void
@@ -175,10 +217,17 @@ class StaffController
         if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
 
         $staff = Database::fetch(
-            "SELECT * FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('landlord','property_manager','maintenance')",
+            "SELECT * FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        // Prevent self role changes
+        $editingSelf = $id === Auth::instance()->id();
+        if ($editingSelf && !empty($_POST['secondary_roles'])) {
+            flash('error', 'You cannot change your own roles.');
+            redirect('/staff/' . $id . '/edit');
+        }
 
         $validator = new Validator();
         $rules = ['name' => 'required|max:255'];
@@ -205,6 +254,14 @@ class StaffController
         $sql .= ", must_change_password = ?";
         $params[] = $mustChange;
 
+        // Only allow secondary_roles changes for non-self edits
+        if (!$editingSelf) {
+            $secondaryRoles = $this->parseSecondaryRolesFromUpdate($staff['role']);
+            $secondaryRolesStr = !empty($secondaryRoles) ? implode(',', $secondaryRoles) : null;
+            $sql .= ", secondary_roles = ?";
+            $params[] = $secondaryRolesStr;
+        }
+
         $sql .= " WHERE id = ?";
         $params[] = $id;
         Database::execute($sql, $params);
@@ -219,6 +276,14 @@ class StaffController
 
         flash('success', 'Staff updated successfully.');
         redirect('/staff/' . $id);
+    }
+
+    private function parseSecondaryRolesFromUpdate(string $mainRole): array
+    {
+        $roles = $_POST['secondary_roles'] ?? [];
+        if (!is_array($roles)) return [];
+        $allowed = $this->validSecondaryRoles($mainRole);
+        return array_values(array_intersect($roles, $allowed));
     }
 
     public function restore(int $id): void
