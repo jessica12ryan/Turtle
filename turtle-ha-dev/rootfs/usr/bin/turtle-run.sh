@@ -46,6 +46,10 @@ if ! mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; then
     until mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; do
         sleep 1
     done
+    # Also wait for TCP port so PHP PDO (host=127.0.0.1) can connect
+    until mysqladmin ping -h 127.0.0.1 -P 3306 --silent 2>/dev/null; do
+        sleep 1
+    done
 else
     bashio::log.info "MariaDB already running, skipping start."
 fi
