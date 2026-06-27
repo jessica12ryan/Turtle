@@ -34,5 +34,4 @@ schema:
   mail_from_address: str
 map:
   - data:rw
-image: ghcr.io/jessica12ryan/turtle-dev/{arch}
 stage: experimental
