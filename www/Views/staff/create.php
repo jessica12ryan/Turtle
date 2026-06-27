@@ -35,7 +35,7 @@
             <select name="role" x-model="role" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 <option value=""><?= __('Select Role') ?></option>
                 <?php foreach ($roles as $role): ?>
-                    <option value="<?= $role ?>" <?= old('role') === $role ? 'selected' : '' ?>><?= ucfirst(str_replace('_', ' ', $role)) ?></option>
+                    <option value="<?= $role ?>" <?= old('role') === $role ? 'selected' : '' ?>><?= ucwords(str_replace('_', ' ', $role)) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>

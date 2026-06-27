@@ -21,7 +21,7 @@
         <dl class="space-y-3">
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500"><?= __('Role') ?></dt>
-                <dd class="text-sm font-medium"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></dd>
+                <dd class="text-sm font-medium"><?= ucwords(str_replace('_', ' ', $staff['role'])) ?></dd>
             </div>
             <?php if (!empty($staff['secondary_roles'])): ?>
             <div class="flex justify-between">

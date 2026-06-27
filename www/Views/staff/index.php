@@ -35,7 +35,7 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($s['email']) ?></td>
                         <td class="px-6 py-4 text-sm">
-                            <span class="text-xs bg-gray-100 px-2 py-1 rounded"><?= ucfirst(str_replace('_', ' ', $s['role'])) ?></span>
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded"><?= ucwords(str_replace('_', ' ', $s['role'])) ?></span>
                             <?php if (!empty($s['secondary_roles'])): ?>
                                 <?php foreach (explode(',', $s['secondary_roles']) as $sr): ?>
                                     <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-1"><?= ucfirst(str_replace('_', ' ', $sr)) ?></span>

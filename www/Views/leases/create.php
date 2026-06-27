@@ -1,16 +1,5 @@
 <h1 class="text-2xl font-bold text-gray-800 mb-6"><?= __('Upload Document') ?></h1>
 <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
-    <?php if (!empty($noTenantProperties)): ?>
-        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p class="text-yellow-800 text-sm font-medium"><?= __('Properties without tenants:') ?></p>
-            <ul class="mt-1 text-sm text-yellow-700">
-                <?php foreach ($noTenantProperties as $np): ?>
-                    <li>• <?= h($np['name']) ?> — <a href="/tenants/create?property_id=<?= $np['id'] ?>" class="text-blue-600 hover:underline"><?= __('Click here to add a tenant') ?></a></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    <?php endif; ?>
-
     <?php if (empty($properties)): ?>
         <div class="p-6 text-center text-gray-500">
             <p><?= __('No properties with active tenants exist.') ?></p>

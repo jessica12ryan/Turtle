@@ -32,7 +32,7 @@
         </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Role') ?></label>
-            <p class="text-gray-600"><?= ucfirst(str_replace('_', ' ', $staff['role'])) ?></p>
+            <p class="text-gray-600"><?= ucwords(str_replace('_', ' ', $staff['role'])) ?></p>
             <p class="text-xs text-gray-500 mt-1"><?= __('Role cannot be changed. Archive and re-invite if needed.') ?></p>
         </div>
         <?php if ((!$editingSelf || $canChangeOwnRoles) && !empty($secondaryRoleMap[$staff['role']])): ?>

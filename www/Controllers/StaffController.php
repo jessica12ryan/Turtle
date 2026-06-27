@@ -150,7 +150,7 @@ class StaffController
                 $_POST['email'],
                 'Welcome to Turtle - Your Account Has Been Created',
                 'Hello ' . h($_POST['name']) . ',',
-                'You have been added as a ' . ucfirst(str_replace('_', ' ', $_POST['role'])) . ' on the Turtle portal.<br><br><strong>Your temporary password is: ' . $password . '</strong><br><br>Please log in and change your password immediately.',
+                'You have been added as a ' . ucwords(str_replace('_', ' ', $_POST['role'])) . ' on the Turtle portal.<br><br><strong>Your temporary password is: ' . $password . '</strong><br><br>Please log in and change your password immediately.',
                 $loginUrl,
                 'Log In'
             );

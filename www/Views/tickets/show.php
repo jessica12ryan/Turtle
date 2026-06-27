@@ -63,7 +63,7 @@ foreach ($files ?? [] as $f) {
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
                                         <span class="font-medium text-sm"><?= h($comment['user_name']) ?></span>
-                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded ml-1"><?= ucfirst(str_replace('_', ' ', $comment['user_role'])) ?></span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded ml-1"><?= ucwords(str_replace('_', ' ', $comment['user_role'])) ?></span>
                                         <?php if ($comment['is_internal']): ?>
                                             <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded ml-1"><?= __('Internal') ?></span>
                                         <?php endif; ?>
@@ -122,7 +122,7 @@ foreach ($files ?? [] as $f) {
                     <select name="assigned_to" class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 focus:ring-2 focus:ring-blue-500">
                         <option value=""><?= __('Unassigned') ?></option>
                         <?php foreach ($staffUsers as $su): ?>
-                            <option value="<?= $su['id'] ?>" <?= $su['id'] == $ticket['assigned_to'] ? 'selected' : '' ?>><?= h($su['name']) ?> (<?= ucfirst(str_replace('_', ' ', $su['role'])) ?>)</option>
+                            <option value="<?= $su['id'] ?>" <?= $su['id'] == $ticket['assigned_to'] ? 'selected' : '' ?>><?= h($su['name']) ?> (<?= ucwords(str_replace('_', ' ', $su['role'])) ?>)</option>
                         <?php endforeach; ?>
                     </select>
                     <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Update') ?></button>
