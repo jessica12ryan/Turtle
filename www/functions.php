@@ -18,12 +18,19 @@ function current_language(): string
         return $sessionLang;
     }
     try {
+        $userId = $_SESSION['user_id'] ?? null;
+        if ($userId) {
+            $userLang = \App\Core\Database::fetch("SELECT language FROM users WHERE id = ?", [$userId]);
+            if ($userLang && !empty($userLang['language']) && in_array($userLang['language'], ['en', 'fr', 'es'])) {
+                $_SESSION['_language'] = $userLang['language'];
+                return $userLang['language'];
+            }
+        }
         $lang = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'default_language'");
         if ($lang && in_array($lang['value'], ['en', 'fr', 'es'])) {
             return $lang['value'];
         }
     } catch (\Throwable $e) {
-        // Database not available yet (e.g., during setup)
     }
     return 'en';
 }

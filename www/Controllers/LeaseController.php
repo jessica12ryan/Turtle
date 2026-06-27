@@ -135,9 +135,11 @@ class LeaseController
             );
         }
 
+        $preselectedPropertyId = !empty($_GET['property_id']) ? (int)$_GET['property_id'] : null;
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Upload Lease']);
-        $view->render('leases/create', compact('properties', 'tenantNames', 'noTenantProperties'));
+        $view->render('leases/create', compact('properties', 'tenantNames', 'noTenantProperties', 'preselectedPropertyId'));
     }
 
     public function store(): void

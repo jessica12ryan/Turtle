@@ -33,9 +33,10 @@ class ProfileController
 
         $timezone = $_POST['timezone'] ?: null;
         $theme = $_POST['theme'] ?? 'system';
+        $language = $_POST['language'] ?: null;
 
-        $sql = "UPDATE users SET name = ?, timezone = ?, theme = ?, updated_at = NOW()";
-        $params = [$_POST['name'], $timezone, $theme];
+        $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, theme = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone, $language, $theme];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";
@@ -46,6 +47,12 @@ class ProfileController
         $params[] = Auth::instance()->id();
 
         Database::execute($sql, $params);
+
+        if ($language) {
+            $_SESSION['_language'] = $language;
+        } else {
+            unset($_SESSION['_language']);
+        }
 
         flash('success', 'Profile updated successfully.');
         redirect('/profile');

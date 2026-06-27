@@ -46,6 +46,15 @@
             </div>
         </div>
         <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
+            <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value=""><?= __('Use default language') ?></option>
+                <?php foreach (languages() as $code => $name): ?>
+                    <option value="<?= $code ?>" <?= old('language') === $code ? 'selected' : '' ?>><?= $name ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="mb-4">
             <?php $currentTimezone = old('timezone'); require base_path('www/Views/partials/timezone.php'); ?>
         </div>
         <div class="mb-6">

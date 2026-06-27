@@ -18,6 +18,7 @@
                     <p class="text-sm text-gray-600 mt-2"><?= h($link['description']) ?></p>
                 <?php endif; ?>
                 <p class="text-xs text-gray-400 mt-2"><?= __('Added by') ?> <?= h($link['created_by_name']) ?></p>
+                <p class="text-xs text-gray-400"><?= __('Created') ?> <?= date('M j, Y', strtotime($link['created_at'])) ?><?php if ($link['updated_at'] && $link['updated_at'] !== $link['created_at']): ?> &middot; <?= __('Last updated') ?> <?= date('M j, Y', strtotime($link['updated_at'])) ?><?php endif; ?></p>
                 <?php if (can('resources.edit') || can('resources.delete')): ?>
                     <div class="mt-3 pt-3 border-t flex space-x-3">
                         <?php if (can('resources.edit')): ?>

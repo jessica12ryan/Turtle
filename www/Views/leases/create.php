@@ -22,7 +22,7 @@
                 return ['id' => $p['id'], 'name' => $p['name'], 'main_tenant_id' => $p['main_tenant_id'] ?? null];
             }, $properties), JSON_HEX_APOS) ?>,
             tenantNames: <?= json_encode($tenantNames, JSON_HEX_APOS) ?>,
-            selectedProperty: "",
+            selectedProperty: "<?= $preselectedPropertyId ?? '' ?>",
             get mainTenantName() {
                 const prop = this.properties.find(p => p.id == this.selectedProperty);
                 return prop && prop.main_tenant_id ? (this.tenantNames[prop.id] || "Unknown") : null;
@@ -34,7 +34,7 @@
                 <select name="property_id" x-model="selectedProperty" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                     <option value=""><?= __('Select Property') ?></option>
                     <?php foreach ($properties as $p): ?>
-                        <option value="<?= $p['id'] ?>" <?= old('property_id') == $p['id'] ? 'selected' : '' ?>><?= h($p['name']) ?></option>
+                        <option value="<?= $p['id'] ?>" <?= (old('property_id') == $p['id'] || ($preselectedPropertyId == $p['id'] && !old('property_id'))) ? 'selected' : '' ?>><?= h($p['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

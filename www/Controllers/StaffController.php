@@ -21,7 +21,7 @@ class StaffController
             $staff = Database::fetchAll(
                 "SELECT u.* FROM users u
                  WHERE 1=1{$archivedClause}
-                 AND u.role IN ('landlord','property_manager','maintenance')
+                 AND u.role IN ('admin','landlord','property_manager','maintenance')
                  ORDER BY u.archived_at IS NULL DESC, u.name"
             );
         } else {
@@ -35,7 +35,7 @@ class StaffController
                 "SELECT u.* FROM users u
                  JOIN company_user cu ON cu.user_id = u.id
                  WHERE cu.company_id IN ({$companyIdList}){$archivedClause}
-                 AND u.role IN ('property_manager','maintenance')
+                 AND u.role IN ('admin','landlord','property_manager','maintenance')
                  ORDER BY u.archived_at IS NULL DESC, u.name"
             );
         }
@@ -87,10 +87,11 @@ class StaffController
         $password = bin2hex(random_bytes(6));
 
         $timezone = $_POST['timezone'] ?: null;
+        $language = $_POST['language'] ?: null;
 
         $userId = Database::insert(
-            "INSERT INTO users (name, email, password, role, timezone, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone]
+            "INSERT INTO users (name, email, password, role, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
+            [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone, $language]
         );
 
         $creator = Auth::instance()->user();
@@ -190,9 +191,10 @@ class StaffController
         }
 
         $timezone = $_POST['timezone'] ?: null;
+        $language = $_POST['language'] ?: null;
 
-        $sql = "UPDATE users SET name = ?, timezone = ?, updated_at = NOW()";
-        $params = [$_POST['name'], $timezone];
+        $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone, $language];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";
@@ -206,6 +208,14 @@ class StaffController
         $sql .= " WHERE id = ?";
         $params[] = $id;
         Database::execute($sql, $params);
+
+        if ($id === Auth::instance()->id()) {
+            if ($language) {
+                $_SESSION['_language'] = $language;
+            } else {
+                unset($_SESSION['_language']);
+            }
+        }
 
         flash('success', 'Staff updated successfully.');
         redirect('/staff/' . $id);

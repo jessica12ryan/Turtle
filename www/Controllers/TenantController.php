@@ -185,10 +185,11 @@ class TenantController
 
         $password = bin2hex(random_bytes(6));
         $timezone = $_POST['timezone'] ?: null;
+        $language = $_POST['language'] ?: null;
 
         $tenantId = Database::insert(
-            "INSERT INTO users (name, email, phone, password, role, timezone, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', ?, 1, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone]
+            "INSERT INTO users (name, email, phone, password, role, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', ?, ?, 1, NOW(), NOW())",
+            [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
         );
 
         if ($existingMain && !empty($_POST['is_main_tenant'])) {
@@ -321,9 +322,10 @@ class TenantController
         }
 
         $timezone = $_POST['timezone'] ?: null;
+        $language = $_POST['language'] ?: null;
 
-        $sql = "UPDATE users SET name = ?, phone = ?, timezone = ?, updated_at = NOW()";
-        $params = [$_POST['name'], $phone, $timezone];
+        $sql = "UPDATE users SET name = ?, phone = ?, timezone = ?, language = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $phone, $timezone, $language];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";
@@ -337,6 +339,14 @@ class TenantController
         $sql .= " WHERE id = ?";
         $params[] = $id;
         Database::execute($sql, $params);
+
+        if ($id === Auth::instance()->id()) {
+            if ($language) {
+                $_SESSION['_language'] = $language;
+            } else {
+                unset($_SESSION['_language']);
+            }
+        }
 
         $pt = $this->getPropertyTenant($id);
         if ($pt && !empty($pt['is_main_tenant'])) {

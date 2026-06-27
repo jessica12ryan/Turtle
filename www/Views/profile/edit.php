@@ -20,6 +20,19 @@
             <?php $currentTimezone = $user['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
         </div>
         <hr class="my-6">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
+            <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value=""><?= __('Use default language') ?></option>
+                <?php foreach (languages() as $code => $name): ?>
+                    <option value="<?= $code ?>" <?= ($user['language'] ?? '') === $code ? 'selected' : '' ?>><?= $name ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="mb-6">
+            <?php $currentTimezone = $user['timezone'] ?? ''; require base_path('www/Views/partials/timezone.php'); ?>
+        </div>
+        <hr class="my-6">
         <div class="mb-6">
             <?php $currentTheme = $user['theme'] ?? 'system'; require base_path('www/Views/partials/theme.php'); ?>
         </div>

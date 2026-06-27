@@ -345,4 +345,7 @@ return [
     'A1A 1A1' => 'A1A 1A1',
     '12345' => '12345',
     'time.gov' => 'time.gov',
+    'Language' => 'Idioma',
+    'Use default language' => 'Usar idioma predeterminado',
+    'Last updated' => 'Última actualización',
 ];

@@ -1,7 +1,7 @@
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Tenants') ?></h1>
     <div class="flex items-center space-x-3">
-        <?php if (can('tenants.edit') || can('tenants.restore')): ?>
+        <?php if (can('tenants.archive') || can('tenants.restore')): ?>
             <a href="?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
                 <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
             </a>
@@ -49,7 +49,7 @@
                         <td class="px-6 py-4 space-x-2">
                             <?php if (!$tenant['archived_at']): ?>
                                 <a href="/tenants/<?= $tenant['id'] ?>/edit" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
-                                <?php if (can('tenants.edit')): ?>
+                                <?php if (can('tenants.archive')): ?>
                                     <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this tenant and is not reversible. They will be removed from the property and their account disabled. Continue?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>

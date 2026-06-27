@@ -50,6 +50,10 @@ class Auth
         $_SESSION['user_id'] = (int) $user['id'];
         session_regenerate_id(true);
 
+        if (!empty($user['language'])) {
+            $_SESSION['_language'] = $user['language'];
+        }
+
         return true;
     }
 
