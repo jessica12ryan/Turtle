@@ -1,5 +1,5 @@
 name: Turtle (Dev)
-version: "0.0.0"
+version: "latest"
 slug: turtle_dev
 description: "Turtle Tenant Management Portal — latest master branch. May be unstable."
 url: https://github.com/jessica12ryan/Turtle
@@ -35,3 +35,4 @@ schema:
 map:
   - data:rw
 image: ghcr.io/jessica12ryan/turtle-dev/{arch}
+stage: experimental
