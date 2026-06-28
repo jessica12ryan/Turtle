@@ -1,5 +1,5 @@
 <style>
-.setup-wide { max-width: 40rem !important; }
+.setup-wide { max-width: 48rem !important; }
 .step-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding: 0 0.5rem; }
 .step-dot { display: flex; align-items: center; justify-content: center; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; flex-shrink: 0; transition: all 0.2s; }
 .step-dot.active { background: #2563eb; color: #fff; }
