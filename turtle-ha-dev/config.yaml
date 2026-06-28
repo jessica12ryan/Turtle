@@ -1,7 +1,7 @@
 name: Turtle (Dev)
 version: "latest"
 slug: turtle_dev
-description: "Turtle Tenant Management Portal — latest master branch. May be unstable."
+description: "Tenant Management Portal — manage properties, tenants, leases, maintenance tickets, and more"
 url: https://github.com/jessica12ryan/Turtle
 arch:
   - aarch64
