@@ -140,6 +140,10 @@ bash "${PATCHED_MIGRATE}"
 rm -f "${PATCHED_MIGRATE}"
 touch "${DATA_DIR}/.db_initialized"
 
+# ── Dev defaults ──────────────────────────────────────────────────────────────
+bashio::log.info "Setting dev defaults (update_channel=development)..."
+mysql --socket=/tmp/mysql.sock -u root turtle -e "INSERT INTO settings (\`key\`, \`value\`) VALUES ('update_channel', 'development') ON DUPLICATE KEY UPDATE \`value\` = 'development';"
+
 # ── Permissions ───────────────────────────────────────────────────────────────
 chown -R apache:apache "${TURTLE_DIR}/www/assets" 2>/dev/null || true
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
