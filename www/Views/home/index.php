@@ -35,11 +35,17 @@
         </div>
     <?php endif; ?>
 
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
     <?php if (isset($stats['properties'])): ?>
         <div class="bg-white rounded-lg shadow p-4 text-center">
             <p class="text-2xl font-bold text-blue-600"><?= $stats['properties'] ?></p>
             <p class="text-sm text-gray-500"><?= __('Properties') ?></p>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($stats['occupied']) && isset($stats['total_units'])): ?>
+        <div class="bg-white rounded-lg shadow p-4 text-center">
+            <p class="text-2xl font-bold text-teal-600"><?= $stats['occupied'] ?>/<?= $stats['total_units'] ?></p>
+            <p class="text-sm text-gray-500"><?= __('Occupancy') ?></p>
         </div>
     <?php endif; ?>
     <?php if (isset($stats['tenants'])): ?>

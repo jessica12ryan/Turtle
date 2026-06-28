@@ -325,6 +325,7 @@ function defaultPermissions(): array
             'resources.access', 'resources.create', 'resources.edit', 'resources.delete',
             'calendar.access',
             'documents.download',
+            'ai_assistant.access',
         ],
         'property_manager' => [
             'home.access',
@@ -337,6 +338,7 @@ function defaultPermissions(): array
             'resources.access', 'resources.create', 'resources.edit', 'resources.delete',
             'calendar.access',
             'documents.download',
+            'ai_assistant.access',
         ],
         'maintenance' => [
             'home.access',

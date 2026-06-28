@@ -11,7 +11,7 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'permissions', 'reset'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'logging', 'reset'])) {
             $tab = 'general';
         }
 
@@ -61,6 +61,10 @@ class SettingsController
             $data['defaults'] = defaultPermissions();
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'permissions_mode'");
             $data['permissionsMode'] = $row['value'] ?? 'default';
+        } elseif ($tab === 'logging') {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'log_level'");
+            $data['logLevel'] = $row['value'] ?? 'debug';
+            $data['logFilePath'] = ini_get('error_log') ?: '/var/log/php_errors.log';
         }
 
         $view = new View();
@@ -392,5 +396,41 @@ class SettingsController
 
         flash('success', 'Permissions saved successfully.');
         redirect('/settings?tab=permissions');
+    }
+
+    public function saveLogging(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=logging');
+        }
+
+        $level = $_POST['log_level'] ?? 'debug';
+        if (!in_array($level, ['debug', 'info', 'notice', 'warning', 'error'])) {
+            $level = 'debug';
+        }
+
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('log_level', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$level, $level]
+        );
+
+        flash('success', 'Logging settings saved successfully.');
+        redirect('/settings?tab=logging');
+    }
+
+    public function downloadLogs(): void
+    {
+        $logPath = ini_get('error_log') ?: '/var/log/php_errors.log';
+
+        if (!file_exists($logPath) || !is_readable($logPath)) {
+            flash('error', 'Log file not found or not readable.');
+            redirect('/settings?tab=logging');
+        }
+
+        header('Content-Type: text/plain');
+        header('Content-Disposition: attachment; filename="turtle-logs.txt"');
+        readfile($logPath);
+        exit;
     }
 }

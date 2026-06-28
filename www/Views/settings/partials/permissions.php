@@ -65,6 +65,7 @@
             'resources.edit' => 'Edit Resources',
             'resources.delete' => 'Delete Resources',
             'calendar.access' => 'View Calendar',
+            'ai_assistant.access' => 'Use AI Assistant',
         ];
 
         $groupOverrides = [
@@ -81,6 +82,7 @@
             'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore', 'staff.delete',
             'resources.create', 'resources.edit', 'resources.delete',
             'calendar.access',
+            'ai_assistant.access',
         ];
 
         $groups = [];
@@ -109,6 +111,7 @@
                 'download' => 'text-purple-600',
                 'upload_photos' => 'text-cyan-600',
                 'download_photos' => 'text-cyan-600',
+                'use' => 'text-indigo-600',
             ];
             return $map[$action] ?? 'text-gray-600';
         }
@@ -131,6 +134,7 @@
                 'download' => 'text-purple-600 focus:ring-purple-500',
                 'upload_photos' => 'text-cyan-600 focus:ring-cyan-500',
                 'download_photos' => 'text-cyan-600 focus:ring-cyan-500',
+                'use' => 'text-indigo-600 focus:ring-indigo-500',
             ];
             return $map[$action] ?? 'text-gray-600 focus:ring-gray-500';
         }

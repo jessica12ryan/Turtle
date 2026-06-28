@@ -210,6 +210,9 @@ $router->get('/notifications', 'NotificationController@index', ['auth']);
 $router->post('/notifications/read-all', 'NotificationController@readAll', ['auth']);
 $router->post('/notifications/{id}/read', 'NotificationController@read', ['auth']);
 
+// AI Assistant
+$router->get('/ai-assistant', 'AiAssistantController@index', ['auth', 'perm:ai_assistant.access']);
+
 // Profile
 $router->get('/profile', 'ProfileController@edit', ['auth']);
 $router->post('/profile', 'ProfileController@update', ['auth']);
@@ -222,6 +225,8 @@ $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:ad
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
+$router->post('/settings/logging', 'SettingsController@saveLogging', ['auth', 'role:admin']);
+$router->get('/settings/logs/download', 'SettingsController@downloadLogs', ['auth', 'role:admin']);
 
 // Updates API (admin only)
 $router->post('/updates/check', 'UpdateController@check', ['auth', 'role:admin']);

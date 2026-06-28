@@ -174,7 +174,8 @@ class HomeController
                 );
                 $companyIds = array_column($companyIds, 'company_id');
                 $companyIdList = implode(',', array_map('intval', $companyIds)) ?: '0';
-                $propertyIds = "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL";
+                $pmClause = $role === 'property_manager' ? " AND property_manager_id = {$auth->id()}" : '';
+                $propertyIds = "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL{$pmClause}";
             }
 
             $props = Database::fetchAll("SELECT id FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL");
@@ -187,6 +188,10 @@ class HomeController
             $stats['leases'] = Database::fetch(
                 "SELECT COUNT(*) as count FROM leases WHERE property_id IN ({$propertyIdList}) AND archived_at IS NULL"
             )['count'] ?? 0;
+            $stats['occupied'] = Database::fetch(
+                "SELECT COUNT(*) as count FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = properties.id AND pt.moved_out_at IS NULL)"
+            )['count'] ?? 0;
+            $stats['total_units'] = $stats['properties'];
             $stats['open_tickets'] = Database::fetch(
                 "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL"
             )['count'] ?? 0;

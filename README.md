@@ -22,10 +22,10 @@ Access control uses a two-layer system: **route middleware** (which pages a role
 Default permissions are assigned per role, but admins can override them in **Settings → Permissions** by switching from "Use defaults" to "Custom" and toggling individual permissions for each role.
 
 | Role | Typical access |
-|---|---|
+|---|---|---|
 | **Admin** | Unrestricted — bypasses all permission checks |
-| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar |
-| **Property Manager** | Properties, tenants, leases, tickets, resources, calendar |
+| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, AI Assistant |
+| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, AI Assistant |
 | **Maintenance** | Tickets (view assigned, update status, comment) |
 | **Tenant** | Own tickets, assigned leases/units, resources |
 

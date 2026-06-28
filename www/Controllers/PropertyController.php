@@ -69,12 +69,16 @@ class PropertyController
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
             $archivedClause = $showArchived ? '' : ' AND p.archived_at IS NULL';
 
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params = $pmClause ? [$auth->id()] : [];
+
             $properties = Database::fetchAll(
                 "SELECT {$baseQuery}, p.archived_at
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}
-                 ORDER BY p.archived_at IS NULL DESC, p.name"
+                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}{$pmClause}
+                 ORDER BY p.archived_at IS NULL DESC, p.name",
+                $params
             );
         }
 

@@ -81,14 +81,18 @@ class TenantController
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params = $pmClause ? [Auth::instance()->id()] : [];
+
             $tenants = Database::fetchAll(
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
                  p.name as property_name, p.id as property_id 
                  FROM users u 
                  JOIN property_tenant pt ON pt.tenant_id = u.id 
                  JOIN properties p ON p.id = pt.property_id 
-                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}
-                 {$orderBy}"
+                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}{$pmClause}
+                 {$orderBy}",
+                $params
             );
         }
 

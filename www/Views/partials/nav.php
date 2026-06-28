@@ -64,6 +64,9 @@ function navActive(string $prefix, string $currentUri): string {
                     </button>
                     <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                         <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"><?= __('Profile') ?></a>
+                        <?php if (can('ai_assistant.access')): ?>
+                            <a href="/ai-assistant" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><?= __('AI Assistant') ?></a>
+                        <?php endif; ?>
                         <?php if ($user['role'] === 'admin'): ?>
                             <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><?= __('Settings') ?></a>
                         <?php endif; ?>
