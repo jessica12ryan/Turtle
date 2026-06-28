@@ -32,6 +32,7 @@ class Database
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
         } catch (PDOException $e) {
+            error_log("Database connection failed: DSN={$dsn} user={$user} error=" . $e->getMessage());
             throw new PDOException("Database connection failed: " . $e->getMessage());
         }
     }

@@ -19,33 +19,38 @@ class AuthController
 
     public function loginPost(): void
     {
-        if (!verify_csrf($_POST['_csrf'] ?? '')) {
-            flash('error', 'Invalid form token.');
-            redirect('/login');
-        }
+        try {
+            if (!verify_csrf($_POST['_csrf'] ?? '')) {
+                flash('error', 'Invalid form token.');
+                redirect('/login');
+            }
 
-        $validator = new Validator();
-        if (!$validator->validate($_POST, [
-            'email' => 'required|email',
-            'password' => 'required',
-        ])) {
-            $_SESSION['_old'] = $_POST;
-            $_SESSION['_errors'] = $validator->errors();
-            redirect('/login');
-        }
+            $validator = new Validator();
+            if (!$validator->validate($_POST, [
+                'email' => 'required|email',
+                'password' => 'required',
+            ])) {
+                $_SESSION['_old'] = $_POST;
+                $_SESSION['_errors'] = $validator->errors();
+                redirect('/login');
+            }
 
-        $auth = Auth::instance();
-        if (!$auth->login($_POST['email'], $_POST['password'])) {
-            flash('error', 'Invalid email or password.');
-            redirect('/login');
-        }
+            $auth = Auth::instance();
+            if (!$auth->login($_POST['email'], $_POST['password'])) {
+                flash('error', 'Invalid email or password.');
+                redirect('/login');
+            }
 
-        if ($auth->mustChangePassword()) {
-            redirect('/password/change');
-        }
+            if ($auth->mustChangePassword()) {
+                redirect('/password/change');
+            }
 
-        log_activity('auth.login', "User '{$_POST['email']}' logged in");
-        redirect('/home');
+            log_activity('auth.login', "User '{$_POST['email']}' logged in");
+            redirect('/home');
+        } catch (\Throwable $e) {
+            error_log('AuthController::loginPost: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            throw $e;
+        }
     }
 
     public function logout(): void

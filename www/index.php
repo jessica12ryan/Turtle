@@ -4,6 +4,22 @@ error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
+// Global error/exception handler to log everything
+set_exception_handler(function (\Throwable $e) {
+    error_log('FATAL: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+    http_response_code(500);
+    if (file_exists(__DIR__ . '/Views/errors/500.php')) {
+        require __DIR__ . '/Views/errors/500.php';
+    } else {
+        echo 'An unexpected error occurred.';
+    }
+    exit;
+});
+set_error_handler(function ($severity, $message, $file, $line) {
+    error_log("PHP Error [{$severity}]: {$message} in {$file}:{$line}");
+    return false;
+});
+
 require_once __DIR__ . '/autoload.php';
 require_once __DIR__ . '/functions.php';
 
@@ -248,8 +264,8 @@ try {
     $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
     $uri = $_SERVER['REQUEST_URI'];
     $router->dispatch(strtoupper($method), $uri);
-} catch (\Exception $e) {
-    error_log($e->getMessage());
+} catch (\Throwable $e) {
+    error_log('Route dispatch failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
     http_response_code(500);
     require base_path('www/Views/errors/500.php');
 }
