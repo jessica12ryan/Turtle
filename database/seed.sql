@@ -29,12 +29,12 @@ INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id,
 (4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA');
 
 -- Tenant-property assignments (some properties have multiple tenants)
-INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at) VALUES
-(1, 4, 1, NOW()),
-(2, 5, 1, NOW()),
-(3, 7, 1, NOW()),
-(4, 8, 1, NOW()),
-(4, 9, 0, NOW());
+INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date) VALUES
+(1, 4, 1, NOW(), '2025-01-01', '2025-12-31', NULL),
+(2, 5, 1, NOW(), '2025-03-01', '2026-02-28', NULL),
+(3, 7, 1, NOW(), '2025-02-15', '2026-02-14', NULL),
+(4, 8, 1, NOW(), '2025-06-01', '2026-05-31', NULL),
+(4, 9, 0, NOW(), '2025-06-01', '2026-05-31', '2026-07-15');
 
 -- Leases
 INSERT IGNORE INTO leases (id, property_id, tenant_id, title, start_date, end_date, rent_amount, created_at, updated_at) VALUES

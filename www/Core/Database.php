@@ -12,13 +12,18 @@ class Database
 
     private function __construct()
     {
-        $host = $_ENV['DB_HOST'] ?? 'mysql';
-        $port = $_ENV['DB_PORT'] ?? '3306';
-        $dbname = $_ENV['DB_DATABASE'] ?? 'turtle';
-        $user = $_ENV['DB_USERNAME'] ?? 'turtle';
-        $pass = $_ENV['DB_PASSWORD'] ?? 'turtle';
+        $this->loadEnv();
 
-        $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
+        $host = getenv('DB_HOST') ?: 'mysql';
+        $port = getenv('DB_PORT') ?: '3306';
+        $dbname = getenv('DB_DATABASE') ?: 'turtle';
+        $user = getenv('DB_USERNAME') ?: 'turtle';
+        $pass = getenv('DB_PASSWORD') ?: 'turtle';
+        $socket = getenv('DB_SOCKET') ?: '';
+
+        $dsn = $socket
+            ? "mysql:unix_socket={$socket};dbname={$dbname};charset=utf8mb4"
+            : "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
 
         try {
             $this->pdo = new PDO($dsn, $user, $pass, [
@@ -37,6 +42,32 @@ class Database
             self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    private function loadEnv(): void
+    {
+        $envFile = __DIR__ . '/../../.env';
+        if (!file_exists($envFile)) {
+            return;
+        }
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+            $pos = strpos($line, '=');
+            if ($pos === false) {
+                continue;
+            }
+            $key = trim(substr($line, 0, $pos));
+            $value = trim(substr($line, $pos + 1));
+            if (strlen($value) >= 2 && (($value[0] === '"' && $value[-1] === '"') || ($value[0] === "'" && $value[-1] === "'"))) {
+                $value = substr($value, 1, -1);
+            }
+            $_ENV[$key] = $value;
+            putenv("{$key}={$value}");
+        }
     }
 
     public function getConnection(): PDO
