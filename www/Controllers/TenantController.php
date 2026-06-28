@@ -233,9 +233,12 @@ class TenantController
             );
         }
 
+        log_activity('tenant.created', "Tenant '{$_POST['name']}' added");
         flash('success', 'Tenant added successfully.');
         redirect('/tenants');
     }
+
+    public function show
 
     public function show(int $id): void
     {
@@ -382,6 +385,7 @@ class TenantController
             $this->restoreSecondaryTenants($pt['property_id'], $id);
         }
 
+        log_activity('tenant.restored', "Tenant #{$id} restored");
         flash('success', 'Tenant restored successfully.');
         redirect('/tenants');
     }
@@ -414,6 +418,7 @@ class TenantController
             }
         }
 
+        log_activity('tenant.archived', "Tenant #{$id} archived");
         flash('success', 'Tenant archived successfully.');
         redirect('/tenants');
     }
@@ -443,6 +448,7 @@ class TenantController
         Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$id]);
         Database::execute("DELETE FROM users WHERE id = ?", [$id]);
 
+        log_activity('tenant.deleted', "Tenant '{$target['name']}' permanently deleted");
         flash('success', 'Tenant permanently deleted.');
         redirect('/tenants');
     }

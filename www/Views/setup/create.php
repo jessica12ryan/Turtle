@@ -29,12 +29,22 @@
         <div class="step-line active" id="line-1"></div>
         <div class="flex flex-col items-center">
             <div class="step-dot pending" id="dot-2">2</div>
-            <span class="step-label pending" id="label-2"><?= __('Account') ?></span>
+            <span class="step-label pending" id="label-2"><?= __('Localization') ?></span>
         </div>
         <div class="step-line pending" id="line-2"></div>
         <div class="flex flex-col items-center">
             <div class="step-dot pending" id="dot-3">3</div>
-            <span class="step-label pending" id="label-3"><?= __('Optional') ?></span>
+            <span class="step-label pending" id="label-3"><?= __('Account') ?></span>
+        </div>
+        <div class="step-line pending" id="line-3"></div>
+        <div class="flex flex-col items-center">
+            <div class="step-dot pending" id="dot-4">4</div>
+            <span class="step-label pending" id="label-4"><?= __('Email (SMTP)') ?></span>
+        </div>
+        <div class="step-line pending" id="line-4"></div>
+        <div class="flex flex-col items-center">
+            <div class="step-dot pending" id="dot-5">5</div>
+            <span class="step-label pending" id="label-5"><?= __('Optional') ?></span>
         </div>
     </div>
 
@@ -64,7 +74,7 @@
             <div class="mb-4">
                 <label for="site_name" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Site Name') ?></label>
                 <input type="text" name="site_name" id="site_name" value="<?= old('site_name', 'Turtle') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <p class="text-xs text-gray-400 mt-1"><?= __('Used in page titles and branding.') ?></p>
+                <p class="text-xs text-gray-400 mt-1"><?= __('Used in page titles and branding. Default: Turtle') ?></p>
             </div>
 
             <div class="mb-4">
@@ -82,87 +92,9 @@
             </div>
 
             <div class="mb-4">
-                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Timezone') ?></label>
-                <select name="timezone" id="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    <?php foreach ($timezones as $tz): ?>
-                        <option value="<?= $tz ?>" <?= $tz === (old('timezone', $selectedTz)) ? 'selected' : '' ?>><?= $tz ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <div class="border-t border-gray-200 pt-4 mb-4">
-                <h3 class="text-md font-semibold text-gray-800 mb-3"><?= __('Localization') ?></h3>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="default_country" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Country') ?> <span class="text-red-500">*</span></label>
-                        <select name="default_country" id="default_country" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                            <option value="CA" <?= old('default_country', 'CA') === 'CA' ? 'selected' : '' ?>>Canada</option>
-                            <option value="US" <?= old('default_country', 'CA') === 'US' ? 'selected' : '' ?>>United States</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="default_language" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Language') ?> <span class="text-red-500">*</span></label>
-                        <select name="default_language" id="default_language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                            <?php foreach (languages() as $code => $name): ?>
-                                <option value="<?= $code ?>" <?= old('default_language', 'en') === $code ? 'selected' : '' ?>><?= $name ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Timezone') ?> <span class="text-red-500">*</span></label>
-                        <select name="timezone" id="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                            <?php foreach ($timezones as $tz): ?>
-                                <option value="<?= $tz ?>" <?= $tz === (old('timezone', $selectedTz)) ? 'selected' : '' ?>><?= $tz ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-4">
                 <label for="ntp_server" class="block text-sm font-medium text-gray-700 mb-1"><?= __('NTP Server') ?></label>
                 <input type="text" name="ntp_server" id="ntp_server" value="<?= old('ntp_server', 'time.gov') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <p class="text-xs text-gray-400 mt-1"><?= __('Used for time sync. Default: time.gov') ?></p>
-            </div>
-
-            <div class="border-t border-gray-200 pt-4 mb-4">
-                <h3 class="text-md font-semibold text-gray-800 mb-3"><?= __('Email (SMTP)') ?> <span class="text-sm font-normal text-gray-500"><?= __('— optional, can configure later') ?></span></h3>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="mail_host" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Host') ?></label>
-                        <input type="text" name="mail_host" id="mail_host" value="<?= old('mail_host', 'mailpit') ?>" placeholder="mailpit" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="mail_port" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Port') ?></label>
-                        <input type="number" name="mail_port" id="mail_port" value="<?= old('mail_port', '1025') ?>" placeholder="1025" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="mail_username" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Username') ?></label>
-                        <input type="text" name="mail_username" id="mail_username" value="<?= old('mail_username', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
-                    </div>
-                    <div>
-                        <label for="mail_password" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Password') ?></label>
-                        <input type="password" name="mail_password" id="mail_password" value="<?= old('mail_password', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="mail_from_address" class="block text-sm font-medium text-gray-700 mb-1"><?= __('From Address') ?></label>
-                        <input type="email" name="mail_from_address" id="mail_from_address" value="<?= old('mail_from_address', 'noreply@turtleapp.com') ?>" placeholder="noreply@turtleapp.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="mail_from_name" class="block text-sm font-medium text-gray-700 mb-1"><?= __('From Name') ?></label>
-                        <input type="text" name="mail_from_name" id="mail_from_name" value="<?= old('mail_from_name', 'Turtle') ?>" placeholder="Turtle" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
             </div>
 
             <div class="flex justify-end mt-6">
@@ -170,8 +102,45 @@
             </div>
         </div>
 
-        <!-- Step 2: Create Account -->
+        <!-- Step 2: Localization -->
         <div class="step-content" data-step="2">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Localization') ?></h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="default_country" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Country') ?> <span class="text-red-500">*</span></label>
+                    <select name="default_country" id="default_country" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value="US" <?= old('default_country', 'US') === 'US' ? 'selected' : '' ?>>United States</option>
+                        <option value="CA" <?= old('default_country', 'US') === 'CA' ? 'selected' : '' ?>>Canada</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="default_language" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Language') ?> <span class="text-red-500">*</span></label>
+                    <select name="default_language" id="default_language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <?php foreach (languages() as $code => $name): ?>
+                            <option value="<?= $code ?>" <?= old('default_language', 'en') === $code ? 'selected' : '' ?>><?= $name ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Default Timezone') ?> <span class="text-red-500">*</span></label>
+                <select name="timezone" id="timezone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <?php foreach ($timezones as $tz): ?>
+                        <option value="<?= $tz ?>" <?= $tz === (old('timezone', $selectedTz)) ? 'selected' : '' ?>><?= $tz ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
+            </div>
+        </div>
+
+        <!-- Step 3: Create Account -->
+        <div class="step-content" data-step="3">
             <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Create Administrator Account') ?></h2>
 
             <div class="mb-4">
@@ -203,8 +172,51 @@
             </div>
         </div>
 
-        <!-- Step 3: Optional -->
-        <div class="step-content" data-step="3">
+        <!-- Step 4: Email (SMTP) -->
+        <div class="step-content" data-step="4">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Email (SMTP)') ?> <span class="text-sm font-normal text-gray-500"><?= __('— optional, can configure later') ?></span></h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="mail_host" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Host') ?></label>
+                    <input type="text" name="mail_host" id="mail_host" value="<?= old('mail_host', 'mailpit') ?>" placeholder="mailpit" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="mail_port" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Port') ?></label>
+                    <input type="number" name="mail_port" id="mail_port" value="<?= old('mail_port', '1025') ?>" placeholder="1025" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="mail_username" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Username') ?></label>
+                    <input type="text" name="mail_username" id="mail_username" value="<?= old('mail_username', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                </div>
+                <div>
+                    <label for="mail_password" class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Password') ?></label>
+                    <input type="password" name="mail_password" id="mail_password" value="<?= old('mail_password', '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="mail_from_address" class="block text-sm font-medium text-gray-700 mb-1"><?= __('From Address') ?></label>
+                    <input type="email" name="mail_from_address" id="mail_from_address" value="<?= old('mail_from_address', 'noreply@turtleapp.com') ?>" placeholder="noreply@turtleapp.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="mail_from_name" class="block text-sm font-medium text-gray-700 mb-1"><?= __('From Name') ?></label>
+                    <input type="text" name="mail_from_name" id="mail_from_name" value="<?= old('mail_from_name', 'Turtle') ?>" placeholder="Turtle" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
+            </div>
+        </div>
+
+        <!-- Step 5: Optional -->
+        <div class="step-content" data-step="5">
             <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Optional Setup') ?></h2>
 
             <div class="mb-6">
@@ -233,7 +245,7 @@
 
 <script>
 var currentStep = 1;
-var totalSteps = 3;
+var totalSteps = 5;
 
 function showStep(n) {
     document.querySelectorAll('.step-content').forEach(function(el) {
@@ -289,7 +301,7 @@ function validateStep(n) {
         }
     }
 
-    if (n === 2) {
+    if (n === 3) {
         var pw = document.getElementById('password');
         var confirm = document.getElementById('password_confirmation');
         if (pw.value && confirm.value && pw.value !== confirm.value) {
@@ -318,11 +330,11 @@ function prevStep() {
     }
 }
 
-// Handle validation error redirect — show step 2 so errors are visible
+// Handle validation error redirect — show step 3 so errors are visible
 (function() {
     var hasErrors = <?= !empty($_SESSION['_errors']) ? 'true' : 'false' ?>;
     if (hasErrors) {
-        showStep(2);
+        showStep(3);
     }
 })();
 
@@ -351,6 +363,7 @@ function filterTimezones(country) {
 }
 
 if (countrySelect) {
+    filterTimezones(countrySelect.value);
     countrySelect.addEventListener('change', function() {
         filterTimezones(this.value);
     });

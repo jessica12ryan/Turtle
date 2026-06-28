@@ -218,6 +218,7 @@ class LeaseController
             }
 
             Database::commit();
+            log_activity('lease.created', "Lease #{$leaseId} uploaded for property #{$_POST['property_id']}");
             flash('success', 'Lease uploaded successfully.');
             redirect('/leases/' . $leaseId);
         } catch (\Throwable $e) {
@@ -254,6 +255,7 @@ class LeaseController
     public function restore(int $id): void
     {
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
+        log_activity('lease.restored', "Lease #{$id} restored");
         flash('success', 'Lease restored successfully.');
         redirect('/leases');
     }
@@ -261,6 +263,7 @@ class LeaseController
     public function destroy(int $id): void
     {
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
+        log_activity('lease.archived', "Lease #{$id} archived");
         flash('success', 'Lease archived successfully.');
         redirect('/leases');
     }
@@ -280,6 +283,7 @@ class LeaseController
         }
         Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$id]);
         Database::execute("DELETE FROM leases WHERE id = ?", [$id]);
+        log_activity('lease.deleted', "Lease #{$id} permanently deleted");
         flash('success', 'Lease permanently deleted.');
         redirect('/leases');
     }

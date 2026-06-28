@@ -67,6 +67,7 @@ class DocumentController
             Database::execute("UPDATE documents SET archived_at = NOW() WHERE id = ?", [$id]);
         }
 
+        log_activity('document.deleted', "Document #{$id} '" . ($document['original_name'] ?? '') . "' deleted");
         flash('success', 'Document deleted successfully.');
         redirectBack();
     }

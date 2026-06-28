@@ -156,6 +156,7 @@ class StaffController
             );
         }
 
+        log_activity('staff.created', "Staff member '{$_POST['name']}' added ({$_POST['role']})");
         flash('success', 'Staff member added successfully.');
         redirect('/staff');
     }
@@ -276,6 +277,7 @@ class StaffController
             }
         }
 
+        log_activity('staff.updated', "Staff member '{$_POST['name']}' updated");
         flash('success', 'Staff updated successfully.');
         redirect('/staff/' . $id);
     }
@@ -291,6 +293,7 @@ class StaffController
     public function restore(int $id): void
     {
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
+        log_activity('staff.restored', "Staff member #{$id} restored");
         flash('success', 'Staff member restored successfully.');
         redirect('/staff');
     }
@@ -309,6 +312,7 @@ class StaffController
         }
 
         Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
+        log_activity('staff.archived', "Staff member #{$id} archived");
         flash('success', 'Staff member archived successfully.');
         redirect('/staff');
     }
@@ -328,6 +332,7 @@ class StaffController
 
         Database::execute("DELETE FROM company_user WHERE user_id = ?", [$id]);
         Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+        log_activity('staff.deleted', "Staff member '{$target['name']}' permanently deleted");
         flash('success', 'Staff member permanently deleted.');
         redirect('/staff');
     }

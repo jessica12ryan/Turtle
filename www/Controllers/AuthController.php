@@ -44,11 +44,16 @@ class AuthController
             redirect('/password/change');
         }
 
+        log_activity('auth.login', "User '{$_POST['email']}' logged in");
         redirect('/home');
     }
 
     public function logout(): void
     {
+        $user = Auth::instance()->user();
+        if ($user) {
+            log_activity('auth.logout', "User '{$user['email']}' logged out");
+        }
         Auth::instance()->logout();
         redirect('/login');
     }
@@ -141,6 +146,7 @@ class AuthController
         );
         Database::execute("DELETE FROM password_reset_tokens WHERE email = ?", [$_POST['email']]);
 
+        log_activity('auth.password_reset', "Password reset for '{$_POST['email']}'");
         flash('success', 'Password reset successfully. Please log in.');
         redirect('/login');
     }
@@ -191,6 +197,7 @@ class AuthController
             'Log In'
         );
 
+        log_activity('auth.welcome_sent', "Welcome email sent to '{$_POST['email']}'");
         flash('success', 'Welcome email sent! Please check your inbox for your temporary password.');
         redirect('/login');
     }
@@ -217,6 +224,7 @@ class AuthController
             [password_hash($_POST['password'], PASSWORD_DEFAULT), Auth::instance()->id()]
         );
 
+        log_activity('auth.password_changed', "Password changed for user #" . Auth::instance()->id());
         flash('success', 'Password changed successfully.');
         redirect('/home');
     }

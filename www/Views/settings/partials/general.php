@@ -6,7 +6,7 @@
 <!-- Branding -->
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Branding') ?></h3>
-    <p class="text-sm text-gray-500 mb-4"><?= __('Customize the site name and logo displayed throughout the application.') ?></p>
+    <p class="text-sm text-gray-500 mb-4"><?= __('Customize the site name and logo.') ?></p>
 
     <form method="POST" action="/settings/general" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
@@ -14,7 +14,7 @@
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Site Name') ?></label>
             <input type="text" name="site_name" value="<?= h($siteName ?? 'Turtle') ?>" class="w-full max-w-md border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-            <p class="text-xs text-gray-400 mt-1"><?= __('Used in page titles and branding. Default: Turtle') ?></p>
+            <p class="text-xs text-gray-400 mt-1"><?= __('Used in page titles and branding.') ?></p>
         </div>
 
         <div class="mb-4">
@@ -33,7 +33,7 @@
                     <span class="text-sm text-gray-700"><?= __('Upload custom logo') ?></span>
                 </label>
                 <input type="file" name="logo" accept="image/png,image/jpeg,image/gif,image/svg+xml" class="block text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                <p class="text-xs text-gray-400"><?= __('Recommended: 200x50px PNG, JPEG, GIF, or SVG. Max dimensions: 400x100px.') ?></p>
+                <p class="text-xs text-gray-400"><?= __('Recommended: 200x50px PNG, JPEG, GIF, or SVG.') ?></p>
             </div>
         </div>
 
@@ -44,7 +44,7 @@
 <!-- Localization -->
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Localization') ?></h3>
-    <p class="text-sm text-gray-500 mb-4"><?= __('Configure the default country and timezone. The default country pre-selects the country when adding new properties.') ?></p>
+    <p class="text-sm text-gray-500 mb-4"><?= __('Configure the default country and timezone.') ?></p>
 
     <form method="POST" action="/settings/general">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
@@ -80,7 +80,7 @@
         <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('NTP Server') ?></label>
             <input type="text" name="ntp_server" value="<?= h($mail['ntp_server'] ?: 'time.gov') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-            <p class="text-xs text-gray-400 mt-1"><?= __('Used for time sync verification. Default: time.gov') ?></p>
+            <p class="text-xs text-gray-400 mt-1"><?= __('Used for time sync. Default: time.gov') ?></p>
         </div>
 
         <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Save Localization') ?></button>
@@ -108,7 +108,7 @@
 <!-- Mail Settings -->
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Email (SMTP)') ?></h3>
-    <p class="text-sm text-gray-500 mb-4"><?= __('Configure the SMTP server used for sending password resets, notifications, and other emails. Leave username/password blank to use the server without authentication.') ?></p>
+    <p class="text-sm text-gray-500 mb-4"><?= __('Configure the SMTP server.') ?></p>
 
     <form method="POST" action="/settings/mail">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
@@ -171,7 +171,7 @@ function testMail() {
     .then(data => {
         if (data.success) {
             result.className = 'mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700';
-            result.textContent = '<?= __('Test email sent! Check your inbox (or Mailpit at http://localhost:8025).') ?>';
+            result.textContent = '<?= __('Test email sent! Check your inbox.') ?>';
         } else {
             result.className = 'mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
             result.textContent = data.error || '<?= __('Failed to send test email.') ?>';

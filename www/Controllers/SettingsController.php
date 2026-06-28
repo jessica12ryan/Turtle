@@ -64,7 +64,56 @@ class SettingsController
         } elseif ($tab === 'logging') {
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'log_level'");
             $data['logLevel'] = $row['value'] ?? 'debug';
-            $data['logFilePath'] = ini_get('error_log') ?: '/var/log/php_errors.log';
+
+            // Activity logs from DB
+            $actionFilter = $_GET['action_filter'] ?? '';
+            $actionFilterSql = $actionFilter ? ' WHERE action = ?' : '';
+            $params = $actionFilter ? [$actionFilter] : [];
+            $data['activityLogs'] = Database::fetchAll(
+                "SELECT * FROM activity_logs{$actionFilterSql} ORDER BY created_at DESC LIMIT 100",
+                $params
+            );
+            $data['activityActions'] = Database::fetchAll(
+                "SELECT DISTINCT action FROM activity_logs ORDER BY action"
+            );
+
+            // PHP error log
+            $phpLogPath = ini_get('error_log') ?: '/var/log/php_errors.log';
+            $data['phpLog'] = [];
+            if (file_exists($phpLogPath) && is_readable($phpLogPath)) {
+                $lines = file($phpLogPath);
+                $data['phpLog'] = array_slice($lines, -100);
+            }
+            $data['phpLogPath'] = $phpLogPath;
+
+            // Apache logs
+            $apachePaths = [
+                '/var/log/apache2/access.log',
+                '/var/log/apache2/error.log',
+                '/var/log/httpd/access_log',
+                '/var/log/httpd/error_log',
+            ];
+            $data['apacheLogs'] = [];
+            foreach ($apachePaths as $ap) {
+                if (file_exists($ap) && is_readable($ap)) {
+                    $lines = file($ap);
+                    $data['apacheLogs'][basename($ap)] = array_slice($lines, -100);
+                }
+            }
+
+            // MySQL logs
+            $mysqlLogPaths = [
+                '/var/log/mysql/error.log',
+                '/var/log/mysql/mysql.log',
+                '/var/log/mariadb/mariadb.log',
+            ];
+            $data['mysqlLogs'] = [];
+            foreach ($mysqlLogPaths as $mp) {
+                if (file_exists($mp) && is_readable($mp)) {
+                    $lines = file($mp);
+                    $data['mysqlLogs'][basename($mp)] = array_slice($lines, -100);
+                }
+            }
         }
 
         $view = new View();
@@ -162,6 +211,7 @@ class SettingsController
             );
         }
 
+        log_activity('settings.general_saved', 'General settings saved');
         flash('success', 'General settings saved successfully.');
         redirect('/settings?tab=general');
     }
@@ -198,6 +248,7 @@ class SettingsController
             );
         }
 
+        log_activity('settings.mail_saved', 'Mail settings saved');
         flash('success', 'Mail settings saved successfully.');
         redirect('/settings?tab=general');
     }
@@ -304,6 +355,7 @@ class SettingsController
             Database::execute("DELETE FROM resources WHERE 1=1", []);
         }
 
+        log_activity('settings.data_reset', 'Data reset completed');
         flash('success', 'Reset completed successfully.');
         redirect('/settings');
     }
@@ -402,6 +454,7 @@ class SettingsController
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
         }
 
+        log_activity('settings.permissions_saved', 'Permissions saved');
         flash('success', 'Permissions saved successfully.');
         redirect('/settings?tab=permissions');
     }
@@ -423,22 +476,78 @@ class SettingsController
             [$level, $level]
         );
 
+        log_activity('settings.logging_saved', "Log level changed to {$level}");
         flash('success', 'Logging settings saved successfully.');
         redirect('/settings?tab=logging');
     }
 
-    public function downloadLogs(): void
+    public function downloadLogs(string $type = 'php'): void
     {
-        $logPath = ini_get('error_log') ?: '/var/log/php_errors.log';
+        $content = '';
+        $filename = 'turtle-logs.txt';
 
-        if (!file_exists($logPath) || !is_readable($logPath)) {
-            flash('error', 'Log file not found or not readable.');
+        switch ($type) {
+            case 'activity':
+                $rows = Database::fetchAll("SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 1000");
+                $content = "Action\tUser\tDescription\tTime\n";
+                foreach ($rows as $r) {
+                    $content .= "{$r['action']}\t{$r['user_name']}\t{$r['description']}\t{$r['created_at']}\n";
+                }
+                $filename = 'activity-logs.tsv';
+                break;
+
+            case 'php':
+                $logPath = ini_get('error_log') ?: '/var/log/php_errors.log';
+                if (file_exists($logPath) && is_readable($logPath)) {
+                    $content = file_get_contents($logPath);
+                }
+                $filename = 'php-error.log';
+                break;
+
+            case 'apache':
+                $paths = [
+                    '/var/log/apache2/access.log',
+                    '/var/log/apache2/error.log',
+                    '/var/log/httpd/access_log',
+                    '/var/log/httpd/error_log',
+                ];
+                foreach ($paths as $p) {
+                    if (file_exists($p) && is_readable($p)) {
+                        $content .= "=== $p ===\n\n";
+                        $content .= file_get_contents($p) . "\n\n";
+                    }
+                }
+                $filename = 'apache-logs.txt';
+                break;
+
+            case 'mysql':
+                $paths = [
+                    '/var/log/mysql/error.log',
+                    '/var/log/mysql/mysql.log',
+                    '/var/log/mariadb/mariadb.log',
+                ];
+                foreach ($paths as $p) {
+                    if (file_exists($p) && is_readable($p)) {
+                        $content .= "=== $p ===\n\n";
+                        $content .= file_get_contents($p) . "\n\n";
+                    }
+                }
+                $filename = 'mysql-logs.txt';
+                break;
+
+            default:
+                flash('error', 'Unknown log type.');
+                redirect('/settings?tab=logging');
+        }
+
+        if (empty($content)) {
+            flash('error', 'No log content found.');
             redirect('/settings?tab=logging');
         }
 
         header('Content-Type: text/plain');
-        header('Content-Disposition: attachment; filename="turtle-logs.txt"');
-        readfile($logPath);
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        echo $content;
         exit;
     }
 }

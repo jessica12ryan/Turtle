@@ -1,5 +1,19 @@
 <?php
 
+function log_activity(string $action, string $description = ''): void
+{
+    try {
+        $user = \App\Core\Auth::instance()->user();
+        if (!$user) return;
+        \App\Core\Database::execute(
+            "INSERT INTO activity_logs (user_id, user_name, action, description, ip_address, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
+            [$user['id'], $user['name'], $action, $description, $_SERVER['REMOTE_ADDR'] ?? '']
+        );
+    } catch (\Throwable $e) {
+        error_log('Failed to log activity: ' . $e->getMessage());
+    }
+}
+
 function __(string $text): string
 {
     static $translations = null;

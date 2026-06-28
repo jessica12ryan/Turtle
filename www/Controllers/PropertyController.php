@@ -140,6 +140,7 @@ class PropertyController
             [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'] ?: null, $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA']
         );
 
+        log_activity('property.created', "Property '{$_POST['name']}' created");
         flash('success', 'Property created successfully.');
         redirect('/properties/' . $propertyId);
     }
@@ -231,6 +232,7 @@ class PropertyController
             [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'] ?: null, $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $id]
         );
 
+        log_activity('property.updated', "Property '{$_POST['name']}' updated");
         flash('success', 'Property updated successfully.');
         redirect('/properties/' . $id);
     }
@@ -429,6 +431,7 @@ class PropertyController
         Database::execute("UPDATE leases SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
         Database::execute("UPDATE tickets SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
 
+        log_activity('property.restored', "Property '{$property['name']}' restored");
         flash('success', 'Property restored successfully. Related tenants, leases, and tickets have also been restored.');
         redirect('/properties');
     }
@@ -446,6 +449,7 @@ class PropertyController
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
         Database::execute("UPDATE tickets SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
 
+        log_activity('property.archived', "Property '{$property['name']}' archived");
         flash('success', 'Property archived successfully. Related tenants, leases, and tickets have also been archived.');
         redirect('/properties');
     }

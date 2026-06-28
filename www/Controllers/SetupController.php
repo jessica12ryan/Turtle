@@ -30,7 +30,7 @@ class SetupController
 
         $view = new View();
         $view->layout('layouts/guest', ['title' => 'Setup']);
-        $view->render('setup/create', compact('timezones', 'selectedTz', 'tzByCountry', 'languages'));
+        $view->render('setup/create', compact('timezones', 'selectedTz', 'tzByCountry'));
     }
 
     public function store(): void
@@ -136,9 +136,9 @@ class SetupController
         );
 
         // Save default country
-        $country = $_POST['default_country'] ?? 'CA';
+        $country = $_POST['default_country'] ?? 'US';
         if (!in_array($country, ['CA', 'US'])) {
-            $country = 'CA';
+            $country = 'US';
         }
         Database::execute(
             "INSERT INTO settings (`key`, `value`) VALUES ('default_country', ?) ON DUPLICATE KEY UPDATE `value` = ?",

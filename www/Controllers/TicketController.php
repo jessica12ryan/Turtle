@@ -130,6 +130,7 @@ class TicketController
 
         $this->uploadTicketFiles($ticketId, null);
 
+        log_activity('ticket.created', "Ticket '{$_POST['subject']}' created");
         flash('success', 'Ticket created successfully.');
         redirect('/tickets/' . $ticketId);
     }
@@ -232,6 +233,7 @@ class TicketController
             [$id, $user['id'], $commentBody]
         );
 
+        log_activity('ticket.assigned', "Ticket #{$id} assigned");
         flash('success', 'Ticket assigned successfully.');
         redirect('/tickets/' . $id);
     }
@@ -239,6 +241,7 @@ class TicketController
     public function restore(int $id): void
     {
         Database::execute("UPDATE tickets SET archived_at = NULL WHERE id = ?", [$id]);
+        log_activity('ticket.restored', "Ticket #{$id} restored");
         flash('success', 'Ticket restored successfully.');
         redirect('/tickets');
     }
@@ -274,6 +277,7 @@ class TicketController
             );
         }
 
+        log_activity('ticket.status_updated', "Ticket #{$id} status updated");
         flash('success', 'Ticket status updated.');
         redirect('/tickets/' . $id);
     }
@@ -316,6 +320,7 @@ class TicketController
 
         $this->uploadTicketFiles((int)$id, $commentId);
 
+        log_activity('ticket.comment_added', "Comment added to ticket #{$id}");
         flash('success', 'Comment added successfully.');
         redirect('/tickets/' . $id);
     }
@@ -394,6 +399,7 @@ class TicketController
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
         Database::execute("UPDATE tickets SET archived_at = NOW() WHERE id = ?", [$id]);
+        log_activity('ticket.archived', "Ticket #{$id} archived");
         flash('success', 'Ticket archived successfully.');
         redirect('/tickets');
     }
@@ -406,6 +412,7 @@ class TicketController
         Database::execute("DELETE FROM ticket_files WHERE ticket_id = ?", [$id]);
         Database::execute("DELETE FROM ticket_comments WHERE ticket_id = ?", [$id]);
         Database::execute("DELETE FROM tickets WHERE id = ?", [$id]);
+        log_activity('ticket.deleted', "Ticket #{$ticket['subject']} permanently deleted");
         flash('success', 'Ticket permanently deleted.');
         redirect('/tickets');
     }

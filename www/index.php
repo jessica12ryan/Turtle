@@ -227,7 +227,7 @@ $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'ro
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
 $router->post('/settings/logging', 'SettingsController@saveLogging', ['auth', 'role:admin']);
-$router->get('/settings/logs/download', 'SettingsController@downloadLogs', ['auth', 'role:admin']);
+$router->get('/settings/logs/download/{type}', 'SettingsController@downloadLogs', ['auth', 'role:admin']);
 
 // Updates API (admin only)
 $router->post('/updates/check', 'UpdateController@check', ['auth', 'role:admin']);
