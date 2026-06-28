@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS properties (
     id INT AUTO_INCREMENT PRIMARY KEY,
     landlord_id INT NOT NULL,
     company_id INT NOT NULL,
+    property_manager_id INT DEFAULT NULL,
     name VARCHAR(255) NOT NULL,
     address VARCHAR(255) DEFAULT '',
     apt_suite VARCHAR(100) DEFAULT '',
@@ -55,7 +56,8 @@ CREATE TABLE IF NOT EXISTS properties (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (landlord_id) REFERENCES users(id),
-    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    FOREIGN KEY (property_manager_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS property_tenant (

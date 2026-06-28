@@ -32,6 +32,8 @@ run_sql "ALTER TABLE users ADD COLUMN language VARCHAR(5) DEFAULT NULL AFTER the
 run_sql "ALTER TABLE users ADD COLUMN secondary_roles VARCHAR(255) DEFAULT NULL AFTER language;"
 run_sql "ALTER TABLE properties ADD COLUMN country VARCHAR(2) DEFAULT 'CA' AFTER postal_code;"
 run_sql "ALTER TABLE properties ADD COLUMN apt_suite VARCHAR(100) DEFAULT '' AFTER address;"
+run_sql "ALTER TABLE properties ADD COLUMN property_manager_id INT DEFAULT NULL AFTER company_id;"
+run_sql "ALTER TABLE properties ADD FOREIGN KEY (property_manager_id) REFERENCES users(id);"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('default_country', 'CA');"
 run_sql "ALTER TABLE property_tenant ADD COLUMN move_out_date DATE DEFAULT NULL AFTER lease_end;"
 run_sql "ALTER TABLE ticket_comments ADD COLUMN is_system TINYINT(1) DEFAULT 0 AFTER is_internal;"
