@@ -87,6 +87,24 @@
     </form>
 </div>
 
+<!-- AI Assistant -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4"><?= __('AI Assistant') ?></h3>
+    <p class="text-sm text-gray-500 mb-4"><?= __('Configure the AI Assistant integration. An OpenAI API key is required to use the assistant.') ?></p>
+
+    <form method="POST" action="/settings/general">
+        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('OpenAI API Key') ?></label>
+            <input type="password" name="openai_api_key" value="<?= h($mail['openai_api_key'] ?? '') ?>" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off" placeholder="sk-...">
+            <p class="text-xs text-gray-400 mt-1"><?= __('Your API key is stored securely in the database and used only for AI Assistant requests.') ?></p>
+        </div>
+
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 font-medium"><?= __('Save AI Settings') ?></button>
+    </form>
+</div>
+
 <!-- Mail Settings -->
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Email (SMTP)') ?></h3>

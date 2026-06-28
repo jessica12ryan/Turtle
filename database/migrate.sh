@@ -35,6 +35,7 @@ run_sql "ALTER TABLE properties ADD COLUMN apt_suite VARCHAR(100) DEFAULT '' AFT
 run_sql "ALTER TABLE properties ADD COLUMN property_manager_id INT DEFAULT NULL AFTER company_id;"
 run_sql "ALTER TABLE properties ADD FOREIGN KEY (property_manager_id) REFERENCES users(id);"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('default_country', 'CA');"
+run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('openai_api_key', '');"
 run_sql "ALTER TABLE property_tenant ADD COLUMN move_out_date DATE DEFAULT NULL AFTER lease_end;"
 run_sql "ALTER TABLE ticket_comments ADD COLUMN is_system TINYINT(1) DEFAULT 0 AFTER is_internal;"
 run_sql "CREATE TABLE IF NOT EXISTS ticket_files (id INT AUTO_INCREMENT PRIMARY KEY, ticket_id INT NOT NULL, comment_id INT DEFAULT NULL, file_path VARCHAR(500) NOT NULL, original_name VARCHAR(255) NOT NULL, size INT DEFAULT NULL, mime_type VARCHAR(100) DEFAULT NULL, uploaded_by INT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE, FOREIGN KEY (comment_id) REFERENCES ticket_comments(id) ON DELETE SET NULL, FOREIGN KEY (uploaded_by) REFERENCES users(id), INDEX idx_ticket (ticket_id), INDEX idx_comment (comment_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"

@@ -212,6 +212,7 @@ $router->post('/notifications/{id}/read', 'NotificationController@read', ['auth'
 
 // AI Assistant
 $router->get('/ai-assistant', 'AiAssistantController@index', ['auth', 'perm:ai_assistant.access']);
+$router->post('/ai-assistant/chat', 'AiAssistantController@chat', ['auth', 'perm:ai_assistant.access']);
 
 // Profile
 $router->get('/profile', 'ProfileController@edit', ['auth']);

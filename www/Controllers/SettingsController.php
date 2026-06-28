@@ -18,7 +18,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path', 'default_country', 'default_language'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path', 'default_country', 'default_language', 'openai_api_key'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -151,6 +151,14 @@ class SettingsController
             Database::execute(
                 "INSERT INTO settings (`key`, `value`) VALUES ('default_language', ?) ON DUPLICATE KEY UPDATE `value` = ?",
                 [$lang, $lang]
+            );
+        }
+
+        if (isset($_POST['openai_api_key'])) {
+            $key = trim($_POST['openai_api_key']);
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('openai_api_key', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$key, $key]
             );
         }
 
