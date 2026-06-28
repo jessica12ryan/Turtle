@@ -191,7 +191,8 @@ class AiAssistantController
         );
 
         $context['recent_leases'] = Database::fetchAll(
-            "SELECT DISTINCT p.name as property_name, pt.lease_start, pt.lease_end FROM property_tenant pt
+            "SELECT p.name as property_name, pt.lease_start, pt.lease_end
+             FROM property_tenant pt
              JOIN properties p ON p.id = pt.property_id
              WHERE pt.property_id IN ({$propertyIdList}) AND pt.moved_out_at IS NULL
              ORDER BY pt.created_at DESC LIMIT 10"
