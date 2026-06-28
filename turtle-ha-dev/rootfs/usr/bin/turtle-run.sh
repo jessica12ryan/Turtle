@@ -62,13 +62,16 @@ GRANT ALL PRIVILEGES ON turtle.* TO 'turtle'@'localhost';
 FLUSH PRIVILEGES;
 SQL
 
-# ── Pull latest master from GitHub ────────────────────────────────────────────
-bashio::log.info "Pulling latest master from GitHub..."
-git config --global --add safe.directory "${TURTLE_DIR}" 2>/dev/null || true
-git -C "${TURTLE_DIR}" pull --ff-only origin master || bashio::log.warning "git pull failed, running existing code"
-
-# Re-patch Database.php after pull (in case git overwrote it with a pre-socket version)
-php /usr/bin/patch-db.php 2>/dev/null || true
+# ── Pull latest master in background (non-blocking) ──────────────────────────
+# git pull is run in background so Apache can start immediately even when
+# the container has restricted outbound internet access (common in HA).
+bashio::log.info "Scheduling background git pull..."
+(
+    sleep 5
+    git config --global --add safe.directory "${TURTLE_DIR}" 2>/dev/null || true
+    git -C "${TURTLE_DIR}" pull --ff-only origin master 2>/dev/null || true
+    php /usr/bin/patch-db.php 2>/dev/null || true
+) &
 
 # ── Write .env ────────────────────────────────────────────────────────────────
 bashio::log.info "Writing .env..."
