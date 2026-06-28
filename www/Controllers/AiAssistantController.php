@@ -41,29 +41,30 @@ class AiAssistantController
             return;
         }
 
-        $user = Auth::instance()->user();
-        $context = $this->buildContext($user);
-        $systemPrompt = $this->buildSystemPrompt($user, $context);
-
-        if (!isset($_SESSION['ai_conversation'])) {
-            $_SESSION['ai_conversation'] = [];
-        }
-
-        $conversation = $_SESSION['ai_conversation'];
-        $conversation[] = ['role' => 'user', 'content' => $message];
-
-        $messages = [['role' => 'system', 'content' => $systemPrompt]];
-        foreach (array_slice($conversation, -20) as $msg) {
-            $messages[] = $msg;
-        }
-
         try {
+            $user = Auth::instance()->user();
+            $context = $this->buildContext($user);
+            $systemPrompt = $this->buildSystemPrompt($user, $context);
+
+            if (!isset($_SESSION['ai_conversation'])) {
+                $_SESSION['ai_conversation'] = [];
+            }
+
+            $conversation = $_SESSION['ai_conversation'];
+            $conversation[] = ['role' => 'user', 'content' => $message];
+
+            $messages = [['role' => 'system', 'content' => $systemPrompt]];
+            foreach (array_slice($conversation, -20) as $msg) {
+                $messages[] = $msg;
+            }
+
             $response = $this->callOpenAI($apiKey, $messages);
             $conversation[] = ['role' => 'assistant', 'content' => $response];
             $_SESSION['ai_conversation'] = $conversation;
 
             echo json_encode(['response' => $response]);
         } catch (\Throwable $e) {
+            error_log('AI Assistant error: ' . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
         }

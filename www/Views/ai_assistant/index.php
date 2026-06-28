@@ -112,7 +112,8 @@ function chat() {
                 this.scrollDown();
             })
             .catch(err => {
-                this.error = '<?= __('Connection error. Please try again.') ?>';
+                this.error = '<?= __('Connection error') ?>: ' + err.message;
+                console.error('AI Assistant fetch error:', err);
             })
             .finally(() => {
                 this.loading = false;
