@@ -68,8 +68,22 @@ function old(string $key, string $default = ''): string
     return isset($_SESSION['_old'][$key]) ? h($_SESSION['_old'][$key]) : $default;
 }
 
+function base_url(): string
+{
+    static $basePath = null;
+    if ($basePath === null) {
+        $basePath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] 
+            ?? $_SERVER['HTTP_X_INGRESS_PATH'] 
+            ?? '';
+    }
+    return $basePath;
+}
+
 function redirect(string $url): void
 {
+    if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+        $url = base_url() . $url;
+    }
     header('Location: ' . $url);
     exit;
 }
@@ -111,7 +125,7 @@ function verify_csrf(string $token): bool
 
 function asset(string $path): string
 {
-    return $path;
+    return base_url() . $path;
 }
 
 function base_path(string $path = ''): string

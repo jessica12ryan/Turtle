@@ -302,8 +302,7 @@ class SettingsController
             session_destroy();
             $_SESSION = [];
 
-            header('Location: /setup');
-            exit;
+            redirect('/setup');
         }
 
         if (!empty($_POST['reset_leases'])) {

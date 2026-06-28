@@ -7,6 +7,7 @@ $themePref = $themeUser['theme'] ?? 'system';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="<?= h(base_url()) ?>/">
     <title><?= h($title ?? 'Home') ?> - <?= h(site_name()) ?></title>
     <script>
         (function() {

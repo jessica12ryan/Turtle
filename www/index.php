@@ -23,6 +23,18 @@ if (file_exists($envFile)) {
     }
 }
 
+// HA ingress support: prepend ingress path to all absolute URLs in output
+$ingressPath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '';
+if ($ingressPath !== '') {
+    ob_start(function ($buffer) use ($ingressPath) {
+        return preg_replace(
+            '/((?:href|action|src)\s*=\s*["\'])\/(?![\/\s])/i',
+            '$1' . $ingressPath . '/',
+            $buffer
+        );
+    });
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -31,11 +43,10 @@ if (session_status() === PHP_SESSION_NONE) {
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if ($requestUri === '/' || $requestUri === '/index.php') {
     if (\App\Core\Auth::instance()->check()) {
-        header('Location: /home');
+        redirect('/home');
     } else {
-        header('Location: /login');
+        redirect('/login');
     }
-    exit;
 }
 
 // Set timezone from settings
@@ -103,8 +114,7 @@ try {
     $needsSetup = true;
 }
 if ($needsSetup && !str_starts_with($requestUri, '/setup')) {
-    header('Location: /setup');
-    exit;
+    redirect('/setup');
 }
 
 $router = new \App\Core\Router();
