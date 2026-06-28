@@ -46,19 +46,17 @@ if ! mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; then
     until mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; do
         sleep 1
     done
-    # Also wait for TCP port so PHP PDO (host=127.0.0.1) can connect
-    until mysqladmin ping -h 127.0.0.1 -P 3306 --silent 2>/dev/null; do
-        sleep 1
-    done
 else
     bashio::log.info "MariaDB already running, skipping start."
 fi
 
-# Create DB + user if missing
+# Create DB + user if missing (socket + TCP user for PHP compatibility)
 mysql --socket=/tmp/mysql.sock <<SQL
 CREATE DATABASE IF NOT EXISTS turtle CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS 'turtle'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+CREATE USER IF NOT EXISTS 'turtle'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON turtle.* TO 'turtle'@'localhost';
+GRANT ALL PRIVILEGES ON turtle.* TO 'turtle'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
 
