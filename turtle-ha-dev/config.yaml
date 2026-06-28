@@ -26,11 +26,11 @@ options:
   mail_from_address: "noreply@turtle.local"
 schema:
   db_password: str
-  app_url: str
-  mail_host: str
+  app_url: str?
+  mail_host: str?
   mail_port: int
-  mail_username: str
-  mail_password: str
+  mail_username: str?
+  mail_password: str?
   mail_from_address: str
 map:
   - data:rw

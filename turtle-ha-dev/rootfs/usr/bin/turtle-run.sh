@@ -67,6 +67,9 @@ bashio::log.info "Pulling latest master from GitHub..."
 git config --global --add safe.directory "${TURTLE_DIR}" 2>/dev/null || true
 git -C "${TURTLE_DIR}" pull --ff-only origin master || bashio::log.warning "git pull failed, running existing code"
 
+# Re-patch Database.php after pull (in case git overwrote it with a pre-socket version)
+php /usr/bin/patch-db.php 2>/dev/null || true
+
 # ── Write .env ────────────────────────────────────────────────────────────────
 bashio::log.info "Writing .env..."
 cat > "${TURTLE_DIR}/.env" <<ENV
@@ -95,6 +98,12 @@ MAIL_PASSWORD=${MAIL_PASS}
 MAIL_FROM_ADDRESS=${MAIL_FROM}
 MAIL_FROM_NAME=Turtle
 ENV
+
+# Export env vars for Apache/PHP and ensure .env is readable by apache user
+set -a
+. "${TURTLE_DIR}/.env"
+set +a
+chmod 644 "${TURTLE_DIR}/.env"
 
 # ── Symlink persistent storage into app ───────────────────────────────────────
 rm -rf "${TURTLE_DIR}/storage/uploads"

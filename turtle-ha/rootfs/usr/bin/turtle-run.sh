@@ -90,6 +90,12 @@ MAIL_FROM_ADDRESS=${MAIL_FROM}
 MAIL_FROM_NAME=Turtle
 ENV
 
+# Export env vars for Apache/PHP and ensure .env is readable by apache user
+set -a
+. "${TURTLE_DIR}/.env"
+set +a
+chmod 644 "${TURTLE_DIR}/.env"
+
 # ── Symlink persistent storage into app ───────────────────────────────────────
 rm -rf "${TURTLE_DIR}/storage/uploads"
 ln -sf "${DATA_DIR}/uploads"   "${TURTLE_DIR}/storage/uploads"
