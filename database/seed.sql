@@ -1,4 +1,9 @@
 -- Seed demo data (run from setup wizard; admin user already exists as id=1)
+-- Note: A default company is auto-created by ensureLandlordCompany() when
+-- properties are created through the app. For seed data we insert one directly.
+
+-- Default company (required by properties FK)
+INSERT IGNORE INTO companies (id, name) VALUES (1, 'Default Company');
 
 -- Users: staff + tenants
 INSERT IGNORE INTO users (id, name, email, password, role, must_change_password, created_at, updated_at) VALUES
@@ -12,22 +17,16 @@ INSERT IGNORE INTO users (id, name, email, password, role, must_change_password,
 (9, 'Evan Tenant', 'evan@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
 (10, 'Fiona Staff', 'fiona@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'maintenance', 0, NOW(), NOW());
 
--- Companies
-INSERT IGNORE INTO companies (id, name, address, city, province, postal_code, phone) VALUES
-(1, 'Turtle Properties Inc.', '123 Main Street', 'Toronto', 'ON', 'M5A 1A1', '555-0100'),
-(2, 'Lakeside Properties LLC', '456 Lake Shore Blvd', 'Buffalo', 'NY', '14201', '555-0200');
-
--- Company-user assignments (admin belongs to both; staff scoped by company)
+-- Company-user assignments (required for non-admin access scoping)
 INSERT IGNORE INTO company_user (company_id, user_id) VALUES
-(1, 1), (1, 2), (1, 3), (1, 10),
-(2, 1), (2, 6);
+(1, 1), (1, 2), (1, 3), (1, 6), (1, 10);
 
--- Properties (4 active in 2 companies)
+-- Properties
 INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id, name, address, city, province, postal_code, country) VALUES
 (1, 6, 1, 2, 'The Wellington', '45 Wellington St W', 'Toronto', 'ON', 'M5V 1E3', 'CA'),
 (2, 6, 1, 2, 'King Street Lofts', '120 King St E', 'Toronto', 'ON', 'M5C 1G6', 'CA'),
-(3, 6, 2, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Buffalo', 'NY', '14202', 'US'),
-(4, 6, 2, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Buffalo', 'NY', '14201', 'US');
+(3, 6, 1, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'ON', 'M5V 1A2', 'CA'),
+(4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA');
 
 -- Tenant-property assignments (some properties have multiple tenants)
 INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at) VALUES
