@@ -276,10 +276,12 @@ class SettingsController
             Database::execute("DELETE FROM notifications WHERE 1=1", []);
             Database::execute("DELETE FROM password_reset_tokens WHERE 1=1", []);
             Database::execute("DELETE FROM sessions WHERE 1=1", []);
-            // Reset general settings to defaults (setup re-creates site_name, logo, timezone, ntp, mail)
-            $generalKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'default_language', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
-            $placeholders = implode(',', array_fill(0, count($generalKeys), '?'));
-            Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $generalKeys);
+            Database::execute("DELETE FROM property_photos WHERE 1=1", []);
+            Database::execute("DELETE FROM activity_logs WHERE 1=1", []);
+            // Reset all user-configurable settings (setup re-creates what it needs)
+            $settingsKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $placeholders = implode(',', array_fill(0, count($settingsKeys), '?'));
+            Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $settingsKeys);
             // Reset permissions to "Use defaults"
             Database::execute(
                 "INSERT INTO settings (`key`, `value`) VALUES ('permissions_mode', 'default') ON DUPLICATE KEY UPDATE `value` = 'default'",

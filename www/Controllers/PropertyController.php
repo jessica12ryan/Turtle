@@ -103,11 +103,11 @@ class PropertyController
     public function create(): void
     {
         $landlords = Database::fetchAll(
-            "SELECT id, name, email FROM users WHERE role = 'landlord' AND archived_at IS NULL ORDER BY name"
+            "SELECT id, name, email FROM users WHERE (role = 'landlord' OR FIND_IN_SET('landlord', COALESCE(secondary_roles, ''))) AND archived_at IS NULL ORDER BY name"
         );
 
         $propertyManagers = Database::fetchAll(
-            "SELECT id, name, email FROM users WHERE role = 'property_manager' AND archived_at IS NULL ORDER BY name"
+            "SELECT id, name, email FROM users WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, ''))) AND archived_at IS NULL ORDER BY name"
         );
 
         $view = new View();
@@ -148,7 +148,7 @@ class PropertyController
     public function show(int $id): void
     {
         $property = Database::fetch(
-            "SELECT p.*, u.name as landlord_name FROM properties p JOIN users u ON u.id = p.landlord_id WHERE p.id = ?",
+            "SELECT p.*, l.name as landlord_name, pm.name as property_manager_name FROM properties p JOIN users l ON l.id = p.landlord_id LEFT JOIN users pm ON pm.id = p.property_manager_id WHERE p.id = ?",
             [$id]
         );
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -190,11 +190,11 @@ class PropertyController
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
         $landlords = Database::fetchAll(
-            "SELECT id, name, email FROM users WHERE role = 'landlord' AND archived_at IS NULL ORDER BY name"
+            "SELECT id, name, email FROM users WHERE (role = 'landlord' OR FIND_IN_SET('landlord', COALESCE(secondary_roles, ''))) AND archived_at IS NULL ORDER BY name"
         );
 
         $propertyManagers = Database::fetchAll(
-            "SELECT id, name, email FROM users WHERE role = 'property_manager' AND archived_at IS NULL ORDER BY name"
+            "SELECT id, name, email FROM users WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, ''))) AND archived_at IS NULL ORDER BY name"
         );
 
         $photos = Database::fetchAll(

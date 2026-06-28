@@ -9,7 +9,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         <?php endif; ?>
         <div>
             <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
-            <p class="text-gray-500"><?= h($property['landlord_name']) ?> — <?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
+            <p class="text-gray-500"><?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
         </div>
     </div>
     <div class="flex space-x-3">
@@ -30,6 +30,24 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         <?php endif; ?>
     </div>
 </div>
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="px-6 py-4 border-b">
+        <h2 class="text-lg font-semibold text-gray-800"><?= __('Property Details') ?></h2>
+    </div>
+    <div class="p-6">
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <dt class="text-sm font-medium text-gray-500"><?= __('Landlord') ?></dt>
+                <dd class="text-sm text-gray-900"><?= h($property['landlord_name']) ?></dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500"><?= __('Property Manager') ?></dt>
+                <dd class="text-sm text-gray-900"><?= $property['property_manager_name'] ? h($property['property_manager_name']) : '<span class="text-gray-400">—</span>' ?></dd>
+            </div>
+        </dl>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
         <div class="bg-white rounded-lg shadow">

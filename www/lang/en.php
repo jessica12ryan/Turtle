@@ -26,4 +26,5 @@
     'No Apache logs found. In Docker, Apache logs are typically streamed to stdout/stderr.' => 'No Apache logs found. In Docker, Apache logs are typically streamed to stdout/stderr.',
     'MySQL Logs' => 'MySQL Logs',
     'No MySQL log files found. MySQL logs may need to be enabled in the MySQL configuration.' => 'No MySQL log files found. MySQL logs may need to be enabled in the MySQL configuration.',
+    'Property Details' => 'Property Details',
 ];
