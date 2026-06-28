@@ -12,8 +12,8 @@
             </select>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Property Manager') ?></label>
-            <select name="property_manager_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Property Manager') ?> <span class="text-red-500">*</span></label>
+            <select name="property_manager_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 <option value=""><?= __('Select Property Manager') ?></option>
                 <?php foreach ($propertyManagers as $pm): ?>
                     <option value="<?= $pm['id'] ?>" <?= $property['property_manager_id'] == $pm['id'] ? 'selected' : '' ?>><?= h($pm['name']) ?> (<?= h($pm['email']) ?>)</option>

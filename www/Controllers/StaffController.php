@@ -121,7 +121,7 @@ class StaffController
         $secondaryRolesStr = !empty($secondaryRoles) ? implode(',', $secondaryRoles) : null;
 
         $userId = Database::insert(
-            "INSERT INTO users (name, email, password, role, timezone, language, secondary_roles, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())",
+            "INSERT INTO users (name, email, password, role, theme, timezone, language, secondary_roles, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'system', ?, ?, ?, 1, NOW(), NOW())",
             [$_POST['name'], $_POST['email'], password_hash($password, PASSWORD_DEFAULT), $_POST['role'], $timezone, $language, $secondaryRolesStr]
         );
 

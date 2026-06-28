@@ -37,12 +37,12 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     <div class="p-6">
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <dt class="text-sm font-medium text-gray-500"><?= __('Landlord') ?></dt>
-                <dd class="text-sm text-gray-900"><?= h($property['landlord_name']) ?></dd>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Landlord') ?></dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= h($property['landlord_name']) ?></dd>
             </div>
             <div>
-                <dt class="text-sm font-medium text-gray-500"><?= __('Property Manager') ?></dt>
-                <dd class="text-sm text-gray-900"><?= $property['property_manager_name'] ? h($property['property_manager_name']) : '<span class="text-gray-400">—</span>' ?></dd>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Property Manager') ?></dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= $property['property_manager_name'] ? h($property['property_manager_name']) : '<span class="text-gray-400 dark:text-gray-500">—</span>' ?></dd>
             </div>
         </dl>
     </div>

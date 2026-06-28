@@ -75,7 +75,7 @@ class SetupController
 
         // Create admin account
         Database::insert(
-            "INSERT INTO users (name, email, password, role, must_change_password, created_at, updated_at) VALUES (?, ?, ?, 'admin', 0, NOW(), NOW())",
+            "INSERT INTO users (name, email, password, role, theme, must_change_password, created_at, updated_at) VALUES (?, ?, ?, 'admin', 'system', 0, NOW(), NOW())",
             [$_POST['name'], $_POST['email'], password_hash($_POST['password'], PASSWORD_DEFAULT)]
         );
 

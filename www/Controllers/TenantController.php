@@ -192,7 +192,7 @@ class TenantController
         $language = $_POST['language'] ?: null;
 
         $tenantId = Database::insert(
-            "INSERT INTO users (name, email, phone, password, role, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', ?, ?, 1, NOW(), NOW())",
+            "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
             [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
         );
 
@@ -237,8 +237,6 @@ class TenantController
         flash('success', 'Tenant added successfully.');
         redirect('/tenants');
     }
-
-    public function show
 
     public function show(int $id): void
     {

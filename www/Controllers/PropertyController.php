@@ -120,6 +120,7 @@ class PropertyController
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
+            'property_manager_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
             'address' => 'required|max:255',
             'apt_suite' => 'max:100',
@@ -137,7 +138,7 @@ class PropertyController
 
         $propertyId = Database::insert(
             "INSERT INTO properties (landlord_id, company_id, property_manager_id, name, address, apt_suite, city, province, postal_code, country, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'] ?: null, $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA']
+            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA']
         );
 
         log_activity('property.created', "Property '{$_POST['name']}' created");
@@ -212,6 +213,7 @@ class PropertyController
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
+            'property_manager_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
             'address' => 'required|max:255',
             'apt_suite' => 'max:100',
@@ -229,7 +231,7 @@ class PropertyController
 
         Database::execute(
             "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'] ?: null, $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $id]
+            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $id]
         );
 
         log_activity('property.updated', "Property '{$_POST['name']}' updated");

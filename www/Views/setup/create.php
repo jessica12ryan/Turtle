@@ -1,11 +1,11 @@
 <style>
 .setup-wide { max-width: 40rem !important; }
-.step-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; gap: 0; }
-.step-dot { display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; flex-shrink: 0; transition: all 0.2s; }
+.step-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding: 0 0.5rem; }
+.step-dot { display: flex; align-items: center; justify-content: center; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; flex-shrink: 0; transition: all 0.2s; }
 .step-dot.active { background: #2563eb; color: #fff; }
 .step-dot.completed { background: #16a34a; color: #fff; }
 .step-dot.pending { background: #e5e7eb; color: #9ca3af; }
-.step-line { width: 4rem; height: 2px; flex-shrink: 0; transition: background 0.2s; }
+.step-line { width: 2.5rem; height: 2px; flex-shrink: 0; transition: background 0.2s; }
 .step-line.active { background: #2563eb; }
 .step-line.completed { background: #16a34a; }
 .step-line.pending { background: #e5e7eb; }
