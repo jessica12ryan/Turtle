@@ -66,6 +66,11 @@
             'resources.delete' => 'Delete Resources',
             'calendar.access' => 'View Calendar',
             'ai_assistant.access' => 'Use AI Assistant',
+            'rents.access' => 'View Rents',
+            'rents.payments.create' => 'Add Payments',
+            'rents.payments.edit' => 'Edit Payments',
+            'rents.payments.archive' => 'Archive Payments',
+            'rents.payments.restore' => 'Restore Payments',
         ];
 
         $groupOverrides = [

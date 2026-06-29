@@ -48,6 +48,119 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     </div>
 </div>
 
+<?php if (can('rents.access') && ($property['rent_amount'] ?? 0) > 0): ?>
+<div class="bg-white rounded-lg shadow mb-6">
+    <div class="px-6 py-4 border-b flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-800"><?= __('Rent') ?></h2>
+        <a href="/properties/<?= $property['id'] ?>/rent" class="text-sm text-blue-600 hover:underline"><?= __('View Details') ?></a>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <p class="text-xs text-gray-500 uppercase"><?= __('Monthly Rent') ?></p>
+                <p class="text-xl font-bold text-gray-800">$<?= number_format($property['rent_amount'], 2) ?></p>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <p class="text-xs text-gray-500 uppercase"><?= __('Due Day') ?></p>
+                <p class="text-xl font-bold text-gray-800"><?= h($property['rent_due_day'] ?? '—') ?></p>
+            </div>
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+                <p class="text-xs text-gray-500 uppercase"><?= __('This Month') ?></p>
+                <?php if ($rentStatus === 'paid'): ?>
+                    <p class="text-xl font-bold text-green-600">$<?= number_format($paidThisMonth, 2) ?></p>
+                    <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded"><?= __('Paid') ?></span>
+                <?php elseif ($rentStatus === 'partial'): ?>
+                    <p class="text-xl font-bold text-yellow-600">$<?= number_format($paidThisMonth, 2) ?></p>
+                    <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded"><?= __('Partial') ?></span>
+                <?php elseif ($rentStatus === 'unpaid'): ?>
+                    <p class="text-xl font-bold text-red-600">$0.00</p>
+                    <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded"><?= __('Unpaid') ?></span>
+                <?php else: ?>
+                    <p class="text-xl font-bold text-gray-400">—</p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php if (!empty($payments)): ?>
+            <details class="mt-4">
+                <summary class="text-sm text-blue-600 hover:underline cursor-pointer"><?= __('Payment History') ?> (<?= count($payments) ?>)</summary>
+                <div class="mt-3 overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b text-left">
+                                <th class="py-2 pr-3 font-medium text-gray-500"><?= __('Date') ?></th>
+                                <th class="py-2 pr-3 font-medium text-gray-500"><?= __('Tenant') ?></th>
+                                <th class="py-2 pr-3 font-medium text-gray-500"><?= __('Amount') ?></th>
+                                <th class="py-2 pr-3 font-medium text-gray-500"><?= __('Method') ?></th>
+                                <th class="py-2 pr-3 font-medium text-gray-500"><?= __('Recorded By') ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach (array_slice($payments, 0, 10) as $pym): ?>
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-2 pr-3"><?= h($pym['payment_date']) ?></td>
+                                    <td class="py-2 pr-3"><?= h($pym['tenant_name']) ?></td>
+                                    <td class="py-2 pr-3 font-medium">$<?= number_format($pym['amount'], 2) ?></td>
+                                    <td class="py-2 pr-3 capitalize"><?= h(str_replace('_', ' ', $pym['payment_method'] ?? '—')) ?></td>
+                                    <td class="py-2 pr-3 text-gray-500"><?= h($pym['recorded_by_name']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+        <?php endif; ?>
+        <?php if (can('rents.payments.create')): ?>
+            <form method="POST" action="/properties/<?= $property['id'] ?>/rent" class="mt-4 p-4 border border-blue-200 rounded-lg bg-blue-50">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <h4 class="text-sm font-semibold text-blue-800 mb-3"><?= __('Record Payment') ?></h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-blue-700 mb-1"><?= __('Tenant') ?> <span class="text-red-500">*</span></label>
+                        <select name="property_tenant_id" required class="w-full border border-blue-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value=""><?= __('Select Tenant') ?></option>
+                            <?php foreach ($tenants as $t): ?>
+                                <option value="<?= $t['property_tenant_id'] ?>"><?= h($t['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-blue-700 mb-1"><?= __('Amount') ?> <span class="text-red-500">*</span></label>
+                        <input type="number" name="amount" step="0.01" min="0.01" required class="w-full border border-blue-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-blue-700 mb-1"><?= __('Date') ?> <span class="text-red-500">*</span></label>
+                        <input type="date" name="payment_date" value="<?= date('Y-m-d') ?>" required class="w-full border border-blue-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-blue-700 mb-1"><?= __('Method') ?></label>
+                        <select name="payment_method" class="w-full border border-blue-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value=""><?= __('— Select —') ?></option>
+                            <option value="cash"><?= __('Cash') ?></option>
+                            <option value="e-transfer"><?= __('E-Transfer') ?></option>
+                            <option value="cheque"><?= __('Cheque') ?></option>
+                            <option value="credit_card"><?= __('Credit Card') ?></option>
+                            <option value="debit"><?= __('Debit') ?></option>
+                            <option value="other"><?= __('Other') ?></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label class="block text-xs font-medium text-blue-700 mb-1"><?= __('Reference') ?></label>
+                        <input type="text" name="reference" class="w-full border border-blue-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="<?= __('Cheque #, transaction ID, etc.') ?>">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-blue-700 mb-1"><?= __('Notes') ?></label>
+                        <input type="text" name="notes" class="w-full border border-blue-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="<?= __('Optional notes') ?>">
+                    </div>
+                </div>
+                <button type="submit" class="mt-3 bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><?= __('Record Payment') ?></button>
+            </form>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
         <div class="bg-white rounded-lg shadow">

@@ -354,6 +354,7 @@ function defaultPermissions(): array
             'calendar.access',
             'documents.download',
             'ai_assistant.access',
+            'rents.access', 'rents.payments.create', 'rents.payments.edit', 'rents.payments.archive', 'rents.payments.restore',
         ],
         'property_manager' => [
             'home.access',
@@ -367,6 +368,7 @@ function defaultPermissions(): array
             'calendar.access',
             'documents.download',
             'ai_assistant.access',
+            'rents.access', 'rents.payments.create',
         ],
         'maintenance' => [
             'home.access',
@@ -383,6 +385,7 @@ function defaultPermissions(): array
             'resources.access',
             'leases.access',
             'documents.download',
+            'rents.access',
         ],
     ];
 }

@@ -136,9 +136,12 @@ class PropertyController
 
         $companyId = $this->ensureLandlordCompany((int)$_POST['landlord_id']);
 
+        $rentAmount = !empty($_POST['rent_amount']) ? (float)$_POST['rent_amount'] : null;
+        $rentDueDay = !empty($_POST['rent_due_day']) ? (int)$_POST['rent_due_day'] : null;
+
         $propertyId = Database::insert(
-            "INSERT INTO properties (landlord_id, company_id, property_manager_id, name, address, apt_suite, city, province, postal_code, country, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA']
+            "INSERT INTO properties (landlord_id, company_id, property_manager_id, name, address, apt_suite, city, province, postal_code, country, rent_amount, rent_due_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay]
         );
 
         log_activity('property.created', "Property '{$_POST['name']}' created");
@@ -155,7 +158,7 @@ class PropertyController
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
         $tenants = Database::fetchAll(
-            "SELECT u.*, pt.is_main_tenant, pt.assigned_at FROM users u 
+            "SELECT u.*, pt.id as property_tenant_id, pt.is_main_tenant, pt.assigned_at FROM users u 
              JOIN property_tenant pt ON pt.tenant_id = u.id 
              WHERE pt.property_id = ? AND pt.moved_out_at IS NULL AND u.archived_at IS NULL",
             [$id]
@@ -180,9 +183,33 @@ class PropertyController
             [$id]
         );
 
+        $payments = Database::fetchAll(
+            "SELECT p.*, u.name as tenant_name, r.name as recorded_by_name
+             FROM payments p
+             JOIN property_tenant pt ON pt.id = p.property_tenant_id
+             JOIN users u ON u.id = pt.tenant_id
+             JOIN users r ON r.id = p.recorded_by
+             WHERE pt.property_id = ? AND p.archived_at IS NULL
+             ORDER BY p.payment_date DESC",
+            [$id]
+        );
+
+        // Calculate current month status
+        $currentMonth = date('Y-m');
+        $totalRent = $property['rent_amount'] ?? 0;
+        $paidThisMonth = 0;
+        foreach ($payments as $pym) {
+            if (str_starts_with($pym['payment_date'], $currentMonth)) {
+                $paidThisMonth += $pym['amount'];
+            }
+        }
+        $rentStatus = $totalRent > 0
+            ? ($paidThisMonth >= $totalRent ? 'paid' : ($paidThisMonth > 0 ? 'partial' : 'unpaid'))
+            : 'not_set';
+
         $view = new View();
         $view->layout('layouts/main', ['title' => $property['name']]);
-        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos'));
+        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'rentStatus', 'paidThisMonth'));
     }
 
     public function edit(int $id): void
@@ -229,9 +256,12 @@ class PropertyController
 
         $companyId = $this->ensureLandlordCompany((int)$_POST['landlord_id']);
 
+        $rentAmount = !empty($_POST['rent_amount']) ? (float)$_POST['rent_amount'] : null;
+        $rentDueDay = !empty($_POST['rent_due_day']) ? (int)$_POST['rent_due_day'] : null;
+
         Database::execute(
-            "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $id]
+            "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, rent_amount = ?, rent_due_day = ?, updated_at = NOW() WHERE id = ?",
+            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $id]
         );
 
         log_activity('property.updated', "Property '{$_POST['name']}' updated");

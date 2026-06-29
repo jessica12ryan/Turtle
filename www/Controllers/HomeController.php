@@ -50,6 +50,37 @@ class HomeController
                 [$auth->id()]
             );
 
+            // Rent info for tenant home page
+            $tenantProperties = Database::fetchAll(
+                "SELECT p.id, p.name, p.rent_amount, p.rent_due_day, pt.id as property_tenant_id
+                 FROM properties p
+                 JOIN property_tenant pt ON pt.property_id = p.id
+                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
+                [$auth->id()]
+            );
+            $rentInfo = [];
+            $currentMonth = date('Y-m');
+            foreach ($tenantProperties as $tp) {
+                $paid = Database::fetch(
+                    "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE property_tenant_id = ? AND payment_date LIKE ? AND archived_at IS NULL",
+                    [$tp['property_tenant_id'], $currentMonth . '%']
+                );
+                $paidAmount = (float)($paid['total'] ?? 0);
+                $totalRent = $tp['rent_amount'] ?? 0;
+                $status = $totalRent > 0
+                    ? ($paidAmount >= $totalRent ? 'paid' : ($paidAmount > 0 ? 'partial' : 'unpaid'))
+                    : 'not_set';
+                $lastPayment = Database::fetch(
+                    "SELECT payment_date, amount FROM payments WHERE property_tenant_id = ? AND archived_at IS NULL ORDER BY payment_date DESC LIMIT 1",
+                    [$tp['property_tenant_id']]
+                );
+                $tp['paid_amount'] = $paidAmount;
+                $tp['status'] = $status;
+                $tp['last_payment_date'] = $lastPayment['payment_date'] ?? null;
+                $tp['last_payment_amount'] = $lastPayment['amount'] ?? null;
+                $rentInfo[] = $tp;
+            }
+
             $stats = [];
             $stats['properties'] = count($properties);
             $stats['tickets'] = $allTickets['cnt'] ?? 0;
@@ -71,7 +102,7 @@ class HomeController
 
             $view = new View();
             $view->layout('layouts/main', ['title' => 'Home']);
-            $view->render('home/index', compact('alerts', 'stats', 'role', 'properties', 'openTickets', 'leases', 'recentTickets'));
+            $view->render('home/index', compact('alerts', 'stats', 'role', 'properties', 'openTickets', 'leases', 'recentTickets', 'rentInfo'));
             return;
         }
 

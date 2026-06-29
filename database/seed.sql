@@ -22,11 +22,11 @@ INSERT IGNORE INTO company_user (company_id, user_id) VALUES
 (1, 1), (1, 2), (1, 3), (1, 6), (1, 10);
 
 -- Properties
-INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id, name, address, city, province, postal_code, country) VALUES
-(1, 6, 1, 2, 'The Wellington', '45 Wellington St W', 'Toronto', 'ON', 'M5V 1E3', 'CA'),
-(2, 6, 1, 2, 'King Street Lofts', '120 King St E', 'Toronto', 'ON', 'M5C 1G6', 'CA'),
-(3, 6, 1, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'ON', 'M5V 1A2', 'CA'),
-(4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA');
+INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id, name, address, city, province, postal_code, country, rent_amount, rent_due_day) VALUES
+(1, 6, 1, 2, 'The Wellington', '45 Wellington St W', 'Toronto', 'ON', 'M5V 1E3', 'CA', 2200.00, 1),
+(2, 6, 1, 2, 'King Street Lofts', '120 King St E', 'Toronto', 'ON', 'M5C 1G6', 'CA', 1850.00, 1),
+(3, 6, 1, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'ON', 'M5V 1A2', 'CA', 2500.00, 1),
+(4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA', 2100.00, 1);
 
 -- Tenant-property assignments (some properties have multiple tenants)
 INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date) VALUES
@@ -35,6 +35,17 @@ INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assi
 (3, 7, 1, NOW(), '2025-02-15', '2026-02-14', NULL),
 (4, 8, 1, NOW(), '2025-06-01', '2026-05-31', NULL),
 (4, 9, 0, NOW(), '2025-06-01', '2026-05-31', '2026-07-15');
+
+-- Sample payments
+INSERT IGNORE INTO payments (property_tenant_id, amount, payment_date, payment_method, reference, notes, recorded_by, created_at) VALUES
+(1, 2200.00, '2025-01-01', 'e-transfer', '2025-01-wellington', 'January rent', 6, NOW()),
+(1, 2200.00, '2025-02-01', 'e-transfer', '2025-02-wellington', 'February rent', 6, NOW()),
+(1, 2200.00, '2025-03-01', 'e-transfer', '2025-03-wellington', 'March rent', 6, NOW()),
+(2, 1850.00, '2025-03-01', 'cheque', 'CHQ-1024', 'March rent', 6, NOW()),
+(2, 1850.00, '2025-04-01', 'e-transfer', '2025-04-king', 'April rent', 6, NOW()),
+(3, 2500.00, '2025-02-15', 'cash', '', 'February rent - paid in person', 6, NOW()),
+(3, 2500.00, '2025-03-15', 'e-transfer', '2025-03-harbour', 'March rent', 6, NOW()),
+(4, 2100.00, '2025-06-01', 'e-transfer', '2025-06-maple', 'June rent', 6, NOW());
 
 -- Leases
 INSERT IGNORE INTO leases (id, property_id, tenant_id, title, start_date, end_date, rent_amount, created_at, updated_at) VALUES

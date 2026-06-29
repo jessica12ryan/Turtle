@@ -178,6 +178,15 @@ $router->post('/staff/{id}/delete', 'StaffController@destroy', ['auth', 'perm:st
 $router->post('/staff/{id}/restore', 'StaffController@restore', ['auth', 'perm:staff.restore']);
 $router->post('/staff/{id}/hard-delete', 'StaffController@hardDelete', ['auth', 'perm:staff.delete']);
 
+// Rent
+$router->get('/rent', 'RentController@index', ['auth', 'perm:rents.access']);
+$router->get('/properties/{id}/rent', 'RentController@show', ['auth', 'perm:rents.access']);
+$router->post('/properties/{id}/rent', 'RentController@store', ['auth', 'perm:rents.payments.create']);
+$router->post('/payments/{id}/edit', 'RentController@update', ['auth', 'perm:rents.payments.edit']);
+$router->post('/payments/{id}/archive', 'RentController@archive', ['auth', 'perm:rents.payments.archive']);
+$router->post('/payments/{id}/restore', 'RentController@restore', ['auth', 'perm:rents.payments.restore']);
+$router->post('/payments/{id}/delete', 'RentController@destroy', ['auth', 'role:admin']);
+
 // Properties
 $router->get('/properties', 'PropertyController@index', ['auth', 'perm:properties.access']);
 $router->get('/properties/create', 'PropertyController@create', ['auth', 'perm:properties.create']);

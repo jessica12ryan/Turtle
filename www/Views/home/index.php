@@ -92,6 +92,39 @@
     </div>
 <?php endif; ?>
 
+<?php if ($role === 'tenant' && !empty($rentInfo)): ?>
+    <div class="bg-white rounded-lg shadow mt-6">
+        <div class="px-6 py-4 border-b">
+            <h2 class="text-lg font-semibold text-gray-800"><?= __('My Rent') ?></h2>
+        </div>
+        <div class="p-6 space-y-3">
+            <?php foreach ($rentInfo as $r): ?>
+                <div class="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                        <p class="font-medium text-gray-800"><?= h($r['name']) ?></p>
+                        <?php if ($r['rent_amount'] > 0): ?>
+                            <p class="text-sm text-gray-500">$<?= number_format($r['rent_amount'], 2) ?> <?= __('per month') ?> — <?= __('Due') ?>: <?= __('day') ?> <?= h($r['rent_due_day'] ?? '—') ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="text-right">
+                        <?php if ($r['status'] === 'paid'): ?>
+                            <span class="text-xs bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium"><?= __('Paid') ?></span>
+                            <?php if ($r['last_payment_date']): ?>
+                                <p class="text-xs text-gray-500 mt-1"><?= h($r['last_payment_date']) ?></p>
+                            <?php endif; ?>
+                        <?php elseif ($r['status'] === 'partial'): ?>
+                            <span class="text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium"><?= __('Partial') ?></span>
+                            <p class="text-xs text-gray-500 mt-1">$<?= number_format($r['paid_amount'], 2) ?> <?= __('paid') ?></p>
+                        <?php elseif ($r['status'] === 'unpaid'): ?>
+                            <span class="text-xs bg-red-100 text-red-800 px-3 py-1 rounded-full font-medium"><?= __('Unpaid') ?></span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
+
 <?php if ($role === 'tenant' && !empty($properties)): ?>
     <div class="bg-white rounded-lg shadow mt-6">
         <div class="px-6 py-4 border-b">
