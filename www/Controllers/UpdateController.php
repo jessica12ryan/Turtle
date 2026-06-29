@@ -8,6 +8,15 @@ use App\Core\View;
 
 class UpdateController
 {
+    private static function repoPath(): string
+    {
+        static $path = null;
+        if ($path === null) {
+            $path = escapeshellarg(dirname(__DIR__, 2));
+        }
+        return $path;
+    }
+
     public function check(): void
     {
         header('Content-Type: application/json');
@@ -75,7 +84,7 @@ class UpdateController
 
     private function checkDevChannel(string $currentVersion): array
     {
-        $setupCmd = 'git config --global --add safe.directory /var/www/html 2>/dev/null; cd /var/www/html';
+        $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
         exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
 
         if ($fetchExitCode !== 0) {
@@ -121,7 +130,7 @@ class UpdateController
         $updateId = bin2hex(random_bytes(8));
         $logFile = sys_get_temp_dir() . "/turtle_update_{$updateId}.log";
 
-        $setupCmd = 'git config --global --add safe.directory /var/www/html 2>/dev/null; cd /var/www/html';
+        $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
 
         $steps = [
             'Preparing working directory...' => "{$setupCmd} && git reset --hard HEAD 2>&1 && git clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
@@ -218,7 +227,7 @@ class UpdateController
         }
 
         if ($done && file_exists($scriptFile)) {
-            $version = trim(shell_exec('cd /var/www/html && git describe --tags 2>/dev/null') ?? '');
+            $version = trim(shell_exec('cd ' . self::repoPath() . ' && git describe --tags 2>/dev/null') ?? '');
             if ($version) {
                 $version = ltrim($version, 'v');
                 Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'app_version'", [$version]);
@@ -245,7 +254,7 @@ class UpdateController
         }
 
         if ($channel === 'development') {
-            $setupCmd = 'git config --global --add safe.directory /var/www/html 2>/dev/null; cd /var/www/html';
+            $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
             exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
             if ($fetchExitCode !== 0) return null;
 
