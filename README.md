@@ -1,8 +1,8 @@
 # Turtle — Tenant Management Portal
 
-A web application for managing rental properties, tenants, leases, and maintenance tickets.
+A web application for managing rental properties, tenants, leases, maintenance tickets, and rent payments.
 
-## Quick Start
+## Quick Start (Docker)
 
 ```bash
 git clone https://github.com/jessica12ryan/Turtle.git
@@ -11,9 +11,32 @@ docker compose up -d --build
 open http://localhost
 ```
 
-The first boot presents a multi-step setup wizard where you configure site information (name, logo, default country, timezone, SMTP), create your admin account, and optionally load sample data.
+The first boot presents a setup wizard. Choose **New Installation** to configure site information (name, logo, localization, timezone, SMTP), create your admin account, and optionally load sample data. Choose **Restore Backup** to upload a `.turtle` backup file and restore a previous installation.
 
 **Email testing:** http://localhost:8025 (Mailpit)
+
+## Quick Start (Home Assistant Add-on)
+
+Turtle is available as a Home Assistant add-on in two variants:
+
+| Add-on | Dockerfile | Description |
+|--------|-----------|-------------|
+| **Turtle** | `turtle-ha/` | Stable production build |
+| **Turtle (Dev)** | `turtle-ha-dev/` | Development channel — builds from `development` branch |
+
+Both add-ons support **ingress** (embedded in HA UI) and **direct access** via port. The build config (`build.yaml`) and add-on config (`config.yaml`) follow the standard HA add-on structure. An AppArmor profile (`apparmor.txt`) is included and auto-loaded.
+
+## Setup Wizard
+
+The first boot redirects to `/setup`. Two paths are available:
+
+1. **New Installation** — 5-step wizard:
+   - Step 1: Site name, logo, NTP server
+   - Step 2: Default country, language, timezone
+   - Step 3: Admin account creation
+   - Step 4: SMTP configuration (optional, can be skipped)
+   - Step 5: Load sample data toggle + finish
+2. **Restore Backup** — upload a `.turtle` file, then log in with restored credentials.
 
 ## Permissions
 
@@ -22,25 +45,47 @@ Access control uses a two-layer system: **route middleware** (which pages a role
 Default permissions are assigned per role, but admins can override them in **Settings → Permissions** by switching from "Use defaults" to "Custom" and toggling individual permissions for each role.
 
 | Role | Typical access |
-|---|---|---|
+|---|---|
 | **Admin** | Unrestricted — bypasses all permission checks |
-| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, AI Assistant |
-| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, AI Assistant |
+| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, rent dashboard, AI Assistant |
+| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, rent dashboard, AI Assistant |
 | **Maintenance** | Tickets (view assigned, update status, comment) |
-| **Tenant** | Own tickets, assigned leases/units, resources |
+| **Tenant** | Own tickets, assigned leases/units, resources, rent status |
 
 ## Project Structure
 
 ```
-www/              Apache document root — controllers, views, core framework
-database/         Schema and seed data
-docker/php/       Dockerfile + entrypoint + PHP config
-docker-compose.yml
+www/                  Apache document root — controllers, views, core framework
+database/             Schema (schema.sql), seed data (seed.sql), migrations (migrate.sh)
+docker/php/           Dockerfile + entrypoint + PHP config
+turtle-ha/            Home Assistant production add-on (Dockerfile, config.yaml, apparmor.txt, rootfs/)
+turtle-ha-dev/        Home Assistant dev add-on (same structure, development channel)
+docker-compose.yml    Docker Compose for local development
+update.sh             Update script for HA add-on containers
 ```
+
+## Rent Tracking
+
+Rent amounts and due days are configured per-property. Payments are recorded against the main tenant of each property.
+
+- **Rent Dashboard** at `/rent` — shows total expected/collected, per-property status (paid/partial/unpaid), and quick links
+- **Property detail** — rent summary with status badge and payment history; record payment form (auto-linked to main tenant)
+- **My Rent** card on tenant home page — per-property rent status at a glance
+- **Permissions** — `rents.access`, `rents.payments.create`, `rents.payments.edit`, `rents.payments.archive`, `rents.payments.restore`. Delete is hardcoded to admin role only.
+- Payments cascade with tenant archives/restores — archiving a tenant or property archives its linked payments
+
+## Backup & Restore
+
+Admins can create and restore full system backups via **Settings → Backup & Restore**.
+
+- Format: `.turtle` file (standard zip archive)
+- Contents: full database dump (`SHOW CREATE TABLE` + `SELECT *`), uploaded files, `.env`
+- Restore drops all existing tables and re-imports, then logs out the current user
+- The setup wizard also supports restore on first boot (no admin login required)
 
 ## Updating
 
-### In-app (recommended)
+### In-app (recommended for Docker)
 1. Go to **Settings → Updates** (admin only) — the page auto-checks for updates on load
 2. If an update is available, click **Apply Update** — runs `git pull` + migrations automatically
 3. Each step tracks its exit code; only non-zero exit codes produce error output in the progress view
@@ -51,6 +96,9 @@ docker-compose.yml
 git pull
 docker compose up -d --build
 ```
+
+### HA Add-on
+The add-on runs `git pull` at container boot (before schema load) to ensure fresh code despite Docker build caching. Run-time updates can also be triggered via **Settings → Updates** using the in-app updater, which runs `git pull` as the apache user.
 
 ## Email Configuration
 
@@ -96,29 +144,23 @@ When creating a tenant, Lease Start is required and Lease End is optional (leave
 
 - **Main tenants** control lease dates for their property. Only main tenants can edit Lease Start/End and Scheduled Move-Out dates on the edit page.
 - **Secondary tenants** (non-main) inherit lease dates from the main tenant. Their date fields are read-only on both create and edit, with a note: "Lease dates must be changed on main tenant."
-- When a main tenant is **archived** (moved out) or **deleted**, all secondary tenants on the same property are also archived/deleted, along with their linked leases. Restoring a main tenant also restores secondary tenants.
-- When a **Scheduled Move-Out** date is reached (compared against `CURDATE()`), the tenant is auto-archived once per hour, along with cascade for main tenants (secondary tenants + leases).
+- When a main tenant is **archived** (moved out) or **deleted**, all secondary tenants on the same property are also archived/deleted, along with their linked leases and payments. Restoring a main tenant also restores secondary tenants and payments.
+- When a **Scheduled Move-Out** date is reached (compared against `CURDATE()`), the tenant is auto-archived once per hour, along with cascade for main tenants (secondary tenants + leases + payments).
 - The auto-archive check runs on every page load but is rate-limited to once per hour. The last check time is stored in the `settings` table as `last_moveout_check`.
 
 ## Timezone & NTP
 
 The application maintains its own timezone, default country, and NTP configuration for accurate time tracking:
 
-- **Localization** (country + timezone) is configurable globally in **Settings → General** (admin only). The **Default Country** pre-selects Canada or the United States when adding new properties. The **Timezone** is applied via `date_default_timezone_set()` at boot. Default country: `CA`, default timezone: `America/New_York`.
-- **Per-user timezone override** — All create/edit forms for staff and tenants include a Timezone dropdown with "Use default timezone" as the default option. Users can also set their own timezone on the **Profile** page. When set, the user's timezone overrides the global default for that user. The timezone is applied in the Router's `auth` middleware after login verification.
-- Property addresses now support **Canada** (provinces, A1A 1A1 postal codes) and **the United States** (states, 12345 zip codes). Select the country on the property form to switch between region lists and label formats.
-- **Per-user timezone override** — All create/edit forms for staff and tenants include a Timezone dropdown with "Use default timezone" as the default option. Users can also set their own timezone on the **Profile** page. When set, the user's timezone overrides the global default for that user. The timezone is applied in the Router's `auth` middleware after login verification.
-- **NTP Server** is checked on the home page for admin users. The default server is `time.gov` (via `https://time.gov/actualtime.cgi`). Results are cached for 1 hour in the `settings` table.
-- The check uses PHP's `curl` extension (preferred) or falls back to `file_get_contents()` if curl is unavailable. Set `timezone` to blank to disable the check entirely.
-- The Dockerfile installs `php-curl` via `docker-php-ext-install curl` for reliable HTTPS requests. After updating the Dockerfile, rebuild the container with `docker compose build php` then `docker compose up -d`.
-- If the NTP server cannot be reached, the function also tries `www.google.com` as a fallback (parsing the `Date` response header). If all external HTTP requests fail, the environment is assumed offline and the warning is shown only briefly.
-- A yellow warning alert appears if the system time drifts more than 60 seconds from NTP time.
-- The NTP server URL is configurable in **Settings → General**. Setting it to blank disables the check entirely.
+- **Localization** — country + timezone configurable in **Settings → General** (admin only). Default country pre-selects Canada or the US when adding new properties. Timezone is applied via `date_default_timezone_set()` at boot. Default country: `US`, default timezone: `America/New_York`.
+- **Per-user timezone override** — Staff and tenant create/edit forms include a Timezone dropdown. Users can also set their own timezone on the **Profile** page. When set, it overrides the global default.
+- Property addresses support **Canada** (provinces, A1A 1A1 postal codes) and **the United States** (states, 12345 zip codes). Select the country on the property form to switch between region lists and label formats.
+- **NTP Server** is checked on the home page for admin users. Default: `time.gov`. Results cached for 1 hour. Falls back to `www.google.com` (parsing `Date` header). A yellow warning appears if system time drifts >60 seconds.
 - All scheduled move-out checks use `CURDATE()` in MySQL (database time), not system time, to avoid timezone drift issues.
 
 ## Calendar
 
-Shows tenant move-in dates (green), move-out dates (red), and lease end dates (yellow) on an interactive monthly calendar. Not available to tenants. Data is fetched via a JSON API endpoint at `/calendar/events` for extensibility (future notices, evictions, etc.).
+Shows tenant move-in dates (green), lease end dates (yellow), and scheduled move-out dates (orange) on an interactive monthly calendar. Not available to tenants. Data is fetched via a JSON API endpoint at `/calendar/events` for extensibility (future notices, evictions, etc.).
 
 ## Persistent Data
 
@@ -129,8 +171,8 @@ Shows tenant move-in dates (green), move-out dates (red), and lease end dates (y
 ## Restoring Archived Items
 
 Only **IT Admins** can restore archived records.
-- **Property restore** — cascades to tenants, leases, and tickets (reverse of archive cascade)
-- **Individual restore** — tenants, leases, tickets, and staff can be restored one at a time
+- **Property restore** — cascades to tenants, leases, tickets, and payments (reverse of archive cascade)
+- **Individual restore** — tenants, leases, tickets, and staff can be restored one at a time; tenant restore also restores linked payments
 - Restore buttons appear on index pages when "Show archived" is active
 
 ## Tenant Management
@@ -138,6 +180,7 @@ Only **IT Admins** can restore archived records.
 - Adding a tenant requires **Lease Start** (date) and optionally **Lease End** (date)
 - Email addresses are unique across the entire system — even archived records block re-use with a "Email exists in archived tenant/staff member" warning
 - Tenant names on the property detail page link to the tenant's profile
+- Phone numbers are required on tenant create/edit forms
 
 ## Property Photos
 
