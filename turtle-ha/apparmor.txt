@@ -5,6 +5,13 @@ profile turtle flags=(attach_disconnected,mediate_deleted) {
 
   file,
   signal (send) set=(kill,term,int,hup,cont),
+  capability chown,
+  capability dac_override,
+  capability dac_read_search,
+  capability setuid,
+  capability setgid,
+  capability net_bind_service,
+  capability sys_resource,
 
   /init ix,
   /bin/** ix,
