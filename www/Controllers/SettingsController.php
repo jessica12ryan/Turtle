@@ -633,6 +633,12 @@ class SettingsController
         // Write SQL
         file_put_contents("{$tmpDir}/database.sql", $sql);
 
+        // Include .env for exact system replication (db creds, app key, mail settings, etc.)
+        $envFile = base_path('.env');
+        if (file_exists($envFile)) {
+            copy($envFile, "{$tmpDir}/.env");
+        }
+
         // Collect uploaded files
         $uploadDirs = [
             'www/assets/uploads/logo' => 'uploads/logo',
@@ -641,32 +647,29 @@ class SettingsController
         ];
 
         foreach ($uploadDirs as $srcRel => $destRel) {
-            $src = base_path($srcRel);
-            if (!is_dir($src)) continue;
+            $src = realpath(base_path($srcRel));
+            if ($src === false || !is_dir($src)) continue;
             $destDir = "{$tmpDir}/{$destRel}";
             if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-            $files = glob($src . '/*');
+            $files = new \FilesystemIterator($src, \FilesystemIterator::SKIP_DOTS);
             foreach ($files as $file) {
-                if (is_file($file)) {
-                    $target = $destDir . '/' . basename($file);
-                    // Handle symlinks (HA add-on: storage/ -> /data/)
-                    if (is_link($file)) {
-                        $realPath = readlink($file);
-                        if (file_exists($realPath)) {
-                            copy($realPath, $target);
-                        }
-                    } else {
-                        copy($file, $target);
-                    }
+                if ($file->isFile()) {
+                    copy($file->getRealPath(), $destDir . '/' . $file->getFilename());
                 }
             }
+        }
+
+        // Check ZipArchive availability
+        if (!class_exists('\ZipArchive')) {
+            self::_rrmdir($tmpDir);
+            flash('error', 'ZipArchive PHP extension is required for backup.');
+            redirect('/settings?tab=backup');
         }
 
         // Create zip archive
         $zipFile = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8)) . '.zip';
         $zip = new \ZipArchive();
         if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
-            // Clean up
             self::_rrmdir($tmpDir);
             flash('error', 'Failed to create backup archive.');
             redirect('/settings?tab=backup');
@@ -687,10 +690,32 @@ class SettingsController
 
         // Send zip as download with .turtle extension
         $date = date('ymd');
+        $fileSize = filesize($zipFile);
+        if ($fileSize === false) {
+            self::_rrmdir($tmpDir);
+            flash('error', 'Failed to read backup archive.');
+            redirect('/settings?tab=backup');
+        }
+
+        // Clear any output buffering so the file download isn't corrupted
+        while (ob_get_level()) ob_end_clean();
+
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="turtle-bak-' . $date . '.turtle"');
-        header('Content-Length: ' . filesize($zipFile));
-        readfile($zipFile);
+        header('Content-Length: ' . $fileSize);
+        header('Pragma: public');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        header('Expires: 0');
+
+        // Stream file in chunks
+        $fh = fopen($zipFile, 'rb');
+        if ($fh) {
+            while (!feof($fh)) {
+                echo fread($fh, 8192);
+                flush();
+            }
+            fclose($fh);
+        }
 
         // Clean up
         unlink($zipFile);
@@ -747,40 +772,36 @@ class SettingsController
         $db = \App\Core\Database::getConnection();
 
         try {
-            $db->beginTransaction();
-
-            // Disable foreign key checks
+            // Disable foreign key checks (SET and DDL can't be in a transaction)
             $db->exec("SET FOREIGN_KEY_CHECKS = 0");
 
-            // Get list of existing tables to truncate
+            // Drop all existing tables so the backup SQL fully replaces everything
             $existingTables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
             foreach ($existingTables as $table) {
-                $db->exec("TRUNCATE TABLE `{$table}`");
+                $db->exec("DROP TABLE IF EXISTS `{$table}`");
             }
 
-            // Execute the backup SQL
+            // Execute backup SQL — generated with one statement per line ending in ;\n
             $sql = file_get_contents($sqlFile);
-            // Split by semicolons and execute each statement
-            $statements = explode(';', $sql);
+            $statements = explode(";\n", $sql);
             foreach ($statements as $stmt) {
                 $stmt = trim($stmt);
-                if ($stmt !== '' && !str_starts_with($stmt, '--') && !str_starts_with($stmt, '#')) {
-                    try {
-                        $db->exec($stmt);
-                    } catch (\Throwable $e) {
-                        error_log("Restore SQL error: " . $e->getMessage() . " in statement: " . substr($stmt, 0, 200));
-                        // Continue — some statements may fail (e.g., dropping tables that don't exist)
-                    }
-                }
+                if ($stmt === '' || str_starts_with($stmt, '--') || str_starts_with($stmt, '#')) continue;
+                $db->exec($stmt);
             }
 
             $db->exec("SET FOREIGN_KEY_CHECKS = 1");
-            $db->commit();
         } catch (\Throwable $e) {
-            $db->rollBack();
             self::_rrmdir($tmpDir);
             flash('error', 'Database restore failed: ' . $e->getMessage());
             redirect('/settings?tab=backup');
+        }
+
+        // Restore .env if included in backup (exact system replication)
+        $envBak = "{$tmpDir}/.env";
+        $envDest = base_path('.env');
+        if (file_exists($envBak) && is_writable(dirname($envDest))) {
+            copy($envBak, $envDest);
         }
 
         // Restore uploaded files
