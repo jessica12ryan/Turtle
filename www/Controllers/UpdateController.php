@@ -164,16 +164,8 @@ class UpdateController
         $commitMsg = $data['commit']['message'] ?? '';
         $commitUrl = $data['html_url'] ?? '';
 
-        if ($localHash === '') {
-            return [
-                'latest_version' => $remoteShort,
-                'update_available' => false,
-                'behind_count' => 0,
-                'release_body' => $commitMsg,
-            ];
-        }
-
-        $updateAvailable = $localHash !== $remoteShort;
+        $localRef = $localHash !== '' ? $localHash : $currentVersion;
+        $updateAvailable = $localRef !== $remoteShort;
         return [
             'latest_version' => $remoteShort,
             'update_available' => $updateAvailable,
