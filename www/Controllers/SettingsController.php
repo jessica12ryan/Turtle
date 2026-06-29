@@ -585,7 +585,7 @@ class SettingsController
                 redirect('/settings');
             }
 
-            $db = \App\Core\Database::getConnection();
+            $db = \App\Core\Database::instance()->getConnection();
 
             // Collect all table names
             $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
@@ -764,7 +764,7 @@ class SettingsController
             redirect('/settings?tab=backup');
         }
 
-        $db = \App\Core\Database::getConnection();
+        $db = \App\Core\Database::instance()->getConnection();
 
         try {
             // Disable foreign key checks (SET and DDL can't be in a transaction)
