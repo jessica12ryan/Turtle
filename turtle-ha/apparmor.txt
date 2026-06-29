@@ -1,6 +1,7 @@
 profile turtle flags=(attach_disconnected) {
   / r,
   /** r,
+  /init r,
   /init ix,
   /bin/** ix,
   /sbin/** ix,
