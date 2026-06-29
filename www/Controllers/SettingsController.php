@@ -577,152 +577,147 @@ class SettingsController
 
     public function exportBackup(): void
     {
-        set_time_limit(0);
+        try {
+            set_time_limit(0);
 
-        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
-            redirect('/settings');
-        }
+            if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+                flash('error', 'Invalid security token.');
+                redirect('/settings');
+            }
 
-        $db = \App\Core\Database::getConnection();
+            $db = \App\Core\Database::getConnection();
 
-        // Collect all table names
-        $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+            // Collect all table names
+            $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
 
-        // Build SQL dump
-        $sql = "-- Turtle Database Backup\n";
-        $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
-        $sql .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+            // Build SQL dump
+            $sql = "-- Turtle Database Backup\n";
+            $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
+            $sql .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
 
-        foreach ($tables as $table) {
-            // CREATE TABLE
-            $stmt = $db->query("SHOW CREATE TABLE `{$table}`");
-            $row = $stmt->fetch(\PDO::FETCH_NUM);
-            $createSql = $row[1];
-            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
-            $sql .= "{$createSql};\n\n";
+            foreach ($tables as $table) {
+                $stmt = $db->query("SHOW CREATE TABLE `{$table}`");
+                $row = $stmt->fetch(\PDO::FETCH_NUM);
+                $createSql = $row[1];
+                $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+                $sql .= "{$createSql};\n\n";
 
-            // Data
-            $rows = $db->query("SELECT * FROM `{$table}`")->fetchAll(\PDO::FETCH_ASSOC);
-            if (empty($rows)) continue;
+                $rows = $db->query("SELECT * FROM `{$table}`")->fetchAll(\PDO::FETCH_ASSOC);
+                if (empty($rows)) continue;
 
-            $columns = array_keys($rows[0]);
-            $colList = '`' . implode('`,`', $columns) . '`';
+                $columns = array_keys($rows[0]);
+                $colList = '`' . implode('`,`', $columns) . '`';
 
-            foreach ($rows as $row) {
-                $vals = [];
-                foreach ($columns as $col) {
-                    $v = $row[$col];
-                    if ($v === null) {
-                        $vals[] = 'NULL';
-                    } else {
-                        $vals[] = $db->quote($v);
+                foreach ($rows as $row) {
+                    $vals = [];
+                    foreach ($columns as $col) {
+                        $v = $row[$col];
+                        $vals[] = $v === null ? 'NULL' : $db->quote($v);
+                    }
+                    $sql .= "INSERT INTO `{$table}` ({$colList}) VALUES (" . implode(',', $vals) . ");\n";
+                }
+                $sql .= "\n";
+            }
+
+            $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+
+            // Create temp dir
+            $tmpDir = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8));
+            if (!mkdir($tmpDir, 0755, true) && !is_dir($tmpDir)) {
+                error_log('exportBackup: Failed to create temp dir');
+                flash('error', 'Failed to create temporary directory.');
+                redirect('/settings?tab=backup');
+            }
+
+            file_put_contents("{$tmpDir}/database.sql", $sql);
+
+            // Include .env if available
+            $envFile = base_path('.env');
+            if (file_exists($envFile)) {
+                copy($envFile, "{$tmpDir}/.env");
+            }
+
+            // Collect uploaded files (same pattern as rest of app)
+            $uploadDirs = [
+                'www/assets/uploads/logo' => 'uploads/logo',
+                'storage/uploads/property_photos' => 'uploads/property_photos',
+                'storage/uploads/leases' => 'uploads/leases',
+            ];
+
+            foreach ($uploadDirs as $srcRel => $destRel) {
+                $src = base_path($srcRel);
+                if (!is_dir($src)) continue;
+                $destDir = "{$tmpDir}/{$destRel}";
+                if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+                $entries = scandir($src);
+                if ($entries === false) continue;
+                foreach ($entries as $entry) {
+                    if ($entry === '.' || $entry === '..') continue;
+                    $filePath = $src . '/' . $entry;
+                    if (is_file($filePath)) {
+                        copy($filePath, $destDir . '/' . $entry);
                     }
                 }
-                $sql .= "INSERT INTO `{$table}` ({$colList}) VALUES (" . implode(',', $vals) . ");\n";
             }
-            $sql .= "\n";
-        }
 
-        $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+            // Check ZipArchive availability
+            if (!class_exists('\ZipArchive')) {
+                self::_rrmdir($tmpDir);
+                flash('error', 'ZipArchive PHP extension is required for backup.');
+                redirect('/settings?tab=backup');
+            }
 
-        // Create temp dir for the backup
-        $tmpDir = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8));
-        mkdir($tmpDir, 0755, true);
+            // Create zip
+            $zipFile = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8)) . '.zip';
+            $zip = new \ZipArchive();
+            if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
+                self::_rrmdir($tmpDir);
+                flash('error', 'Failed to create backup archive.');
+                redirect('/settings?tab=backup');
+            }
 
-        // Write SQL
-        file_put_contents("{$tmpDir}/database.sql", $sql);
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($tmpDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
 
-        // Include .env for exact system replication (db creds, app key, mail settings, etc.)
-        $envFile = base_path('.env');
-        if (file_exists($envFile)) {
-            copy($envFile, "{$tmpDir}/.env");
-        }
-
-        // Collect uploaded files
-        $uploadDirs = [
-            'www/assets/uploads/logo' => 'uploads/logo',
-            'storage/uploads/property_photos' => 'uploads/property_photos',
-            'storage/uploads/leases' => 'uploads/leases',
-        ];
-
-        foreach ($uploadDirs as $srcRel => $destRel) {
-            $src = realpath(base_path($srcRel));
-            if ($src === false || !is_dir($src)) continue;
-            $destDir = "{$tmpDir}/{$destRel}";
-            if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-            $files = new \FilesystemIterator($src, \FilesystemIterator::SKIP_DOTS);
             foreach ($files as $file) {
-                if ($file->isFile()) {
-                    copy($file->getRealPath(), $destDir . '/' . $file->getFilename());
-                }
+                $localPath = substr($file->getPathname(), strlen($tmpDir) + 1);
+                $zip->addFile($file->getPathname(), $localPath);
             }
-        }
 
-        // Check ZipArchive availability
-        if (!class_exists('\ZipArchive')) {
-            self::_rrmdir($tmpDir);
-            flash('error', 'ZipArchive PHP extension is required for backup.');
-            redirect('/settings?tab=backup');
-        }
+            $zip->close();
 
-        // Create zip archive
-        $zipFile = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8)) . '.zip';
-        $zip = new \ZipArchive();
-        if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
-            self::_rrmdir($tmpDir);
-            flash('error', 'Failed to create backup archive.');
-            redirect('/settings?tab=backup');
-        }
-
-        // Add files to zip
-        $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($tmpDir, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::LEAVES_ONLY
-        );
-
-        foreach ($files as $file) {
-            $localPath = substr($file->getPathname(), strlen($tmpDir) + 1);
-            $zip->addFile($file->getPathname(), $localPath);
-        }
-
-        $zip->close();
-
-        // Send zip as download with .turtle extension
-        $date = date('ymd');
-        $fileSize = filesize($zipFile);
-        if ($fileSize === false) {
-            self::_rrmdir($tmpDir);
-            flash('error', 'Failed to read backup archive.');
-            redirect('/settings?tab=backup');
-        }
-
-        // Clear any output buffering so the file download isn't corrupted
-        while (ob_get_level()) ob_end_clean();
-
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="turtle-bak-' . $date . '.turtle"');
-        header('Content-Length: ' . $fileSize);
-        header('Pragma: public');
-        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-        header('Expires: 0');
-
-        // Stream file in chunks
-        $fh = fopen($zipFile, 'rb');
-        if ($fh) {
-            while (!feof($fh)) {
-                echo fread($fh, 8192);
-                flush();
+            // Send file
+            $date = date('ymd');
+            $fileSize = filesize($zipFile);
+            if ($fileSize === false) {
+                self::_rrmdir($tmpDir);
+                flash('error', 'Failed to read backup archive.');
+                redirect('/settings?tab=backup');
             }
-            fclose($fh);
+
+            // Flush output buffers without removing them (preserves ingress rewriting)
+            ob_clean();
+
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="turtle-bak-' . $date . '.turtle"');
+            header('Content-Length: ' . $fileSize);
+
+            readfile($zipFile);
+
+            unlink($zipFile);
+            self::_rrmdir($tmpDir);
+
+            log_activity('settings.backup_created', 'Full backup downloaded');
+            exit;
+        } catch (\Throwable $e) {
+            error_log('exportBackup failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            if (isset($tmpDir) && is_dir($tmpDir)) self::_rrmdir($tmpDir);
+            if (isset($zipFile) && file_exists($zipFile)) unlink($zipFile);
+            flash('error', 'Backup failed: ' . $e->getMessage());
+            redirect('/settings?tab=backup');
         }
-
-        // Clean up
-        unlink($zipFile);
-        self::_rrmdir($tmpDir);
-
-        log_activity('settings.backup_created', 'Full backup downloaded');
-        exit;
     }
 
     public function importRestore(): void
