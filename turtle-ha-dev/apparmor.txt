@@ -1,40 +1,34 @@
-profile turtle_dev flags=(attach_disconnected) {
-  / r,
-  /** r,
-  /init r,
+#include <tunables/global>
+
+profile turtle_dev flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  file,
+  signal (send) set=(kill,term,int,hup,cont),
+
   /init ix,
   /bin/** ix,
-  /sbin/** ix,
   /usr/bin/** ix,
-  /usr/sbin/** ix,
-  /command/** ix,
-  /package/** ix,
-  /etc/s6-overlay/** ix,
   /run/{s6,s6-rc*,service}/** ix,
-  /run/** ix,
+  /package/** ix,
+  /command/** ix,
+  /etc/services.d/** rwix,
+  /etc/cont-init.d/** rwix,
+  /etc/cont-finish.d/** rwix,
+  /run/{,**} rwk,
+  /dev/tty rw,
 
-  /lib/** mr,
-  /usr/lib/** mr,
+  /usr/lib/bashio/** ix,
+  /tmp/** rwk,
 
+  /etc/s6-overlay/** rwix,
+  /var/www/turtle/** rw,
   /data/** rw,
-  /tmp/** rw,
-  /run/** rw,
-  /var/log/** rw,
 
-  /dev/** rw,
-  /proc/** r,
-  /sys/** r,
-
-  network inet stream,
-  network inet6 stream,
-  network inet dgram,
-  network inet6 dgram,
-
-  capability chown,
-  capability dac_override,
-  capability dac_read_search,
-  capability setuid,
-  capability setgid,
-  capability net_bind_service,
-  capability sys_resource,
+  /usr/sbin/httpd ix,
+  /usr/bin/php* ix,
+  /usr/bin/git ix,
+  /usr/bin/mysql* ix,
+  /usr/bin/mysqld* ix,
+  /usr/bin/mariadb* ix,
 }
