@@ -11,7 +11,7 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'permissions', 'logging', 'reset'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset'])) {
             $tab = 'general';
         }
 
@@ -573,5 +573,269 @@ class SettingsController
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         echo $content;
         exit;
+    }
+
+    public function exportBackup(): void
+    {
+        set_time_limit(0);
+
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings');
+        }
+
+        $db = \App\Core\Database::getConnection();
+
+        // Collect all table names
+        $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+
+        // Build SQL dump
+        $sql = "-- Turtle Database Backup\n";
+        $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
+        $sql .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+
+        foreach ($tables as $table) {
+            // CREATE TABLE
+            $stmt = $db->query("SHOW CREATE TABLE `{$table}`");
+            $row = $stmt->fetch(\PDO::FETCH_NUM);
+            $createSql = $row[1];
+            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+            $sql .= "{$createSql};\n\n";
+
+            // Data
+            $rows = $db->query("SELECT * FROM `{$table}`")->fetchAll(\PDO::FETCH_ASSOC);
+            if (empty($rows)) continue;
+
+            $columns = array_keys($rows[0]);
+            $colList = '`' . implode('`,`', $columns) . '`';
+
+            foreach ($rows as $row) {
+                $vals = [];
+                foreach ($columns as $col) {
+                    $v = $row[$col];
+                    if ($v === null) {
+                        $vals[] = 'NULL';
+                    } else {
+                        $vals[] = $db->quote($v);
+                    }
+                }
+                $sql .= "INSERT INTO `{$table}` ({$colList}) VALUES (" . implode(',', $vals) . ");\n";
+            }
+            $sql .= "\n";
+        }
+
+        $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+
+        // Create temp dir for the backup
+        $tmpDir = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8));
+        mkdir($tmpDir, 0755, true);
+
+        // Write SQL
+        file_put_contents("{$tmpDir}/database.sql", $sql);
+
+        // Collect uploaded files
+        $uploadDirs = [
+            'www/assets/uploads/logo' => 'uploads/logo',
+            'storage/uploads/property_photos' => 'uploads/property_photos',
+            'storage/uploads/leases' => 'uploads/leases',
+        ];
+
+        foreach ($uploadDirs as $srcRel => $destRel) {
+            $src = base_path($srcRel);
+            if (!is_dir($src)) continue;
+            $destDir = "{$tmpDir}/{$destRel}";
+            if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+            $files = glob($src . '/*');
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    $target = $destDir . '/' . basename($file);
+                    // Handle symlinks (HA add-on: storage/ -> /data/)
+                    if (is_link($file)) {
+                        $realPath = readlink($file);
+                        if (file_exists($realPath)) {
+                            copy($realPath, $target);
+                        }
+                    } else {
+                        copy($file, $target);
+                    }
+                }
+            }
+        }
+
+        // Create zip archive
+        $zipFile = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8)) . '.zip';
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
+            // Clean up
+            self::_rrmdir($tmpDir);
+            flash('error', 'Failed to create backup archive.');
+            redirect('/settings?tab=backup');
+        }
+
+        // Add files to zip
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($tmpDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $file) {
+            $localPath = substr($file->getPathname(), strlen($tmpDir) + 1);
+            $zip->addFile($file->getPathname(), $localPath);
+        }
+
+        $zip->close();
+
+        // Send zip as download with .turtle extension
+        $date = date('ymd');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="turtle-bak-' . $date . '.turtle"');
+        header('Content-Length: ' . filesize($zipFile));
+        readfile($zipFile);
+
+        // Clean up
+        unlink($zipFile);
+        self::_rrmdir($tmpDir);
+
+        log_activity('settings.backup_created', 'Full backup downloaded');
+        exit;
+    }
+
+    public function importRestore(): void
+    {
+        set_time_limit(0);
+
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings');
+        }
+
+        // Validate upload
+        if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
+            flash('error', 'No backup file uploaded or upload failed.');
+            redirect('/settings?tab=backup');
+        }
+
+        $ext = pathinfo($_FILES['backup_file']['name'], PATHINFO_EXTENSION);
+        if ($ext !== 'turtle') {
+            flash('error', 'Invalid file format. Please upload a .turtle backup file.');
+            redirect('/settings?tab=backup');
+        }
+
+        // Extract to temp dir
+        $tmpDir = sys_get_temp_dir() . '/turtle_restore_' . bin2hex(random_bytes(8));
+        mkdir($tmpDir, 0755, true);
+
+        $zipPath = $_FILES['backup_file']['tmp_name'];
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath) !== true) {
+            self::_rrmdir($tmpDir);
+            flash('error', 'Failed to open backup file. It may be corrupted.');
+            redirect('/settings?tab=backup');
+        }
+
+        $zip->extractTo($tmpDir);
+        $zip->close();
+
+        // Check for database.sql
+        $sqlFile = "{$tmpDir}/database.sql";
+        if (!file_exists($sqlFile)) {
+            self::_rrmdir($tmpDir);
+            flash('error', 'Invalid backup file: database.sql not found.');
+            redirect('/settings?tab=backup');
+        }
+
+        $db = \App\Core\Database::getConnection();
+
+        try {
+            $db->beginTransaction();
+
+            // Disable foreign key checks
+            $db->exec("SET FOREIGN_KEY_CHECKS = 0");
+
+            // Get list of existing tables to truncate
+            $existingTables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+            foreach ($existingTables as $table) {
+                $db->exec("TRUNCATE TABLE `{$table}`");
+            }
+
+            // Execute the backup SQL
+            $sql = file_get_contents($sqlFile);
+            // Split by semicolons and execute each statement
+            $statements = explode(';', $sql);
+            foreach ($statements as $stmt) {
+                $stmt = trim($stmt);
+                if ($stmt !== '' && !str_starts_with($stmt, '--') && !str_starts_with($stmt, '#')) {
+                    try {
+                        $db->exec($stmt);
+                    } catch (\Throwable $e) {
+                        error_log("Restore SQL error: " . $e->getMessage() . " in statement: " . substr($stmt, 0, 200));
+                        // Continue — some statements may fail (e.g., dropping tables that don't exist)
+                    }
+                }
+            }
+
+            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            self::_rrmdir($tmpDir);
+            flash('error', 'Database restore failed: ' . $e->getMessage());
+            redirect('/settings?tab=backup');
+        }
+
+        // Restore uploaded files
+        $uploadMappings = [
+            'uploads/logo' => 'www/assets/uploads/logo',
+            'uploads/property_photos' => 'storage/uploads/property_photos',
+            'uploads/leases' => 'storage/uploads/leases',
+        ];
+
+        foreach ($uploadMappings as $srcRel => $destRel) {
+            $srcDir = "{$tmpDir}/{$srcRel}";
+            if (!is_dir($srcDir)) continue;
+
+            $destDir = base_path($destRel);
+            if (!is_dir($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+
+            $files = glob($srcDir . '/*');
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    $target = $destDir . '/' . basename($file);
+                    copy($file, $target);
+                }
+            }
+        }
+
+        // Clean up temp directory
+        self::_rrmdir($tmpDir);
+
+        log_activity('settings.restore_completed', 'Full backup restored from ' . $_FILES['backup_file']['name']);
+
+        // Log the user out and redirect to login — everything changed
+        flash('success', 'Backup restored successfully. Please log in with your restored admin account.');
+        $auth = \App\Core\Auth::instance();
+        if ($auth->check()) {
+            $auth->logout();
+        }
+        redirect('/login');
+    }
+
+    private static function _rrmdir(string $dir): void
+    {
+        if (!is_dir($dir)) return;
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($files as $file) {
+            if ($file->isDir()) {
+                rmdir($file->getRealPath());
+            } else {
+                unlink($file->getRealPath());
+            }
+        }
+        rmdir($dir);
     }
 }

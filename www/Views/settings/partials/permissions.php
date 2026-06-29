@@ -72,6 +72,10 @@
             'documents' => 'leases',
         ];
 
+        $groupLabels = [
+            'ai_assistant' => 'AI Assistant',
+        ];
+
         $hiddenTenantPerms = [
             'properties.access', 'properties.create', 'properties.edit', 'properties.archive', 'properties.restore', 'properties.delete',
             'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
@@ -153,7 +157,7 @@
                 <tbody>
                     <?php foreach ($groups as $group => $perms): ?>
                         <tr class="border-t border-gray-100">
-                            <td colspan="5" class="py-2 font-semibold text-gray-700 capitalize"><?= h($group === 'leases' ? 'Leases & Documents' : $group) ?></td>
+                            <td colspan="5" class="py-2 font-semibold text-gray-700 capitalize"><?= h($groupLabels[$group] ?? ($group === 'leases' ? 'Leases & Documents' : $group)) ?></td>
                         </tr>
                         <?php foreach ($perms as $perm): ?>
                             <?php $label = $permissionLabels[$perm] ?? $perm; ?>

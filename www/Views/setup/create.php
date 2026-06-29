@@ -237,7 +237,13 @@
 
             <div class="flex justify-between mt-6">
                 <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Finish Setup') ?></button>
+                <button type="submit" id="finish-btn" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium inline-flex items-center">
+                    <span id="finish-text"><?= __('Finish Setup') ?></span>
+                    <svg id="finish-spinner" class="hidden animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     </form>
@@ -329,6 +335,15 @@ function prevStep() {
         showStep(currentStep - 1);
     }
 }
+
+// Prevent double-click on finish button
+document.getElementById('setup-form').addEventListener('submit', function() {
+    var btn = document.getElementById('finish-btn');
+    if (btn.disabled) return false;
+    btn.disabled = true;
+    document.getElementById('finish-text').classList.add('hidden');
+    document.getElementById('finish-spinner').classList.remove('hidden');
+});
 
 // Handle validation error redirect — show step 3 so errors are visible
 (function() {
