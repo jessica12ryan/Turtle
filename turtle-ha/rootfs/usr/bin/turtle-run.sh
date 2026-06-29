@@ -134,6 +134,7 @@ rm -f "${PATCHED_MIGRATE}"
 
 # ── Permissions ───────────────────────────────────────────────────────────────
 chown -R apache:apache "${TURTLE_DIR}/www/assets" 2>/dev/null || true
+chown -R apache:apache "${TURTLE_DIR}/.git" 2>/dev/null || true
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
 
 # Allow in-app git pull updater to work
