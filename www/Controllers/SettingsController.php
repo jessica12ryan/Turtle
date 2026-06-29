@@ -78,7 +78,17 @@ class SettingsController
             );
 
             // PHP error log
-            $phpLogPath = ini_get('error_log') ?: '/var/log/php_errors.log';
+            $phpLogPath = ini_get('error_log') ?: '';
+            if ($phpLogPath === '' || !file_exists($phpLogPath)) {
+                // HA add-on: PHP errors go to Apache stderr → /data/logs/apache_error.log
+                $haApacheError = '/data/logs/apache_error.log';
+                if (file_exists($haApacheError)) {
+                    $phpLogPath = $haApacheError;
+                }
+            }
+            if ($phpLogPath === '' || !file_exists($phpLogPath)) {
+                $phpLogPath = '/var/log/php_errors.log';
+            }
             $data['phpLog'] = [];
             if (file_exists($phpLogPath) && is_readable($phpLogPath)) {
                 $lines = file($phpLogPath);
@@ -92,6 +102,8 @@ class SettingsController
                 '/var/log/apache2/error.log',
                 '/var/log/httpd/access_log',
                 '/var/log/httpd/error_log',
+                '/data/logs/apache_error.log',
+                '/data/logs/apache_access.log',
             ];
             $data['apacheLogs'] = [];
             foreach ($apachePaths as $ap) {
@@ -498,7 +510,16 @@ class SettingsController
                 break;
 
             case 'php':
-                $logPath = ini_get('error_log') ?: '/var/log/php_errors.log';
+                $logPath = ini_get('error_log') ?: '';
+                if ($logPath === '' || !file_exists($logPath)) {
+                    $haApacheError = '/data/logs/apache_error.log';
+                    if (file_exists($haApacheError)) {
+                        $logPath = $haApacheError;
+                    }
+                }
+                if ($logPath === '' || !file_exists($logPath)) {
+                    $logPath = '/var/log/php_errors.log';
+                }
                 if (file_exists($logPath) && is_readable($logPath)) {
                     $content = file_get_contents($logPath);
                 }
@@ -511,6 +532,8 @@ class SettingsController
                     '/var/log/apache2/error.log',
                     '/var/log/httpd/access_log',
                     '/var/log/httpd/error_log',
+                    '/data/logs/apache_error.log',
+                    '/data/logs/apache_access.log',
                 ];
                 foreach ($paths as $p) {
                     if (file_exists($p) && is_readable($p)) {

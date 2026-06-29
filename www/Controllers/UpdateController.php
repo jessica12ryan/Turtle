@@ -85,12 +85,15 @@ class UpdateController
     private function checkDevChannel(string $currentVersion): array
     {
         $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
+
+        // Try git fetch first — works when container has outbound git access
         exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
 
         if ($fetchExitCode !== 0) {
             $output = implode("\n", $fetchOutput);
             error_log("checkDevChannel: git fetch failed (exit {$fetchExitCode}): {$output}");
-            return ['error' => 'Failed to fetch from remote.', 'latest_version' => $currentVersion, 'update_available' => false];
+            // Fall back to GitHub API
+            return $this->checkDevViaApi($currentVersion);
         }
 
         exec("{$setupCmd} && git rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
@@ -98,9 +101,7 @@ class UpdateController
         if ($countExitCode !== 0) {
             $countOut = implode("\n", $countOutput);
             error_log("checkDevChannel: git rev-list failed (exit {$countExitCode}): {$countOut}");
-            exec("{$setupCmd} && git rev-parse --short HEAD 2>&1", $hashOutput);
-            $currentHash = trim($hashOutput[0] ?? $currentVersion);
-            return ['error' => 'Could not check origin/master. Ensure the remote branch exists.', 'latest_version' => $currentHash, 'update_available' => false];
+            return $this->checkDevViaApi($currentVersion);
         }
 
         $behindCount = (int)trim($countOutput[0] ?? '0');
@@ -124,6 +125,60 @@ class UpdateController
             'update_available' => false,
             'behind_count' => 0,
             'release_body' => '',
+        ];
+    }
+
+    private function checkDevViaApi(string $currentVersion): array
+    {
+        $repo = 'jessica12ryan/Turtle';
+
+        // Get local HEAD via git (no network needed)
+        exec('cd ' . self::repoPath() . ' && git rev-parse --short HEAD 2>&1', $localHashOutput, $localExitCode);
+        $localHash = $localExitCode === 0 ? trim($localHashOutput[0] ?? '') : '';
+
+        // Fetch latest commit on master via GitHub API
+        $url = "https://api.github.com/repos/{$repo}/commits/master";
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => "User-Agent: Turtle-App/1.0\r\nAccept: application/vnd.github.v3+json\r\n",
+                'timeout' => 10,
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+
+        if ($response === false) {
+            error_log('checkDevViaApi: GitHub API unreachable after git fetch failed');
+            return ['error' => 'Cannot reach GitHub. Check container network access.', 'latest_version' => $currentVersion, 'update_available' => false];
+        }
+
+        $data = json_decode($response, true);
+        if (!$data || !isset($data['sha'])) {
+            error_log('checkDevViaApi: invalid GitHub API response');
+            return ['error' => 'Invalid response from GitHub API.', 'latest_version' => $currentVersion, 'update_available' => false];
+        }
+
+        $remoteHash = $data['sha'];
+        $remoteShort = substr($remoteHash, 0, 7);
+        $commitMsg = $data['commit']['message'] ?? '';
+        $commitUrl = $data['html_url'] ?? '';
+
+        if ($localHash === '') {
+            return [
+                'latest_version' => $remoteShort,
+                'update_available' => false,
+                'behind_count' => 0,
+                'release_body' => $commitMsg,
+            ];
+        }
+
+        $updateAvailable = $localHash !== $remoteShort;
+        return [
+            'latest_version' => $remoteShort,
+            'update_available' => $updateAvailable,
+            'behind_count' => $updateAvailable ? 1 : 0,
+            'release_body' => $updateAvailable ? "Update available: {$commitMsg}" : '',
         ];
     }
 
