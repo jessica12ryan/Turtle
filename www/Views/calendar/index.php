@@ -123,7 +123,7 @@ function calendar() {
 
         async init() {
             try {
-                const resp = await fetch('/calendar/events');
+                const resp = await fetch((window.baseUrl || '') + '/calendar/events');
                 this.events = await resp.json();
             } catch (e) {
                 console.error('Failed to load calendar events:', e);

@@ -167,7 +167,7 @@ document.getElementById('photo-upload-form').addEventListener('submit', function
 
     const formData = new FormData(form);
 
-    fetch('/properties/<?= $property['id'] ?>/photos', {
+    fetch((window.baseUrl || '') + '/properties/<?= $property['id'] ?>/photos', {
         method: 'POST',
         body: formData,
         headers: {

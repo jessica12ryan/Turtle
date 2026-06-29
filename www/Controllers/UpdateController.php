@@ -88,12 +88,16 @@ class UpdateController
         exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
 
         if ($fetchExitCode !== 0) {
+            $output = implode("\n", $fetchOutput);
+            error_log("checkDevChannel: git fetch failed (exit {$fetchExitCode}): {$output}");
             return ['error' => 'Failed to fetch from remote.', 'latest_version' => $currentVersion, 'update_available' => false];
         }
 
         exec("{$setupCmd} && git rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
 
         if ($countExitCode !== 0) {
+            $countOut = implode("\n", $countOutput);
+            error_log("checkDevChannel: git rev-list failed (exit {$countExitCode}): {$countOut}");
             exec("{$setupCmd} && git rev-parse --short HEAD 2>&1", $hashOutput);
             $currentHash = trim($hashOutput[0] ?? $currentVersion);
             return ['error' => 'Could not check origin/master. Ensure the remote branch exists.', 'latest_version' => $currentHash, 'update_available' => false];

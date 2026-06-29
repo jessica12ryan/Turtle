@@ -162,7 +162,7 @@ function testMail() {
     btn.disabled = true;
     result.className = 'mt-3 p-3 rounded-lg text-sm hidden';
 
-    fetch('/settings/test-mail', {
+    fetch((window.baseUrl || '') + '/settings/test-mail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: '_csrf=<?= csrf_token() ?>'

@@ -97,7 +97,7 @@ function chat() {
             formData.append('_csrf', '<?= csrf_token() ?>');
             formData.append('message', msg);
 
-            fetch('/ai-assistant/chat', {
+            fetch((window.baseUrl || '') + '/ai-assistant/chat', {
                 method: 'POST',
                 body: formData,
                 headers: { 'Accept': 'application/json' },

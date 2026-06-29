@@ -166,7 +166,7 @@ let currentChannel = '<?= $channel ?>';
 function toggleChannel() {
     const newChannel = currentChannel === 'stable' ? 'development' : 'stable';
 
-    fetch('/settings/update-channel', {
+    fetch((window.baseUrl || '') + '/settings/update-channel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: '_csrf=<?= csrf_token() ?>&channel=' + newChannel
@@ -209,7 +209,7 @@ function checkForUpdates() {
     document.getElementById('update-section').classList.add('hidden');
     document.getElementById('up-to-date-section').classList.add('hidden');
 
-    fetch('/updates/check', { method: 'POST' })
+    fetch((window.baseUrl || '') + '/updates/check', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
             document.getElementById('checking-section').classList.add('hidden');
@@ -253,7 +253,7 @@ function applyUpdate() {
     document.getElementById('progress-section').classList.remove('hidden');
     document.getElementById('apply-btn').disabled = true;
 
-    fetch('/updates/apply', { method: 'POST' })
+    fetch((window.baseUrl || '') + '/updates/apply', { method: 'POST' })
         .then(r => r.json())
         .then(data => {
             updateId = data.update_id;
@@ -267,7 +267,7 @@ function applyUpdate() {
 function pollProgress() {
     if (!updateId) return;
 
-    fetch('/updates/progress?update_id=' + updateId)
+    fetch((window.baseUrl || '') + '/updates/progress?update_id=' + updateId)
         .then(r => r.json())
         .then(data => {
             const totalSteps = 7;
