@@ -103,9 +103,25 @@ ln -sf "${DATA_DIR}/logs"      "${TURTLE_DIR}/storage/logs"
 rm -rf "${TURTLE_DIR}/storage/framework"
 ln -sf "${DATA_DIR}/framework" "${TURTLE_DIR}/storage/framework"
 
+# ── Run database schema directly (before patched migrate.sh) ──────────────────
+bashio::log.info "Loading database schema..."
+if mysql --socket=/tmp/mysql.sock -u root turtle < "${TURTLE_DIR}/database/schema.sql"; then
+    bashio::log.info "Schema loaded successfully."
+else
+    bashio::log.error "Schema loading FAILED — check schema.sql for errors."
+fi
+
+# Verify settings table was created
+if echo "SELECT 1 FROM settings LIMIT 1" | mysql --socket=/tmp/mysql.sock -u root turtle >/dev/null 2>&1; then
+    bashio::log.info "Settings table exists — schema is complete."
+else
+    bashio::log.error "Settings table is MISSING — schema.sql may have failed partway through."
+    mysql --socket=/tmp/mysql.sock -u root turtle -e "SHOW TABLES;" 2>&1 | bashio::log.info
+fi
+
 # ── Run migrations ────────────────────────────────────────────────────────────
 # migrate.sh hardcodes /var/www/html and -h mysql, so we patch it on the fly
-bashio::log.info "Running database migrations..."
+bashio::log.info "Running incremental migrations..."
 PATCHED_MIGRATE=$(mktemp)
 sed \
     -e 's|cd /var/www/html|cd '"${TURTLE_DIR}"'|g' \
