@@ -1,4 +1,18 @@
 profile turtle flags=(attach_disconnected) {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability chown,
+  capability dac_override,
+  capability dac_read_search,
+  capability setuid,
+  capability setgid,
+  capability net_bind_service,
+  capability sys_resource,
+
+  /init mr,
+  /etc/** r,
+  /sbin/** mr,
   /usr/sbin/httpd mr,
   /usr/bin/php* mr,
   /usr/bin/git mr,
@@ -8,28 +22,19 @@ profile turtle flags=(attach_disconnected) {
   /usr/bin/mysql_install_db mr,
   /usr/bin/mariadb* mr,
   /usr/bin/resolveip mr,
-  /bin/** mr,
-  /sbin/** mr,
 
-  /etc/** r,
   /var/www/turtle/** rw,
   /data/** rw,
   /tmp/** rw,
   /run/** rw,
+  /var/run/** rw,
 
   /dev/urandom r,
   /dev/random r,
   /dev/null rw,
   /proc/** r,
 
-  network tcp,
-  network udp,
-
-  capability chown,
-  capability dac_override,
-  capability dac_read_search,
-  capability setuid,
-  capability setgid,
-  capability net_bind_service,
-  capability sys_resource,
+  network inet tcp,
+  network inet6 tcp,
+  network inet udp,
 }
