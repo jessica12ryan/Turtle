@@ -38,4 +38,6 @@ profile turtle_dev flags=(attach_disconnected,mediate_deleted) {
   /usr/bin/mysql* ix,
   /usr/bin/mysqld* ix,
   /usr/bin/mariadb* ix,
+  /sbin/chmod ix,
+  /usr/lib/mariadb/plugin/auth_pam_tool_dir/** rw,
 }
