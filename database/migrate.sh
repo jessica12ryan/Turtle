@@ -2,8 +2,6 @@
 # Database migrations — safe to run from updates (no root needed)
 set -e
 
-cd /var/www/html
-
 MYSQL_CMD="mysql -h mysql -u turtle -pturtle turtle --skip-ssl"
 MYSQL_ROOT="mysql -h mysql -u root -proot turtle --skip-ssl"
 
@@ -58,5 +56,5 @@ fi
 run_sql "INSERT IGNORE INTO company_user (company_id, user_id) SELECT c.id, u.id FROM users u CROSS JOIN companies c WHERE u.role IN ('property_manager','maintenance') AND NOT EXISTS (SELECT 1 FROM company_user cu WHERE cu.user_id = u.id);"
 
 # Update version
-APP_VER=$(cd /var/www/html && (git describe --tags 2>/dev/null || git log --oneline -1 --format=%h 2>/dev/null || echo "0.0.0") | sed 's/^v//')
+APP_VER=$( (git -c safe.directory=. -C . describe --tags 2>/dev/null || git -c safe.directory=. -C . log --oneline -1 --format=%h 2>/dev/null || echo "0.0.0") | sed 's/^v//' )
 run_sql "INSERT INTO settings (\`key\`, \`value\`) VALUES ('app_version', '${APP_VER}') ON DUPLICATE KEY UPDATE \`value\` = '${APP_VER}';"

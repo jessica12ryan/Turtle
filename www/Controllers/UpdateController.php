@@ -84,10 +84,10 @@ class UpdateController
 
     private function checkDevChannel(string $currentVersion): array
     {
-        $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
+        $git = 'git -c safe.directory=' . self::repoPath() . ' -C ' . self::repoPath();
 
         // Try git fetch first — works when container has outbound git access
-        exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
+        exec("{$git} fetch origin 2>&1", $fetchOutput, $fetchExitCode);
 
         if ($fetchExitCode !== 0) {
             $output = implode("\n", $fetchOutput);
@@ -96,7 +96,7 @@ class UpdateController
             return $this->checkDevViaApi($currentVersion);
         }
 
-        exec("{$setupCmd} && git rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
+        exec("{$git} rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
 
         if ($countExitCode !== 0) {
             $countOut = implode("\n", $countOutput);
@@ -106,11 +106,11 @@ class UpdateController
 
         $behindCount = (int)trim($countOutput[0] ?? '0');
 
-        exec("{$setupCmd} && git rev-parse --short HEAD 2>&1", $hashOutput);
+        exec("{$git} rev-parse --short HEAD 2>&1", $hashOutput);
         $currentHash = trim($hashOutput[0] ?? $currentVersion);
 
         if ($behindCount > 0) {
-            exec("{$setupCmd} && git rev-parse --short origin/master 2>&1", $remoteHashOutput);
+            exec("{$git} rev-parse --short origin/master 2>&1", $remoteHashOutput);
             $remoteHash = trim($remoteHashOutput[0] ?? '');
             return [
                 'latest_version' => $remoteHash ?: "origin/master",
@@ -133,7 +133,7 @@ class UpdateController
         $repo = 'jessica12ryan/Turtle';
 
         // Get local HEAD via git (no network needed)
-        exec('cd ' . self::repoPath() . ' && git rev-parse --short HEAD 2>&1', $localHashOutput, $localExitCode);
+        exec('git -c safe.directory=' . self::repoPath() . ' -C ' . self::repoPath() . ' rev-parse --short HEAD 2>&1', $localHashOutput, $localExitCode);
         $localHash = $localExitCode === 0 ? trim($localHashOutput[0] ?? '') : '';
 
         // Fetch latest commit on master via GitHub API
@@ -181,16 +181,18 @@ class UpdateController
         $updateId = bin2hex(random_bytes(8));
         $logFile = sys_get_temp_dir() . "/turtle_update_{$updateId}.log";
 
-        $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
+        $repo = self::repoPath();
+        $git = 'git -c safe.directory=' . $repo;
+        $cd = 'cd ' . $repo;
 
         $steps = [
-            'Preparing working directory...' => "{$setupCmd} && git reset --hard HEAD 2>&1 && git clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
-            'Ensuring storage directories...' => "{$setupCmd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/framework storage/logs www/assets/uploads/logo 2>&1",
-            'Fetching latest code...' => "{$setupCmd} && git fetch origin 2>&1",
-            'Checking for changes...' => "{$setupCmd} && git log HEAD..origin/master --oneline 2>&1",
-            'Pulling updates...' => "{$setupCmd} && git pull origin master 2>&1",
-            'Running migrations...' => "{$setupCmd} && bash database/migrate.sh 2>&1",
-            'Restarting services...' => "{$setupCmd} && php -r 'opcache_reset();' 2>&1; apachectl graceful 2>&1 || httpd -k graceful 2>&1 || true",
+            'Preparing working directory...' => "{$cd} && {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
+            'Ensuring storage directories...' => "{$cd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/framework storage/logs www/assets/uploads/logo 2>&1",
+            'Fetching latest code...' => "{$cd} && {$git} fetch origin 2>&1",
+            'Checking for changes...' => "{$cd} && {$git} log HEAD..origin/master --oneline 2>&1",
+            'Pulling updates...' => "{$cd} && {$git} pull origin master 2>&1",
+            'Running migrations...' => "{$cd} && bash database/migrate.sh 2>&1",
+            'Restarting services...' => "{$cd} && php -r 'opcache_reset();' 2>&1; apachectl graceful 2>&1 || httpd -k graceful 2>&1 || true",
         ];
 
         $script = '#!/bin/bash' . "\n";
@@ -278,7 +280,7 @@ class UpdateController
         }
 
         if ($done && file_exists($scriptFile)) {
-            $version = trim(shell_exec('cd ' . self::repoPath() . ' && git describe --tags 2>/dev/null') ?? '');
+            $version = trim(shell_exec('git -c safe.directory=' . self::repoPath() . ' -C ' . self::repoPath() . ' describe --tags 2>/dev/null') ?? '');
             if ($version) {
                 $version = ltrim($version, 'v');
                 Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'app_version'", [$version]);
@@ -305,17 +307,17 @@ class UpdateController
         }
 
         if ($channel === 'development') {
-            $setupCmd = 'git config --global --add safe.directory ' . self::repoPath() . ' 2>/dev/null; cd ' . self::repoPath();
-            exec("{$setupCmd} && git fetch origin 2>&1", $fetchOutput, $fetchExitCode);
+            $git = 'git -c safe.directory=' . self::repoPath() . ' -C ' . self::repoPath();
+            exec("{$git} fetch origin 2>&1", $fetchOutput, $fetchExitCode);
             if ($fetchExitCode !== 0) return null;
 
-            exec("{$setupCmd} && git rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
+            exec("{$git} rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
             if ($countExitCode !== 0) return null;
 
             $behindCount = (int)trim($countOutput[0] ?? '0');
             if ($behindCount <= 0) return null;
 
-            exec("{$setupCmd} && git rev-parse --short origin/master 2>&1", $hashOutput);
+            exec("{$git} rev-parse --short origin/master 2>&1", $hashOutput);
             return trim($hashOutput[0] ?? '');
         }
 
