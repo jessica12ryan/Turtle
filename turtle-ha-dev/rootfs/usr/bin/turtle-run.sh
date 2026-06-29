@@ -150,6 +150,18 @@ chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
 # Make app dir writable so in-app updater can modify files
 chmod -R a+w "${TURTLE_DIR}" 2>/dev/null || true
 
+# ── Shutdown handler ──────────────────────────────────────────────────────────
+_cleanup() {
+    bashio::log.info "Shutting down..."
+    kill -TERM "${APACHE_PID}" 2>/dev/null || true
+    mysqladmin --socket=/tmp/mysql.sock shutdown 2>/dev/null || true
+    wait
+    bashio::log.info "Shutdown complete."
+}
+trap '_cleanup' SIGTERM SIGHUP
+
 # ── Start Apache ──────────────────────────────────────────────────────────────
 bashio::log.info "Turtle (Dev) is ready at port 8099"
-exec httpd -D FOREGROUND
+httpd -D FOREGROUND &
+APACHE_PID=$!
+wait
