@@ -1,41 +1,19 @@
-#include <tunables/global>
-
 profile turtle_dev flags=(attach_disconnected) {
-  #include <abstractions/base>
-  #include <abstractions/nameservice>
-
-  capability chown,
-  capability dac_override,
-  capability dac_read_search,
-  capability setuid,
-  capability setgid,
-  capability net_bind_service,
-  capability sys_resource,
-
   /usr/sbin/httpd mr,
   /usr/bin/php* mr,
   /usr/bin/git mr,
   /usr/bin/mysql* mr,
   /usr/bin/mysqld* mr,
-  /usr/bin/mariadb* mr,
   /usr/bin/mysqladmin mr,
   /usr/bin/mysql_install_db mr,
+  /usr/bin/mariadb* mr,
   /usr/bin/resolveip mr,
+  /bin/** mr,
+  /sbin/** mr,
 
-  /etc/apache2/** r,
-  /etc/php*/** r,
-  /etc/mysql/** r,
-  /etc/ssl/** r,
-  /etc/ca-certificates/** r,
-
-  /var/www/turtle/** r,
-  /var/www/turtle/.git/** rw,
-  /var/www/turtle/.env r,
-  /var/www/turtle/storage/** rw,
-  /var/www/turtle/www/assets/uploads/** rw,
-
+  /etc/** r,
+  /var/www/turtle/** rw,
   /data/** rw,
-
   /tmp/** rw,
   /run/** rw,
 
@@ -46,10 +24,12 @@ profile turtle_dev flags=(attach_disconnected) {
 
   network tcp,
   network udp,
-  network inet tcp,
-  network inet6 tcp,
 
-  signal (send, receive) set={ term, hup, int, quit, usr1, usr2 },
-
-  deny /etc/shadow w,
+  capability chown,
+  capability dac_override,
+  capability dac_read_search,
+  capability setuid,
+  capability setgid,
+  capability net_bind_service,
+  capability sys_resource,
 }
