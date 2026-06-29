@@ -10,7 +10,6 @@ profile turtle flags=(attach_disconnected) {
   /package/** ix,
   /etc/s6-overlay/** ix,
   /run/{s6,s6-rc*,service}/** ix,
-  deny /run/{s6,s6-rc*,service}/** w,
 
   /lib/** mr,
   /usr/lib/** mr,
