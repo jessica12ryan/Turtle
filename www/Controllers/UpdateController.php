@@ -186,7 +186,7 @@ class UpdateController
         $cd = 'cd ' . $repo;
 
         $steps = [
-            'Fixing permissions...' => "chown -R apache:apache {$repo} 2>/dev/null; chown -R www-data:www-data {$repo} 2>/dev/null; true",
+            'Fixing permissions...' => "chmod -R a+w {$repo} 2>/dev/null; rm -f {$repo}/storage/framework {$repo}/storage/logs {$repo}/storage/uploads; true",
             'Preparing working directory...' => "{$cd} && {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
             'Ensuring storage directories...' => "{$cd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/framework storage/logs www/assets/uploads/logo 2>&1",
             'Fetching latest code...' => "{$cd} && {$git} fetch origin 2>&1",
@@ -197,6 +197,7 @@ class UpdateController
         ];
 
         $script = '#!/bin/bash' . "\n";
+        $script .= "export HOME=/tmp\n";
         foreach ($steps as $label => $cmd) {
             $script .= "echo '[TURTLE_STEP] {$label}'\n";
             $script .= "{$cmd}\n";
