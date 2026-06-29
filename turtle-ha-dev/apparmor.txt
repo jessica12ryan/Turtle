@@ -1,116 +1,55 @@
 #include <tunables/global>
 
-profile turtle_dev {{ attachment_parameters }}
+profile turtle_dev flags=(attach_disconnected) {
   #include <abstractions/base>
   #include <abstractions/nameservice>
-  #include <abstractions/openssl>
-  #include <abstractions/ssl_certs>
 
-  # Capabilities
   capability chown,
   capability dac_override,
   capability dac_read_search,
   capability setuid,
   capability setgid,
   capability net_bind_service,
-  capability sys_ptrace,
   capability sys_resource,
 
-  # Apache
   /usr/sbin/httpd mr,
-  /etc/apache2/** r,
-  /var/run/apache2/** rw,
-  /run/apache2/** rw,
-
-  # PHP
   /usr/bin/php* mr,
-  /etc/php*/** r,
-  /usr/lib/php*/** mr,
-  /run/php/** rw,
-
-  # MariaDB / MySQL
-  /usr/bin/mysqld mr,
-  /usr/bin/mysql mr,
+  /usr/bin/git mr,
+  /usr/bin/mysql* mr,
+  /usr/bin/mysqld* mr,
+  /usr/bin/mariadb* mr,
   /usr/bin/mysqladmin mr,
   /usr/bin/mysql_install_db mr,
-  /usr/bin/mysqld_safe mr,
   /usr/bin/resolveip mr,
-  /usr/bin/mariadbd mr,
-  /usr/bin/mariadb mr,
-  /usr/bin/mariadbd-safe mr,
+
+  /etc/apache2/** r,
+  /etc/php*/** r,
   /etc/mysql/** r,
-  /tmp/mysql.sock rw,
-  /tmp/mysqld.pid rw,
-  /run/mysqld/** rw,
+  /etc/ssl/** r,
+  /etc/ca-certificates/** r,
 
-  # Git
-  /usr/bin/git mr,
-  /usr/lib/git-core/** mr,
-  /usr/share/git-core/** r,
-
-  # Shell and utilities
-  /bin/** mr,
-  /usr/bin/** mr,
-  /sbin/** mr,
-  /usr/sbin/** mr,
-  /lib/** mr,
-  /usr/lib/** mr,
-
-  # Application code
   /var/www/turtle/** r,
-  /var/www/turtle/www/** r,
   /var/www/turtle/.git/** rw,
   /var/www/turtle/.env r,
   /var/www/turtle/storage/** rw,
   /var/www/turtle/www/assets/uploads/** rw,
 
-  # HA persistent data
   /data/** rw,
-  /data/logs/** rw,
-  /data/mysql/** rw,
-  /data/uploads/** rw,
-  /data/framework/** rw,
 
-  # Temp files
   /tmp/** rw,
+  /run/** rw,
 
-  # System files
   /dev/urandom r,
   /dev/random r,
   /dev/null rw,
-  /dev/pts/** rw,
   /proc/** r,
-  /sys/** r,
-  /etc/hostname r,
-  /etc/hosts r,
-  /etc/resolv.conf r,
-  /etc/passwd r,
-  /etc/group r,
-  /etc/shadow r,
-  /etc/nsswitch.conf r,
-  /etc/ssl/** r,
-  /etc/ca-certificates/** r,
-  /etc/localtime r,
-  /etc/mtab r,
 
-  # Logging
-  /var/log/** rw,
-  /var/log/apache2/** rw,
-
-  # Network
   network tcp,
   network udp,
   network inet tcp,
-  network inet udp,
   network inet6 tcp,
-  network inet6 udp,
-  network netlink raw,
-  network packet dgram,
 
-  # Process signals (for graceful restart)
   signal (send, receive) set={ term, hup, int, quit, usr1, usr2 },
-  ptrace (read, trace) peer=@{profile_name},
 
-  # Deny risky operations by default
   deny /etc/shadow w,
-  deny /etc/gshadow rw,
+}
