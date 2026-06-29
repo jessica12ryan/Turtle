@@ -147,8 +147,8 @@ mysql --socket=/tmp/mysql.sock -u root turtle -e "INSERT INTO settings (\`key\`,
 # ── Permissions ───────────────────────────────────────────────────────────────
 chown -R apache:apache "${TURTLE_DIR}/www/assets" 2>/dev/null || true
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
-# Make .git writable by apache so in-app updates can run
-chown -R apache:apache "${TURTLE_DIR}/.git" 2>/dev/null || true
+# Make app dir writable so in-app updater can modify files
+chmod -R a+w "${TURTLE_DIR}" 2>/dev/null || true
 
 # ── Start Apache ──────────────────────────────────────────────────────────────
 bashio::log.info "Turtle (Dev) is ready at port 8099"
