@@ -40,22 +40,21 @@ class CalendarController
             ];
         }
 
-        // Tenant move-out dates
+        // Tenant scheduled move-out dates
         $moveOuts = Database::fetchAll(
-            "SELECT pt.moved_out_at, u.name as tenant_name, p.name as property_name, pt.id
+            "SELECT pt.move_out_date, u.name as tenant_name, p.name as property_name, pt.id
              FROM property_tenant pt
              JOIN users u ON u.id = pt.tenant_id
              JOIN properties p ON p.id = pt.property_id
-             WHERE pt.moved_out_at IS NOT NULL"
+             WHERE pt.move_out_date IS NOT NULL AND pt.moved_out_at IS NULL"
         );
         foreach ($moveOuts as $m) {
-            $date = date('Y-m-d', strtotime($m['moved_out_at']));
             $events[] = [
                 'id' => 'moveout-' . $m['id'],
-                'title' => 'Move Out: ' . $m['tenant_name'] . ' (' . $m['property_name'] . ')',
-                'start' => $date,
+                'title' => __('Scheduled Move Out') . ': ' . $m['tenant_name'] . ' (' . $m['property_name'] . ')',
+                'start' => $m['move_out_date'],
                 'allDay' => true,
-                'className' => 'bg-red-100 text-red-800 border-red-300',
+                'className' => 'bg-orange-100 text-orange-800 border-orange-300',
             ];
         }
 

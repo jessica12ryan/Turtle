@@ -6,16 +6,16 @@
 INSERT IGNORE INTO companies (id, name) VALUES (1, 'Default Company');
 
 -- Users: staff + tenants
-INSERT IGNORE INTO users (id, name, email, password, role, must_change_password, created_at, updated_at) VALUES
-(2, 'Jane Manager', 'manager@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'property_manager', 0, NOW(), NOW()),
-(3, 'Bob Maintenance', 'bob@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'maintenance', 0, NOW(), NOW()),
-(4, 'Tom Tenant', 'tom@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
-(5, 'Sue Tenant', 'sue@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
-(6, 'Alice Landlord', 'alice@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'landlord', 0, NOW(), NOW()),
-(7, 'Charlie Tenant', 'charlie@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
-(8, 'Diana Tenant', 'diana@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
-(9, 'Evan Tenant', 'evan@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
-(10, 'Fiona Staff', 'fiona@turtleapp.com', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'maintenance', 0, NOW(), NOW());
+INSERT IGNORE INTO users (id, name, email, phone, password, role, must_change_password, created_at, updated_at) VALUES
+(2, 'Jane Manager', 'manager@turtleapp.com', '(416) 555-0102', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'property_manager', 0, NOW(), NOW()),
+(3, 'Bob Maintenance', 'bob@turtleapp.com', '(416) 555-0103', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'maintenance', 0, NOW(), NOW()),
+(4, 'Tom Tenant', 'tom@turtleapp.com', '(416) 555-0104', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
+(5, 'Sue Tenant', 'sue@turtleapp.com', '(416) 555-0105', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
+(6, 'Alice Landlord', 'alice@turtleapp.com', '(416) 555-0106', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'landlord', 0, NOW(), NOW()),
+(7, 'Charlie Tenant', 'charlie@turtleapp.com', '(416) 555-0107', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
+(8, 'Diana Tenant', 'diana@turtleapp.com', '(416) 555-0108', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
+(9, 'Evan Tenant', 'evan@turtleapp.com', '(416) 555-0109', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'tenant', 0, NOW(), NOW()),
+(10, 'Fiona Staff', 'fiona@turtleapp.com', '(416) 555-0110', '$2y$12$EN5B05AqFwvhbBZso49M0u0V3QOIeE/qSNmi/Gd0T/dipzYrn6XA2', 'maintenance', 0, NOW(), NOW());
 
 -- Company-user assignments (required for non-admin access scoping)
 INSERT IGNORE INTO company_user (company_id, user_id) VALUES

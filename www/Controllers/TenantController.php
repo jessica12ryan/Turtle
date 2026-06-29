@@ -20,8 +20,8 @@ class TenantController
     private function archiveSecondaryTenants(int $propertyId, int $mainTenantId): void
     {
         $secondaries = Database::fetchAll(
-            "SELECT tenant_id FROM property_tenant 
-             WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NULL",
+            "SELECT pt.id, pt.tenant_id FROM property_tenant pt
+             WHERE pt.property_id = ? AND pt.tenant_id != ? AND pt.moved_out_at IS NULL",
             [$propertyId, $mainTenantId]
         );
         foreach ($secondaries as $s) {
@@ -34,14 +34,18 @@ class TenantController
                 "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
                 [$s['tenant_id']]
             );
+            Database::execute(
+                "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id = ? AND archived_at IS NULL",
+                [$s['id']]
+            );
         }
     }
 
     private function restoreSecondaryTenants(int $propertyId, int $mainTenantId): void
     {
         $secondaries = Database::fetchAll(
-            "SELECT tenant_id FROM property_tenant 
-             WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NOT NULL",
+            "SELECT pt.id, pt.tenant_id FROM property_tenant pt
+             WHERE pt.property_id = ? AND pt.tenant_id != ? AND pt.moved_out_at IS NOT NULL",
             [$propertyId, $mainTenantId]
         );
         foreach ($secondaries as $s) {
@@ -53,6 +57,10 @@ class TenantController
             Database::execute(
                 "UPDATE leases SET archived_at = NULL WHERE tenant_id = ? AND archived_at IS NOT NULL",
                 [$s['tenant_id']]
+            );
+            Database::execute(
+                "UPDATE payments SET archived_at = NULL WHERE property_tenant_id = ? AND archived_at IS NOT NULL",
+                [$s['id']]
             );
         }
     }
@@ -372,15 +380,22 @@ class TenantController
     public function restore(int $id): void
     {
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
-        Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE tenant_id = ? AND moved_out_at IS NOT NULL", [$id]);
-
-        // Cascade restore to secondary tenants if this is a main tenant
         $pt = Database::fetch(
-            "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
+            "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NOT NULL",
             [$id]
         );
         if ($pt) {
-            $this->restoreSecondaryTenants($pt['property_id'], $id);
+            Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE tenant_id = ? AND moved_out_at IS NOT NULL", [$id]);
+            Database::execute("UPDATE payments SET archived_at = NULL WHERE property_tenant_id = ? AND archived_at IS NOT NULL", [$pt['id']]);
+        }
+
+        // Cascade restore to secondary tenants if this is a main tenant
+        $mainPt = Database::fetch(
+            "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
+            [$id]
+        );
+        if ($mainPt) {
+            $this->restoreSecondaryTenants($mainPt['property_id'], $id);
         }
 
         log_activity('tenant.restored', "Tenant #{$id} restored");
@@ -408,6 +423,10 @@ class TenantController
             Database::execute(
                 "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
                 [$id]
+            );
+            Database::execute(
+                "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id = ? AND archived_at IS NULL",
+                [$pt['id']]
             );
 
             // Cascade archive to secondary tenants if this is a main tenant

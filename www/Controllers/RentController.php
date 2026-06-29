@@ -131,9 +131,18 @@ class RentController
 
     public function store(int $propertyId): void
     {
+        // Auto-detect main tenant for this property
+        $mainTenant = Database::fetch(
+            "SELECT id FROM property_tenant WHERE property_id = ? AND is_main_tenant = 1 AND moved_out_at IS NULL",
+            [$propertyId]
+        );
+        if (!$mainTenant) {
+            flash('error', __('No active main tenant found for this property.'));
+            redirect('/properties/' . $propertyId);
+        }
+
         $validator = new Validator();
         if (!$validator->validate($_POST, [
-            'property_tenant_id' => 'required|exists:property_tenant,id',
             'amount' => 'required|numeric|min:0.01',
             'payment_date' => 'required|date',
             'payment_method' => 'max:50',
@@ -148,7 +157,7 @@ class RentController
         Database::insert(
             "INSERT INTO payments (property_tenant_id, amount, payment_date, payment_method, reference, notes, recorded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
             [
-                $_POST['property_tenant_id'],
+                $mainTenant['id'],
                 $_POST['amount'],
                 $_POST['payment_date'],
                 $_POST['payment_method'] ?: null,

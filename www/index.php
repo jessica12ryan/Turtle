@@ -138,6 +138,7 @@ $router = new \App\Core\Router();
 // Setup (no middleware — boot check handles redirects)
 $router->get('/setup', 'SetupController@create');
 $router->post('/setup', 'SetupController@store');
+$router->post('/setup/restore', 'SetupController@restore');
 
 // Auth routes
 $router->get('/login', 'AuthController@login', ['guest']);

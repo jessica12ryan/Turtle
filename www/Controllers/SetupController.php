@@ -188,4 +188,94 @@ class SetupController
             throw $e; // Let the global handler render the 500 page
         }
     }
+
+    public function restore(): void
+    {
+        $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
+        if (!$admin) {
+            // No admin exists yet — use the file upload from setup form
+            if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
+                flash('error', __('Please select a backup file.'));
+                redirect('/setup');
+            }
+
+            $tmpPath = $_FILES['backup_file']['tmp_name'];
+            $origName = $_FILES['backup_file']['name'];
+
+            // Validate extension
+            if (!str_ends_with(strtolower($origName), '.turtle')) {
+                flash('error', __('Invalid backup file. Expected a .turtle file.'));
+                redirect('/setup');
+            }
+
+            $dataDir = base_path('storage/app/backups/');
+            if (!is_dir($dataDir)) {
+                mkdir($dataDir, 0755, true);
+            }
+            $destPath = $dataDir . uniqid('restore_') . '.turtle';
+            move_uploaded_file($tmpPath, $destPath);
+
+            $zip = new \ZipArchive();
+            if ($zip->open($destPath) !== true) {
+                unlink($destPath);
+                flash('error', __('Could not open backup archive.'));
+                redirect('/setup');
+            }
+
+            // Extract SQL dump
+            $sqlContent = $zip->getFromName('database.sql');
+            if ($sqlContent === false) {
+                $zip->close();
+                unlink($destPath);
+                flash('error', __('Backup file is missing database.sql.'));
+                redirect('/setup');
+            }
+
+            // Extract .env
+            $envContent = $zip->getFromName('.env');
+            if ($envContent !== false) {
+                $envPath = base_path('.env');
+                file_put_contents($envPath, $envContent);
+            }
+
+            try {
+                // Drop all tables
+                $pdo = Database::instance()->getConnection();
+                $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
+                $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+                foreach ($tables as $table) {
+                    $pdo->exec("DROP TABLE IF EXISTS `$table`");
+                }
+                $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
+
+                // Execute SQL
+                $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
+                $statements = explode(";\n", $sqlContent);
+                foreach ($statements as $stmt) {
+                    $stmt = trim($stmt);
+                    if ($stmt !== '') {
+                        try {
+                            $pdo->exec($stmt);
+                        } catch (\Throwable $e) {
+                            error_log('Restore SQL exec failed: ' . $e->getMessage());
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                $zip->close();
+                unlink($destPath);
+                error_log('Setup restore error: ' . $e->getMessage());
+                flash('error', __('Database restore failed.') . ' ' . $e->getMessage());
+                redirect('/setup');
+            }
+
+            $zip->close();
+            unlink($destPath);
+            flash('success', __('Backup restored successfully. Please log in with your restored credentials.'));
+            redirect('/login');
+        }
+
+        flash('success', __('Backup restored successfully.'));
+        redirect('/home');
+    }
 }

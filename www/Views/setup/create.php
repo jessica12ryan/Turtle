@@ -20,31 +20,68 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-1 text-center"><?= __('Welcome to Turtle') ?></h1>
     <p class="text-gray-500 mb-6 text-center"><?= __("Let's get your portal set up.") ?></p>
 
-    <!-- Step Indicator -->
-    <div class="step-indicator">
-        <div class="flex flex-col items-center">
-            <div class="step-dot active" id="dot-1">1</div>
-            <span class="step-label active" id="label-1"><?= __('Site Info') ?></span>
+    <!-- New Installation vs Restore Backup -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="flex items-center space-x-6 mb-2">
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="radio" name="setup_mode" value="new" checked onchange="toggleSetupMode()" class="text-blue-600 focus:ring-blue-500">
+                <span class="text-sm font-medium text-gray-700"><?= __('New Installation') ?></span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="radio" name="setup_mode" value="restore" onchange="toggleSetupMode()" class="text-blue-600 focus:ring-blue-500">
+                <span class="text-sm font-medium text-gray-700"><?= __('Restore Backup') ?></span>
+            </label>
         </div>
-        <div class="step-line active" id="line-1"></div>
-        <div class="flex flex-col items-center">
-            <div class="step-dot pending" id="dot-2">2</div>
-            <span class="step-label pending" id="label-2"><?= __('Localization') ?></span>
+    </div>
+
+    <!-- Restore Backup section (hidden by default) -->
+    <div id="setup-restore-section" class="hidden bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Restore from Backup') ?></h2>
+        <p class="text-sm text-gray-600 mb-4"><?= __('Upload a .turtle backup file to restore the application. No other configuration is needed.') ?></p>
+        <div class="mb-4">
+            <input type="file" name="backup_file" accept=".turtle" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
-        <div class="step-line pending" id="line-2"></div>
-        <div class="flex flex-col items-center">
-            <div class="step-dot pending" id="dot-3">3</div>
-            <span class="step-label pending" id="label-3"><?= __('Account') ?></span>
+        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-sm text-yellow-800"><?= __('Warning: Restoring a backup will replace all current data. This cannot be undone.') ?></p>
         </div>
-        <div class="step-line pending" id="line-3"></div>
-        <div class="flex flex-col items-center">
-            <div class="step-dot pending" id="dot-4">4</div>
-            <span class="step-label pending" id="label-4"><?= __('Email (SMTP)') ?></span>
+        <div class="flex justify-end mt-6">
+            <button type="submit" id="restore-btn" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium inline-flex items-center">
+                <span id="restore-text"><?= __('Restore Backup') ?></span>
+                <svg id="restore-spinner" class="hidden animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </button>
         </div>
-        <div class="step-line pending" id="line-4"></div>
-        <div class="flex flex-col items-center">
-            <div class="step-dot pending" id="dot-5">5</div>
-            <span class="step-label pending" id="label-5"><?= __('Optional') ?></span>
+    </div>
+
+    <!-- Step Indicator (hidden during restore mode) -->
+    <div id="setup-steps-indicator">
+        <div class="step-indicator">
+            <div class="flex flex-col items-center">
+                <div class="step-dot active" id="dot-1">1</div>
+                <span class="step-label active" id="label-1"><?= __('Site Info') ?></span>
+            </div>
+            <div class="step-line active" id="line-1"></div>
+            <div class="flex flex-col items-center">
+                <div class="step-dot pending" id="dot-2">2</div>
+                <span class="step-label pending" id="label-2"><?= __('Localization') ?></span>
+            </div>
+            <div class="step-line pending" id="line-2"></div>
+            <div class="flex flex-col items-center">
+                <div class="step-dot pending" id="dot-3">3</div>
+                <span class="step-label pending" id="label-3"><?= __('Account') ?></span>
+            </div>
+            <div class="step-line pending" id="line-3"></div>
+            <div class="flex flex-col items-center">
+                <div class="step-dot pending" id="dot-4">4</div>
+                <span class="step-label pending" id="label-4"><?= __('Email (SMTP)') ?></span>
+            </div>
+            <div class="step-line pending" id="line-4"></div>
+            <div class="flex flex-col items-center">
+                <div class="step-dot pending" id="dot-5">5</div>
+                <span class="step-label pending" id="label-5"><?= __('Optional') ?></span>
+            </div>
         </div>
     </div>
 
@@ -336,8 +373,45 @@ function prevStep() {
     }
 }
 
+function toggleSetupMode() {
+    var mode = document.querySelector('input[name="setup_mode"]:checked').value;
+    var restoreSection = document.getElementById('setup-restore-section');
+    var stepsIndicator = document.getElementById('setup-steps-indicator');
+    var stepContents = document.querySelectorAll('.step-content');
+    var formAction = document.getElementById('setup-form').action;
+
+    if (mode === 'restore') {
+        restoreSection.classList.remove('hidden');
+        stepsIndicator.classList.add('hidden');
+        stepContents.forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('setup-form').action = '/setup/restore';
+    } else {
+        restoreSection.classList.add('hidden');
+        stepsIndicator.classList.remove('hidden');
+        document.querySelector('.step-content[data-step="1"]').classList.add('active');
+        document.getElementById('setup-form').action = '/setup';
+    }
+}
+
+// Restore form submission
+document.getElementById('restore-btn').addEventListener('click', function(e) {
+    var fileInput = document.querySelector('input[name="backup_file"]');
+    if (!fileInput.files.length) {
+        alert('<?= __('Please select a backup file to restore.') ?>');
+        e.preventDefault();
+        return false;
+    }
+    var btn = document.getElementById('restore-btn');
+    btn.disabled = true;
+    document.getElementById('restore-text').classList.add('hidden');
+    document.getElementById('restore-spinner').classList.remove('hidden');
+    document.getElementById('setup-form').submit();
+});
+
 // Prevent double-click on finish button
 document.getElementById('setup-form').addEventListener('submit', function() {
+    var mode = document.querySelector('input[name="setup_mode"]:checked').value;
+    if (mode === 'restore') return; // handled above
     var btn = document.getElementById('finish-btn');
     if (btn.disabled) return false;
     btn.disabled = true;

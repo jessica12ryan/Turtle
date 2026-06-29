@@ -452,6 +452,9 @@ class PropertyController
 
     public function restore(int $id): void
     {
+        $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
+        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
         Database::execute("UPDATE properties SET archived_at = NULL WHERE id = ?", [$id]);
 
         // Cascade restore tenants, leases, and tickets that were archived with this property
@@ -462,6 +465,10 @@ class PropertyController
         }
         Database::execute("UPDATE leases SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
         Database::execute("UPDATE tickets SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
+        Database::execute(
+            "UPDATE payments SET archived_at = NULL WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NOT NULL",
+            [$id]
+        );
 
         log_activity('property.restored', "Property '{$property['name']}' restored");
         flash('success', 'Property restored successfully. Related tenants, leases, and tickets have also been restored.');
@@ -470,6 +477,9 @@ class PropertyController
 
     public function destroy(int $id): void
     {
+        $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
+        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
         Database::execute("UPDATE properties SET archived_at = NOW() WHERE id = ?", [$id]);
 
         // Cascade archive to related records
@@ -480,6 +490,10 @@ class PropertyController
         }
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
         Database::execute("UPDATE tickets SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
+        Database::execute(
+            "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NULL",
+            [$id]
+        );
 
         log_activity('property.archived', "Property '{$property['name']}' archived");
         flash('success', 'Property archived successfully. Related tenants, leases, and tickets have also been archived.');
