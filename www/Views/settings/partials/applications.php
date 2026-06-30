@@ -1,8 +1,8 @@
 <?php
-$enabled = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
-$notes = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_notes'");
-$enabledVal = $enabled['value'] ?? '0';
-$notesVal = $notes['value'] ?? '';
+$enabledRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
+$notesRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_notes'");
+$enabledVal = is_array($enabledRow) ? ($enabledRow['value'] ?? '0') : '0';
+$notesVal = is_array($notesRow) ? ($notesRow['value'] ?? '') : '';
 ?>
 <div class="bg-white rounded-lg shadow p-6">
     <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Tenancy Applications') ?></h2>

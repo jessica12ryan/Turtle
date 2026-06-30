@@ -340,7 +340,6 @@ class ApplicationController
                     status VARCHAR(20) DEFAULT 'pending',
                     data JSON NOT NULL,
                     notes TEXT DEFAULT '',
-                    archived_at TIMESTAMP NULL DEFAULT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_status (status),
@@ -350,6 +349,11 @@ class ApplicationController
                 error_log('Failed to create tenant_applications table: ' . $e2->getMessage());
             }
         }
+        try {
+            Database::query("ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL AFTER notes");
+        } catch (\Throwable $e) {
+            // Column already exists — safe to ignore
+        }
     }
 
     private function getSettings(): array
@@ -357,8 +361,8 @@ class ApplicationController
         $enabled = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
         $notes = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_notes'");
         return [
-            'enabled' => $enabled['value'] ?? '0',
-            'notes' => $notes['value'] ?? '',
+            'enabled' => (($enabled ?? [])['value'] ?? '0') === '1',
+            'notes' => ($notes ?? [])['value'] ?? '',
         ];
     }
 
