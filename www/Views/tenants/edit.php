@@ -29,7 +29,7 @@
                 <?php if ($tenant['is_main_tenant']): ?>
                     <input type="date" name="lease_start" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 <?php else: ?>
-                    <input type="date" value="<?= h($tenant['lease_start']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                    <input type="date" value="<?= h($mainTenant['lease_start'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
                     <p class="text-xs text-gray-400 mt-1"><?= __('Lease dates must be changed on main tenant.') ?></p>
                 <?php endif; ?>
             </div>
@@ -38,7 +38,7 @@
                 <?php if ($tenant['is_main_tenant']): ?>
                     <input type="date" name="lease_end" value="<?= h($tenant['lease_end']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <?php else: ?>
-                    <input type="date" value="<?= h($tenant['lease_end']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                    <input type="date" value="<?= h($mainTenant['lease_end'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
                 <?php endif; ?>
             </div>
             <div>
@@ -46,7 +46,7 @@
                 <?php if ($tenant['is_main_tenant']): ?>
                     <input type="date" name="move_out_date" value="<?= h($tenant['move_out_date']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <?php else: ?>
-                    <input type="date" value="<?= h($tenant['move_out_date']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                    <input type="date" value="<?= h($mainTenant['move_out_date'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
                 <?php endif; ?>
                 <p class="text-xs text-gray-400 mt-1"><?= __('Optional — tenant auto-archives on this date.') ?></p>
             </div>

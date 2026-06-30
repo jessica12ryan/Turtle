@@ -52,6 +52,12 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Security Deposit') ?></dt>
                 <dd class="text-sm text-gray-900 dark:text-gray-100"><?= ($property['security_deposit'] ?? 0) > 0 ? '$' . number_format($property['security_deposit'], 2) : '<span class="text-gray-400 dark:text-gray-500">—</span>' ?></dd>
             </div>
+            <?php if ($mainTenantLeaseType): ?>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Lease Type') ?></dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= __(ucwords(str_replace('_', ' ', $mainTenantLeaseType))) ?></dd>
+            </div>
+            <?php endif; ?>
         </dl>
     </div>
 </div>

@@ -182,6 +182,10 @@ Only **IT Admins** can restore archived records.
 - Tenant names on the property detail page link to the tenant's profile
 - Phone numbers are required on tenant create/edit forms
 
+### Main vs. Secondary Tenants
+
+When creating a tenant, checking **Make this the main tenant** enables editing of the lease date fields and lease type. If unchecked (secondary tenant), the lease start, lease end, scheduled move out, and lease type fields are **grayed out** and populated from the main tenant of the selected property. Secondary tenants do **not** store their own lease dates — all date data is fetched from the main tenant at display time, so updating the main tenant's dates automatically applies to all secondary tenants on that property.
+
 ## Heating Type
 
 Properties include a **Heating Type** field (required). Options: Oil - Forced Air, Oil - Hot Water, Electric, Propane, Natural Gas, Other. Appears as a dropdown on the property create/edit forms and is displayed on the property detail page under Property Details.
@@ -208,7 +212,7 @@ Each tenancy has a **Lease Type** field on the `property_tenant` pivot table. Av
 - **Week to Week** — renews weekly
 - **Other** — custom arrangement
 
-The lease type appears as a required dropdown on the main tenant's create/edit form. Secondary tenants inherit lease dates from the main tenant, and the lease type is set only for the main tenant. On the property detail page, the lease type is displayed next to the main tenant name.
+The lease type appears as a required dropdown on the main tenant's create/edit form. The lease type is set only for the main tenant. On the property detail page, the lease type is displayed under **Property Details** when a tenant is assigned, and also shown next to the main tenant's name in the Tenants section.
 
 ## Tenancy Applications
 

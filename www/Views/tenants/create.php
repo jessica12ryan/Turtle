@@ -83,7 +83,9 @@
 
 <script>
 document.querySelector('form').addEventListener('submit', function() {
-    document.querySelectorAll('#lease-start, #lease-end, #move-out-date').forEach(el => el.removeAttribute('disabled'));
+    if (document.getElementById('is-main-tenant').checked) {
+        document.querySelectorAll('#lease-start, #lease-end, #move-out-date').forEach(el => el.removeAttribute('disabled'));
+    }
 });
 
 const mainTenants = <?= json_encode($mainTenants) ?>;

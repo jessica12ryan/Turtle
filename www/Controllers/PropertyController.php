@@ -206,6 +206,15 @@ class PropertyController
             [$id]
         );
 
+        // Extract main tenant's lease type for Property Details display
+        $mainTenantLeaseType = null;
+        foreach ($tenants as $t) {
+            if (!empty($t['is_main_tenant'])) {
+                $mainTenantLeaseType = $t['lease_type'] ?? null;
+                break;
+            }
+        }
+
         // Calculate current month status
         $currentMonth = date('Y-m');
         $totalRent = $property['rent_amount'] ?? 0;
@@ -221,7 +230,7 @@ class PropertyController
 
         $view = new View();
         $view->layout('layouts/main', ['title' => $property['name']]);
-        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'rentStatus', 'paidThisMonth'));
+        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'rentStatus', 'paidThisMonth', 'mainTenantLeaseType'));
     }
 
     public function edit(int $id): void

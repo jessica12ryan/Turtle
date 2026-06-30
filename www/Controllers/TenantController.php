@@ -218,17 +218,18 @@ class TenantController
 
         $isMain = !$existingMain ? 1 : 0;
 
-        // Secondary tenants inherit lease dates from the main tenant
-        if (!$isMain && $existingMain) {
-            $leaseStart = $existingMain['lease_start'];
-            $leaseEnd = $existingMain['lease_end'];
-        } else {
+        // Secondary tenants do not store their own dates — always fetched from main tenant
+        if ($isMain) {
             $leaseStart = $_POST['lease_start'] ?? null;
             $leaseEnd = $_POST['lease_end'] ?: null;
+            $moveOutDate = $_POST['move_out_date'] ?: null;
+            $leaseType = $_POST['lease_type'] ?: null;
+        } else {
+            $leaseStart = null;
+            $leaseEnd = null;
+            $moveOutDate = null;
+            $leaseType = null;
         }
-
-        $moveOutDate = $_POST['move_out_date'] ?: null;
-        $leaseType = $isMain ? ($_POST['lease_type'] ?: null) : null;
 
         Database::insert(
             "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
@@ -273,9 +274,21 @@ class TenantController
             [$id]
         );
 
+        // Fetch main tenant lease dates if this tenant is not the main tenant
+        $mainTenant = null;
+        if (empty($tenant['is_main_tenant']) && !empty($tenant['property_id'])) {
+            $mainTenant = Database::fetch(
+                "SELECT pt.lease_start, pt.lease_end, pt.move_out_date
+                 FROM property_tenant pt
+                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL
+                 LIMIT 1",
+                [$tenant['property_id']]
+            );
+        }
+
         $view = new View();
         $view->layout('layouts/main', ['title' => $tenant['name']]);
-        $view->render('tenants/show', compact('tenant', 'tickets'));
+        $view->render('tenants/show', compact('tenant', 'tickets', 'mainTenant'));
     }
 
     public function edit(int $id): void
@@ -319,9 +332,21 @@ class TenantController
         $tenant['lease_type'] = $pt['lease_type'] ?? '';
         $tenant['property_id'] = $pt['property_id'] ?? '';
 
+        // For secondary tenants, fetch main tenant dates for display
+        $mainTenant = null;
+        if (empty($tenant['is_main_tenant']) && !empty($tenant['property_id'])) {
+            $mainTenant = Database::fetch(
+                "SELECT pt.lease_start, pt.lease_end, pt.move_out_date
+                 FROM property_tenant pt
+                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL
+                 LIMIT 1",
+                [$tenant['property_id']]
+            );
+        }
+
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Tenant']);
-        $view->render('tenants/edit', compact('tenant', 'properties'));
+        $view->render('tenants/edit', compact('tenant', 'properties', 'mainTenant'));
     }
 
     public function update(int $id): void

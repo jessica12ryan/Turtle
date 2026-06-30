@@ -69,18 +69,22 @@ class ApplicationController
 
     public function index(): void
     {
-        $this->ensureTable();
-
         $showArchived = !empty($_GET['show_archived']);
         $archivedClause = $showArchived ? '' : ' AND a.archived_at IS NULL';
 
-        $applications = Database::fetchAll(
-            "SELECT a.*, p.name as property_name 
-             FROM tenant_applications a 
-             LEFT JOIN properties p ON p.id = a.property_id 
-             WHERE 1=1{$archivedClause}
-             ORDER BY a.created_at DESC"
-        );
+        try {
+            $this->ensureTable();
+            $applications = Database::fetchAll(
+                "SELECT a.*, p.name as property_name 
+                 FROM tenant_applications a 
+                 LEFT JOIN properties p ON p.id = a.property_id 
+                 WHERE 1=1{$archivedClause}
+                 ORDER BY a.created_at DESC"
+            );
+        } catch (\Throwable $e) {
+            error_log('ApplicationController@index: ' . $e->getMessage());
+            $applications = [];
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => __('Applications')]);

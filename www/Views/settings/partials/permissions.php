@@ -71,6 +71,8 @@
             'rents.payments.edit' => 'Edit Payments',
             'rents.payments.archive' => 'Archive Payments',
             'rents.payments.restore' => 'Restore Payments',
+            'applications.view' => 'View Applications',
+            'applications.edit' => 'Edit Applications',
         ];
 
         $groupOverrides = [
@@ -92,6 +94,8 @@
             'resources.create', 'resources.edit', 'resources.delete',
             'calendar.access',
             'ai_assistant.access',
+            'applications.view',
+            'applications.edit',
         ];
 
         $groups = [];
