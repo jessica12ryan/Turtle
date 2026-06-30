@@ -251,6 +251,7 @@ CREATE TABLE IF NOT EXISTS tenant_applications (
     status VARCHAR(20) DEFAULT 'pending',
     data JSON NOT NULL,
     notes TEXT DEFAULT '',
+    archived_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_status (status),
