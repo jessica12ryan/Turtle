@@ -378,7 +378,6 @@ function toggleSetupMode() {
     var restoreSection = document.getElementById('setup-restore-section');
     var stepsIndicator = document.getElementById('setup-steps-indicator');
     var stepContents = document.querySelectorAll('.step-content');
-    var formAction = document.getElementById('setup-form').action;
 
     if (mode === 'restore') {
         restoreSection.classList.remove('hidden');
@@ -401,6 +400,8 @@ document.getElementById('restore-btn').addEventListener('click', function(e) {
         e.preventDefault();
         return false;
     }
+    // Prevent native submit so we control the single submission
+    e.preventDefault();
     var btn = document.getElementById('restore-btn');
     btn.disabled = true;
     document.getElementById('restore-text').classList.add('hidden');
