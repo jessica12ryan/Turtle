@@ -126,11 +126,15 @@ class TenantController
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params = $pmClause ? [$user['id']] : [];
+
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
-                 ORDER BY p.name"
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
+                 ORDER BY p.name",
+                $params
             );
         }
 
@@ -294,11 +298,15 @@ class TenantController
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params = $pmClause ? [$user['id']] : [];
+
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL 
-                 ORDER BY p.name"
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
+                 ORDER BY p.name",
+                $params
             );
         }
 

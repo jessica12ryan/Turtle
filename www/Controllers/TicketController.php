@@ -50,8 +50,11 @@ class TicketController
                 [$auth->id()]
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $pmClause = $user['role'] === 'property_manager' ? ' AND property_manager_id = ?' : '';
+            $pmParams = $pmClause ? [$auth->id()] : [];
             $propertyIds = Database::fetchAll(
-                "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL"
+                "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL{$pmClause}",
+                $pmParams
             );
             $propertyIdList = implode(',', array_column($propertyIds, 'id')) ?: '0';
             $query .= " AND t.property_id IN ({$propertyIdList})";

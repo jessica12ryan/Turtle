@@ -358,7 +358,7 @@ function defaultPermissions(): array
         ],
         'property_manager' => [
             'home.access',
-            'properties.access', 'properties.create', 'properties.edit',
+            'properties.access', 'properties.edit',
             'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
             'tenants.access', 'tenants.create', 'tenants.edit',
             'leases.access', 'leases.create',

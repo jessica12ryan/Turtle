@@ -97,10 +97,10 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                         <tbody>
                             <?php foreach (array_slice($payments, 0, 10) as $pym): ?>
                                 <tr class="border-b border-gray-100 dark:border-gray-700">
-                                    <td class="py-2 pr-3 dark:text-gray-200"><?= h($pym['payment_date']) ?></td>
-                                    <td class="py-2 pr-3 dark:text-gray-200"><?= h($pym['tenant_name']) ?></td>
-                                    <td class="py-2 pr-3 font-medium dark:text-gray-200">$<?= number_format($pym['amount'], 2) ?></td>
-                                    <td class="py-2 pr-3 capitalize dark:text-gray-200"><?= h(str_replace('_', ' ', $pym['payment_method'] ?? '—')) ?></td>
+                                    <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= h($pym['payment_date']) ?></td>
+                                    <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= h($pym['tenant_name']) ?></td>
+                                    <td class="py-2 pr-3 font-medium text-gray-900 dark:text-gray-200">$<?= number_format($pym['amount'], 2) ?></td>
+                                    <td class="py-2 pr-3 capitalize text-gray-900 dark:text-gray-200"><?= h(str_replace('_', ' ', $pym['payment_method'] ?? '—')) ?></td>
                                     <td class="py-2 pr-3 text-gray-500 dark:text-gray-400"><?= h($pym['recorded_by_name']) ?></td>
                                 </tr>
                             <?php endforeach; ?>

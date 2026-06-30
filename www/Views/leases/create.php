@@ -50,6 +50,15 @@
                 <input type="file" name="documents[]" multiple class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <p class="text-xs text-gray-500 mt-1"><?= __('PDF, DOC, DOCX, images accepted') ?></p>
             </div>
+            <div class="mb-6">
+                <label class="flex items-start space-x-3">
+                    <input type="checkbox" name="email_tenant" value="1" class="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <span class="text-sm text-gray-700">
+                        <strong><?= __('Send this document to tenant by email') ?></strong><br>
+                        <span class="text-xs text-gray-500"><?= __('The main tenant for the selected property will receive a notification email with a link to download the document.') ?></span>
+                    </span>
+                </label>
+            </div>
             <div class="flex space-x-3">
                 <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed" x-bind:disabled="selectedProperty && !mainTenantName"><?= __('Upload Document') ?></button>
                 <a href="/leases" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50"><?= __('Cancel') ?></a>

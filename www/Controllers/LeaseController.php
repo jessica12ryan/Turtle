@@ -89,14 +89,18 @@ class LeaseController
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
 
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params = $pmClause ? [$user['id']] : [];
+
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
                  (SELECT pt.tenant_id FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL AND pt.is_main_tenant = 1 LIMIT 1) as main_tenant_id
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
                  AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
-                 ORDER BY p.name"
+                 ORDER BY p.name",
+                $params
             );
         }
 
@@ -126,12 +130,15 @@ class LeaseController
                 [$user['id']]
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $pmClause2 = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params2 = $pmClause2 ? [$user['id']] : [];
             $noTenantProperties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause2}
                  AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
-                 ORDER BY p.name"
+                 ORDER BY p.name",
+                $params2
             );
         }
 
@@ -214,6 +221,29 @@ class LeaseController
 
                 if (!$allOk) {
                     throw new \RuntimeException('File upload failed. Check file size and permissions.');
+                }
+            }
+
+            // Send notification email to tenant if requested
+            if (!empty($_POST['email_tenant'])) {
+                $tenant = Database::fetch(
+                    "SELECT u.name, u.email FROM users u WHERE u.id = ?",
+                    [$_POST['tenant_id']]
+                );
+                if ($tenant) {
+                    $property = Database::fetch(
+                        "SELECT name FROM properties WHERE id = ?",
+                        [$_POST['property_id']]
+                    );
+                    $leaseUrl = url('/leases/' . $leaseId);
+                    \App\Core\Mailer::sendTemplate(
+                        $tenant['email'],
+                        __('New document uploaded'),
+                        __('Hello') . ' ' . h($tenant['name']) . ',',
+                        __('A new document has been uploaded for your property') . ' ' . h($property['name'] ?? '') . ': <strong>' . h($_POST['title']) . '</strong>.<br><br>' . __('You can view and download the document here:'),
+                        $leaseUrl,
+                        __('View Document')
+                    );
                 }
             }
 
