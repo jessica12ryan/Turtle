@@ -180,4 +180,10 @@
     'Deposit tracking allows you to record security deposit payments against tenants. The deposit amount is set per-property and payments are marked as deposit payments.' => 'Deposit tracking allows you to record security deposit payments against tenants. The deposit amount is set per-property and payments are marked as deposit payments.',
     'Tenant Applications are currently disabled.' => 'Tenant Applications are currently disabled.',
     'If you are a prospective tenant, please contact the property manager directly for application instructions.' => 'If you are a prospective tenant, please contact the property manager directly for application instructions.',
+    'Lease Type' => 'Lease Type',
+    'Fixed Term' => 'Fixed Term',
+    'Year to Year' => 'Year to Year',
+    'Month to Month' => 'Month to Month',
+    'Week to Week' => 'Week to Week',
+    'Other' => 'Other',
 ];

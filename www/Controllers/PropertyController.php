@@ -161,7 +161,7 @@ class PropertyController
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
         $tenants = Database::fetchAll(
-            "SELECT u.*, pt.id as property_tenant_id, pt.is_main_tenant, pt.assigned_at FROM users u 
+            "SELECT u.*, pt.id as property_tenant_id, pt.is_main_tenant, pt.assigned_at, pt.lease_type FROM users u 
              JOIN property_tenant pt ON pt.tenant_id = u.id 
              WHERE pt.property_id = ? AND pt.moved_out_at IS NULL AND u.archived_at IS NULL",
             [$id]

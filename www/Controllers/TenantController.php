@@ -184,6 +184,7 @@ class TenantController
         ];
         if ($isMainRequest) {
             $rules['lease_start'] = 'required';
+            $rules['lease_type'] = 'required';
         }
 
         $validator = new Validator();
@@ -227,10 +228,11 @@ class TenantController
         }
 
         $moveOutDate = $_POST['move_out_date'] ?: null;
+        $leaseType = $isMain ? ($_POST['lease_type'] ?: null) : null;
 
         Database::insert(
-            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, NOW(), NOW())",
-            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate]
+            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate, $leaseType]
         );
 
         if (!empty($_POST['send_welcome_email'])) {
@@ -314,6 +316,7 @@ class TenantController
         $tenant['lease_start'] = $pt['lease_start'] ?? '';
         $tenant['lease_end'] = $pt['lease_end'] ?? '';
         $tenant['move_out_date'] = $pt['move_out_date'] ?? '';
+        $tenant['lease_type'] = $pt['lease_type'] ?? '';
         $tenant['property_id'] = $pt['property_id'] ?? '';
 
         $view = new View();
@@ -375,9 +378,11 @@ class TenantController
             $leaseEnd = $_POST['lease_end'] ?: null;
             $moveOutDate = $_POST['move_out_date'] ?: null;
 
+            $leaseType = $_POST['lease_type'] ?? null;
+
             Database::execute(
-                "UPDATE property_tenant SET lease_start = ?, lease_end = ?, move_out_date = ?, updated_at = NOW() WHERE tenant_id = ?",
-                [$leaseStart, $leaseEnd, $moveOutDate, $id]
+                "UPDATE property_tenant SET lease_start = ?, lease_end = ?, move_out_date = ?, lease_type = ?, updated_at = NOW() WHERE tenant_id = ?",
+                [$leaseStart, $leaseEnd, $moveOutDate, $leaseType, $id]
             );
         }
 

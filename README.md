@@ -199,6 +199,17 @@ When recording a payment, a **Security Deposit** checkbox is available. Marking 
 - `rents.access`, `rents.payments.create`, `rents.payments.edit`, `rents.payments.archive`, `rents.payments.restore`
 - Delete is hardcoded to admin role only
 
+## Lease Type
+
+Each tenancy has a **Lease Type** field on the `property_tenant` pivot table. Available options:
+- **Fixed Term** — a specific start and end date
+- **Year to Year** — renews annually
+- **Month to Month** — renews monthly
+- **Week to Week** — renews weekly
+- **Other** — custom arrangement
+
+The lease type appears as a required dropdown on the main tenant's create/edit form. Secondary tenants inherit lease dates from the main tenant, and the lease type is set only for the main tenant. On the property detail page, the lease type is displayed next to the main tenant name.
+
 ## Tenancy Applications
 
 Prospective tenants can submit tenancy applications through a public form linked from the login page. Admins can enable/disable the form and add notes to applicants via **Settings → Applications** (moved up in the sidebar between General and Permissions).

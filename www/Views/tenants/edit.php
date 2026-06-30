@@ -51,6 +51,23 @@
                 <p class="text-xs text-gray-400 mt-1"><?= __('Optional — tenant auto-archives on this date.') ?></p>
             </div>
         </div>
+        <div class="mb-4" id="lease-type-row" <?= $tenant['is_main_tenant'] ? '' : 'style="display:none"' ?>>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Lease Type') ?> <span class="text-red-500">*</span></label>
+            <?php if ($tenant['is_main_tenant']): ?>
+                <select name="lease_type" id="lease-type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <option value=""><?= __('— Select —') ?></option>
+                    <option value="fixed_term" <?= ($tenant['lease_type'] ?? '') === 'fixed_term' ? 'selected' : '' ?>><?= __('Fixed Term') ?></option>
+                    <option value="year_to_year" <?= ($tenant['lease_type'] ?? '') === 'year_to_year' ? 'selected' : '' ?>><?= __('Year to Year') ?></option>
+                    <option value="month_to_month" <?= ($tenant['lease_type'] ?? '') === 'month_to_month' ? 'selected' : '' ?>><?= __('Month to Month') ?></option>
+                    <option value="week_to_week" <?= ($tenant['lease_type'] ?? '') === 'week_to_week' ? 'selected' : '' ?>><?= __('Week to Week') ?></option>
+                    <option value="other" <?= ($tenant['lease_type'] ?? '') === 'other' ? 'selected' : '' ?>><?= __('Other') ?></option>
+                </select>
+            <?php else: ?>
+                <select disabled class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100">
+                    <option value=""><?= h($tenant['lease_type'] ? ucwords(str_replace('_', ' ', $tenant['lease_type'])) : '—') ?></option>
+                </select>
+            <?php endif; ?>
+        </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
             <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">

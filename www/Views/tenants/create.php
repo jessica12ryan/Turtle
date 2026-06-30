@@ -45,6 +45,17 @@
                 <p class="text-xs text-gray-400 mt-1"><?= __('Optional — tenant auto-archives on this date.') ?></p>
             </div>
         </div>
+        <div id="lease-type-row" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Lease Type') ?> <span class="text-red-500">*</span></label>
+            <select name="lease_type" id="lease-type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value=""><?= __('— Select —') ?></option>
+                <option value="fixed_term" <?= old('lease_type') === 'fixed_term' ? 'selected' : '' ?>><?= __('Fixed Term') ?></option>
+                <option value="year_to_year" <?= old('lease_type') === 'year_to_year' ? 'selected' : '' ?>><?= __('Year to Year') ?></option>
+                <option value="month_to_month" <?= old('lease_type') === 'month_to_month' ? 'selected' : '' ?>><?= __('Month to Month') ?></option>
+                <option value="week_to_week" <?= old('lease_type') === 'week_to_week' ? 'selected' : '' ?>><?= __('Week to Week') ?></option>
+                <option value="other" <?= old('lease_type') === 'other' ? 'selected' : '' ?>><?= __('Other') ?></option>
+            </select>
+        </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
             <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
@@ -83,12 +94,16 @@ function syncLeaseDates() {
     const startEl = document.getElementById('lease-start');
     const endEl = document.getElementById('lease-end');
     const moveOutEl = document.getElementById('move-out-date');
+    const leaseTypeRow = document.getElementById('lease-type-row');
+    const leaseTypeEl = document.getElementById('lease-type');
 
     if (isMain) {
         [startEl, endEl, moveOutEl].forEach(el => {
             el.removeAttribute('disabled');
             el.classList.remove('bg-gray-100');
         });
+        leaseTypeRow.style.display = 'block';
+        leaseTypeEl.removeAttribute('disabled');
     } else if (propId && mainTenants[propId]) {
         startEl.value = mainTenants[propId].lease_start || '';
         endEl.value = mainTenants[propId].lease_end || '';
@@ -99,9 +114,15 @@ function syncLeaseDates() {
             el.setAttribute('disabled', 'disabled');
             el.classList.add('bg-gray-100');
         });
+        leaseTypeRow.style.display = 'none';
+        leaseTypeEl.setAttribute('disabled', 'disabled');
+    } else {
+        leaseTypeRow.style.display = 'none';
+        leaseTypeEl.setAttribute('disabled', 'disabled');
     }
 }
 
 document.getElementById('is-main-tenant').addEventListener('change', syncLeaseDates);
 document.getElementById('property-select').addEventListener('change', syncLeaseDates);
+syncLeaseDates();
 </script>
