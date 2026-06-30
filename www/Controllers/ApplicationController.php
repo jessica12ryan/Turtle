@@ -333,18 +333,22 @@ class ApplicationController
         try {
             Database::query("SELECT 1 FROM tenant_applications LIMIT 1");
         } catch (\Throwable $e) {
-            Database::query("CREATE TABLE IF NOT EXISTS tenant_applications (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                property_id INT DEFAULT NULL,
-                status VARCHAR(20) DEFAULT 'pending',
-                data JSON NOT NULL,
-                notes TEXT DEFAULT '',
-                archived_at TIMESTAMP NULL DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                INDEX idx_status (status),
-                INDEX idx_created (created_at)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            try {
+                Database::query("CREATE TABLE IF NOT EXISTS tenant_applications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    property_id INT DEFAULT NULL,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    data JSON NOT NULL,
+                    notes TEXT DEFAULT '',
+                    archived_at TIMESTAMP NULL DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_status (status),
+                    INDEX idx_created (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            } catch (\Throwable $e2) {
+                error_log('Failed to create tenant_applications table: ' . $e2->getMessage());
+            }
         }
     }
 
