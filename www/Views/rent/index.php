@@ -1,4 +1,4 @@
-<h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6"><?= __('Rent Dashboard') ?></h1>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6"><?= __('Rent Dashboard') ?></h1>
 
 <?php if (empty($rentData)): ?>
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
@@ -46,9 +46,9 @@
                             <a href="/properties/<?= $prop['id'] ?>" class="text-blue-600 dark:text-blue-400 hover:underline font-medium"><?= h($prop['name']) ?></a>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"><?= $prop['tenants_count'] ?></td>
-                        <td class="px-6 py-4 text-sm font-medium dark:text-gray-200">$<?= number_format($prop['rent_amount'], 2) ?></td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format($prop['rent_amount'], 2) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"><?= h($prop['rent_due_day'] ?? '—') ?></td>
-                        <td class="px-6 py-4 text-sm font-medium dark:text-gray-200">$<?= number_format($prop['paid_amount'], 2) ?></td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format($prop['paid_amount'], 2) ?></td>
                         <td class="px-6 py-4">
                             <?php if ($prop['rent_status'] === 'paid'): ?>
                                 <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full font-medium"><?= __('Paid') ?></span>
@@ -61,7 +61,7 @@
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                             <?php if ($prop['last_payment_date']): ?>
                                 <?= h($prop['last_payment_date']) ?><br>
-                                <span class="text-xs dark:text-gray-400">$<?= number_format($prop['last_payment_amount'], 2) ?></span>
+                                <span class="text-xs text-gray-600 dark:text-gray-400">$<?= number_format($prop['last_payment_amount'], 2) ?></span>
                             <?php else: ?>
                                 <span class="text-gray-400 dark:text-gray-500">—</span>
                             <?php endif; ?>

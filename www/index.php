@@ -250,6 +250,19 @@ $router->post('/notifications/{id}/read', 'NotificationController@read', ['auth'
 $router->get('/ai-assistant', 'AiAssistantController@index', ['auth', 'perm:ai_assistant.access']);
 $router->post('/ai-assistant/chat', 'AiAssistantController@chat', ['auth', 'perm:ai_assistant.access']);
 
+// Tenancy Applications (public)
+$router->get('/applications/create', 'ApplicationController@create', ['guest']);
+$router->post('/applications', 'ApplicationController@store', ['guest']);
+$router->get('/applications/thank-you', 'ApplicationController@thankYou', ['guest']);
+
+// Tenancy Applications (auth)
+$router->get('/applications', 'ApplicationController@index', ['auth', 'perm:applications.view']);
+$router->get('/applications/{id}', 'ApplicationController@show', ['auth', 'perm:applications.view']);
+$router->post('/applications/{id}/notes', 'ApplicationController@updateNotes', ['auth', 'perm:applications.view']);
+$router->post('/applications/{id}/status', 'ApplicationController@updateStatus', ['auth', 'perm:applications.view']);
+$router->post('/applications/{id}/archive', 'ApplicationController@destroy', ['auth', 'perm:applications.view']);
+$router->post('/applications/{id}/restore', 'ApplicationController@restore', ['auth', 'perm:applications.view']);
+
 // Profile
 $router->get('/profile', 'ProfileController@edit', ['auth']);
 $router->post('/profile', 'ProfileController@update', ['auth']);
@@ -263,6 +276,7 @@ $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'ro
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
 $router->post('/settings/logging', 'SettingsController@saveLogging', ['auth', 'role:admin']);
+$router->post('/settings/applications', 'ApplicationController@saveSettings', ['auth', 'role:admin']);
 $router->get('/settings/logs/download/{type}', 'SettingsController@downloadLogs', ['auth', 'role:admin']);
 $router->post('/settings/backup', 'SettingsController@exportBackup', ['auth', 'role:admin']);
 $router->post('/settings/restore', 'SettingsController@importRestore', ['auth', 'role:admin']);

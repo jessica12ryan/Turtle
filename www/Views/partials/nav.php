@@ -47,6 +47,9 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>"><?= __('Calendar') ?></a>
                     <?php endif; ?>
+                    <?php if (can('applications.view')): ?>
+                        <a href="/applications" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/applications', $currentUri) ?>"><?= __('Applications') ?></a>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -108,6 +111,9 @@ function navActive(string $prefix, string $currentUri): string {
             <?php endif; ?>
             <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>"><?= __('Calendar') ?></a>
+            <?php endif; ?>
+            <?php if (can('applications.view')): ?>
+                <a href="/applications" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/applications', $currentUri) ?>"><?= __('Applications') ?></a>
             <?php endif; ?>
         </div>
     </div>

@@ -13,5 +13,6 @@
     <div class="mt-4 text-center text-sm space-y-2">
         <div><a href="/forgot-password" class="text-blue-600 hover:underline"><?= __('Forgot your password?') ?></a></div>
         <div><a href="/onboarding" class="text-blue-600 hover:underline"><?= __('Tenant Onboarding') ?></a></div>
+        <div><a href="/applications/create" class="text-blue-600 hover:underline font-medium"><?= __('Application for Tenancy') ?></a></div>
     </div>
 </form>

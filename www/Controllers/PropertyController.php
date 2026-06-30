@@ -139,9 +139,11 @@ class PropertyController
         $rentAmount = !empty($_POST['rent_amount']) ? (float)$_POST['rent_amount'] : null;
         $rentDueDay = !empty($_POST['rent_due_day']) ? (int)$_POST['rent_due_day'] : null;
 
+        $heatingType = !empty($_POST['heating_type']) ? $_POST['heating_type'] : null;
+
         $propertyId = Database::insert(
-            "INSERT INTO properties (landlord_id, company_id, property_manager_id, name, address, apt_suite, city, province, postal_code, country, rent_amount, rent_due_day, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay]
+            "INSERT INTO properties (landlord_id, company_id, property_manager_id, name, address, apt_suite, city, province, postal_code, country, rent_amount, rent_due_day, heating_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType]
         );
 
         log_activity('property.created', "Property '{$_POST['name']}' created");
@@ -259,9 +261,11 @@ class PropertyController
         $rentAmount = !empty($_POST['rent_amount']) ? (float)$_POST['rent_amount'] : null;
         $rentDueDay = !empty($_POST['rent_due_day']) ? (int)$_POST['rent_due_day'] : null;
 
+        $heatingType = !empty($_POST['heating_type']) ? $_POST['heating_type'] : null;
+
         Database::execute(
-            "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, rent_amount = ?, rent_due_day = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $id]
+            "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, rent_amount = ?, rent_due_day = ?, heating_type = ?, updated_at = NOW() WHERE id = ?",
+            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $id]
         );
 
         log_activity('property.updated', "Property '{$_POST['name']}' updated");

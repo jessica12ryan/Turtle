@@ -75,6 +75,18 @@
                 <input type="text" name="postal_code" id="property_postal" value="<?= old('postal_code') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required placeholder="A1A 1A1">
             </div>
         </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Heating Type') ?> <span class="text-red-500">*</span></label>
+            <select name="heating_type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                <option value=""><?= __('Select Heating Type') ?></option>
+                <option value="Oil - Forced Air" <?= old('heating_type') === 'Oil - Forced Air' ? 'selected' : '' ?>><?= __('Oil - Forced Air') ?></option>
+                <option value="Oil - Hot Water" <?= old('heating_type') === 'Oil - Hot Water' ? 'selected' : '' ?>><?= __('Oil - Hot Water') ?></option>
+                <option value="Electric" <?= old('heating_type') === 'Electric' ? 'selected' : '' ?>><?= __('Electric') ?></option>
+                <option value="Propane" <?= old('heating_type') === 'Propane' ? 'selected' : '' ?>><?= __('Propane') ?></option>
+                <option value="Natural Gas" <?= old('heating_type') === 'Natural Gas' ? 'selected' : '' ?>><?= __('Natural Gas') ?></option>
+                <option value="Other" <?= old('heating_type') === 'Other' ? 'selected' : '' ?>><?= __('Other') ?></option>
+            </select>
+        </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-yellow-600 text-white px-6 py-2 rounded-lg hover:bg-yellow-700 font-medium"><?= __('Add Property') ?></button>
             <a href="/properties" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50"><?= __('Cancel') ?></a>

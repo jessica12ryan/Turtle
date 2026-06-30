@@ -2,7 +2,7 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Properties') ?></h1>
     <div class="flex items-center space-x-3">
         <?php if (can('properties.archive') || can('properties.restore')): ?>
-            <a href="?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
+            <a href="/properties?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
                 <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
             </a>
         <?php endif; ?>

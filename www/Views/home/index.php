@@ -1,5 +1,5 @@
 <div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100"><?= __('Home') ?></h1>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100"><?= __('Home') ?></h1>
     <p class="text-gray-500 dark:text-gray-400 mt-1"><?= __('Welcome back') ?>, <?= h(\App\Core\Auth::instance()->user()['name']) ?></p>
 </div>
 

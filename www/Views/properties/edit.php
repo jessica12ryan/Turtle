@@ -75,6 +75,18 @@
                 <input type="text" name="postal_code" id="property_postal" value="<?= h($property['postal_code']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500<?= ($property['country'] ?? 'CA') === 'CA' ? ' uppercase' : '' ?>" required placeholder="<?= ($property['country'] ?? 'CA') === 'US' ? '12345' : 'A1A 1A1' ?>">
             </div>
         </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Heating Type') ?> <span class="text-red-500">*</span></label>
+            <select name="heating_type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                <option value=""><?= __('Select Heating Type') ?></option>
+                <option value="Oil - Forced Air" <?= ($property['heating_type'] ?? '') === 'Oil - Forced Air' ? 'selected' : '' ?>><?= __('Oil - Forced Air') ?></option>
+                <option value="Oil - Hot Water" <?= ($property['heating_type'] ?? '') === 'Oil - Hot Water' ? 'selected' : '' ?>><?= __('Oil - Hot Water') ?></option>
+                <option value="Electric" <?= ($property['heating_type'] ?? '') === 'Electric' ? 'selected' : '' ?>><?= __('Electric') ?></option>
+                <option value="Propane" <?= ($property['heating_type'] ?? '') === 'Propane' ? 'selected' : '' ?>><?= __('Propane') ?></option>
+                <option value="Natural Gas" <?= ($property['heating_type'] ?? '') === 'Natural Gas' ? 'selected' : '' ?>><?= __('Natural Gas') ?></option>
+                <option value="Other" <?= ($property['heating_type'] ?? '') === 'Other' ? 'selected' : '' ?>><?= __('Other') ?></option>
+            </select>
+        </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Update Property') ?></button>
             <a href="/properties/<?= $property['id'] ?>" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50"><?= __('Cancel') ?></a>

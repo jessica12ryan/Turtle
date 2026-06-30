@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS properties (
     country VARCHAR(2) DEFAULT 'CA',
     rent_amount DECIMAL(10,2) DEFAULT NULL,
     rent_due_day INT DEFAULT NULL,
+    heating_type VARCHAR(50) DEFAULT NULL,
     archived_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -238,6 +239,19 @@ CREATE TABLE IF NOT EXISTS sessions (
     last_activity INT NOT NULL,
     INDEX idx_user (user_id),
     INDEX idx_last_activity (last_activity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- tenant applications
+CREATE TABLE IF NOT EXISTS tenant_applications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    property_id INT DEFAULT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    data JSON NOT NULL,
+    notes TEXT DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_status (status),
+    INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- activity logs

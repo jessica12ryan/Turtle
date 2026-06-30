@@ -182,6 +182,31 @@ Only **IT Admins** can restore archived records.
 - Tenant names on the property detail page link to the tenant's profile
 - Phone numbers are required on tenant create/edit forms
 
+## Heating Type
+
+Properties include a **Heating Type** field (required). Options: Oil - Forced Air, Oil - Hot Water, Electric, Propane, Natural Gas, Other. Appears as a dropdown on the property create/edit forms and is displayed on the property detail page under Property Details.
+
+## Tenancy Applications
+
+Prospective tenants can submit tenancy applications through a public form linked from the login page. Admins can enable/disable the form and add notes to applicants via **Settings → Applications**.
+
+### Application Form Sections
+- **Property** — optional property selector with note "If you were given a property ID, enter it here."
+- **Applicant Information** — last name, first name, middle name(s), birth date, phone, email
+- **Current Address** — street, apt/suite, city/town, province/state, postal/zip code, date moved in, reason for leaving
+- **Other Tenants (18+)** — repeatable section with full name, birth date, phone, email, relationship; each person gets their own address, employment, background, emergency contact, and other info sections
+- **Other Occupants (Under 18)** — repeatable with name, age, relationship
+- **Employment & Income Information** — occupation, employer, address, start date, supervisor, phone, other income sources
+- **Emergency Contact** — name, relationship, phone
+- **Background Information** — three yes/no questions with details (evicted, convicted, refused rent)
+- **Personal References** — repeatable with name, relationship, phone
+- **Other Information** — free text
+
+### Management
+- Accessible to admins, landlords, and property managers via the **Applications** link in the top navigation bar
+- Admins can update application status (pending, reviewed, accepted, rejected) and add internal notes
+- Applications can be archived/restored
+
 ## Property Photos
 
 Upload from the property edit page. Supported formats: JPG, PNG, GIF, WebP.
