@@ -350,7 +350,7 @@ class ApplicationController
             }
         }
         try {
-            Database::query("ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL AFTER notes");
+            Database::query("ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL");
         } catch (\Throwable $e) {
             // Column already exists — safe to ignore
         }

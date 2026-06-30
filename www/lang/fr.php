@@ -476,6 +476,7 @@ return [
     'Natural Gas' => 'Gaz naturel',
     'Application for Tenancy' => 'Demande de location',
     'Tenancy Application' => 'Demande de location',
+    'Tenancy Applications' => 'Candidatures de location',
     'Applications' => 'Candidatures',
     'Please fill out this form to apply for tenancy. All fields marked with * are required unless noted otherwise.' => 'Veuillez remplir ce formulaire pour postuler à une location. Tous les champs marqués d\'un * sont obligatoires sauf indication contraire.',
     'If you were given a property ID, enter it here.' => 'Si vous avez reçu un ID de propriété, saisissez-le ici.',

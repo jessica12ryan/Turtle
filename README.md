@@ -47,8 +47,8 @@ Default permissions are assigned per role, but admins can override them in **Set
 | Role | Typical access |
 |---|---|
 | **Admin** | Unrestricted — bypasses all permission checks |
-| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, rent dashboard, AI Assistant |
-| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, rent dashboard, AI Assistant |
+| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, rent dashboard, AI Assistant, tenancy applications |
+| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, rent dashboard, AI Assistant, tenancy applications |
 | **Maintenance** | Tickets (view assigned, update status, comment) |
 | **Tenant** | Own tickets, assigned leases/units, resources, rent status |
 
@@ -231,7 +231,7 @@ Prospective tenants can submit tenancy applications through a public form linked
 - Admins can update application status (pending, reviewed, accepted, rejected) and add internal notes
 - Applications can be archived/restored
 - When applications are disabled, a friendly message is shown instead of a 404 error
-- The `tenant_applications` table is auto-created on first access if it does not exist
+- The `tenant_applications` table is auto-created on first access if it does not exist, and the `archived_at` column is auto-added if missing
 
 ## Property Photos
 

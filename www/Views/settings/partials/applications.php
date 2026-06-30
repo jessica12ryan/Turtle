@@ -1,6 +1,6 @@
 <?php
-$enabledRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
-$notesRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_notes'");
+$enabledRow = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
+$notesRow = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_notes'");
 $enabledVal = is_array($enabledRow) ? ($enabledRow['value'] ?? '0') : '0';
 $notesVal = is_array($notesRow) ? ($notesRow['value'] ?? '') : '';
 ?>
