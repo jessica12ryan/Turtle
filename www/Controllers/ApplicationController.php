@@ -34,10 +34,13 @@ class ApplicationController
     {
         $settings = $this->getSettings();
         if ($settings['enabled'] !== '1') {
-            http_response_code(404);
-            require base_path('www/Views/errors/404.php');
+            $view = new View();
+            $view->layout('layouts/guest', ['title' => __('Tenancy Application')]);
+            $view->render('applications/disabled');
             return;
         }
+
+        $this->ensureTable();
 
         if (empty($_POST['_csrf']) || $_POST['_csrf'] !== ($_SESSION['_csrf'] ?? '')) {
             flash('error', 'Invalid form token. Please try again.');
@@ -117,6 +120,8 @@ class ApplicationController
 
     public function updateNotes(int $id): void
     {
+        $this->ensureTable();
+
         if (empty($_POST['notes'])) {
             flash('error', 'Notes cannot be empty.');
             redirect('/applications/' . $id);
@@ -134,6 +139,8 @@ class ApplicationController
 
     public function updateStatus(int $id): void
     {
+        $this->ensureTable();
+
         $allowed = ['pending', 'reviewed', 'accepted', 'rejected'];
         $status = $_POST['status'] ?? '';
         if (!in_array($status, $allowed)) {
@@ -153,6 +160,8 @@ class ApplicationController
 
     public function destroy(int $id): void
     {
+        $this->ensureTable();
+
         Database::execute(
             "UPDATE tenant_applications SET archived_at = NOW(), updated_at = NOW() WHERE id = ?",
             [$id]
@@ -165,6 +174,8 @@ class ApplicationController
 
     public function restore(int $id): void
     {
+        $this->ensureTable();
+
         Database::execute(
             "UPDATE tenant_applications SET archived_at = NULL, updated_at = NOW() WHERE id = ?",
             [$id]
