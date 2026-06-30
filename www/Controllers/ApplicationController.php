@@ -12,8 +12,9 @@ class ApplicationController
     {
         $settings = $this->getSettings();
         if ($settings['enabled'] !== '1') {
-            http_response_code(404);
-            require base_path('www/Views/errors/404.php');
+            $view = new View();
+            $view->layout('layouts/guest', ['title' => __('Tenancy Application')]);
+            $view->render('applications/disabled');
             return;
         }
 
@@ -65,6 +66,8 @@ class ApplicationController
 
     public function index(): void
     {
+        $this->ensureTable();
+
         $showArchived = !empty($_GET['show_archived']);
         $archivedClause = $showArchived ? '' : ' AND a.archived_at IS NULL';
 
@@ -86,6 +89,8 @@ class ApplicationController
 
     public function show(int $id): void
     {
+        $this->ensureTable();
+
         $application = Database::fetch(
             "SELECT a.*, p.name as property_name 
              FROM tenant_applications a 
@@ -310,6 +315,26 @@ class ApplicationController
             ];
         }
         return $refs;
+    }
+
+    private function ensureTable(): void
+    {
+        try {
+            Database::query("SELECT 1 FROM tenant_applications LIMIT 1");
+        } catch (\Throwable $e) {
+            Database::query("CREATE TABLE IF NOT EXISTS tenant_applications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                property_id INT DEFAULT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                data JSON NOT NULL,
+                notes TEXT DEFAULT '',
+                archived_at TIMESTAMP NULL DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_status (status),
+                INDEX idx_created (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        }
     }
 
     private function getSettings(): array

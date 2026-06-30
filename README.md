@@ -186,9 +186,22 @@ Only **IT Admins** can restore archived records.
 
 Properties include a **Heating Type** field (required). Options: Oil - Forced Air, Oil - Hot Water, Electric, Propane, Natural Gas, Other. Appears as a dropdown on the property create/edit forms and is displayed on the property detail page under Property Details.
 
+## Security Deposit
+
+Properties include a **Security Deposit** field (optional, appears after rent fields on create/edit forms). The deposit amount is displayed on the property detail page under Property Details.
+
+When recording a payment, a **Security Deposit** checkbox is available. Marking a payment as a deposit:
+- Shows a **Deposit Paid** badge in the payment history table
+- Uses the `is_security_deposit` column in the `payments` table
+- The deposit amount is set per-property, but paid on a per-tenant basis so archived tenants retain their deposit payment history
+
+### Permissions
+- `rents.access`, `rents.payments.create`, `rents.payments.edit`, `rents.payments.archive`, `rents.payments.restore`
+- Delete is hardcoded to admin role only
+
 ## Tenancy Applications
 
-Prospective tenants can submit tenancy applications through a public form linked from the login page. Admins can enable/disable the form and add notes to applicants via **Settings → Applications**.
+Prospective tenants can submit tenancy applications through a public form linked from the login page. Admins can enable/disable the form and add notes to applicants via **Settings → Applications** (moved up in the sidebar between General and Permissions).
 
 ### Application Form Sections
 - **Property** — optional property selector with note "If you were given a property ID, enter it here."
@@ -206,6 +219,8 @@ Prospective tenants can submit tenancy applications through a public form linked
 - Accessible to admins, landlords, and property managers via the **Applications** link in the top navigation bar
 - Admins can update application status (pending, reviewed, accepted, rejected) and add internal notes
 - Applications can be archived/restored
+- When applications are disabled, a friendly message is shown instead of a 404 error
+- The `tenant_applications` table is auto-created on first access if it does not exist
 
 ## Property Photos
 

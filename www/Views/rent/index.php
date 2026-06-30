@@ -1,4 +1,4 @@
-<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6"><?= __('Rent Dashboard') ?></h1>
+<h1 class="text-2xl font-bold text-black dark:text-white mb-6"><?= __('Rent Dashboard') ?></h1>
 
 <?php if (empty($rentData)): ?>
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">

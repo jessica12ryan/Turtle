@@ -47,6 +47,21 @@
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="region_label"><?= __('Province') ?> <span class="text-red-500">*</span></label>
+                <select name="province" id="property_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <option value=""><?= __('Select Province') ?></option>
+                    <?php foreach (regions($property['country'] ?? 'CA') as $code => $name): ?>
+                        <option value="<?= $code ?>" <?= ($property['province'] ?? '') === $code ? 'selected' : '' ?>><?= h($name) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" id="postal_label"><?= __('Postal Code') ?> <span class="text-red-500">*</span></label>
+                <input type="text" name="postal_code" id="property_postal" value="<?= h($property['postal_code']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500<?= ($property['country'] ?? 'CA') === 'CA' ? ' uppercase' : '' ?>" required placeholder="<?= ($property['country'] ?? 'CA') === 'US' ? '12345' : 'A1A 1A1' ?>">
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Monthly Rent ($)') ?> <span class="text-gray-400 text-xs">(<?= __('optional') ?>)</span></label>
                 <input type="number" name="rent_amount" value="<?= h($property['rent_amount'] ?? '') ?>" step="0.01" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="0.00">
             </div>
@@ -62,17 +77,8 @@
         </div>
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="region_label"><?= __('Province') ?> <span class="text-red-500">*</span></label>
-                <select name="province" id="property_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
-                    <option value=""><?= __('Select Province') ?></option>
-                    <?php foreach (regions($property['country'] ?? 'CA') as $code => $name): ?>
-                        <option value="<?= $code ?>" <?= ($property['province'] ?? '') === $code ? 'selected' : '' ?>><?= h($name) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" id="postal_label"><?= __('Postal Code') ?> <span class="text-red-500">*</span></label>
-                <input type="text" name="postal_code" id="property_postal" value="<?= h($property['postal_code']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500<?= ($property['country'] ?? 'CA') === 'CA' ? ' uppercase' : '' ?>" required placeholder="<?= ($property['country'] ?? 'CA') === 'US' ? '12345' : 'A1A 1A1' ?>">
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Security Deposit ($)') ?> <span class="text-gray-400 text-xs">(<?= __('optional') ?>)</span></label>
+                <input type="number" name="security_deposit" value="<?= h($property['security_deposit'] ?? '') ?>" step="0.01" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="0.00">
             </div>
         </div>
         <div class="mb-4">

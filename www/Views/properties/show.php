@@ -48,6 +48,10 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Heating Type') ?></dt>
                 <dd class="text-sm text-gray-900 dark:text-gray-100"><?= $property['heating_type'] ? h($property['heating_type']) : '<span class="text-gray-400 dark:text-gray-500">—</span>' ?></dd>
             </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Security Deposit') ?></dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= ($property['security_deposit'] ?? 0) > 0 ? '$' . number_format($property['security_deposit'], 2) : '<span class="text-gray-400 dark:text-gray-500">—</span>' ?></dd>
+            </div>
         </dl>
     </div>
 </div>
@@ -95,6 +99,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Tenant') ?></th>
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Amount') ?></th>
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Method') ?></th>
+                                <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Type') ?></th>
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Recorded By') ?></th>
                             </tr>
                         </thead>
@@ -105,6 +110,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                                     <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= h($pym['tenant_name']) ?></td>
                                     <td class="py-2 pr-3 font-medium text-gray-900 dark:text-gray-200">$<?= number_format($pym['amount'], 2) ?></td>
                                     <td class="py-2 pr-3 capitalize text-gray-900 dark:text-gray-200"><?= h(str_replace('_', ' ', $pym['payment_method'] ?? '—')) ?></td>
+                                    <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= !empty($pym['is_security_deposit']) ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded font-medium">' . __('Deposit Paid') . '</span>' : '<span class="text-gray-400 dark:text-gray-500">—</span>' ?></td>
                                     <td class="py-2 pr-3 text-gray-500 dark:text-gray-400"><?= h($pym['recorded_by_name']) ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -148,6 +154,12 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Notes') ?></label>
                         <input type="text" name="notes" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500" placeholder="<?= __('Optional notes') ?>">
                     </div>
+                </div>
+                <div class="mt-3">
+                    <label class="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
+                        <input type="checkbox" name="is_security_deposit" value="1" class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
+                        <span><?= __('Security Deposit') ?></span>
+                    </label>
                 </div>
                 <button type="submit" class="mt-3 bg-blue-600 text-white px-4 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><?= __('Record Payment') ?></button>
             </form>

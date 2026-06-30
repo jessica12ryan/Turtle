@@ -174,4 +174,10 @@
     'Refused Rent' => 'Refused Rent',
     'Show archived' => 'Show archived',
     'Showing archived' => 'Showing archived',
+    'Security Deposit' => 'Security Deposit',
+    'Security Deposit ($)' => 'Security Deposit ($)',
+    'Deposit Paid' => 'Deposit Paid',
+    'Deposit tracking allows you to record security deposit payments against tenants. The deposit amount is set per-property and payments are marked as deposit payments.' => 'Deposit tracking allows you to record security deposit payments against tenants. The deposit amount is set per-property and payments are marked as deposit payments.',
+    'Tenant Applications are currently disabled.' => 'Tenant Applications are currently disabled.',
+    'If you are a prospective tenant, please contact the property manager directly for application instructions.' => 'If you are a prospective tenant, please contact the property manager directly for application instructions.',
 ];

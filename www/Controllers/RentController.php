@@ -154,8 +154,10 @@ class RentController
             redirect('/properties/' . $propertyId . '/rent');
         }
 
+        $isDeposit = !empty($_POST['is_security_deposit']) ? 1 : 0;
+
         Database::insert(
-            "INSERT INTO payments (property_tenant_id, amount, payment_date, payment_method, reference, notes, recorded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            "INSERT INTO payments (property_tenant_id, amount, payment_date, payment_method, reference, notes, is_security_deposit, recorded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
             [
                 $mainTenant['id'],
                 $_POST['amount'],
@@ -163,6 +165,7 @@ class RentController
                 $_POST['payment_method'] ?: null,
                 $_POST['reference'] ?: null,
                 $_POST['notes'] ?: null,
+                $isDeposit,
                 Auth::instance()->id(),
             ]
         );

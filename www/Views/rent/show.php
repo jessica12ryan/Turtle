@@ -74,6 +74,12 @@
                     <input type="text" name="notes" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="<?= __('Optional notes') ?>">
                 </div>
             </div>
+            <div class="mb-4">
+                <label class="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input type="checkbox" name="is_security_deposit" value="1" class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
+                    <span><?= __('Security Deposit') ?></span>
+                </label>
+            </div>
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Record Payment') ?></button>
         </form>
     </div>
@@ -94,6 +100,7 @@
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Amount') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Method') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Reference') ?></th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Type') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Notes') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Recorded By') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"><?= __('Actions') ?></th>
@@ -107,6 +114,7 @@
                         <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format($pym['amount'], 2) ?></td>
                         <td class="px-6 py-4 text-sm capitalize text-gray-900 dark:text-gray-200"><?= h(str_replace('_', ' ', $pym['payment_method'] ?? '—')) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"><?= h($pym['reference'] ?? '—') ?></td>
+                        <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-200"><?= !empty($pym['is_security_deposit']) ? '<span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded font-medium">' . __('Deposit Paid') . '</span>' : '—' ?></td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-[200px] truncate"><?= h($pym['notes'] ?? '—') ?></td>
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"><?= h($pym['recorded_by_name']) ?></td>
                         <td class="px-6 py-4 text-sm space-x-2">

@@ -542,4 +542,10 @@ return [
     'Evicted' => 'Desalojado',
     'Convicted' => 'Condenado',
     'Refused Rent' => 'Alquiler rechazado',
+    'Security Deposit' => 'Depósito de garantía',
+    'Security Deposit ($)' => 'Depósito de garantía ($)',
+    'Deposit Paid' => 'Depósito pagado',
+    'Deposit tracking allows you to record security deposit payments against tenants. The deposit amount is set per-property and payments are marked as deposit payments.' => 'El seguimiento de depósitos le permite registrar pagos de depósitos de garantía de los inquilinos. El monto del depósito se establece por propiedad y los pagos se marcan como depósitos.',
+    'Tenant Applications are currently disabled.' => 'Las solicitudes de alquiler están actualmente deshabilitadas.',
+    'If you are a prospective tenant, please contact the property manager directly for application instructions.' => 'Si es un posible inquilino, comuníquese directamente con el administrador de la propiedad para obtener instrucciones.',
 ];
