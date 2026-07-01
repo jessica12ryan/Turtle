@@ -170,7 +170,7 @@ class TicketController
         }
 
         $comments = Database::fetchAll(
-            "SELECT tc.*, u.name as user_name, u.role as user_role FROM ticket_comments tc 
+            "SELECT tc.*, u.name as user_name, u.role as user_role, u.secondary_roles FROM ticket_comments tc 
              JOIN users u ON u.id = tc.user_id 
              WHERE tc.ticket_id = ? ORDER BY tc.created_at ASC",
             [$id]

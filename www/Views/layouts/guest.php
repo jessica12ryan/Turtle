@@ -26,6 +26,7 @@
         tailwind.config = { darkMode: 'class' }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .dark,
         .dark body { background-color: #0f172a; color: #e2e8f0; }

@@ -29,12 +29,12 @@ INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id,
 (4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA', 2100.00, 1);
 
 -- Tenant-property assignments (some properties have multiple tenants)
-INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date) VALUES
-(1, 4, 1, NOW(), '2025-01-01', '2025-12-31', NULL),
-(2, 5, 1, NOW(), '2025-03-01', '2026-02-28', NULL),
-(3, 7, 1, NOW(), '2025-02-15', '2026-02-14', NULL),
-(4, 8, 1, NOW(), '2025-06-01', '2026-05-31', NULL),
-(4, 9, 0, NOW(), '2025-06-01', '2026-05-31', '2026-07-15');
+INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, emergency_contact_name, emergency_contact_phone) VALUES
+(1, 4, 1, NOW(), '2025-01-01', '2025-12-31', NULL, 'fixed_term', 'Mary Johnson', '(416) 555-9001'),
+(2, 5, 1, NOW(), '2025-03-01', '2026-02-28', NULL, 'month_to_month', 'Tom Green', '(416) 555-9002'),
+(3, 7, 1, NOW(), '2025-02-15', '2026-02-14', NULL, 'year_to_year', 'Sarah Connor', '(416) 555-9003'),
+(4, 8, 1, NOW(), '2025-06-01', '2026-05-31', NULL, 'fixed_term', 'Bob Wilson', '(416) 555-9004'),
+(4, 9, 0, NOW(), '2025-06-01', '2026-05-31', '2026-07-15', NULL, NULL, NULL);
 
 -- Sample payments
 INSERT IGNORE INTO payments (property_tenant_id, amount, payment_date, payment_method, reference, notes, recorded_by, created_at) VALUES

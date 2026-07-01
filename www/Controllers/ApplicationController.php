@@ -42,7 +42,7 @@ class ApplicationController
 
         $this->ensureTable();
 
-        if (empty($_POST['_csrf']) || $_POST['_csrf'] !== ($_SESSION['_csrf'] ?? '')) {
+        if (empty($_POST['_csrf']) || $_POST['_csrf'] !== ($_SESSION['_csrf_token'] ?? '')) {
             flash('error', 'Invalid form token. Please try again.');
             redirect('/applications/create');
         }

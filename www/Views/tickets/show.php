@@ -63,7 +63,16 @@ foreach ($files ?? [] as $f) {
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
                                         <span class="font-medium text-sm"><?= h($comment['user_name']) ?></span>
-                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded ml-1"><?= ucwords(str_replace('_', ' ', $comment['user_role'])) ?></span>
+                                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded ml-1"><?php
+                                            $roles = [ucwords(str_replace('_', ' ', $comment['user_role']))];
+                                            if (!empty($comment['secondary_roles'])) {
+                                                foreach (explode(',', $comment['secondary_roles']) as $sr) {
+                                                    $sr = trim($sr);
+                                                    if ($sr) $roles[] = ucwords(str_replace('_', ' ', $sr));
+                                                }
+                                            }
+                                            echo implode(', ', $roles);
+                                        ?></span>
                                         <?php if ($comment['is_internal']): ?>
                                             <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded ml-1"><?= __('Internal') ?></span>
                                         <?php endif; ?>
