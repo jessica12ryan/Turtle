@@ -188,26 +188,26 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been evicted from a tenancy?') ?> <span class="text-red-500">*</span></label>
                     <div class="flex space-x-4">
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="yes" x-model="primary_evicted" class="mr-1"> <?= __('Yes') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="no" x-model="primary_evicted" class="mr-1"> <?= __('No') ?></label>
                     </div>
-                    <textarea name="primary_background_evicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea name="primary_background_evicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" x-show="primary_evicted === 'yes'" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been convicted of a crime for which you have not received a pardon?') ?> <span class="text-red-500">*</span></label>
                     <div class="flex space-x-4">
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="yes" x-model="primary_convicted" class="mr-1"> <?= __('Yes') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="no" x-model="primary_convicted" class="mr-1"> <?= __('No') ?></label>
                     </div>
-                    <textarea name="primary_background_convicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea name="primary_background_convicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" x-show="primary_convicted === 'yes'" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever willfully or intentionally refused to pay rent when due?') ?> <span class="text-red-500">*</span></label>
                     <div class="flex space-x-4">
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="yes" x-model="primary_refused_rent" class="mr-1"> <?= __('Yes') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="no" x-model="primary_refused_rent" class="mr-1"> <?= __('No') ?></label>
                     </div>
-                    <textarea name="primary_background_refused_rent_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea name="primary_background_refused_rent_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" x-show="primary_refused_rent === 'yes'" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
             </div>
         </div>
@@ -352,32 +352,28 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been evicted from a tenancy?') ?> <span class="text-red-500">*</span></label>
                             <div class="flex space-x-4">
-                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_evicted[' + i + ']'" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_evicted[' + i + ']'" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_evicted[' + i + ']'" value="yes" x-model="tenant.evicted" class="mr-1"> <?= __('Yes') ?></label>
+                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_evicted[' + i + ']'" value="no" x-model="tenant.evicted" class="mr-1"> <?= __('No') ?></label>
                             </div>
-                            <textarea :name="'other_tenant_background_evicted_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                            <textarea :name="'other_tenant_background_evicted_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" x-show="tenant.evicted === 'yes'" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been convicted of a crime for which you have not received a pardon?') ?> <span class="text-red-500">*</span></label>
                             <div class="flex space-x-4">
-                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_convicted[' + i + ']'" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_convicted[' + i + ']'" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_convicted[' + i + ']'" value="yes" x-model="tenant.convicted" class="mr-1"> <?= __('Yes') ?></label>
+                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_convicted[' + i + ']'" value="no" x-model="tenant.convicted" class="mr-1"> <?= __('No') ?></label>
                             </div>
-                            <textarea :name="'other_tenant_background_convicted_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                            <textarea :name="'other_tenant_background_convicted_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" x-show="tenant.convicted === 'yes'" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever willfully or intentionally refused to pay rent when due?') ?> <span class="text-red-500">*</span></label>
                             <div class="flex space-x-4">
-                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_refused_rent[' + i + ']'" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_refused_rent[' + i + ']'" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_refused_rent[' + i + ']'" value="yes" x-model="tenant.refused_rent" class="mr-1"> <?= __('Yes') ?></label>
+                                <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_refused_rent[' + i + ']'" value="no" x-model="tenant.refused_rent" class="mr-1"> <?= __('No') ?></label>
                             </div>
-                            <textarea :name="'other_tenant_background_refused_rent_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                            <textarea :name="'other_tenant_background_refused_rent_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" x-show="tenant.refused_rent === 'yes'" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                     </div>
-
-                    <!-- Other Info for other tenant -->
-                    <h4 class="font-medium text-gray-600 mb-2 mt-4"><?= __('Other Information') ?></h4>
-                    <textarea :name="'other_tenant_other_info[' + i + ']'" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="<?= __('Any additional information') ?>"></textarea>
                 </div>
             </template>
             <button type="button" class="text-sm text-blue-600 hover:text-blue-800 font-medium" x-on:click="addOtherTenant()">+ <?= __('Add Another Tenant') ?></button>
@@ -466,7 +462,10 @@ function applicationForm() {
         otherOccupants: [],
         references: [],
         ageErrors: {},
-        addOtherTenant() { this.otherTenants.push({}); },
+        primary_evicted: '',
+        primary_convicted: '',
+        primary_refused_rent: '',
+        addOtherTenant() { this.otherTenants.push({evicted: '', convicted: '', refused_rent: ''}); },
         removeOtherTenant(i) { this.otherTenants.splice(i, 1); },
         addOtherOccupant() { this.otherOccupants.push({}); },
         removeOtherOccupant(i) { this.otherOccupants.splice(i, 1); },
