@@ -56,6 +56,16 @@
                 <option value="other" <?= old('lease_type') === 'other' ? 'selected' : '' ?>><?= __('Other') ?></option>
             </select>
         </div>
+        <div id="emergency-contact-row" class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Emergency Contact Name') ?></label>
+                <input type="text" name="emergency_contact_name" value="<?= old('emergency_contact_name') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Emergency Contact Phone') ?></label>
+                <input type="text" name="emergency_contact_phone" value="<?= old('emergency_contact_phone') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555" x-data x-init="$el.addEventListener('input', function() { let x = this.value.replace(/[^\d]/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/); this.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : ''); })">
+            </div>
+        </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Language') ?></label>
             <select name="language" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
@@ -98,6 +108,7 @@ function syncLeaseDates() {
     const moveOutEl = document.getElementById('move-out-date');
     const leaseTypeRow = document.getElementById('lease-type-row');
     const leaseTypeEl = document.getElementById('lease-type');
+    const emergencyRow = document.getElementById('emergency-contact-row');
 
     if (isMain) {
         [startEl, endEl, moveOutEl].forEach(el => {
@@ -106,6 +117,7 @@ function syncLeaseDates() {
         });
         leaseTypeRow.style.display = 'block';
         leaseTypeEl.removeAttribute('disabled');
+        emergencyRow.style.display = 'block';
     } else if (propId && mainTenants[propId]) {
         startEl.value = mainTenants[propId].lease_start || '';
         endEl.value = mainTenants[propId].lease_end || '';
@@ -118,9 +130,11 @@ function syncLeaseDates() {
         });
         leaseTypeRow.style.display = 'none';
         leaseTypeEl.setAttribute('disabled', 'disabled');
+        emergencyRow.style.display = 'none';
     } else {
         leaseTypeRow.style.display = 'none';
         leaseTypeEl.setAttribute('disabled', 'disabled');
+        emergencyRow.style.display = 'none';
     }
 }
 

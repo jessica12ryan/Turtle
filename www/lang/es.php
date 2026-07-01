@@ -506,6 +506,8 @@ return [
     'Supervisor\'s Name' => 'Nombre del supervisor',
     'Other Income Source' => 'Otra fuente de ingresos',
     'Emergency Contact' => 'Contacto de emergencia',
+    'Emergency Contact Name' => 'Nombre del contacto de emergencia',
+    'Emergency Contact Phone' => 'Teléfono del contacto de emergencia',
     'Background Information' => 'Información de antecedentes',
     'Have you ever been evicted from a tenancy?' => '¿Ha sido desalojado alguna vez de un alquiler?',
     'Have you ever been convicted of a crime for which you have not received a pardon?' => '¿Ha sido condenado por un delito por el cual no ha recibido un indulto?',

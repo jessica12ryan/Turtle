@@ -224,16 +224,20 @@ class TenantController
             $leaseEnd = $_POST['lease_end'] ?: null;
             $moveOutDate = $_POST['move_out_date'] ?: null;
             $leaseType = $_POST['lease_type'] ?: null;
+            $emergencyName = $_POST['emergency_contact_name'] ?: null;
+            $emergencyPhone = $_POST['emergency_contact_phone'] ?: null;
         } else {
             $leaseStart = null;
             $leaseEnd = null;
             $moveOutDate = null;
             $leaseType = null;
+            $emergencyName = null;
+            $emergencyPhone = null;
         }
 
         Database::insert(
-            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate, $leaseType]
+            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, emergency_contact_name, emergency_contact_phone, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate, $leaseType, $emergencyName, $emergencyPhone]
         );
 
         if (!empty($_POST['send_welcome_email'])) {
@@ -257,6 +261,7 @@ class TenantController
     {
         $tenant = Database::fetch(
             "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
+             pt.emergency_contact_name, pt.emergency_contact_phone,
              p.name as property_name, p.id as property_id 
              FROM users u 
              JOIN property_tenant pt ON pt.tenant_id = u.id 
@@ -330,6 +335,8 @@ class TenantController
         $tenant['lease_end'] = $pt['lease_end'] ?? '';
         $tenant['move_out_date'] = $pt['move_out_date'] ?? '';
         $tenant['lease_type'] = $pt['lease_type'] ?? '';
+        $tenant['emergency_contact_name'] = $pt['emergency_contact_name'] ?? '';
+        $tenant['emergency_contact_phone'] = $pt['emergency_contact_phone'] ?? '';
         $tenant['property_id'] = $pt['property_id'] ?? '';
 
         // For secondary tenants, fetch main tenant dates for display
@@ -402,12 +409,13 @@ class TenantController
             $leaseStart = $_POST['lease_start'] ?? null;
             $leaseEnd = $_POST['lease_end'] ?: null;
             $moveOutDate = $_POST['move_out_date'] ?: null;
-
             $leaseType = $_POST['lease_type'] ?? null;
+            $emergencyName = $_POST['emergency_contact_name'] ?: null;
+            $emergencyPhone = $_POST['emergency_contact_phone'] ?: null;
 
             Database::execute(
-                "UPDATE property_tenant SET lease_start = ?, lease_end = ?, move_out_date = ?, lease_type = ?, updated_at = NOW() WHERE tenant_id = ?",
-                [$leaseStart, $leaseEnd, $moveOutDate, $leaseType, $id]
+                "UPDATE property_tenant SET lease_start = ?, lease_end = ?, move_out_date = ?, lease_type = ?, emergency_contact_name = ?, emergency_contact_phone = ?, updated_at = NOW() WHERE tenant_id = ?",
+                [$leaseStart, $leaseEnd, $moveOutDate, $leaseType, $emergencyName, $emergencyPhone, $id]
             );
         }
 

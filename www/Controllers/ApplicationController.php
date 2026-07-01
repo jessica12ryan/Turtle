@@ -365,7 +365,7 @@ class ApplicationController
         $enabled = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
         $notes = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_notes'");
         return [
-            'enabled' => (($enabled ?? [])['value'] ?? '0') === '1',
+            'enabled' => ($enabled ?? [])['value'] ?? '0',
             'notes' => ($notes ?? [])['value'] ?? '',
         ];
     }

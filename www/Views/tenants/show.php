@@ -35,6 +35,16 @@
                 <dt class="text-sm text-gray-500"><?= __('Assigned') ?></dt>
                 <dd class="text-sm text-gray-600"><?= $tenant['assigned_at'] ?></dd>
             </div>
+            <?php if ($tenant['is_main_tenant'] && !empty($tenant['emergency_contact_name'])): ?>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500"><?= __('Emergency Contact Name') ?></dt>
+                    <dd class="text-sm text-gray-600"><?= h($tenant['emergency_contact_name']) ?></dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-gray-500"><?= __('Emergency Contact Phone') ?></dt>
+                    <dd class="text-sm text-gray-600"><?= h($tenant['emergency_contact_phone'] ?? '') ?></dd>
+                </div>
+            <?php endif; ?>
             <?php if ($tenant['moved_out_at']): ?>
                 <div class="flex justify-between">
                     <dt class="text-sm text-gray-500"><?= __('Moved Out') ?></dt>

@@ -184,7 +184,7 @@ Only **IT Admins** can restore archived records.
 
 ### Main vs. Secondary Tenants
 
-When creating a tenant, checking **Make this the main tenant** enables editing of the lease date fields and lease type. If unchecked (secondary tenant), the lease start, lease end, scheduled move out, and lease type fields are **grayed out** and populated from the main tenant of the selected property. Secondary tenants do **not** store their own lease dates — all date data is fetched from the main tenant at display time, so updating the main tenant's dates automatically applies to all secondary tenants on that property.
+When creating a tenant, checking **Make this the main tenant** enables editing of the lease date fields, lease type, and emergency contact fields. If unchecked (secondary tenant), the lease start, lease end, scheduled move out, lease type, and emergency contact fields are hidden or **grayed out** and populated from the main tenant of the selected property. Secondary tenants do **not** store their own lease dates — all date data is fetched from the main tenant at display time, so updating the main tenant's dates automatically applies to all secondary tenants on that property.
 
 ## Heating Type
 
@@ -213,6 +213,10 @@ Each tenancy has a **Lease Type** field on the `property_tenant` pivot table. Av
 - **Other** — custom arrangement
 
 The lease type appears as a required dropdown on the main tenant's create/edit form. The lease type is set only for the main tenant. On the property detail page, the lease type is displayed under **Property Details** when a tenant is assigned, and also shown next to the main tenant's name in the Tenants section.
+
+## Emergency Contact
+
+Main tenants can optionally provide an **Emergency Contact Name** and **Emergency Contact Phone** on their create/edit form (fields appear after the Lease Type dropdown). These fields are only visible for main tenants and are stored on the `property_tenant` pivot table. The phone number uses the same `(###) ###-####` mask as the tenant's primary phone field. Emergency contact information is displayed on the tenant's show page.
 
 ## Tenancy Applications
 

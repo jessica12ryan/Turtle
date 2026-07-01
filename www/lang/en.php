@@ -136,6 +136,8 @@
     'Supervisor\'s Name' => 'Supervisor\'s Name',
     'Other Income Source' => 'Other Income Source',
     'Emergency Contact' => 'Emergency Contact',
+    'Emergency Contact Name' => 'Emergency Contact Name',
+    'Emergency Contact Phone' => 'Emergency Contact Phone',
     'Background Information' => 'Background Information',
     'Have you ever been evicted from a tenancy?' => 'Have you ever been evicted from a tenancy?',
     'Have you ever been convicted of a crime for which you have not received a pardon?' => 'Have you ever been convicted of a crime for which you have not received a pardon?',

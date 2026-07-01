@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS property_tenant (
     lease_end DATE DEFAULT NULL,
     move_out_date DATE DEFAULT NULL,
     lease_type VARCHAR(50) DEFAULT NULL,
+    emergency_contact_name VARCHAR(255) DEFAULT NULL,
+    emergency_contact_phone VARCHAR(20) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
