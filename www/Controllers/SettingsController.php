@@ -642,6 +642,7 @@ class SettingsController
                 'www/assets/uploads/logo' => 'uploads/logo',
                 'storage/uploads/property_photos' => 'uploads/property_photos',
                 'storage/uploads/leases' => 'uploads/leases',
+                'storage/uploads/application_photos' => 'uploads/application_photos',
             ];
 
             foreach ($uploadDirs as $srcRel => $destRel) {
@@ -804,6 +805,7 @@ class SettingsController
             'uploads/logo' => 'www/assets/uploads/logo',
             'uploads/property_photos' => 'storage/uploads/property_photos',
             'uploads/leases' => 'storage/uploads/leases',
+            'uploads/application_photos' => 'storage/uploads/application_photos',
         ];
 
         foreach ($uploadMappings as $srcRel => $destRel) {

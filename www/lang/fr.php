@@ -565,4 +565,7 @@ return [
     'Other' => 'Autre',
     'Must be at least 18 years old' => 'Doit avoir au moins 18 ans',
     'You must be at least 18 years old.' => 'Vous devez avoir au moins 18 ans.',
+    'Government Issued Photo ID' => 'Pièce d\'identité avec photo délivrée par le gouvernement',
+    'Drivers License, Passport, Military ID, Ontario Health Card' => 'Permis de conduire, passeport, carte d\'identité militaire, carte santé de l\'Ontario',
+    'View Document' => 'Voir le document',
 ];

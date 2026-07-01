@@ -48,6 +48,8 @@ class ApplicationController
                 redirect('/applications/create');
             }
 
+            $this->handlePhotoUploads();
+
             $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
             $data = $this->buildData();
 
@@ -272,6 +274,7 @@ class ApplicationController
                     'phone' => $_POST['primary_emergency_phone'] ?? '',
                 ],
                 'other_info' => $_POST['primary_other_info'] ?? '',
+                'photo_id' => $_POST['primary_photo_id'] ?? '',
             ],
             'other_tenants' => $this->buildOtherTenants(),
             'other_occupants' => $this->buildOtherOccupants(),
@@ -323,13 +326,7 @@ class ApplicationController
                     'refused_rent' => $_POST['other_tenant_background_refused_rent'][$i] ?? 'no',
                     'refused_rent_details' => $_POST['other_tenant_background_refused_rent_details'][$i] ?? '',
                 ],
-                'emergency_contact' => [
-                    'last_name' => $_POST['other_tenant_emergency_last_name'][$i] ?? '',
-                    'first_name' => $_POST['other_tenant_emergency_first_name'][$i] ?? '',
-                    'relationship' => $_POST['other_tenant_emergency_relationship'][$i] ?? '',
-                    'phone' => $_POST['other_tenant_emergency_phone'][$i] ?? '',
-                ],
-                'other_info' => $_POST['other_tenant_other_info'][$i] ?? '',
+                'photo_id' => $_POST['other_tenant_photo_id'][$i] ?? '',
             ];
         }
         return $tenants;
@@ -464,5 +461,104 @@ class ApplicationController
         log_activity('settings.applications_updated', 'Application settings updated');
         flash('success', 'Application settings saved.');
         redirect('/settings?tab=applications');
+    }
+
+    private function handlePhotoUploads(): void
+    {
+        $uploadDir = base_path('storage/uploads/application_photos');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        if (!empty($_FILES['primary_photo_id']) && $_FILES['primary_photo_id']['error'] === UPLOAD_ERR_OK) {
+            $path = $this->moveUploadedFile($_FILES['primary_photo_id'], $uploadDir);
+            if ($path) {
+                $_POST['primary_photo_id'] = $path;
+            }
+        }
+
+        if (!empty($_FILES['other_tenant_photo_id']) && is_array($_FILES['other_tenant_photo_id']['name'])) {
+            foreach ($_FILES['other_tenant_photo_id']['name'] as $i => $name) {
+                if (!empty($name) && ($_FILES['other_tenant_photo_id']['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $file = [
+                        'name' => $_FILES['other_tenant_photo_id']['name'][$i],
+                        'type' => $_FILES['other_tenant_photo_id']['type'][$i],
+                        'tmp_name' => $_FILES['other_tenant_photo_id']['tmp_name'][$i],
+                        'error' => $_FILES['other_tenant_photo_id']['error'][$i],
+                        'size' => $_FILES['other_tenant_photo_id']['size'][$i],
+                    ];
+                    $path = $this->moveUploadedFile($file, $uploadDir);
+                    if ($path) {
+                        $_POST['other_tenant_photo_id'][$i] = $path;
+                    }
+                }
+            }
+        }
+    }
+
+    private function moveUploadedFile(array $file, string $uploadDir): ?string
+    {
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+        if (!in_array($ext, $allowed)) {
+            return null;
+        }
+
+        $filename = uniqid('app_photo_') . '.' . $ext;
+        $destPath = $uploadDir . '/' . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $destPath)) {
+            return 'storage/uploads/application_photos/' . $filename;
+        }
+
+        return null;
+    }
+
+    public function servePhoto(int $id, string $key): void
+    {
+        try {
+            $this->ensureTable();
+            $application = Database::fetch(
+                "SELECT data FROM tenant_applications WHERE id = ?",
+                [$id]
+            );
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            exit;
+        }
+
+        if (!$application) {
+            http_response_code(404);
+            exit;
+        }
+
+        $data = json_decode($application['data'], true);
+        $filePath = null;
+
+        if ($key === 'primary' && !empty($data['primary_applicant']['photo_id'])) {
+            $filePath = $data['primary_applicant']['photo_id'];
+        } elseif (str_starts_with($key, 'tenant_')) {
+            $index = (int) substr($key, 7);
+            if (!empty($data['other_tenants'][$index]['photo_id'])) {
+                $filePath = $data['other_tenants'][$index]['photo_id'];
+            }
+        }
+
+        if (!$filePath) {
+            http_response_code(404);
+            exit;
+        }
+
+        $fullPath = base_path($filePath);
+        if (!file_exists($fullPath)) {
+            http_response_code(404);
+            exit;
+        }
+
+        $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: inline; filename="' . basename($filePath) . '"');
+        header('Content-Length: ' . filesize($fullPath));
+        readfile($fullPath);
     }
 }

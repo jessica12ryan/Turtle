@@ -72,6 +72,12 @@
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Email') ?></dt>
             <dd class="text-sm text-gray-900 dark:text-gray-100"><?= h($p['email']) ?></dd>
         </div>
+        <?php if (!empty($p['photo_id'])): ?>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Government Issued Photo ID') ?></dt>
+                <dd class="text-sm"><a href="/applications/<?= $application['id'] ?>/photo/primary" target="_blank" class="text-blue-600 hover:underline"><?= __('View Document') ?></a></dd>
+            </div>
+        <?php endif; ?>
     </dl>
 </div>
 
@@ -199,6 +205,9 @@
                     <div><dt class="text-gray-500 dark:text-gray-400"><?= __('Birth Date') ?></dt><dd class="text-gray-900 dark:text-gray-100"><?= h($t['birth_date']) ?></dd></div>
                     <div><dt class="text-gray-500 dark:text-gray-400"><?= __('Phone') ?></dt><dd class="text-gray-900 dark:text-gray-100"><?= h($t['phone']) ?></dd></div>
                     <div><dt class="text-gray-500 dark:text-gray-400"><?= __('Email') ?></dt><dd class="text-gray-900 dark:text-gray-100"><?= h($t['email']) ?></dd></div>
+                    <?php if (!empty($t['photo_id'])): ?>
+                        <div><dt class="text-gray-500 dark:text-gray-400"><?= __('Government Issued Photo ID') ?></dt><dd class="text-gray-900 dark:text-gray-100"><a href="/applications/<?= $application['id'] ?>/photo/tenant_<?= $i ?>" target="_blank" class="text-blue-600 hover:underline"><?= __('View Document') ?></a></dd></div>
+                    <?php endif; ?>
                 </dl>
 
                 <?php if (!empty($t['current_address']['street'])): ?>

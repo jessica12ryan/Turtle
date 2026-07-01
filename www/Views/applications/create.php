@@ -8,7 +8,7 @@
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="/applications" class="space-y-8" x-data="applicationForm()">
+    <form method="POST" action="/applications" class="space-y-8" x-data="applicationForm()" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <!-- Property ID -->
@@ -55,6 +55,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Email Address') ?> <span class="text-red-500">*</span></label>
                     <input type="email" name="primary_email" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Government Issued Photo ID') ?> <span class="text-red-500">*</span></label>
+                <p class="text-xs text-gray-500 mb-1"><?= __('Drivers License, Passport, Military ID, Ontario Health Card') ?></p>
+                <input type="file" name="primary_photo_id" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
             </div>
         </div>
 
@@ -252,6 +257,11 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Relationship') ?> <span class="text-red-500">*</span></label>
                             <input type="text" :name="'other_tenant_relationship[' + i + ']'" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Government Issued Photo ID') ?> <span class="text-red-500">*</span></label>
+                        <p class="text-xs text-gray-500 mb-1"><?= __('Drivers License, Passport, Military ID, Ontario Health Card') ?></p>
+                        <input type="file" :name="'other_tenant_photo_id[' + i + ']'" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
 
                     <!-- Current Address for other tenant -->

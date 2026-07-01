@@ -263,6 +263,7 @@ $router->post('/applications/{id}/status', 'ApplicationController@updateStatus',
 $router->post('/applications/{id}/archive', 'ApplicationController@archive', ['auth', 'perm:applications.archive']);
 $router->post('/applications/{id}/restore', 'ApplicationController@restore', ['auth', 'perm:applications.restore']);
 $router->post('/applications/{id}/delete', 'ApplicationController@delete', ['auth', 'perm:applications.delete']);
+$router->get('/applications/{id}/photo/{key}', 'ApplicationController@servePhoto', ['auth', 'perm:applications.view']);
 
 // Profile
 $router->get('/profile', 'ProfileController@edit', ['auth']);

@@ -195,4 +195,7 @@
     'Other' => 'Other',
     'Must be at least 18 years old' => 'Must be at least 18 years old',
     'You must be at least 18 years old.' => 'You must be at least 18 years old.',
+    'Government Issued Photo ID' => 'Government Issued Photo ID',
+    'Drivers License, Passport, Military ID, Ontario Health Card' => 'Drivers License, Passport, Military ID, Ontario Health Card',
+    'View Document' => 'View Document',
 ];
