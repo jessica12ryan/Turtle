@@ -50,7 +50,7 @@ run_sql "ALTER TABLE payments ADD COLUMN is_security_deposit TINYINT(1) DEFAULT 
 run_sql "ALTER TABLE property_tenant ADD COLUMN lease_type VARCHAR(50) DEFAULT NULL AFTER move_out_date;"
 run_sql "ALTER TABLE property_tenant ADD COLUMN emergency_contact_name VARCHAR(255) DEFAULT NULL AFTER lease_type;"
 run_sql "ALTER TABLE property_tenant ADD COLUMN emergency_contact_phone VARCHAR(20) DEFAULT NULL AFTER emergency_contact_name;"
-run_sql "CREATE TABLE IF NOT EXISTS tenant_applications (id INT AUTO_INCREMENT PRIMARY KEY, property_id INT DEFAULT NULL, status VARCHAR(20) DEFAULT 'pending', data LONGTEXT NOT NULL, notes TEXT DEFAULT '', archived_at TIMESTAMP NULL DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX idx_status (status), INDEX idx_created (created_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+run_sql "CREATE TABLE IF NOT EXISTS tenant_applications (id INT AUTO_INCREMENT PRIMARY KEY, property_id INT DEFAULT NULL, status VARCHAR(20) DEFAULT 'pending', data LONGTEXT NOT NULL, notes TEXT DEFAULT '', archived_at TIMESTAMP NULL DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL AFTER notes;"
 # Only re-seed permissions if not in custom mode (preserves user customizations on updates)
 PERM_MODE=$($MYSQL_CMD -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || echo "")

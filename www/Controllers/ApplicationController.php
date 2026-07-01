@@ -359,17 +359,30 @@ class ApplicationController
                     data LONGTEXT NOT NULL,
                     notes TEXT DEFAULT '',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             } catch (\Throwable $e2) {
                 error_log('Failed to create tenant_applications table: ' . $e2->getMessage());
             }
+        }
+        // Ensure data column is LONGTEXT (existing tables may have been created with JSON type)
+        try {
+            Database::query("ALTER TABLE tenant_applications MODIFY COLUMN data LONGTEXT NOT NULL");
+        } catch (\Throwable $e) {
+            error_log('Failed to alter tenant_applications.data column: ' . $e->getMessage());
         }
         try {
             Database::query("ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL");
         } catch (\Throwable $e) {
             // Column already exists — safe to ignore
         }
+        // Add indexes if missing (ignore errors if they already exist)
+        try {
+            Database::query("ALTER TABLE tenant_applications ADD INDEX idx_status (status)");
+        } catch (\Throwable $e) {}
+        try {
+            Database::query("ALTER TABLE tenant_applications ADD INDEX idx_created (created_at)");
+        } catch (\Throwable $e) {}
     }
 
     private function getSettings(): array
