@@ -69,8 +69,7 @@ class ApplicationController
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
             error_log('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            $msg = $e->getMessage();
-            flash('error', "Submission failed: {$msg}");
+            flash('error', 'There was a problem submitting your application. Please try again.');
             redirect('/applications/create');
         }
     }
@@ -360,7 +359,7 @@ class ApplicationController
                     property_id INT DEFAULT NULL,
                     status VARCHAR(20) DEFAULT 'pending',
                     data LONGTEXT NOT NULL,
-                    notes TEXT DEFAULT '',
+                    notes TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
@@ -369,7 +368,7 @@ class ApplicationController
                     property_id INT DEFAULT NULL,
                     status VARCHAR(20) DEFAULT 'pending',
                     data LONGTEXT NOT NULL,
-                    notes TEXT DEFAULT '',
+                    notes TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
                 )",
@@ -397,7 +396,7 @@ class ApplicationController
         $alterAttempts = [
             "ALTER TABLE tenant_applications ADD COLUMN property_id INT DEFAULT NULL",
             "ALTER TABLE tenant_applications ADD COLUMN status VARCHAR(20) DEFAULT 'pending'",
-            "ALTER TABLE tenant_applications ADD COLUMN notes TEXT DEFAULT ''",
+            "ALTER TABLE tenant_applications ADD COLUMN notes TEXT",
             "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL",
             "ALTER TABLE tenant_applications MODIFY COLUMN data LONGTEXT NOT NULL",
         ];

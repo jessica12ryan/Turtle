@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS tenant_applications (
     property_id INT DEFAULT NULL,
     status VARCHAR(20) DEFAULT 'pending',
     data LONGTEXT NOT NULL,
-    notes TEXT DEFAULT '',
+    notes TEXT,
     archived_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
