@@ -88,7 +88,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?> <span class="text-red-500">*</span></label>
-                        <input type="text" name="primary_address_postal_code" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                        <input type="text" name="primary_address_postal_code" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="<?= default_country() === 'US' ? '12345' : 'A1A 1A1' ?>">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?> <span class="text-red-500">*</span></label>
@@ -137,7 +137,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?></label>
-                    <input type="text" name="primary_employment_postal_code" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                    <input type="text" name="primary_employment_postal_code" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="<?= default_country() === 'US' ? '12345' : 'A1A 1A1' ?>">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Start Date') ?></label>
@@ -280,7 +280,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?> <span class="text-red-500">*</span></label>
-                            <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                            <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="<?= default_country() === 'US' ? '12345' : 'A1A 1A1' ?>">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?></label>
@@ -326,7 +326,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?></label>
-                            <input type="text" :name="'other_tenant_employment_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                            <input type="text" :name="'other_tenant_employment_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="<?= default_country() === 'US' ? '12345' : 'A1A 1A1' ?>">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Start Date') ?></label>
@@ -372,27 +372,6 @@
                                 <label class="inline-flex items-center"><input type="radio" :name="'other_tenant_background_refused_rent[' + i + ']'" value="no" checked class="mr-1"> <?= __('No') ?></label>
                             </div>
                             <textarea :name="'other_tenant_background_refused_rent_details[' + i + ']'" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Emergency Contact for other tenant -->
-                    <h4 class="font-medium text-gray-600 mb-2 mt-4"><?= __('Emergency Contact') ?></h4>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Last Name') ?></label>
-                            <input type="text" :name="'other_tenant_emergency_last_name[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('First Name') ?></label>
-                            <input type="text" :name="'other_tenant_emergency_first_name[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Relationship') ?></label>
-                            <input type="text" :name="'other_tenant_emergency_relationship[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?></label>
-                            <input type="tel" :name="'other_tenant_emergency_phone[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
                         </div>
                     </div>
 
