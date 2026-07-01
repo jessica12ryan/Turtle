@@ -47,17 +47,25 @@
                         <td class="px-6 py-4 space-x-2 whitespace-nowrap">
                             <a href="/applications/<?= $app['id'] ?>" class="text-blue-600 dark:text-blue-400 hover:underline text-sm"><?= __('View') ?></a>
                             <?php if (!$app['archived_at']): ?>
-                                <?php if (can('applications.edit')): ?>
+                                <?php if (can('applications.archive')): ?>
                                     <form method="POST" action="/applications/<?= $app['id'] ?>/archive" class="inline" onsubmit="return confirm('<?= __('Archive this application?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
                                     </form>
                                 <?php endif; ?>
-                            <?php elseif (can('applications.edit')): ?>
-                                <form method="POST" action="/applications/<?= $app['id'] ?>/restore" class="inline">
-                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
-                                </form>
+                            <?php else: ?>
+                                <?php if (can('applications.restore')): ?>
+                                    <form method="POST" action="/applications/<?= $app['id'] ?>/restore" class="inline">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                    </form>
+                                <?php endif; ?>
+                                <?php if (can('applications.delete')): ?>
+                                    <form method="POST" action="/applications/<?= $app['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Permanently delete this application? This cannot be undone.') ?>')">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                    </form>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>

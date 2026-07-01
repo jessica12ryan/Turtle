@@ -35,6 +35,19 @@ RUN apk add --no-cache \
     curl \
     bash
 
+# Install Mailpit (multi-arch)
+ARG BUILD_ARCH
+RUN case "${BUILD_ARCH}" in \
+      amd64)   MPARCH="amd64" ;; \
+      aarch64) MPARCH="arm64" ;; \
+      armv7)   MPARCH="arm" ;; \
+      *)       echo "Unsupported arch: ${BUILD_ARCH}"; exit 1 ;; \
+    esac \
+    && curl -sL "https://github.com/axllent/mailpit/releases/latest/download/mailpit-linux-${MPARCH}.tar.gz" -o /tmp/mailpit.tar.gz \
+    && tar xzf /tmp/mailpit.tar.gz -C /usr/local/bin/ mailpit \
+    && chmod +x /usr/local/bin/mailpit \
+    && rm /tmp/mailpit.tar.gz
+
 # php82 -> php alias for scripts that call `php`
 RUN ln -sf /usr/bin/php82 /usr/bin/php
 

@@ -183,7 +183,7 @@ class ApplicationController
         redirect('/applications/' . $id);
     }
 
-    public function destroy(int $id): void
+    public function archive(int $id): void
     {
         $this->ensureTable();
 
@@ -209,6 +209,20 @@ class ApplicationController
         log_activity('application.restored', "Application #{$id} restored");
         flash('success', 'Application restored.');
         redirect('/applications?show_archived=1');
+    }
+
+    public function delete(int $id): void
+    {
+        $this->ensureTable();
+
+        Database::execute(
+            "DELETE FROM tenant_applications WHERE id = ?",
+            [$id]
+        );
+
+        log_activity('application.deleted', "Application #{$id} permanently deleted");
+        flash('success', 'Application permanently deleted.');
+        redirect('/applications');
     }
 
     private function buildData(): array

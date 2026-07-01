@@ -10,8 +10,10 @@ arch:
 init: false
 ports:
   8099/tcp: 8099
+  8025/tcp: 8025
 ports_description:
   8099/tcp: Turtle Dev web UI
+  8025/tcp: Mailpit web UI
 ingress: true
 ingress_port: 8099
 panel_icon: mdi:turtle
@@ -24,6 +26,7 @@ options:
   mail_username: ""
   mail_password: ""
   mail_from_address: "noreply@turtle.local"
+  mailpit_port: 1025
 schema:
   db_password: str
   app_url: str?
@@ -32,6 +35,7 @@ schema:
   mail_username: str?
   mail_password: str?
   mail_from_address: str
+  mailpit_port: int
 apparmor: true
 map:
   - data:rw

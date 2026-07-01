@@ -258,10 +258,11 @@ $router->get('/applications/thank-you', 'ApplicationController@thankYou', ['gues
 // Tenancy Applications (auth)
 $router->get('/applications', 'ApplicationController@index', ['auth', 'perm:applications.view']);
 $router->get('/applications/{id}', 'ApplicationController@show', ['auth', 'perm:applications.view']);
-$router->post('/applications/{id}/notes', 'ApplicationController@updateNotes', ['auth', 'perm:applications.view']);
-$router->post('/applications/{id}/status', 'ApplicationController@updateStatus', ['auth', 'perm:applications.view']);
-$router->post('/applications/{id}/archive', 'ApplicationController@destroy', ['auth', 'perm:applications.view']);
-$router->post('/applications/{id}/restore', 'ApplicationController@restore', ['auth', 'perm:applications.view']);
+$router->post('/applications/{id}/notes', 'ApplicationController@updateNotes', ['auth', 'perm:applications.edit']);
+$router->post('/applications/{id}/status', 'ApplicationController@updateStatus', ['auth', 'perm:applications.edit']);
+$router->post('/applications/{id}/archive', 'ApplicationController@archive', ['auth', 'perm:applications.archive']);
+$router->post('/applications/{id}/restore', 'ApplicationController@restore', ['auth', 'perm:applications.restore']);
+$router->post('/applications/{id}/delete', 'ApplicationController@delete', ['auth', 'perm:applications.delete']);
 
 // Profile
 $router->get('/profile', 'ProfileController@edit', ['auth']);

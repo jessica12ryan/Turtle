@@ -12,6 +12,7 @@ MAIL_PORT=$(bashio::config 'mail_port')
 MAIL_USER=$(bashio::config 'mail_username')
 MAIL_PASS=$(bashio::config 'mail_password')
 MAIL_FROM=$(bashio::config 'mail_from_address')
+MAILPIT_PORT=$(bashio::config 'mailpit_port')
 
 if [ -z "$APP_URL" ]; then
     APP_URL="http://homeassistant.local:8099"
@@ -65,6 +66,25 @@ bashio::log.info "Pulling latest code from GitHub..."
 git config --global --add safe.directory "${TURTLE_DIR}" 2>/dev/null || true
 git -C "${TURTLE_DIR}" pull --ff-only origin master 2>/dev/null || \
     bashio::log.warning "Git pull failed — using cached code. Schema may be outdated."
+
+# ── Start Mailpit ──────────────────────────────────────────────────────────────
+bashio::log.info "Starting Mailpit on port ${MAILPIT_PORT}..."
+mkdir -p "${DATA_DIR}/mailpit"
+/usr/local/bin/mailpit \
+    --smtp "0.0.0.0:${MAILPIT_PORT}" \
+    --listen "0.0.0.0:8025" \
+    --data-dir "${DATA_DIR}/mailpit" &
+bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :8025)"
+
+# ── Derive mail defaults ───────────────────────────────────────────────────────
+if [ -z "$MAIL_HOST" ]; then
+    MAIL_HOST="127.0.0.1"
+    MAIL_PORT=$MAILPIT_PORT
+    bashio::log.info "mail_host empty — defaulting to local Mailpit (127.0.0.1:${MAILPIT_PORT})"
+fi
+if [ -z "$MAIL_FROM" ]; then
+    MAIL_FROM="noreply@turtle.local"
+fi
 
 # ── Write .env ────────────────────────────────────────────────────────────────
 bashio::log.info "Writing .env..."

@@ -13,7 +13,9 @@ open http://localhost
 
 The first boot presents a setup wizard. Choose **New Installation** to configure site information (name, logo, localization, timezone, SMTP), create your admin account, and optionally load sample data. Choose **Restore Backup** to upload a `.turtle` backup file and restore a previous installation.
 
-**Email testing:** http://localhost:8025 (Mailpit)
+**Email testing:** http://localhost:8025 (Mailpit web UI)
+
+In the Home Assistant add-on, Mailpit is bundled inside the container (port 8025 mapped by default). The SMTP port defaults to 1025 and is configurable via the add-on options (`mailpit_port`).
 
 ## Quick Start (Home Assistant Add-on)
 
@@ -47,8 +49,8 @@ Default permissions are assigned per role, but admins can override them in **Set
 | Role | Typical access |
 |---|---|
 | **Admin** | Unrestricted — bypasses all permission checks |
-| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, rent dashboard, AI Assistant, tenancy applications |
-| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, rent dashboard, AI Assistant, tenancy applications |
+| **Landlord** | Properties, tenants, leases, tickets, staff, resources, calendar, rent dashboard, AI Assistant, tenancy applications (archive/restore) |
+| **Property Manager** | Assigned properties, their tenants, leases, tickets, resources, calendar, rent dashboard, AI Assistant, tenancy applications (view/edit) |
 | **Maintenance** | Tickets (view assigned, update status, comment) |
 | **Tenant** | Own tickets, assigned leases/units, resources, rent status |
 
@@ -108,6 +110,12 @@ The app includes a lightweight SMTP client (no external mail library). Templates
 Mail runs through the bundled **Mailpit** container — no configuration needed:
 - Host: `mailpit`, Port: `1025`, no authentication
 - Web UI at http://localhost:8025
+
+### Default (HA Add-on)
+Mailpit is bundled inside the add-on container and starts automatically. Leave `mail_host` empty in the add-on options to use it:
+- Host: `127.0.0.1`, Port: `1025` (configurable via `mailpit_port`), no authentication
+- Web UI at `http://homeassistant.local:8025` (or your HA host address)
+- The SMTP port is configurable through the add-on configuration (`mailpit_port` option)
 
 ### Via Settings UI (recommended)
 Go to **Settings → General** (admin only) to configure SMTP credentials in the browser. Settings are stored in the database and override `.env` values. Leave username/password blank to connect without authentication.

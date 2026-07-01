@@ -42,7 +42,6 @@
             'leases.restore' => 'Restore Leases',
             'leases.delete' => 'Delete Leases',
             'documents.download' => 'Download Files',
-            'documents.delete' => 'Delete Files',
             'tickets.access' => 'View Tickets',
             'tickets.create' => 'Create Tickets',
             'tickets.assign' => 'Assign Tickets',
@@ -73,6 +72,9 @@
             'rents.payments.restore' => 'Restore Payments',
             'applications.view' => 'View Applications',
             'applications.edit' => 'Edit Applications',
+            'applications.archive' => 'Archive Applications',
+            'applications.restore' => 'Restore Applications',
+            'applications.delete' => 'Delete Applications',
         ];
 
         $groupOverrides = [
@@ -88,7 +90,6 @@
             'photos.create', 'photos.edit', 'photos.download', 'photos.delete',
             'tenants.access', 'tenants.create', 'tenants.edit', 'tenants.archive', 'tenants.restore', 'tenants.delete',
             'leases.create', 'leases.archive', 'leases.restore', 'leases.delete',
-            'documents.delete',
             'tickets.archive', 'tickets.restore', 'tickets.delete', 'tickets.internal_comment',
             'staff.access', 'staff.create', 'staff.edit', 'staff.archive', 'staff.restore', 'staff.delete',
             'resources.create', 'resources.edit', 'resources.delete',
@@ -96,6 +97,9 @@
             'ai_assistant.access',
             'applications.view',
             'applications.edit',
+            'applications.archive',
+            'applications.restore',
+            'applications.delete',
         ];
 
         $groups = [];
