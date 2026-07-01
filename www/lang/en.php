@@ -111,6 +111,7 @@
     'Please fill out this form to apply for tenancy. All fields marked with * are required unless noted otherwise.' => 'Please fill out this form to apply for tenancy. All fields marked with * are required unless noted otherwise.',
     'If you were given a property ID, enter it here.' => 'If you were given a property ID, enter it here.',
     'Applicant Information' => 'Applicant Information',
+    'Applicant Information (Main Tenant)' => 'Applicant Information (Main Tenant)',
     'Last Name' => 'Last Name',
     'First Name' => 'First Name',
     'Middle Name(s)' => 'Middle Name(s)',
@@ -192,4 +193,6 @@
     'Month to Month' => 'Month to Month',
     'Week to Week' => 'Week to Week',
     'Other' => 'Other',
+    'Must be at least 18 years old' => 'Must be at least 18 years old',
+    'You must be at least 18 years old.' => 'You must be at least 18 years old.',
 ];

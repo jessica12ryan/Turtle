@@ -28,7 +28,7 @@
 
         <!-- Applicant Information -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Applicant Information') ?></h2>
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Applicant Information (Main Tenant)') ?></h2>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Last Name') ?> <span class="text-red-500">*</span></label>
@@ -44,7 +44,8 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Birth Date') ?> <span class="text-red-500">*</span></label>
-                    <input type="date" name="primary_birth_date" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <input type="date" name="primary_birth_date" required max="<?= date('Y-m-d', strtotime('-18 years')) ?>" @change="checkAge('primary_birth_date')" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <div x-show="ageErrors['primary_birth_date']" class="text-red-600 text-xs mt-1"><?= __('You must be at least 18 years old.') ?></div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?> <span class="text-red-500">*</span></label>
@@ -75,9 +76,9 @@
                         <input type="text" name="primary_address_city" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?> <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(region_label(default_country())) ?> <span class="text-red-500">*</span></label>
                         <select name="primary_address_province" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                            <option value=""><?= __('Select Province') ?></option>
+                            <option value=""><?= default_country() === 'US' ? __('Select State') : __('Select Province') ?></option>
                             <?php foreach (regions(default_country()) as $code => $name): ?>
                                 <option value="<?= $code ?>"><?= h($name) ?></option>
                             <?php endforeach; ?>
@@ -86,7 +87,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?> <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?> <span class="text-red-500">*</span></label>
                         <input type="text" name="primary_address_postal_code" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
                     </div>
                     <div>
@@ -97,6 +98,116 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?> <span class="text-red-500">*</span></label>
                     <textarea name="primary_address_reason_leaving" required rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment & Income Information -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Employment & Income Information') ?></h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Occupation/Title') ?></label>
+                    <input type="text" name="primary_employment_occupation" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Employer/Company') ?></label>
+                    <input type="text" name="primary_employment_employer" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Street Address') ?></label>
+                    <input type="text" name="primary_employment_street" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Suite Number') ?></label>
+                    <input type="text" name="primary_employment_suite" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?></label>
+                    <input type="text" name="primary_employment_city" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(region_label(default_country())) ?></label>
+                    <select name="primary_employment_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <option value=""><?= default_country() === 'US' ? __('Select State') : __('Select Province') ?></option>
+                        <?php foreach (regions(default_country()) as $code => $name): ?>
+                            <option value="<?= $code ?>"><?= h($name) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?></label>
+                    <input type="text" name="primary_employment_postal_code" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Start Date') ?></label>
+                    <input type="date" name="primary_employment_start_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Supervisor\'s Name') ?></label>
+                    <input type="text" name="primary_employment_supervisor_name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?></label>
+                    <input type="tel" name="primary_employment_phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Other Income Source') ?></label>
+                    <input type="text" name="primary_employment_other_income" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Emergency Contact') ?></h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Last Name') ?> <span class="text-red-500">*</span></label>
+                    <input type="text" name="primary_emergency_last_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('First Name') ?> <span class="text-red-500">*</span></label>
+                    <input type="text" name="primary_emergency_first_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Relationship') ?> <span class="text-red-500">*</span></label>
+                    <input type="text" name="primary_emergency_relationship" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?> <span class="text-red-500">*</span></label>
+                    <input type="tel" name="primary_emergency_phone" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
+                </div>
+            </div>
+        </div>
+
+        <!-- Background Information -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Background Information') ?></h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been evicted from a tenancy?') ?> <span class="text-red-500">*</span></label>
+                    <div class="flex space-x-4">
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="yes" class="mr-1"> <?= __('Yes') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                    </div>
+                    <textarea name="primary_background_evicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been convicted of a crime for which you have not received a pardon?') ?> <span class="text-red-500">*</span></label>
+                    <div class="flex space-x-4">
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="yes" class="mr-1"> <?= __('Yes') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                    </div>
+                    <textarea name="primary_background_convicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever willfully or intentionally refused to pay rent when due?') ?> <span class="text-red-500">*</span></label>
+                    <div class="flex space-x-4">
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="yes" class="mr-1"> <?= __('Yes') ?></label>
+                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="no" checked class="mr-1"> <?= __('No') ?></label>
+                    </div>
+                    <textarea name="primary_background_refused_rent_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
             </div>
         </div>
@@ -126,7 +237,8 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Birth Date') ?> <span class="text-red-500">*</span></label>
-                            <input type="date" :name="'other_tenant_birth_date[' + i + ']'" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <input type="date" :name="'other_tenant_birth_date[' + i + ']'" required max="<?= date('Y-m-d', strtotime('-18 years')) ?>" @change="checkAge('other_tenant_birth_date', i)" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <div x-show="ageErrors['other_tenant_birth_date_' + i]" class="text-red-600 text-xs mt-1"><?= __('Must be at least 18 years old') ?></div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?> <span class="text-red-500">*</span></label>
@@ -158,62 +270,62 @@
                             <input type="text" :name="'other_tenant_address_city[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?> <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(region_label(default_country())) ?> <span class="text-red-500">*</span></label>
                             <select :name="'other_tenant_address_province[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                <option value=""><?= __('Select Province') ?></option>
-<?php foreach (regions(default_country()) as $code => $name): ?>
-                                                                    <option value="<?= $code ?>"><?= h($name) ?></option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?> <span class="text-red-500">*</span></label>
-                                                            <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?></label>
-                                                            <input type="date" :name="'other_tenant_address_date_moved_in[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                        </div>
-                                                        <div class="col-span-2">
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?></label>
-                                                            <textarea :name="'other_tenant_address_reason_leaving[' + i + ']'" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Employment & Income for other tenant -->
-                                                    <h4 class="font-medium text-gray-600 mb-2 mt-4"><?= __('Employment & Income Information') ?></h4>
-                                                    <div class="grid grid-cols-2 gap-3">
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Occupation/Title') ?></label>
-                                                            <input type="text" :name="'other_tenant_employment_occupation[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Employer/Company') ?></label>
-                                                            <input type="text" :name="'other_tenant_employment_employer[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Street Address') ?></label>
-                                                            <input type="text" :name="'other_tenant_employment_street[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Suite Number') ?></label>
-                                                            <input type="text" :name="'other_tenant_employment_suite[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?></label>
-                                                            <input type="text" :name="'other_tenant_employment_city[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                        </div>
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?></label>
-                                                            <select :name="'other_tenant_employment_province[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                                                <option value=""><?= __('Select Province') ?></option>
-                                                                <?php foreach (regions(default_country()) as $code => $name): ?>
-                                                                    <option value="<?= $code ?>"><?= h($name) ?></option>
-                                                                <?php endforeach; ?>
-                                                            </select>
-                                                        </div>
+                                <option value=""><?= default_country() === 'US' ? __('Select State') : __('Select Province') ?></option>
+                                <?php foreach (regions(default_country()) as $code => $name): ?>
+                                    <option value="<?= $code ?>"><?= h($name) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?> <span class="text-red-500">*</span></label>
+                            <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?></label>
+                            <input type="date" :name="'other_tenant_address_date_moved_in[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?></label>
+                            <textarea :name="'other_tenant_address_reason_leaving[' + i + ']'" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Employment & Income for other tenant -->
+                    <h4 class="font-medium text-gray-600 mb-2 mt-4"><?= __('Employment & Income Information') ?></h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Occupation/Title') ?></label>
+                            <input type="text" :name="'other_tenant_employment_occupation[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Employer/Company') ?></label>
+                            <input type="text" :name="'other_tenant_employment_employer[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Street Address') ?></label>
+                            <input type="text" :name="'other_tenant_employment_street[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Suite Number') ?></label>
+                            <input type="text" :name="'other_tenant_employment_suite[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?></label>
+                            <input type="text" :name="'other_tenant_employment_city[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(region_label(default_country())) ?></label>
+                            <select :name="'other_tenant_employment_province[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                <option value=""><?= default_country() === 'US' ? __('Select State') : __('Select Province') ?></option>
+                                <?php foreach (regions(default_country()) as $code => $name): ?>
+                                    <option value="<?= $code ?>"><?= h($name) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __(postal_label(default_country())) ?></label>
                             <input type="text" :name="'other_tenant_employment_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
                         </div>
                         <div>
@@ -324,116 +436,6 @@
             <button type="button" class="text-sm text-blue-600 hover:text-blue-800 font-medium" x-on:click="addOtherOccupant()">+ <?= __('Add Another Occupant') ?></button>
         </div>
 
-        <!-- Employment & Income Information -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Employment & Income Information') ?></h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Occupation/Title') ?></label>
-                    <input type="text" name="primary_employment_occupation" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Employer/Company') ?></label>
-                    <input type="text" name="primary_employment_employer" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Street Address') ?></label>
-                    <input type="text" name="primary_employment_street" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Suite Number') ?></label>
-                    <input type="text" name="primary_employment_suite" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?></label>
-                    <input type="text" name="primary_employment_city" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?></label>
-                    <select name="primary_employment_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        <option value=""><?= __('Select Province') ?></option>
-                        <?php foreach (regions(default_country()) as $code => $name): ?>
-                            <option value="<?= $code ?>"><?= h($name) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?></label>
-                    <input type="text" name="primary_employment_postal_code" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Start Date') ?></label>
-                    <input type="date" name="primary_employment_start_date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Supervisor\'s Name') ?></label>
-                    <input type="text" name="primary_employment_supervisor_name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?></label>
-                    <input type="tel" name="primary_employment_phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
-                </div>
-                <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Other Income Source') ?></label>
-                    <input type="text" name="primary_employment_other_income" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
-        </div>
-
-        <!-- Emergency Contact -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Emergency Contact') ?></h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Last Name') ?> <span class="text-red-500">*</span></label>
-                    <input type="text" name="primary_emergency_last_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('First Name') ?> <span class="text-red-500">*</span></label>
-                    <input type="text" name="primary_emergency_first_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Relationship') ?> <span class="text-red-500">*</span></label>
-                    <input type="text" name="primary_emergency_relationship" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?> <span class="text-red-500">*</span></label>
-                    <input type="tel" name="primary_emergency_phone" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
-                </div>
-            </div>
-        </div>
-
-        <!-- Background Information -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Background Information') ?></h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been evicted from a tenancy?') ?> <span class="text-red-500">*</span></label>
-                    <div class="flex space-x-4">
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_evicted" value="no" checked class="mr-1"> <?= __('No') ?></label>
-                    </div>
-                    <textarea name="primary_background_evicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever been convicted of a crime for which you have not received a pardon?') ?> <span class="text-red-500">*</span></label>
-                    <div class="flex space-x-4">
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_convicted" value="no" checked class="mr-1"> <?= __('No') ?></label>
-                    </div>
-                    <textarea name="primary_background_convicted_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Have you ever willfully or intentionally refused to pay rent when due?') ?> <span class="text-red-500">*</span></label>
-                    <div class="flex space-x-4">
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="yes" class="mr-1"> <?= __('Yes') ?></label>
-                        <label class="inline-flex items-center"><input type="radio" name="primary_background_refused_rent" value="no" checked class="mr-1"> <?= __('No') ?></label>
-                    </div>
-                    <textarea name="primary_background_refused_rent_details" rows="2" placeholder="<?= __('If yes, please provide details') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-            </div>
-        </div>
-
         <!-- Personal References -->
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Personal References') ?></h2>
@@ -484,12 +486,29 @@ function applicationForm() {
         otherTenants: [],
         otherOccupants: [],
         references: [],
+        ageErrors: {},
         addOtherTenant() { this.otherTenants.push({}); },
         removeOtherTenant(i) { this.otherTenants.splice(i, 1); },
         addOtherOccupant() { this.otherOccupants.push({}); },
         removeOtherOccupant(i) { this.otherOccupants.splice(i, 1); },
         addReference() { this.references.push({}); },
         removeReference(i) { this.references.splice(i, 1); },
+        checkAge(field, index) {
+            const selector = typeof index !== 'undefined' ? `[name="${field}[${index}]"]` : `[name="${field}"]`;
+            const el = document.querySelector(selector);
+            const key = typeof index !== 'undefined' ? `${field}_${index}` : field;
+            if (el && el.value) {
+                const birthDate = new Date(el.value);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const m = today.getMonth() - birthDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+                if (age < 18) this.ageErrors[key] = true;
+                else delete this.ageErrors[key];
+            } else {
+                delete this.ageErrors[key];
+            }
+        }
     }
 }
 </script>

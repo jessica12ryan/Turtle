@@ -245,6 +245,7 @@ return [
     'Select Property Manager' => 'Seleccionar Administrador de la propiedad',
     'Select Property' => 'Seleccionar Propiedad',
     'Select Province' => 'Seleccionar Provincia',
+    'Select State' => 'Seleccionar Estado',
     'Select Role' => 'Seleccionar Rol',
     'Send Reset Link' => 'Enviar Enlace de Restablecimiento',
     'Send Test Email' => 'Enviar Correo de Prueba',
@@ -480,6 +481,7 @@ return [
     'Please fill out this form to apply for tenancy. All fields marked with * are required unless noted otherwise.' => 'Complete este formulario para solicitar el alquiler. Todos los campos marcados con * son obligatorios a menos que se indique lo contrario.',
     'If you were given a property ID, enter it here.' => 'Si le dieron un ID de propiedad, ingréselo aquí.',
     'Applicant Information' => 'Información del solicitante',
+    'Applicant Information (Main Tenant)' => 'Información del solicitante (inquilino principal)',
     'Last Name' => 'Apellido',
     'First Name' => 'Nombre',
     'Middle Name(s)' => 'Segundo nombre(s)',
@@ -561,4 +563,6 @@ return [
     'Month to Month' => 'Mes a mes',
     'Week to Week' => 'Semana a semana',
     'Other' => 'Otro',
+    'Must be at least 18 years old' => 'Debe tener al menos 18 años',
+    'You must be at least 18 years old.' => 'Debe tener al menos 18 años.',
 ];
