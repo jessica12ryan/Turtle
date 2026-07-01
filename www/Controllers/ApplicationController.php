@@ -54,7 +54,7 @@ class ApplicationController
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json === false) {
                 error_log('Application submission failed: json_encode error: ' . (json_last_error_msg()));
-                flash('error', 'There was a problem submitting your application. Please try again.');
+            flash('error', 'Submission failed: ' . $e->getMessage());
                 redirect('/applications/create');
                 return;
             }
