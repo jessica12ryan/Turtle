@@ -78,7 +78,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?> <span class="text-red-500">*</span></label>
                         <select name="primary_address_province" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                             <option value=""><?= __('Select Province') ?></option>
-                            <?php foreach (regions('CA') as $code => $name): ?>
+                            <?php foreach (regions(default_country()) as $code => $name): ?>
                                 <option value="<?= $code ?>"><?= h($name) ?></option>
                             <?php endforeach; ?>
                         </select>
@@ -161,57 +161,57 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?> <span class="text-red-500">*</span></label>
                             <select :name="'other_tenant_address_province[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                                 <option value=""><?= __('Select Province') ?></option>
-                                <?php foreach (regions('CA') as $code => $name): ?>
-                                    <option value="<?= $code ?>"><?= h($name) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?> <span class="text-red-500">*</span></label>
-                            <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?></label>
-                            <input type="date" :name="'other_tenant_address_date_moved_in[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?></label>
-                            <textarea :name="'other_tenant_address_reason_leaving[' + i + ']'" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
-                        </div>
-                    </div>
+<?php foreach (regions(default_country()) as $code => $name): ?>
+                                                                    <option value="<?= $code ?>"><?= h($name) ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?> <span class="text-red-500">*</span></label>
+                                                            <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?></label>
+                                                            <input type="date" :name="'other_tenant_address_date_moved_in[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                        </div>
+                                                        <div class="col-span-2">
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?></label>
+                                                            <textarea :name="'other_tenant_address_reason_leaving[' + i + ']'" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                                                        </div>
+                                                    </div>
 
-                    <!-- Employment & Income for other tenant -->
-                    <h4 class="font-medium text-gray-600 mb-2 mt-4"><?= __('Employment & Income Information') ?></h4>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Occupation/Title') ?></label>
-                            <input type="text" :name="'other_tenant_employment_occupation[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Employer/Company') ?></label>
-                            <input type="text" :name="'other_tenant_employment_employer[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Street Address') ?></label>
-                            <input type="text" :name="'other_tenant_employment_street[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Suite Number') ?></label>
-                            <input type="text" :name="'other_tenant_employment_suite[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?></label>
-                            <input type="text" :name="'other_tenant_employment_city[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?></label>
-                            <select :name="'other_tenant_employment_province[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                                <option value=""><?= __('Select Province') ?></option>
-                                <?php foreach (regions('CA') as $code => $name): ?>
-                                    <option value="<?= $code ?>"><?= h($name) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
+                                                    <!-- Employment & Income for other tenant -->
+                                                    <h4 class="font-medium text-gray-600 mb-2 mt-4"><?= __('Employment & Income Information') ?></h4>
+                                                    <div class="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Occupation/Title') ?></label>
+                                                            <input type="text" :name="'other_tenant_employment_occupation[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Employer/Company') ?></label>
+                                                            <input type="text" :name="'other_tenant_employment_employer[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Street Address') ?></label>
+                                                            <input type="text" :name="'other_tenant_employment_street[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Suite Number') ?></label>
+                                                            <input type="text" :name="'other_tenant_employment_suite[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('City/Town') ?></label>
+                                                            <input type="text" :name="'other_tenant_employment_city[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?></label>
+                                                            <select :name="'other_tenant_employment_province[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                                                <option value=""><?= __('Select Province') ?></option>
+                                                                <?php foreach (regions(default_country()) as $code => $name): ?>
+                                                                    <option value="<?= $code ?>"><?= h($name) ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Postal/Zip Code') ?></label>
                             <input type="text" :name="'other_tenant_employment_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="A1A 1A1">
@@ -352,7 +352,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Province/State') ?></label>
                     <select name="primary_employment_province" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         <option value=""><?= __('Select Province') ?></option>
-                        <?php foreach (regions('CA') as $code => $name): ?>
+                        <?php foreach (regions(default_country()) as $code => $name): ?>
                             <option value="<?= $code ?>"><?= h($name) ?></option>
                         <?php endforeach; ?>
                     </select>

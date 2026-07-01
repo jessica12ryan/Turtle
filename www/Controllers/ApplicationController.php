@@ -47,17 +47,23 @@ class ApplicationController
             redirect('/applications/create');
         }
 
-        $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
-        $data = $this->buildData();
+        try {
+            $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
+            $data = $this->buildData();
 
-        $id = Database::insert(
-            "INSERT INTO tenant_applications (property_id, status, data, notes, created_at, updated_at) VALUES (?, 'pending', ?, '', NOW(), NOW())",
-            [$propertyId, json_encode($data)]
-        );
+            $id = Database::insert(
+                "INSERT INTO tenant_applications (property_id, status, data, notes, created_at, updated_at) VALUES (?, 'pending', ?, '', NOW(), NOW())",
+                [$propertyId, json_encode($data)]
+            );
 
-        log_activity('application.created', "Tenancy application #{$id} submitted");
-        flash('success', __('Your application has been submitted successfully. We will be in touch.'));
-        redirect('/applications/thank-you');
+            log_activity('application.created', "Tenancy application #{$id} submitted");
+            flash('success', __('Your application has been submitted successfully. We will be in touch.'));
+            redirect('/applications/thank-you');
+        } catch (\Throwable $e) {
+            error_log('Application submission failed: ' . $e->getMessage());
+            flash('error', 'There was a problem submitting your application. Please try again.');
+            redirect('/applications/create');
+        }
     }
 
     public function thankYou(): void

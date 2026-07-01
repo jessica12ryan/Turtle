@@ -521,6 +521,7 @@ return [
     'Any additional information' => 'Toute information supplémentaire',
     'Submit Application' => 'Soumettre la demande',
     'Your application has been submitted successfully. We will be in touch.' => 'Votre demande a été soumise avec succès. Nous vous contacterons.',
+    'There was a problem submitting your application. Please try again.' => 'Un problème est survenu lors de la soumission de votre demande. Veuillez réessayer.',
     'Thank you for submitting your tenancy application. We will review your application and be in touch.' => 'Merci d\'avoir soumis votre demande de location. Nous examinerons votre demande et vous contacterons.',
     'Back to Home' => 'Retour à l\'accueil',
     'No applications found.' => 'Aucune candidature trouvée.',

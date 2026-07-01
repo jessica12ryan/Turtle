@@ -521,6 +521,7 @@ return [
     'Any additional information' => 'Cualquier información adicional',
     'Submit Application' => 'Enviar solicitud',
     'Your application has been submitted successfully. We will be in touch.' => 'Su solicitud ha sido enviada con éxito. Nos pondremos en contacto.',
+    'There was a problem submitting your application. Please try again.' => 'Hubo un problema al enviar su solicitud. Por favor, inténtelo de nuevo.',
     'Thank you for submitting your tenancy application. We will review your application and be in touch.' => 'Gracias por enviar su solicitud de alquiler. Revisaremos su solicitud y nos pondremos en contacto.',
     'Back to Home' => 'Volver al inicio',
     'No applications found.' => 'No se encontraron solicitudes.',

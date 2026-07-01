@@ -151,6 +151,7 @@
     'Any additional information' => 'Any additional information',
     'Submit Application' => 'Submit Application',
     'Your application has been submitted successfully. We will be in touch.' => 'Your application has been submitted successfully. We will be in touch.',
+    'There was a problem submitting your application. Please try again.' => 'There was a problem submitting your application. Please try again.',
     'Thank you for submitting your tenancy application. We will review your application and be in touch.' => 'Thank you for submitting your tenancy application. We will review your application and be in touch.',
     'Back to Home' => 'Back to Home',
     'No applications found.' => 'No applications found.',
