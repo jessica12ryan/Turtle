@@ -356,12 +356,10 @@ class ApplicationController
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     property_id INT DEFAULT NULL,
                     status VARCHAR(20) DEFAULT 'pending',
-                    data JSON NOT NULL,
+                    data LONGTEXT NOT NULL,
                     notes TEXT DEFAULT '',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    INDEX idx_status (status),
-                    INDEX idx_created (created_at)
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             } catch (\Throwable $e2) {
                 error_log('Failed to create tenant_applications table: ' . $e2->getMessage());

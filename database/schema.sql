@@ -251,7 +251,7 @@ CREATE TABLE IF NOT EXISTS tenant_applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     property_id INT DEFAULT NULL,
     status VARCHAR(20) DEFAULT 'pending',
-    data JSON NOT NULL,
+    data LONGTEXT NOT NULL,
     notes TEXT DEFAULT '',
     archived_at TIMESTAMP NULL DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
