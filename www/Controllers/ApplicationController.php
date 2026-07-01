@@ -110,15 +110,22 @@ class ApplicationController
 
     public function show(int $id): void
     {
-        $this->ensureTable();
+        try {
+            $this->ensureTable();
 
-        $application = Database::fetch(
-            "SELECT a.*, p.name as property_name 
-             FROM tenant_applications a 
-             LEFT JOIN properties p ON p.id = a.property_id 
-             WHERE a.id = ?",
-            [$id]
-        );
+            $application = Database::fetch(
+                "SELECT a.*, p.name as property_name 
+                 FROM tenant_applications a 
+                 LEFT JOIN properties p ON p.id = a.property_id 
+                 WHERE a.id = ?",
+                [$id]
+            );
+        } catch (\Throwable $e) {
+            error_log('ApplicationController@show: ' . $e->getMessage());
+            http_response_code(500);
+            require base_path('www/Views/errors/500.php');
+            return;
+        }
 
         if (!$application) {
             http_response_code(404);
@@ -398,6 +405,7 @@ class ApplicationController
             "ALTER TABLE tenant_applications ADD COLUMN status VARCHAR(20) DEFAULT 'pending'",
             "ALTER TABLE tenant_applications ADD COLUMN notes TEXT",
             "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL",
+            "ALTER TABLE tenant_applications ADD COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP",
             "ALTER TABLE tenant_applications MODIFY COLUMN data LONGTEXT NOT NULL",
         ];
         foreach ($alterAttempts as $sql) {
