@@ -69,7 +69,8 @@ class ApplicationController
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
             error_log('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            flash('error', 'There was a problem submitting your application. Please try again.');
+            $msg = $e->getMessage();
+            flash('error', "Submission failed: {$msg}");
             redirect('/applications/create');
         }
     }
