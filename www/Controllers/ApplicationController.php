@@ -352,8 +352,10 @@ class ApplicationController
         try {
             Database::query("SELECT 1 FROM tenant_applications LIMIT 1");
         } catch (\Throwable $e) {
-            try {
-                Database::query("CREATE TABLE IF NOT EXISTS tenant_applications (
+            // Table does not exist — try to create it with engine/charset hints
+            $created = false;
+            $attempts = [
+                "CREATE TABLE IF NOT EXISTS tenant_applications (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     property_id INT DEFAULT NULL,
                     status VARCHAR(20) DEFAULT 'pending',
@@ -361,29 +363,57 @@ class ApplicationController
                     notes TEXT DEFAULT '',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-            } catch (\Throwable $e2) {
-                error_log('Failed to create tenant_applications table: ' . $e2->getMessage());
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+                "CREATE TABLE IF NOT EXISTS tenant_applications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    property_id INT DEFAULT NULL,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    data LONGTEXT NOT NULL,
+                    notes TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+                )",
+                "CREATE TABLE IF NOT EXISTS tenant_applications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    data LONGTEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )",
+            ];
+            foreach ($attempts as $sql) {
+                try {
+                    Database::query($sql);
+                    $created = true;
+                    break;
+                } catch (\Throwable $e2) {
+                    error_log('ensureTable attempt failed: ' . $e2->getMessage());
+                }
+            }
+            if (!$created) {
+                error_log('ensureTable: all CREATE TABLE attempts failed');
+                return;
             }
         }
-        // Ensure data column is LONGTEXT (existing tables may have been created with JSON type)
-        try {
-            Database::query("ALTER TABLE tenant_applications MODIFY COLUMN data LONGTEXT NOT NULL");
-        } catch (\Throwable $e) {
-            error_log('Failed to alter tenant_applications.data column: ' . $e->getMessage());
+        // Add missing columns (ignore if already exist)
+        $alterAttempts = [
+            "ALTER TABLE tenant_applications ADD COLUMN property_id INT DEFAULT NULL",
+            "ALTER TABLE tenant_applications ADD COLUMN status VARCHAR(20) DEFAULT 'pending'",
+            "ALTER TABLE tenant_applications ADD COLUMN notes TEXT DEFAULT ''",
+            "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL",
+            "ALTER TABLE tenant_applications MODIFY COLUMN data LONGTEXT NOT NULL",
+        ];
+        foreach ($alterAttempts as $sql) {
+            try {
+                Database::query($sql);
+            } catch (\Throwable $e) {
+                // Column likely already exists — safe to ignore
+            }
         }
-        try {
-            Database::query("ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL");
-        } catch (\Throwable $e) {
-            // Column already exists — safe to ignore
+        // Add indexes if missing
+        foreach (['idx_status (status)', 'idx_created (created_at)'] as $idx) {
+            try {
+                Database::query("ALTER TABLE tenant_applications ADD INDEX {$idx}");
+            } catch (\Throwable $e) {}
         }
-        // Add indexes if missing (ignore errors if they already exist)
-        try {
-            Database::query("ALTER TABLE tenant_applications ADD INDEX idx_status (status)");
-        } catch (\Throwable $e) {}
-        try {
-            Database::query("ALTER TABLE tenant_applications ADD INDEX idx_created (created_at)");
-        } catch (\Throwable $e) {}
     }
 
     private function getSettings(): array
