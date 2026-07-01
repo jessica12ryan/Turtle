@@ -372,6 +372,10 @@ class TicketController
             }
         }
 
+        $storagePrefix = str_starts_with($uploadDir, base_path())
+            ? 'storage/uploads/ticket_files/' . $ticketId
+            : $uploadDir;
+
         $userId = Auth::instance()->id();
         foreach ($_FILES['attachments']['error'] as $i => $error) {
             if ($error !== UPLOAD_ERR_OK) continue;
@@ -390,7 +394,7 @@ class TicketController
             if (move_uploaded_file($tmpName, $destPath)) {
                 Database::insert(
                     "INSERT INTO ticket_files (ticket_id, comment_id, file_path, original_name, size, mime_type, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-                    [$ticketId, $commentId, 'storage/uploads/ticket_files/' . $ticketId . '/' . $filename, $name, $size, $type, $userId]
+                    [$ticketId, $commentId, $storagePrefix . '/' . $filename, $name, $size, $type, $userId]
                 );
             }
         }

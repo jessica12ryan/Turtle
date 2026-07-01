@@ -56,6 +56,11 @@ class Router
                     $this->runMiddleware($mw);
                 }
 
+                if (!str_contains($route['handler'], '@')) {
+                    throw new \InvalidArgumentException(
+                        "Route handler for '{$route['method']} {$route['original']}' must be in 'Controller@method' format"
+                    );
+                }
                 [$controllerClass, $method] = explode('@', $route['handler']);
                 $controllerClass = 'App\\Controllers\\' . $controllerClass;
 

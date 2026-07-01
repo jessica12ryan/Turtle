@@ -161,6 +161,11 @@ class TenantController
 
     public function store(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', 'Invalid form token. Please try again.');
+            redirect('/tenants/create');
+        }
+
         $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
         if ($archived) {
             flash('error', 'Email exists in archived tenant.');
@@ -358,6 +363,11 @@ class TenantController
 
     public function update(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', 'Invalid form token. Please try again.');
+            redirect('/tenants/' . $id . '/edit');
+        }
+
         $validator = new Validator();
         $rules = ['name' => 'required|max:255'];
         if (!empty($_POST['phone'])) {

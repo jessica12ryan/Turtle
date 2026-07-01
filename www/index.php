@@ -289,9 +289,15 @@ $router->post('/updates/apply', 'UpdateController@apply', ['auth', 'role:admin']
 $router->get('/updates/progress', 'UpdateController@progress', ['auth', 'role:admin']);
 
 try {
-    $method = $_POST['_method'] ?? $_SERVER['REQUEST_METHOD'];
+    $override = $_POST['_method'] ?? '';
+    $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+    if ($override !== '' && in_array(strtoupper($override), $allowedMethods, true)) {
+        $method = strtoupper($override);
+    } else {
+        $method = $_SERVER['REQUEST_METHOD'];
+    }
     $uri = $_SERVER['REQUEST_URI'];
-    $router->dispatch(strtoupper($method), $uri);
+    $router->dispatch($method, $uri);
 } catch (\Throwable $e) {
     error_log('Route dispatch failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
     http_response_code(500);

@@ -7,7 +7,13 @@ class Mailer
     private static function readResponse($socket, string $expectedCode, string $errorMsg): bool
     {
         $response = '';
+        $maxLines = 100;
+        $lineCount = 0;
         while (true) {
+            if (++$lineCount > $maxLines || feof($socket)) {
+                error_log("Mailer: {$errorMsg} — response too long or connection closed. Response: " . trim($response));
+                return false;
+            }
             $line = fgets($socket, 512);
             if ($line === false) break;
             $response .= $line;
@@ -95,16 +101,14 @@ class Mailer
         }
 
         if ($username !== null) {
-            if ($port === 587) {
-                if (!self::smtpCommand($socket, "STARTTLS", '220', 'STARTTLS')) {
-                    fclose($socket);
-                    return false;
-                }
-                stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-                if (!self::smtpCommand($socket, "EHLO turtle", '250', 'EHLO after STARTTLS')) {
-                    fclose($socket);
-                    return false;
-                }
+            if (!self::smtpCommand($socket, "STARTTLS", '220', 'STARTTLS')) {
+                fclose($socket);
+                return false;
+            }
+            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            if (!self::smtpCommand($socket, "EHLO turtle", '250', 'EHLO after STARTTLS')) {
+                fclose($socket);
+                return false;
             }
 
             if (!self::smtpCommand($socket, "AUTH LOGIN", '334', 'AUTH LOGIN')) {

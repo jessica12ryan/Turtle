@@ -8,11 +8,11 @@
     <!-- Totals -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
-            <p class="text-2xl font-bold text-blue-600">$<?= number_format($totalExpected, 2) ?></p>
+            <p class="text-2xl font-bold text-blue-600">$<?= number_format((float)($totalExpected ?? 0), 2) ?></p>
             <p class="text-sm text-gray-500 dark:text-gray-400"><?= __('Total Expected') ?></p>
         </div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
-            <p class="text-2xl font-bold text-green-600">$<?= number_format($totalCollected, 2) ?></p>
+            <p class="text-2xl font-bold text-green-600">$<?= number_format((float)($totalCollected ?? 0), 2) ?></p>
             <p class="text-sm text-gray-500 dark:text-gray-400"><?= __('Total Collected') ?></p>
         </div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
@@ -46,9 +46,9 @@
                             <a href="/properties/<?= $prop['id'] ?>" class="text-blue-600 dark:text-blue-400 hover:underline font-medium"><?= h($prop['name']) ?></a>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"><?= $prop['tenants_count'] ?></td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format($prop['rent_amount'], 2) ?></td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format((float)($prop['rent_amount'] ?? 0), 2) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400"><?= h($prop['rent_due_day'] ?? '—') ?></td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format($prop['paid_amount'], 2) ?></td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format((float)($prop['paid_amount'] ?? 0), 2) ?></td>
                         <td class="px-6 py-4">
                             <?php if ($prop['rent_status'] === 'paid'): ?>
                                 <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full font-medium"><?= __('Paid') ?></span>

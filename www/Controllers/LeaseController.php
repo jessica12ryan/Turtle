@@ -235,7 +235,8 @@ class LeaseController
                         "SELECT name FROM properties WHERE id = ?",
                         [$_POST['property_id']]
                     );
-                    $leaseUrl = url('/leases/' . $leaseId);
+                    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                    $leaseUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . '/leases/' . $leaseId;
                     \App\Core\Mailer::sendTemplate(
                         $tenant['email'],
                         __('New document uploaded'),

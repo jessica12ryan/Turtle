@@ -90,8 +90,12 @@ function redirect(string $url): void
 
 function redirectBack(): void
 {
-    $url = $_SERVER['HTTP_REFERER'] ?? '/';
-    redirect($url);
+    $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+    $parsed = parse_url($referer);
+    if (!empty($parsed['host']) && $parsed['host'] !== ($_SERVER['HTTP_HOST'] ?? '')) {
+        $referer = '/';
+    }
+    redirect($referer);
 }
 
 function error(string $key, string $default = ''): string
