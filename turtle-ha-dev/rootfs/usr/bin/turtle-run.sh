@@ -73,7 +73,7 @@ mkdir -p "${DATA_DIR}/mailpit"
 /usr/local/bin/mailpit \
     --smtp "0.0.0.0:${MAILPIT_PORT}" \
     --listen "0.0.0.0:8025" \
-    --data-dir "${DATA_DIR}/mailpit" &
+    --database "${DATA_DIR}/mailpit/mailpit.db" &
 bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :8025)"
 
 # ── Derive mail defaults ───────────────────────────────────────────────────────
