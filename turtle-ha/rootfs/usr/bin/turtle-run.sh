@@ -152,6 +152,23 @@ chmod +x "${PATCHED_MIGRATE}"
 bash "${PATCHED_MIGRATE}"
 rm -f "${PATCHED_MIGRATE}"
 
+# ── Sync mail settings to database ────────────────────────────────────────────
+# The Mailer reads DB first, so push the add-on config values into the DB so
+# they take effect even after the setup wizard or a restore.
+bashio::log.info "Syncing mail settings to database..."
+mysql --socket=/tmp/mysql.sock -u root turtle <<SQL
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_host', '${MAIL_HOST}')
+    ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_HOST}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_port', '${MAIL_PORT}')
+    ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PORT}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_username', '${MAIL_USER}')
+    ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_USER}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_password', '${MAIL_PASS}')
+    ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PASS}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_from_address', '${MAIL_FROM}')
+    ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_FROM}';
+SQL
+
 # ── Permissions ───────────────────────────────────────────────────────────────
 chown -R apache:apache "${TURTLE_DIR}/www/assets" 2>/dev/null || true
 # Make app dir writable so in-app updater can modify files

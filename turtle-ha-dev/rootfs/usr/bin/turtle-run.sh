@@ -164,6 +164,17 @@ touch "${DATA_DIR}/.db_initialized"
 bashio::log.info "Setting dev defaults (update_channel=development)..."
 mysql --socket=/tmp/mysql.sock -u root turtle -e "INSERT INTO settings (\`key\`, \`value\`) VALUES ('update_channel', 'development') ON DUPLICATE KEY UPDATE \`value\` = 'development';"
 
+# ── Sync mail settings to database ────────────────────────────────────────────
+# The Mailer reads DB first, so upsert the add-on config values
+bashio::log.info "Syncing mail settings to database..."
+mysql --socket=/tmp/mysql.sock -u root turtle <<SQL
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_host', '${MAIL_HOST}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_HOST}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_port', '${MAIL_PORT}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PORT}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_username', '${MAIL_USER}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_USER}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_password', '${MAIL_PASS}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PASS}';
+INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_from_address', '${MAIL_FROM}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_FROM}';
+SQL
+
 # ── Permissions ───────────────────────────────────────────────────────────────
 chown -R apache:apache "${TURTLE_DIR}/www/assets" 2>/dev/null || true
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
