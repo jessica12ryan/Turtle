@@ -62,7 +62,7 @@ class ApplicationController
             }
 
             $id = Database::insert(
-                "INSERT INTO tenant_applications (property_id, status, data, notes, created_at, updated_at) VALUES (?, 'pending', ?, '', NOW(), NOW())",
+                "INSERT INTO tenant_applications (property_id, status, data, notes, created_at, updated_at) VALUES (?, 'new', ?, '', NOW(), NOW())",
                 [$propertyId, $json]
             );
 
@@ -168,7 +168,7 @@ class ApplicationController
     {
         $this->ensureTable();
 
-        $allowed = ['pending', 'reviewed', 'accepted', 'rejected'];
+        $allowed = ['new', 'in_progress', 'accepted', 'rejected'];
         $status = $_POST['status'] ?? '';
         if (!in_array($status, $allowed)) {
             flash('error', 'Invalid status.');
@@ -375,7 +375,7 @@ class ApplicationController
                 "CREATE TABLE IF NOT EXISTS tenant_applications (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     property_id INT DEFAULT NULL,
-                    status VARCHAR(20) DEFAULT 'pending',
+                    status VARCHAR(20) DEFAULT 'new',
                     data LONGTEXT NOT NULL,
                     notes TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -384,7 +384,7 @@ class ApplicationController
                 "CREATE TABLE IF NOT EXISTS tenant_applications (
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     property_id INT DEFAULT NULL,
-                    status VARCHAR(20) DEFAULT 'pending',
+                    status VARCHAR(20) DEFAULT 'new',
                     data LONGTEXT NOT NULL,
                     notes TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -413,7 +413,7 @@ class ApplicationController
         // Add missing columns (ignore if already exist)
         $alterAttempts = [
             "ALTER TABLE tenant_applications ADD COLUMN property_id INT DEFAULT NULL",
-            "ALTER TABLE tenant_applications ADD COLUMN status VARCHAR(20) DEFAULT 'pending'",
+            "ALTER TABLE tenant_applications ADD COLUMN status VARCHAR(20) DEFAULT 'new'",
             "ALTER TABLE tenant_applications ADD COLUMN notes TEXT",
             "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL",
             "ALTER TABLE tenant_applications ADD COLUMN updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP",

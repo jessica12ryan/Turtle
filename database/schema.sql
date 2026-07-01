@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS tenant_applications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     property_id INT DEFAULT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
+    status VARCHAR(20) DEFAULT 'new',
     data LONGTEXT NOT NULL,
     notes TEXT,
     archived_at TIMESTAMP NULL DEFAULT NULL,

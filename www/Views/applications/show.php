@@ -9,8 +9,8 @@
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <div>
-            <span class="px-3 py-1 text-sm rounded-full <?= $application['status'] === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($application['status'] === 'reviewed' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($application['status'] === 'accepted' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : ($application['status'] === 'rejected' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>">
-                <?= ucfirst($application['status']) ?>
+            <span class="px-3 py-1 text-sm rounded-full <?= $application['status'] === 'new' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($application['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($application['status'] === 'accepted' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : ($application['status'] === 'rejected' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>">
+                <?= ucfirst(str_replace('_', ' ', $application['status'])) ?>
             </span>
         </div>
         <div class="text-sm text-gray-500 dark:text-gray-400">
@@ -27,8 +27,8 @@
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= __('Update Status') ?>:</label>
             <select name="status" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
-                <option value="pending" <?= $application['status'] === 'pending' ? 'selected' : '' ?>><?= __('Pending') ?></option>
-                <option value="reviewed" <?= $application['status'] === 'reviewed' ? 'selected' : '' ?>><?= __('Reviewed') ?></option>
+                <option value="new" <?= $application['status'] === 'new' ? 'selected' : '' ?>><?= __('New') ?></option>
+                <option value="in_progress" <?= $application['status'] === 'in_progress' ? 'selected' : '' ?>><?= __('In Progress') ?></option>
                 <option value="accepted" <?= $application['status'] === 'accepted' ? 'selected' : '' ?>><?= __('Accepted') ?></option>
                 <option value="rejected" <?= $application['status'] === 'rejected' ? 'selected' : '' ?>><?= __('Rejected') ?></option>
             </select>
