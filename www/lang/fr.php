@@ -146,7 +146,7 @@ return [
     'Lease End' => 'Fin du bail',
     'Lease Start' => 'Début du bail',
     'Lease dates must be changed on main tenant.' => 'Les dates du bail doivent être modifiées sur le locataire principal.',
-    'Leases & Documents' => 'Baux & Documents',
+    'Documents' => 'Documents',
     'Let\'s get your portal set up.' => 'Configurons votre portail.',
     'Light' => 'Clair',
     'Load sample data' => 'Charger des exemples de données',

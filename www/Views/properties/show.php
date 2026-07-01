@@ -207,7 +207,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         </div>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div class="px-6 py-4 border-b dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200"><?= __('Leases &amp; Documents') ?></h2>
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200"><?= __('Documents') ?></h2>
             </div>
             <div class="p-6">
                 <?php if (empty($leases)): ?>

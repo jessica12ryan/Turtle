@@ -224,7 +224,7 @@
             <template x-for="(tenant, i) in otherTenants" :key="i">
                 <div class="p-4 border border-gray-200 rounded-lg mb-4">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-medium text-gray-700" x-text="'<?= __('Tenant') ?> #' + (i + 1)"></h3>
+                        <h3 class="font-medium text-gray-700" x-text="'<?= __('Tenant') ?> #' + (i + 2)"></h3>
                         <button type="button" class="text-red-600 hover:text-red-800 text-sm" x-on:click="removeOtherTenant(i)"><?= __('Remove') ?></button>
                     </div>
                     <div class="grid grid-cols-2 gap-3 mb-3">

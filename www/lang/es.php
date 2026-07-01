@@ -146,7 +146,7 @@ return [
     'Lease End' => 'Fin del Contrato',
     'Lease Start' => 'Inicio del Contrato',
     'Lease dates must be changed on main tenant.' => 'Las fechas del contrato deben cambiarse en el inquilino principal.',
-    'Leases & Documents' => 'Contratos y Documentos',
+    'Documents' => 'Documentos',
     'Let\'s get your portal set up.' => 'Configuremos su portal.',
     'Light' => 'Claro',
     'Load sample data' => 'Cargar datos de ejemplo',

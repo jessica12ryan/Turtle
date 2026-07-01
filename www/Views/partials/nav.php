@@ -33,7 +33,7 @@ function navActive(string $prefix, string $currentUri): string {
                         <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>"><?= __('Tenants') ?></a>
                     <?php endif; ?>
                     <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Leases &amp; Documents') ?></a>
+                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Documents') ?></a>
                     <?php endif; ?>
                     <?php if (can('tickets.access')): ?>
                         <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>"><?= __('Tickets') ?></a>
@@ -98,7 +98,7 @@ function navActive(string $prefix, string $currentUri): string {
                 <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>"><?= __('Tenants') ?></a>
             <?php endif; ?>
             <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Leases &amp; Documents') ?></a>
+                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Documents') ?></a>
             <?php endif; ?>
             <?php if (can('tickets.access')): ?>
                 <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>"><?= __('Tickets') ?></a>
