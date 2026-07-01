@@ -54,7 +54,7 @@ class ApplicationController
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json === false) {
                 error_log('Application submission failed: json_encode error: ' . (json_last_error_msg()));
-            flash('error', 'Submission failed: ' . $e->getMessage());
+            flash('error', 'Submission failed: ' . json_last_error_msg());
                 redirect('/applications/create');
                 return;
             }
@@ -69,7 +69,7 @@ class ApplicationController
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
             error_log('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            flash('error', 'There was a problem submitting your application. Please try again.');
+            flash('error', 'Submission failed: ' . $e->getMessage());
             redirect('/applications/create');
         }
     }
