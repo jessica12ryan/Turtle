@@ -59,7 +59,7 @@ foreach ($files ?? [] as $f) {
                                 <p class="text-gray-500 text-sm italic"><?= h($comment['body']) ?></p>
                             </div>
                         <?php else: ?>
-                            <div class="p-4 border rounded-lg <?= $comment['is_internal'] ? 'bg-yellow-50 border-yellow-200' : '' ?>">
+                            <div class="p-4 border rounded-lg <?= $comment['is_internal'] ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800' : '' ?>">
                                 <div class="flex justify-between items-start mb-2">
                                     <div>
                                         <span class="font-medium text-sm"><?= h($comment['user_name']) ?></span>
@@ -74,12 +74,12 @@ foreach ($files ?? [] as $f) {
                                             echo implode(', ', $roles);
                                         ?></span>
                                         <?php if ($comment['is_internal']): ?>
-                                            <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded ml-1"><?= __('Internal') ?></span>
+                                            <span class="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded ml-1"><?= __('Internal') ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <span class="text-xs text-gray-500"><?= display_time($comment['created_at']) ?></span>
                                 </div>
-                                <p class="text-gray-700 text-sm whitespace-pre-wrap"><?= h($comment['body']) ?></p>
+                                <p class="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap"><?= h($comment['body']) ?></p>
                                 <?php if (!empty($commentFiles[$comment['id']])): ?>
                                     <div class="mt-3 pt-3 border-t space-y-1">
                                         <?php foreach ($commentFiles[$comment['id']] as $cf): ?>
