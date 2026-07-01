@@ -32,35 +32,43 @@ class ApplicationController
 
     public function store(): void
     {
-        $settings = $this->getSettings();
-        if ($settings['enabled'] !== '1') {
-            $view = new View();
-            $view->layout('layouts/guest', ['title' => __('Tenancy Application')]);
-            $view->render('applications/disabled');
-            return;
-        }
-
-        $this->ensureTable();
-
-        if (empty($_POST['_csrf']) || $_POST['_csrf'] !== ($_SESSION['_csrf_token'] ?? '')) {
-            flash('error', 'Invalid form token. Please try again.');
-            redirect('/applications/create');
-        }
-
         try {
+            $settings = $this->getSettings();
+            if ($settings['enabled'] !== '1') {
+                $view = new View();
+                $view->layout('layouts/guest', ['title' => __('Tenancy Application')]);
+                $view->render('applications/disabled');
+                return;
+            }
+
+            $this->ensureTable();
+
+            if (empty($_POST['_csrf']) || $_POST['_csrf'] !== ($_SESSION['_csrf_token'] ?? '')) {
+                flash('error', 'Invalid form token. Please try again.');
+                redirect('/applications/create');
+            }
+
             $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
             $data = $this->buildData();
 
+            $json = json_encode($data, JSON_UNESCAPED_UNICODE);
+            if ($json === false) {
+                error_log('Application submission failed: json_encode error: ' . (json_last_error_msg()));
+                flash('error', 'There was a problem submitting your application. Please try again.');
+                redirect('/applications/create');
+                return;
+            }
+
             $id = Database::insert(
                 "INSERT INTO tenant_applications (property_id, status, data, notes, created_at, updated_at) VALUES (?, 'pending', ?, '', NOW(), NOW())",
-                [$propertyId, json_encode($data)]
+                [$propertyId, $json]
             );
 
             log_activity('application.created', "Tenancy application #{$id} submitted");
             flash('success', __('Your application has been submitted successfully. We will be in touch.'));
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
-            error_log('Application submission failed: ' . $e->getMessage());
+            error_log('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             flash('error', 'There was a problem submitting your application. Please try again.');
             redirect('/applications/create');
         }
@@ -255,7 +263,7 @@ class ApplicationController
         $tenants = [];
         $names = $_POST['other_tenant_last_name'] ?? [];
         foreach ($names as $i => $lastName) {
-            if (empty(trim($lastName))) continue;
+            if (!is_string($lastName) || trim($lastName) === '') continue;
             $tenants[] = [
                 'last_name' => $lastName,
                 'first_name' => $_POST['other_tenant_first_name'][$i] ?? '',
@@ -311,7 +319,7 @@ class ApplicationController
         $occupants = [];
         $names = $_POST['occupant_last_name'] ?? [];
         foreach ($names as $i => $lastName) {
-            if (empty(trim($lastName))) continue;
+            if (!is_string($lastName) || trim($lastName) === '') continue;
             $occupants[] = [
                 'last_name' => $lastName,
                 'first_name' => $_POST['occupant_first_name'][$i] ?? '',
@@ -327,7 +335,7 @@ class ApplicationController
         $refs = [];
         $lastNames = $_POST['reference_last_name'] ?? [];
         foreach ($lastNames as $i => $lastName) {
-            if (empty(trim($lastName))) continue;
+            if (!is_string($lastName) || trim($lastName) === '') continue;
             $refs[] = [
                 'last_name' => $lastName,
                 'first_name' => $_POST['reference_first_name'][$i] ?? '',
