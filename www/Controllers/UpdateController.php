@@ -190,7 +190,7 @@ class UpdateController
         $branch = trim(shell_exec("{$git} -C {$repo} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
 
         $steps = [
-            'Fixing permissions...' => "chmod -R a+w {$repo} 2>&1; chmod -R a+w {$repo}/.git 2>&1; (command -v sudo && sudo chmod -R a+w {$repo}) 2>&1 || true; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs {$repo}/storage/uploads 2>&1; true",
+            'Fixing permissions...' => "chmod -R a+w {$repo} 2>&1; chmod -R a+w {$repo}/.git 2>&1; (command -v sudo && sudo chmod -R a+w {$repo}) 2>&1 || true; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs 2>&1; true",
             'Preparing working directory...' => "{$cd} && rm -f .git/index.lock .git/FETCH_HEAD 2>&1; {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
             'Ensuring storage directories...' => "{$cd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/uploads/application_photos storage/framework storage/logs www/assets/uploads/logo 2>&1",
             'Fetching latest code...' => "{$cd} && {$git} fetch origin 2>&1",
