@@ -8,6 +8,8 @@ $themePref = $themeUser['theme'] ?? 'system';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="<?= h(base_url()) ?>/">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo-icon.svg">
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" sizes="any">
     <script>window.baseUrl = '<?= h(base_url()) ?>';</script>
     <title><?= h($title ?? 'Home') ?> - <?= h(site_name()) ?></title>
     <script>
