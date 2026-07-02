@@ -186,8 +186,8 @@ class UpdateController
         $cd = 'cd ' . $repo;
 
         $steps = [
-            'Fixing permissions...' => "chmod -R a+w {$repo} 2>/dev/null; rm -f {$repo}/storage/framework {$repo}/storage/logs {$repo}/storage/uploads; true",
-            'Preparing working directory...' => "{$cd} && {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
+            'Fixing permissions...' => "chmod -R a+w {$repo} 2>&1; chmod -R a+w {$repo}/.git 2>&1; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs {$repo}/storage/uploads 2>&1; true",
+            'Preparing working directory...' => "{$cd} && rm -f .git/index.lock .git/FETCH_HEAD 2>&1; {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
             'Ensuring storage directories...' => "{$cd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/uploads/application_photos storage/framework storage/logs www/assets/uploads/logo 2>&1",
             'Fetching latest code...' => "{$cd} && {$git} fetch origin 2>&1",
             'Checking for changes...' => "{$cd} && {$git} log HEAD..origin/master --oneline 2>&1",
