@@ -211,7 +211,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
             </div>
             <div class="p-6">
                 <?php if (empty($leases)): ?>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm"><?= __('No leases uploaded.') ?></p>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm"><?= __('No documents uploaded.') ?></p>
                 <?php else: ?>
                     <ul class="divide-y dark:divide-gray-700">
                         <?php foreach ($leases as $l): ?>

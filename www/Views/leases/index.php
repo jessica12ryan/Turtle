@@ -13,7 +13,7 @@
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <?php if (empty($leases)): ?>
-        <div class="p-6 text-center text-gray-500"><?= __('No leases found.') ?></div>
+        <div class="p-6 text-center text-gray-500"><?= __('No documents uploaded.') ?></div>
     <?php else: ?>
         <table class="w-full">
             <thead class="bg-gray-50">

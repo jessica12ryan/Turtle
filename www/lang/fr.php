@@ -177,6 +177,7 @@ return [
     'No comments yet.' => 'Aucun commentaire pour l\'instant.',
     'No description.' => 'Aucune description.',
     'No documents attached.' => 'Aucun document joint.',
+    'No documents uploaded.' => 'Aucun document téléversé.',
     'No events on this day.' => 'Aucun événement ce jour.',
     'No leases found.' => 'Aucun bail trouvé.',
     'No leases uploaded.' => 'Aucun bail téléversé.',

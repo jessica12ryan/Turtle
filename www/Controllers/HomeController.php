@@ -141,7 +141,7 @@ class HomeController
 
             $lastBackup = Database::fetch("SELECT MAX(created_at) as last FROM documents LIMIT 1");
             if (!$lastBackup || !$lastBackup['last']) {
-                $alerts['warning'][] = ['msg' => 'No lease documents have been uploaded yet.', 'link' => '/leases/create'];
+                $alerts['warning'][] = ['msg' => 'No documents have been uploaded yet.', 'link' => '/leases/create'];
             }
 
             $archivedProperties = Database::fetch("SELECT COUNT(*) as cnt FROM properties WHERE archived_at IS NOT NULL");

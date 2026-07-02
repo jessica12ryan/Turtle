@@ -207,5 +207,6 @@
 'Showing' => 'Showing',
 'of' => 'of',
 'Previous' => 'Previous',
-'Next' => 'Next',
+    'Next' => 'Next',
+    'No documents uploaded.' => 'No documents uploaded.',
 ];

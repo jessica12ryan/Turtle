@@ -177,6 +177,7 @@ return [
     'No comments yet.' => 'Aún no hay comentarios.',
     'No description.' => 'Sin descripción.',
     'No documents attached.' => 'No hay documentos adjuntos.',
+    'No documents uploaded.' => 'No hay documentos subidos.',
     'No events on this day.' => 'No hay eventos en este día.',
     'No leases found.' => 'No se encontraron contratos.',
     'No leases uploaded.' => 'No se subieron contratos.',
