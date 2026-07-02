@@ -446,6 +446,7 @@ return [
     'Rent' => 'Renta',
     'Rent Dashboard' => 'Tablero de Renta',
     'Rent Due Day' => 'Día de Vencimiento de Renta',
+    'Rent Payment' => 'Pago de Renta',
     'Restore Payments' => 'Restaurar Pagos',
     'Select Tenant' => 'Seleccionar Inquilino',
     'This Month' => 'Este Mes',

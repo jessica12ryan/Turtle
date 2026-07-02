@@ -446,6 +446,7 @@ return [
     'Rent' => 'Loyer',
     'Rent Dashboard' => 'Tableau de bord des loyers',
     'Rent Due Day' => 'Jour d\'échéance du loyer',
+    'Rent Payment' => 'Paiement de loyer',
     'Restore Payments' => 'Restaurer les paiements',
     'Select Tenant' => 'Sélectionner le locataire',
     'This Month' => 'Ce mois-ci',

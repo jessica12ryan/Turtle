@@ -73,6 +73,7 @@
     'Rent' => 'Rent',
     'Rent Dashboard' => 'Rent Dashboard',
     'Rent Due Day' => 'Rent Due Day',
+    'Rent Payment' => 'Rent Payment',
     'Restore Payments' => 'Restore Payments',
     'Select Tenant' => 'Select Tenant',
     'This Month' => 'This Month',

@@ -48,20 +48,28 @@
         </template>
         <p x-show="!selectedEvents.length" class="text-sm text-gray-500"><?= __('No events on this day.') ?></p>
     </div>
-</div>
 
-<div class="mt-4 flex items-center space-x-6 text-sm text-gray-600">
-    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-green-100 border border-green-300 inline-block"></span><span><?= __('Move In') ?></span></div>
-    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-red-100 border border-red-300 inline-block"></span><span><?= __('Move Out') ?></span></div>
-    <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300 inline-block"></span><span><?= __('Lease Ends') ?></span></div>
+    <!-- Color legend -->
+    <div class="mt-4 flex items-center space-x-6 text-sm text-gray-600">
+        <button @click="toggleType('movein')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('movein')}"><span class="w-3 h-3 rounded-full bg-green-100 border border-green-300 inline-block"></span><span><?= __('Move In') ?></span></button>
+        <button @click="toggleType('moveout')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('moveout')}"><span class="w-3 h-3 rounded-full bg-orange-100 border border-orange-300 inline-block"></span><span><?= __('Move Out') ?></span></button>
+        <button @click="toggleType('leaseend')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('leaseend')}"><span class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300 inline-block"></span><span><?= __('Lease Ends') ?></span></button>
+        <button @click="toggleType('payment')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('payment')}"><span class="w-3 h-3 rounded-full bg-blue-100 border border-blue-300 inline-block"></span><span><?= __('Rent Payment') ?></span></button>
+        <button @click="toggleType('deposit')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('deposit')}"><span class="w-3 h-3 rounded-full bg-purple-100 border border-purple-300 inline-block"></span><span><?= __('Security Deposit') ?></span></button>
+    </div>
 </div>
 
 <script>
 function calendar() {
     return {
         events: [],
+        enabledTypes: ['movein', 'moveout', 'leaseend', 'payment', 'deposit'],
         currentDate: new Date(),
         selectedDate: null,
+
+        get filteredEvents() {
+            return this.events.filter(e => this.enabledTypes.includes(e.type));
+        },
 
         get monthYear() {
             return this.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -97,7 +105,7 @@ function calendar() {
         makeCell(date, currentMonth, today) {
             const dateStr = date.toISOString().slice(0, 10);
             const day = date.getDate();
-            const events = this.events.filter(e => e.start === dateStr);
+            const events = this.filteredEvents.filter(e => e.start === dateStr);
 
             return {
                 date: dateStr,
@@ -110,7 +118,16 @@ function calendar() {
 
         get selectedEvents() {
             if (!this.selectedDate) return [];
-            return this.events.filter(e => e.start === this.selectedDate);
+            return this.filteredEvents.filter(e => e.start === this.selectedDate);
+        },
+
+        toggleType(type) {
+            const idx = this.enabledTypes.indexOf(type);
+            if (idx === -1) {
+                this.enabledTypes.push(type);
+            } else {
+                this.enabledTypes.splice(idx, 1);
+            }
         },
 
         prevMonth() {
