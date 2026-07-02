@@ -199,7 +199,7 @@
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4"><?= __('Other Tenants (18 and older)') ?></h2>
         <?php foreach ($data['other_tenants'] as $i => $t): ?>
             <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
-                <h3 class="font-medium text-gray-800 dark:text-gray-200 mb-3"><?= __('Tenant') ?> #<?= $i + 1 ?>: <?= h($t['first_name']) ?> <?= h($t['last_name']) ?></h3>
+                <h3 class="font-medium text-gray-800 dark:text-gray-200 mb-3"><?= __('Tenant') ?> #<?= $i + 2 ?>: <?= h($t['first_name']) ?> <?= h($t['last_name']) ?></h3>
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div><dt class="text-gray-500 dark:text-gray-400"><?= __('Relationship') ?></dt><dd class="text-gray-900 dark:text-gray-100"><?= h($t['relationship']) ?></dd></div>
                     <div><dt class="text-gray-500 dark:text-gray-400"><?= __('Birth Date') ?></dt><dd class="text-gray-900 dark:text-gray-100"><?= h($t['birth_date']) ?></dd></div>

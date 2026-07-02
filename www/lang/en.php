@@ -198,4 +198,6 @@
     'Government Issued Photo ID' => 'Government Issued Photo ID',
     'Drivers License, Passport, Military ID, Ontario Health Card' => 'Drivers License, Passport, Military ID, Ontario Health Card',
     'View Document' => 'View Document',
+'Only admins can change email addresses.' => 'Only admins can change email addresses.',
+'Changing the email will affect login credentials.' => 'Changing the email will affect login credentials.',
 ];

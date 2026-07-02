@@ -194,6 +194,7 @@ class StaffController
 
         $editingSelf = $id === Auth::instance()->id();
         $canChangeOwnRoles = $editingSelf && in_array($staff['role'], ['admin', 'landlord']);
+        $isAdmin = Auth::instance()->user()['role'] === 'admin';
 
         $roles = ['property_manager', 'maintenance'];
         if ($staff['role'] === 'landlord' || $staff['role'] === 'admin') {
@@ -211,7 +212,7 @@ class StaffController
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Staff']);
-        $view->render('staff/edit', compact('staff', 'roles', 'secondaryRoleMap', 'staffSecondaryRoles', 'editingSelf', 'canChangeOwnRoles'));
+        $view->render('staff/edit', compact('staff', 'roles', 'secondaryRoleMap', 'staffSecondaryRoles', 'editingSelf', 'canChangeOwnRoles', 'isAdmin'));
     }
 
     public function update(int $id): void
@@ -232,8 +233,13 @@ class StaffController
             redirect('/staff/' . $id . '/edit');
         }
 
+        $isAdmin = Auth::instance()->user()['role'] === 'admin';
+
         $validator = new Validator();
         $rules = ['name' => 'required|max:255'];
+        if ($isAdmin) {
+            $rules['email'] = 'required|email|unique:users,email,' . $id;
+        }
         if (!empty($_POST['password'])) {
             $rules['password'] = 'min:8|confirmed';
         }
@@ -247,6 +253,10 @@ class StaffController
 
         $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, updated_at = NOW()";
         $params = [$_POST['name'], $timezone, $language];
+        if ($isAdmin) {
+            $sql .= ", email = ?";
+            $params[] = $_POST['email'];
+        }
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";

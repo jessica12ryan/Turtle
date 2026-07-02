@@ -568,4 +568,6 @@ return [
     'Government Issued Photo ID' => 'Identificación con foto emitida por el gobierno',
     'Drivers License, Passport, Military ID, Ontario Health Card' => 'Licencia de conducir, pasaporte, identificación militar, tarjeta de salud de Ontario',
     'View Document' => 'Ver documento',
+'Only admins can change email addresses.' => 'Solo los administradores pueden cambiar direcciones de correo electrónico.',
+'Changing the email will affect login credentials.' => 'Cambiar el correo electrónico afectará las credenciales de inicio de sesión.',
 ];

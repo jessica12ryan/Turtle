@@ -20,6 +20,9 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-1 text-center"><?= __('Welcome to Turtle') ?></h1>
     <p class="text-gray-500 mb-6 text-center"><?= __("Let's get your portal set up.") ?></p>
 
+    <form method="POST" action="/setup" enctype="multipart/form-data" id="setup-form">
+        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+
     <!-- New Installation vs Restore Backup -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <div class="flex items-center space-x-6 mb-2">
@@ -100,9 +103,6 @@
             </ul>
         </div>
     <?php endif; ?>
-
-    <form method="POST" action="/setup" enctype="multipart/form-data" id="setup-form">
-        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <!-- Step 1: Site Information -->
         <div class="step-content active" data-step="1">
