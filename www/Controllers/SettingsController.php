@@ -702,27 +702,28 @@ class SettingsController
                 copy($envFile, "{$tmpDir}/.env");
             }
 
-            // Collect uploaded files (same pattern as rest of app)
+            // Collect uploaded files recursively (subdirs: propertyId, leaseId, ticketId, etc.)
             $uploadDirs = [
                 'www/assets/uploads/logo' => 'uploads/logo',
                 'storage/uploads/property_photos' => 'uploads/property_photos',
                 'storage/uploads/leases' => 'uploads/leases',
                 'storage/uploads/application_photos' => 'uploads/application_photos',
+                'storage/uploads/ticket_files' => 'uploads/ticket_files',
             ];
 
             foreach ($uploadDirs as $srcRel => $destRel) {
                 $src = base_path($srcRel);
                 if (!is_dir($src)) continue;
-                $destDir = "{$tmpDir}/{$destRel}";
-                if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-                $entries = scandir($src);
-                if ($entries === false) continue;
-                foreach ($entries as $entry) {
-                    if ($entry === '.' || $entry === '..') continue;
-                    $filePath = $src . '/' . $entry;
-                    if (is_file($filePath)) {
-                        copy($filePath, $destDir . '/' . $entry);
-                    }
+                $iterator = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($src, \RecursiveDirectoryIterator::SKIP_DOTS),
+                    \RecursiveIteratorIterator::LEAVES_ONLY
+                );
+                foreach ($iterator as $file) {
+                    $relativePath = substr($file->getPathname(), strlen($src) + 1);
+                    $destPath = "{$tmpDir}/{$destRel}/{$relativePath}";
+                    $destDir = dirname($destPath);
+                    if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+                    copy($file->getPathname(), $destPath);
                 }
             }
 
@@ -865,29 +866,34 @@ class SettingsController
             copy($envBak, $envDest);
         }
 
-        // Restore uploaded files
+        // Restore uploaded files recursively
         $uploadMappings = [
             'uploads/logo' => 'www/assets/uploads/logo',
             'uploads/property_photos' => 'storage/uploads/property_photos',
             'uploads/leases' => 'storage/uploads/leases',
             'uploads/application_photos' => 'storage/uploads/application_photos',
+            'uploads/ticket_files' => 'storage/uploads/ticket_files',
         ];
 
         foreach ($uploadMappings as $srcRel => $destRel) {
             $srcDir = "{$tmpDir}/{$srcRel}";
             if (!is_dir($srcDir)) continue;
 
-            $destDir = base_path($destRel);
-            if (!is_dir($destDir)) {
-                mkdir($destDir, 0755, true);
+            $destBase = base_path($destRel);
+            if (!is_dir($destBase)) {
+                mkdir($destBase, 0755, true);
             }
 
-            $files = glob($srcDir . '/*');
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    $target = $destDir . '/' . basename($file);
-                    copy($file, $target);
-                }
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($srcDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+            foreach ($iterator as $file) {
+                $relativePath = substr($file->getPathname(), strlen($srcDir) + 1);
+                $target = $destBase . '/' . $relativePath;
+                $targetDir = dirname($target);
+                if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
+                copy($file->getPathname(), $target);
             }
         }
 
