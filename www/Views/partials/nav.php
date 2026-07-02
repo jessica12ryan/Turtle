@@ -26,7 +26,7 @@ function navActive(string $prefix, string $currentUri): string {
                     <?php if (can('properties.access')): ?>
                         <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>"><?= __('Properties') ?></a>
                     <?php endif; ?>
-                    <?php if (can('rents.access')): ?>
+                    <?php if (can('rents.access') && $user['role'] !== 'tenant'): ?>
                         <a href="/rent" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/rent', $currentUri) ?>"><?= __('Rent') ?></a>
                     <?php endif; ?>
                     <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
@@ -91,7 +91,7 @@ function navActive(string $prefix, string $currentUri): string {
             <?php if (can('properties.access')): ?>
                 <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>"><?= __('Properties') ?></a>
             <?php endif; ?>
-            <?php if (can('rents.access')): ?>
+            <?php if (can('rents.access') && $user['role'] !== 'tenant'): ?>
                 <a href="/rent" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/rent', $currentUri) ?>"><?= __('Rent') ?></a>
             <?php endif; ?>
             <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>

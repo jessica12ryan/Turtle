@@ -88,15 +88,6 @@ class HomeController
             $stats['open_tickets'] = count($openTickets);
 
             $alerts = [];
-            $myLeases = Database::fetch(
-                "SELECT COUNT(*) as cnt FROM leases l 
-                 JOIN property_tenant pt ON pt.property_id = l.property_id 
-                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL",
-                [$auth->id()]
-            );
-            if (!$myLeases || $myLeases['cnt'] === 0) {
-                $alerts['warning'][] = ['msg' => 'No leases assigned to you yet.', 'link' => '/leases'];
-            }
 
             $recentTickets = [];
 

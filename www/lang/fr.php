@@ -388,6 +388,7 @@ return [
     'Cheque #, transaction ID, etc.' => 'N° de chèque, ID de transaction, etc.',
     'Credit Card' => 'Carte de crédit',
     'day' => 'jour',
+    'day of the month' => 'jour du mois',
     'Debit' => 'Débit',
     'Due' => 'Dû',
     'Due Day' => 'Jour d\'échéance',

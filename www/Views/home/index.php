@@ -103,7 +103,7 @@
                     <div>
                         <p class="font-medium text-gray-800 dark:text-gray-200"><?= h($r['name']) ?></p>
                         <?php if ($r['rent_amount'] > 0): ?>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">$<?= number_format($r['rent_amount'], 2) ?> <?= __('per month') ?> — <?= __('Due') ?>: <?= __('day') ?> <?= h($r['rent_due_day'] ?? '—') ?></p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">$<?= number_format($r['rent_amount'], 2) ?> <?= __('per month') ?> — <?= __('Due') ?>: <?php $d = (int)($r['rent_due_day'] ?? 0); if ($d) { $s = 'th'; if (!in_array($d % 100, [11,12,13])) { switch ($d % 10) { case 1: $s='st'; break; case 2: $s='nd'; break; case 3: $s='rd'; break; } } echo $d . $s; } else { echo '—'; } ?> <?= __('day of the month') ?></p>
                         <?php endif; ?>
                     </div>
                     <div class="text-right">

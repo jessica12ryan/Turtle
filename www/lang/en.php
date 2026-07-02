@@ -47,6 +47,7 @@
     'Cheque #, transaction ID, etc.' => 'Cheque #, transaction ID, etc.',
     'Credit Card' => 'Credit Card',
     'day' => 'day',
+    'day of the month' => 'day of the month',
     'Debit' => 'Debit',
     'Due' => 'Due',
     'Due Day' => 'Due Day',
