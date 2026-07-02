@@ -100,6 +100,26 @@ document.querySelector('form').addEventListener('submit', function() {
 
 const mainTenants = <?= json_encode($mainTenants) ?>;
 
+function filterProperties() {
+    const isMain = document.getElementById('is-main-tenant').checked;
+    const select = document.getElementById('property-select');
+    let hasVisible = false;
+
+    for (const option of select.options) {
+        if (!option.value) continue;
+        if (isMain) {
+            option.style.display = mainTenants[option.value] ? 'none' : '';
+        } else {
+            option.style.display = mainTenants[option.value] ? '' : 'none';
+        }
+        if (option.style.display !== 'none') hasVisible = true;
+    }
+
+    if (select.options[select.selectedIndex] && select.options[select.selectedIndex].style.display === 'none') {
+        select.value = '';
+    }
+}
+
 function syncLeaseDates() {
     const isMain = document.getElementById('is-main-tenant').checked;
     const propId = document.getElementById('property-select').value;
@@ -136,6 +156,7 @@ function syncLeaseDates() {
         leaseTypeEl.setAttribute('disabled', 'disabled');
         emergencyRow.style.display = 'none';
     }
+    filterProperties();
 }
 
 document.getElementById('is-main-tenant').addEventListener('change', syncLeaseDates);

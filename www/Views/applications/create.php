@@ -475,6 +475,14 @@ function applicationForm() {
         primary_evicted: '',
         primary_convicted: '',
         primary_refused_rent: '',
+        init() {
+            this.$el.addEventListener('input', function(e) {
+                if (e.target.tagName === 'INPUT' && e.target.type === 'tel') {
+                    let x = e.target.value.replace(/[^\d]/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,4})/);
+                    e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+                }
+            });
+        },
         addOtherTenant() { this.otherTenants.push({evicted: '', convicted: '', refused_rent: ''}); },
         removeOtherTenant(i) { this.otherTenants.splice(i, 1); },
         addOtherOccupant() { this.otherOccupants.push({}); },
