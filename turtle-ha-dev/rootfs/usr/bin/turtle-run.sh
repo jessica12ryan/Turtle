@@ -176,9 +176,8 @@ INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_from_address', '${MAIL_F
 SQL
 
 # ── Permissions ───────────────────────────────────────────────────────────────
-chown -R apache:apache "${TURTLE_DIR}/www/assets" 2>/dev/null || true
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
-# Make app dir writable so in-app updater can modify files
+# Make entire app writable so git pull / in-app updater can modify files
 chmod -R a+w "${TURTLE_DIR}" 2>/dev/null || true
 
 # ── Shutdown handler ──────────────────────────────────────────────────────────
