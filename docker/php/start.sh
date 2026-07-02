@@ -19,11 +19,12 @@ fi
 
 # Configure git safe directory for mounted repo
 git config --global --add safe.directory /var/www/html 2>/dev/null || true
+git config --global --add safe.directory /var/www/turtle 2>/dev/null || true
 
-# Ensure storage directories exist and are writable by www-data
+# Ensure storage/upload directories and .git are writable by www-data
 mkdir -p storage/uploads/leases storage/uploads/property_photos storage/logs storage/framework www/assets/uploads/logo
-chown -R www-data:www-data storage/uploads storage/logs storage/framework www/assets 2>/dev/null || true
-chmod -R 777 storage/uploads storage/logs storage/framework www/assets 2>/dev/null || true
+chown -R www-data:www-data storage/uploads storage/logs storage/framework www/assets .git 2>/dev/null || true
+chmod -R 777 storage/uploads storage/logs storage/framework www/assets .git 2>/dev/null || true
 
 # Start queue worker in background
 php -r "
