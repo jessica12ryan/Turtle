@@ -128,7 +128,9 @@ jobs:
           context: ./turtle-ha
           push: true
           platforms: ${{ matrix.platform }}
-          build-args: BUILD_FROM=${{ matrix.base }}
+          build-args: |
+            BUILD_FROM=${{ matrix.base }}
+            BUILD_ARCH=${{ matrix.arch }}
           tags: |
             ghcr.io/jessica12ryan/turtle/${{ matrix.arch }}:${{ needs.release.outputs.version }}
             ghcr.io/jessica12ryan/turtle/${{ matrix.arch }}:latest

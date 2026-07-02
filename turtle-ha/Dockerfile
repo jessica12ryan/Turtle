@@ -44,7 +44,7 @@ RUN MPVER="v1.30.2" \
          armv7)   MPARCH="arm" ;; \
          *)       echo "Unsupported arch: ${BUILD_ARCH}"; exit 1 ;; \
        esac \
-    && curl -fsL "https://github.com/axllent/mailpit/releases/download/${MPVER}/mailpit-linux-${MPARCH}.tar.gz" -o /tmp/mailpit.tar.gz \
+    && curl -fsL --retry 3 --retry-delay 5 "https://github.com/axllent/mailpit/releases/download/${MPVER}/mailpit-linux-${MPARCH}.tar.gz" -o /tmp/mailpit.tar.gz \
     && tar xzf /tmp/mailpit.tar.gz -C /usr/local/bin/ mailpit \
     && chmod +x /usr/local/bin/mailpit \
     && rm /tmp/mailpit.tar.gz
