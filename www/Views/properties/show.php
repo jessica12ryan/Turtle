@@ -9,7 +9,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         <?php endif; ?>
         <div>
             <h1 class="text-2xl font-bold text-gray-800"><?= h($property['name']) ?></h1>
-            <p class="text-gray-500"><?= h($property['address']) ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
+            <p class="text-gray-500"><?= h($property['address']) ?><?= !empty($property['apt_suite']) ? ', ' . h($property['apt_suite']) : '' ?>, <?= h($property['city']) ?>, <?= h($property['province']) ?><?= !empty($property['postal_code']) ? ', ' . h($property['postal_code']) : '' ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
         </div>
     </div>
     <div class="flex space-x-3">

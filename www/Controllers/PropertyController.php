@@ -383,9 +383,12 @@ class PropertyController
             return;
         }
 
+        $existingPhotos = Database::fetch("SELECT COUNT(*) as cnt FROM property_photos WHERE property_id = ?", [$id]);
+        $isMain = ($existingPhotos && (int)$existingPhotos['cnt'] === 0) ? 1 : 0;
+
         $photoId = Database::insert(
             "INSERT INTO property_photos (property_id, file_path, original_name, mime_type, is_main, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
-            [$id, $loc['prefix'] . '/' . $id . '/' . $storedName, $_FILES['photo']['name'], $type, 0]
+            [$id, $loc['prefix'] . '/' . $id . '/' . $storedName, $_FILES['photo']['name'], $type, $isMain]
         );
 
         echo json_encode([

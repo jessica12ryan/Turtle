@@ -187,7 +187,7 @@ class HomeController
         }
 
         if ($role === 'admin' || $role === 'landlord') {
-            $staffCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role IN ('property_manager','maintenance') AND archived_at IS NULL");
+            $staffCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE archived_at IS NULL AND (role IN ('property_manager','maintenance') OR FIND_IN_SET('property_manager', COALESCE(secondary_roles,'')) OR FIND_IN_SET('maintenance', COALESCE(secondary_roles,'')))");
             if (!$staffCount || $staffCount['cnt'] === 0) {
                 $alerts['warning'][] = ['msg' => 'No staff members exist. Invite property managers or maintenance staff.', 'link' => '/staff/create'];
             }
