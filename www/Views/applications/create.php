@@ -3,7 +3,7 @@
     <p class="text-gray-500 mb-6"><?= __('Please fill out this form to apply for tenancy. All fields marked with * are required unless noted otherwise.') ?></p>
 
     <?php if ($notes): ?>
-        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6 text-sm text-gray-700">
+        <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-6 text-sm text-gray-700">
             <?= nl2br(h($notes)) ?>
         </div>
     <?php endif; ?>

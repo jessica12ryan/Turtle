@@ -26,10 +26,10 @@ $themePref = $themeUser['theme'] ?? 'system';
             }
         })();
     </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class' }
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <style>
@@ -38,6 +38,7 @@ $themePref = $themeUser['theme'] ?? 'system';
         html[data-theme="light"] { color-scheme: light; }
         html:not(.dark) body { background-color: #f9fafb; color: #1f2937; }
         html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3 { color: #111827; }
+        html[data-theme="light"] .bg-white { background-color: #ffffff !important; }
 
         .dark,
         .dark body { background-color: #0f172a; color: #e2e8f0; }
