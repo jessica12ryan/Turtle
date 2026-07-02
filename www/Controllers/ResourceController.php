@@ -116,6 +116,7 @@ class ResourceController
             redirect('/resources/create');
         }
 
+        log_activity('resource.created', "Resource '{$_POST['title']}' added");
         flash('success', 'Resource added successfully.');
         redirect('/resources');
     }
@@ -171,6 +172,7 @@ class ResourceController
             redirect('/resources/' . $id . '/edit');
         }
 
+        log_activity('resource.updated', "Resource '{$_POST['title']}' updated");
         flash('success', 'Resource updated successfully.');
         redirect('/resources');
     }
@@ -181,6 +183,7 @@ class ResourceController
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
         if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        log_activity('resource.deleted', "Resource '" . ($link['title'] ?? '') . "' deleted");
         Database::execute("DELETE FROM resources WHERE id = ?", [$id]);
         flash('success', 'Resource deleted successfully.');
         redirect('/resources');

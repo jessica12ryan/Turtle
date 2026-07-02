@@ -222,6 +222,8 @@ class UpdateController
         $pid = (int)($pidOutput[0] ?? 0);
         file_put_contents($logFile . '.pid', (string)$pid);
 
+        log_activity('update.applied', "Update started on {$branch} branch (PID: {$pid})");
+
         echo json_encode([
             'update_id' => $updateId,
             'pid' => $pid,

@@ -570,4 +570,12 @@ return [
     'View Document' => 'Ver documento',
 'Only admins can change email addresses.' => 'Solo los administradores pueden cambiar direcciones de correo electrónico.',
 'Changing the email will affect login credentials.' => 'Cambiar el correo electrónico afectará las credenciales de inicio de sesión.',
+'All users' => 'Todos los usuarios',
+'From' => 'Desde',
+'To' => 'Hasta',
+'Clear' => 'Limpiar',
+'Showing' => 'Mostrando',
+'of' => 'de',
+'Previous' => 'Anterior',
+'Next' => 'Siguiente',
 ];

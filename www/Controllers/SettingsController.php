@@ -65,13 +65,53 @@ class SettingsController
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'log_level'");
             $data['logLevel'] = $row['value'] ?? 'debug';
 
-            // Activity logs from DB
-            $actionFilter = $_GET['action_filter'] ?? '';
-            $actionFilterSql = $actionFilter ? ' WHERE action = ?' : '';
-            $params = $actionFilter ? [$actionFilter] : [];
+            // Activity logs from DB with pagination and filters
+            $conditions = [];
+            $params = [];
+
+            if (!empty($_GET['action_filter'])) {
+                $conditions[] = 'action = ?';
+                $params[] = $_GET['action_filter'];
+            }
+
+            $userId = $_GET['user_id'] ?? '';
+            if ($userId !== '' && $userId !== 'all') {
+                $conditions[] = 'user_id = ?';
+                $params[] = (int)$userId;
+            }
+
+            if (!empty($_GET['from_date'])) {
+                $conditions[] = 'DATE(created_at) >= ?';
+                $params[] = $_GET['from_date'];
+            }
+
+            if (!empty($_GET['to_date'])) {
+                $conditions[] = 'DATE(created_at) <= ?';
+                $params[] = $_GET['to_date'];
+            }
+
+            $where = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
+
+            $countRow = Database::fetch("SELECT COUNT(*) as cnt FROM activity_logs{$where}", $params);
+            $totalLogs = (int)($countRow['cnt'] ?? 0);
+
+            $perPage = 15;
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $totalPages = max(1, (int)ceil($totalLogs / $perPage));
+            $offset = ($page - 1) * $perPage;
+
             $data['activityLogs'] = Database::fetchAll(
-                "SELECT * FROM activity_logs{$actionFilterSql} ORDER BY created_at DESC LIMIT 100",
-                $params
+                "SELECT * FROM activity_logs{$where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                array_merge($params, [$perPage, $offset])
+            );
+            $data['totalLogs'] = $totalLogs;
+            $data['totalPages'] = $totalPages;
+            $data['currentPage'] = $page;
+            $data['perPage'] = $perPage;
+
+            // Distinct users and actions for filter dropdowns
+            $data['activityUsers'] = Database::fetchAll(
+                "SELECT DISTINCT user_id, user_name FROM activity_logs ORDER BY user_name"
             );
             $data['activityActions'] = Database::fetchAll(
                 "SELECT DISTINCT action FROM activity_logs ORDER BY action"
@@ -501,7 +541,32 @@ class SettingsController
 
         switch ($type) {
             case 'activity':
-                $rows = Database::fetchAll("SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 1000");
+                $conditions = [];
+                $params = [];
+
+                if (!empty($_GET['action_filter'])) {
+                    $conditions[] = 'action = ?';
+                    $params[] = $_GET['action_filter'];
+                }
+
+                $userId = $_GET['user_id'] ?? '';
+                if ($userId !== '' && $userId !== 'all') {
+                    $conditions[] = 'user_id = ?';
+                    $params[] = (int)$userId;
+                }
+
+                if (!empty($_GET['from_date'])) {
+                    $conditions[] = 'DATE(created_at) >= ?';
+                    $params[] = $_GET['from_date'];
+                }
+
+                if (!empty($_GET['to_date'])) {
+                    $conditions[] = 'DATE(created_at) <= ?';
+                    $params[] = $_GET['to_date'];
+                }
+
+                $where = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
+                $rows = Database::fetchAll("SELECT * FROM activity_logs{$where} ORDER BY created_at DESC LIMIT 10000", $params);
                 $content = "Action\tUser\tDescription\tTime\n";
                 foreach ($rows as $r) {
                     $content .= "{$r['action']}\t{$r['user_name']}\t{$r['description']}\t{$r['created_at']}\n";

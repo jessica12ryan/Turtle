@@ -429,6 +429,7 @@ class TenantController
             );
         }
 
+        log_activity('tenant.updated', "Tenant '{$_POST['name']}' updated");
         flash('success', 'Tenant updated successfully.');
         redirect('/tenants/' . $id);
     }

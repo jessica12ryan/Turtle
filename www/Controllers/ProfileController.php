@@ -54,6 +54,7 @@ class ProfileController
             unset($_SESSION['_language']);
         }
 
+        log_activity('profile.updated', 'Profile updated');
         flash('success', 'Profile updated successfully.');
         redirect('/profile');
     }

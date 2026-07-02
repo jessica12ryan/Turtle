@@ -200,4 +200,12 @@
     'View Document' => 'View Document',
 'Only admins can change email addresses.' => 'Only admins can change email addresses.',
 'Changing the email will affect login credentials.' => 'Changing the email will affect login credentials.',
+'All users' => 'All users',
+'From' => 'From',
+'To' => 'To',
+'Clear' => 'Clear',
+'Showing' => 'Showing',
+'of' => 'of',
+'Previous' => 'Previous',
+'Next' => 'Next',
 ];
