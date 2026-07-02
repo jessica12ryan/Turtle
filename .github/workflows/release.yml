@@ -45,6 +45,25 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: bump HA add-on version to ${{ steps.version.outputs.version }}"
           git push origin HEAD
 
+      - name: Get Commits Since Last Tag
+        id: git_history
+        run: |
+          # Fetch the latest tag name, ignoring the current one if it was just pushed
+          LATEST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # If no previous tag exists, get all commits
+            COMMITS=$(git log --oneline)
+          else
+            # Get all commits between the last tag and current HEAD
+            COMMITS=$(git log ${LATEST_TAG}..HEAD --oneline)
+          fi
+          
+          # Save the multiline string to the GitHub Action environment variable
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create tag
         run: |
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
@@ -54,8 +73,15 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: "v${{ steps.version.outputs.version }}"
-          name: "Release v${{ steps.version.outputs.version }}"
-          generate_release_notes: true
+          name: "Turtle v${{ steps.version.outputs.version }}"
+        body: |
+          ## Turtle - Tenant Management Portal
+          
+          ### How to use
+          See [README.md](../../blob/master/README.md) for installation instructions.
+          
+          ### Changes
+          ${{ steps.git_history.outputs.changelog }}
 
   build-ha-addon:
     needs: release
