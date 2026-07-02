@@ -136,5 +136,22 @@ $themePref = $themeUser['theme'] ?? 'system';
         <?php endif; ?>
         <?= $content ?>
     </main>
+<script>
+document.addEventListener('input', function(e) {
+    if (e.target.tagName === 'INPUT' && e.target.name && e.target.name.indexOf('postal_code') !== -1) {
+        var raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        var parts = raw.match(/^([A-Z])(\d)([A-Z])?(\d)?([A-Z])?(\d)?/);
+        if (parts) {
+            var formatted = parts[1];
+            if (parts[2] !== undefined) formatted += parts[2];
+            if (parts[3] !== undefined) formatted += parts[3];
+            if (parts[4] !== undefined) formatted += ' ' + parts[4];
+            if (parts[5] !== undefined) formatted += parts[5];
+            if (parts[6] !== undefined) formatted += parts[6];
+            if (formatted !== e.target.value) e.target.value = formatted;
+        }
+    }
+});
+</script>
 </body>
 </html>
