@@ -69,6 +69,11 @@ jobs:
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
 
+      - name: Update stable branch
+        run: |
+          git branch -f stable HEAD
+          git push origin stable
+
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
