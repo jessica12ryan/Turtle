@@ -95,39 +95,41 @@
                 </table>
             </div>
 
-            <?php if ($totalPages > 1): ?>
+            <?php if ($totalPages > 1):
+                $qsBase = 'tab=logging&action_filter=' . urlencode($_GET['action_filter'] ?? '') . '&user_id=' . urlencode($_GET['user_id'] ?? '') . '&from_date=' . urlencode($_GET['from_date'] ?? '') . '&to_date=' . urlencode($_GET['to_date'] ?? '');
+            ?>
             <div class="flex items-center justify-between mt-4">
                 <p class="text-xs text-gray-500">
                     <?= __('Showing') ?> <?= (($currentPage - 1) * $perPage) + 1 ?>–<?= min($currentPage * $perPage, $totalLogs) ?> <?= __('of') ?> <?= $totalLogs ?>
                 </p>
                 <div class="flex gap-1">
                     <?php if ($currentPage > 1): ?>
-                        <a href="?tab=logging&page=<?= $currentPage - 1 ?>&action_filter=<?= h($_GET['action_filter'] ?? '') ?>&user_id=<?= h($_GET['user_id'] ?? '') ?>&from_date=<?= h($_GET['from_date'] ?? '') ?>&to_date=<?= h($_GET['to_date'] ?? '') ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"><?= __('Previous') ?></a>
+                        <a href="/settings?<?= $qsBase ?>&page=<?= $currentPage - 1 ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"><?= __('Previous') ?></a>
                     <?php endif; ?>
 
                     <?php
                     $startPage = max(1, $currentPage - 2);
                     $endPage = min($totalPages, $currentPage + 2);
                     if ($startPage > 1): ?>
-                        <a href="?tab=logging&page=1&action_filter=<?= h($_GET['action_filter'] ?? '') ?>&user_id=<?= h($_GET['user_id'] ?? '') ?>&from_date=<?= h($_GET['from_date'] ?? '') ?>&to_date=<?= h($_GET['to_date'] ?? '') ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100">1</a>
+                        <a href="/settings?<?= $qsBase ?>&page=1" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100">1</a>
                         <?php if ($startPage > 2): ?>
                             <span class="px-2 py-1 text-sm text-gray-400">...</span>
                         <?php endif; ?>
                     <?php endif; ?>
 
                     <?php for ($p = $startPage; $p <= $endPage; $p++): ?>
-                        <a href="?tab=logging&page=<?= $p ?>&action_filter=<?= h($_GET['action_filter'] ?? '') ?>&user_id=<?= h($_GET['user_id'] ?? '') ?>&from_date=<?= h($_GET['from_date'] ?? '') ?>&to_date=<?= h($_GET['to_date'] ?? '') ?>" class="px-3 py-1 text-sm border rounded-lg <?= $p === $currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100' ?>"><?= $p ?></a>
+                        <a href="/settings?<?= $qsBase ?>&page=<?= $p ?>" class="px-3 py-1 text-sm border rounded-lg <?= $p === $currentPage ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100' ?>"><?= $p ?></a>
                     <?php endfor; ?>
 
                     <?php if ($endPage < $totalPages): ?>
                         <?php if ($endPage < $totalPages - 1): ?>
                             <span class="px-2 py-1 text-sm text-gray-400">...</span>
                         <?php endif; ?>
-                        <a href="?tab=logging&page=<?= $totalPages ?>&action_filter=<?= h($_GET['action_filter'] ?? '') ?>&user_id=<?= h($_GET['user_id'] ?? '') ?>&from_date=<?= h($_GET['from_date'] ?? '') ?>&to_date=<?= h($_GET['to_date'] ?? '') ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"><?= $totalPages ?></a>
+                        <a href="/settings?<?= $qsBase ?>&page=<?= $totalPages ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <?php if ($currentPage < $totalPages): ?>
-                        <a href="?tab=logging&page=<?= $currentPage + 1 ?>&action_filter=<?= h($_GET['action_filter'] ?? '') ?>&user_id=<?= h($_GET['user_id'] ?? '') ?>&from_date=<?= h($_GET['from_date'] ?? '') ?>&to_date=<?= h($_GET['to_date'] ?? '') ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"><?= __('Next') ?></a>
+                        <a href="/settings?<?= $qsBase ?>&page=<?= $currentPage + 1 ?>" class="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"><?= __('Next') ?></a>
                     <?php endif; ?>
                 </div>
             </div>
