@@ -84,7 +84,9 @@ class UpdateController
 
     private function checkDevChannel(string $currentVersion): array
     {
-        $git = 'git -c safe.directory=' . self::repoPath() . ' -C ' . self::repoPath();
+        $repo = self::repoPath();
+        $git = 'git -c safe.directory=' . $repo . ' -C ' . $repo;
+        $branch = trim(shell_exec("{$git} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
 
         // Try git fetch first — works when container has outbound git access
         exec("{$git} fetch origin 2>&1", $fetchOutput, $fetchExitCode);
@@ -96,7 +98,7 @@ class UpdateController
             return $this->checkDevViaApi($currentVersion);
         }
 
-        exec("{$git} rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
+        exec("{$git} rev-list --count HEAD..origin/{$branch} 2>&1", $countOutput, $countExitCode);
 
         if ($countExitCode !== 0) {
             $countOut = implode("\n", $countOutput);
@@ -110,13 +112,13 @@ class UpdateController
         $currentHash = trim($hashOutput[0] ?? $currentVersion);
 
         if ($behindCount > 0) {
-            exec("{$git} rev-parse --short origin/master 2>&1", $remoteHashOutput);
+            exec("{$git} rev-parse --short origin/{$branch} 2>&1", $remoteHashOutput);
             $remoteHash = trim($remoteHashOutput[0] ?? '');
             return [
-                'latest_version' => $remoteHash ?: "origin/master",
+                'latest_version' => $remoteHash ?: "origin/{$branch}",
                 'update_available' => true,
                 'behind_count' => $behindCount,
-                'release_body' => "{$behindCount} commit(s) behind origin/master.",
+                'release_body' => "{$behindCount} commit(s) behind origin/{$branch}.",
             ];
         }
 
@@ -185,13 +187,15 @@ class UpdateController
         $git = 'git -c safe.directory=' . $repo;
         $cd = 'cd ' . $repo;
 
+        $branch = trim(shell_exec("{$git} -C {$repo} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
+
         $steps = [
-            'Fixing permissions...' => "chmod -R a+w {$repo} 2>&1; chmod -R a+w {$repo}/.git 2>&1; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs {$repo}/storage/uploads 2>&1; true",
+            'Fixing permissions...' => "chmod -R a+w {$repo} 2>&1; chmod -R a+w {$repo}/.git 2>&1; (command -v sudo && sudo chmod -R a+w {$repo}) 2>&1 || true; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs {$repo}/storage/uploads 2>&1; true",
             'Preparing working directory...' => "{$cd} && rm -f .git/index.lock .git/FETCH_HEAD 2>&1; {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
             'Ensuring storage directories...' => "{$cd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/uploads/application_photos storage/framework storage/logs www/assets/uploads/logo 2>&1",
             'Fetching latest code...' => "{$cd} && {$git} fetch origin 2>&1",
-            'Checking for changes...' => "{$cd} && {$git} log HEAD..origin/master --oneline 2>&1",
-            'Pulling updates...' => "{$cd} && {$git} pull origin master 2>&1",
+            'Checking for changes...' => "{$cd} && {$git} log HEAD..origin/{$branch} --oneline 2>&1",
+            'Pulling updates...' => "{$cd} && {$git} pull origin {$branch} 2>&1",
             'Running migrations...' => "{$cd} && bash database/migrate.sh 2>&1",
             'Restarting services...' => "{$cd} && php -r 'opcache_reset();' 2>&1; apachectl graceful 2>&1 || httpd -k graceful 2>&1 || true",
         ];
@@ -309,17 +313,19 @@ class UpdateController
         }
 
         if ($channel === 'development') {
-            $git = 'git -c safe.directory=' . self::repoPath() . ' -C ' . self::repoPath();
+            $repo = self::repoPath();
+            $git = 'git -c safe.directory=' . $repo . ' -C ' . $repo;
+            $branch = trim(shell_exec("{$git} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
             exec("{$git} fetch origin 2>&1", $fetchOutput, $fetchExitCode);
             if ($fetchExitCode !== 0) return null;
 
-            exec("{$git} rev-list --count HEAD..origin/master 2>&1", $countOutput, $countExitCode);
+            exec("{$git} rev-list --count HEAD..origin/{$branch} 2>&1", $countOutput, $countExitCode);
             if ($countExitCode !== 0) return null;
 
             $behindCount = (int)trim($countOutput[0] ?? '0');
             if ($behindCount <= 0) return null;
 
-            exec("{$git} rev-parse --short origin/master 2>&1", $hashOutput);
+            exec("{$git} rev-parse --short origin/{$branch} 2>&1", $hashOutput);
             return trim($hashOutput[0] ?? '');
         }
 

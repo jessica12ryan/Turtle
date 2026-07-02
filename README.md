@@ -5,7 +5,7 @@ A web application for managing rental properties, tenants, leases, maintenance t
 ## Quick Start (Docker)
 
 ```bash
-git clone https://github.com/jessica12ryan/Turtle.git
+git clone --branch stable https://github.com/jessica12ryan/Turtle.git
 cd Turtle
 docker compose up -d --build
 open http://localhost
@@ -24,7 +24,7 @@ Turtle is available as a Home Assistant add-on in two variants:
 | Add-on | Dockerfile | Description |
 |--------|-----------|-------------|
 | **Turtle** | `turtle-ha/` | Stable production build |
-| **Turtle (Dev)** | `turtle-ha-dev/` | Development channel — builds from `development` branch |
+| **Turtle (Dev)** | `turtle-ha-dev/` | Development channel — builds from `master` branch |
 
 Both add-ons support **ingress** (embedded in HA UI) and **direct access** via port. The build config (`build.yaml`) and add-on config (`config.yaml`) follow the standard HA add-on structure. An AppArmor profile (`apparmor.txt`) is included and auto-loaded.
 
@@ -63,7 +63,7 @@ docker/php/           Dockerfile + entrypoint + PHP config
 turtle-ha/            Home Assistant production add-on (Dockerfile, config.yaml, apparmor.txt, rootfs/)
 turtle-ha-dev/        Home Assistant dev add-on (same structure, development channel)
 docker-compose.yml    Docker Compose for local development
-update.sh             Update script for HA add-on containers
+update.sh             Update script (git pull + docker compose up)
 ```
 
 ## Rent Tracking
@@ -85,22 +85,33 @@ Admins can create and restore full system backups via **Settings → Backup & Re
 - Restore drops all existing tables and re-imports, then logs out the current user
 - The setup wizard also supports restore on first boot (no admin login required)
 
+## Releases
+
+Stable releases are tagged and maintained on the `stable` branch. Development (bleeding-edge) happens on `master`. To switch channels:
+
+- **Stable** (default): `git checkout stable`
+- **Development**: `git checkout master`
+
+On Home Assistant, install **Turtle** for stable or **Turtle (Dev)** for the latest master.
+
 ## Updating
 
 ### In-app (recommended for Docker)
 1. Go to **Settings → Updates** (admin only) — the page auto-checks for updates on load
-2. If an update is available, click **Apply Update** — runs `git pull` + migrations automatically
-3. Each step tracks its exit code; only non-zero exit codes produce error output in the progress view
-4. Reload the page when complete
+2. Toggle **Update Channel** — **Stable** pulls from the `stable` branch (tagged releases); **Development** pulls from `master`
+3. If an update is available, click **Apply Update** — runs `git pull` + migrations automatically
+4. Each step tracks its exit code; only non-zero exit codes produce error output in the progress view
+5. Reload the page when complete
 
 ### Manual
 ```bash
+git checkout stable   # or master for development
 git pull
 docker compose up -d --build
 ```
 
 ### HA Add-on
-The add-on runs `git pull` at container boot (before schema load) to ensure fresh code despite Docker build caching. Run-time updates can also be triggered via **Settings → Updates** using the in-app updater, which runs `git pull` as the apache user.
+The add-on clones the configured branch at build time. Run-time updates can be triggered via **Settings → Updates** using the in-app updater, which runs `git pull` inside the container.
 
 ## Email Configuration
 

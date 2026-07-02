@@ -51,7 +51,7 @@ RUN case "${BUILD_ARCH}" in \
 # php82 -> php alias for scripts that call `php`
 RUN ln -sf /usr/bin/php82 /usr/bin/php
 
-# Clone Turtle master branch — rebuilt on every push to master
+# Clone Turtle development branch — rebuilt on every push to master
 RUN git clone --depth=1 --branch master https://github.com/jessica12ryan/Turtle.git /var/www/turtle
 
 # Apache: switch to port 8099, enable rewrite

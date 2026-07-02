@@ -51,8 +51,8 @@ RUN case "${BUILD_ARCH}" in \
 # php82 -> php alias for scripts that call `php`
 RUN ln -sf /usr/bin/php82 /usr/bin/php
 
-# Clone Turtle at build time; in-app updater handles future updates via git pull
-RUN git clone --depth=1 https://github.com/jessica12ryan/Turtle.git /var/www/turtle
+# Clone Turtle stable branch at build time; in-app updater handles future updates via git pull
+RUN git clone --depth=1 --branch stable https://github.com/jessica12ryan/Turtle.git /var/www/turtle
 
 # Apache: switch to port 8099, enable rewrite
 RUN sed -i 's/^Listen 80$/Listen 8099/' /etc/apache2/httpd.conf \
