@@ -7,9 +7,13 @@
             <input type="text" name="name" value="<?= h($tenant['name']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Email') ?></label>
-            <input type="email" value="<?= h($tenant['email']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
-            <p class="text-xs text-gray-500 mt-1"><?= __('Email cannot be changed.') ?></p>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Email') ?> <?php if (in_array(\App\Core\Auth::instance()->user()['role'] ?? '', ['admin', 'landlord'])): ?><span class="text-red-500">*</span><?php endif; ?></label>
+            <?php if (in_array(\App\Core\Auth::instance()->user()['role'] ?? '', ['admin', 'landlord'])): ?>
+                <input type="email" name="email" value="<?= h($tenant['email']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+            <?php else: ?>
+                <input type="email" value="<?= h($tenant['email']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+                <p class="text-xs text-gray-500 mt-1"><?= __('Email cannot be changed.') ?></p>
+            <?php endif; ?>
         </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Phone Number') ?> <span class="text-red-500">*</span></label>

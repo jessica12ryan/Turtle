@@ -368,8 +368,14 @@ class TenantController
             redirect('/tenants/' . $id . '/edit');
         }
 
+        $currentUser = Auth::instance()->user();
+        $canEditEmail = in_array($currentUser['role'] ?? '', ['admin', 'landlord']);
+
         $validator = new Validator();
         $rules = ['name' => 'required|max:255'];
+        if ($canEditEmail) {
+            $rules['email'] = 'required|email|unique:users,email,' . $id;
+        }
         if (!empty($_POST['phone'])) {
             $rules['phone'] = 'max:20';
         }
@@ -392,6 +398,11 @@ class TenantController
 
         $sql = "UPDATE users SET name = ?, phone = ?, timezone = ?, language = ?, updated_at = NOW()";
         $params = [$_POST['name'], $phone, $timezone, $language];
+
+        if ($canEditEmail) {
+            $sql .= ", email = ?";
+            $params[] = $_POST['email'];
+        }
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";
