@@ -520,7 +520,13 @@ function site_logo(): string
     try {
         $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'logo_path'");
         if ($row && $row['value'] !== '') {
-            return '/' . ltrim($row['value'], '/');
+            $path = $row['value'];
+            $filePath = base_path('www/' . ltrim($path, '/'));
+            $suffix = '';
+            if (file_exists($filePath)) {
+                $suffix = '?v=' . filemtime($filePath);
+            }
+            return '/' . ltrim($path, '/') . $suffix;
         }
     } catch (\Throwable $e) {}
     return '/assets/logo.svg';
