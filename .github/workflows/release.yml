@@ -74,14 +74,14 @@ jobs:
         with:
           tag_name: "v${{ steps.version.outputs.version }}"
           name: "Turtle v${{ steps.version.outputs.version }}"
-        body: |
-          ## Turtle - Tenant Management Portal
-          
-          ### How to use
-          See [README.md](../../blob/master/README.md) for installation instructions.
-          
-          ### Changes
-          ${{ steps.git_history.outputs.changelog }}
+          body: |
+            ## Turtle - Tenant Management Portal
+            
+            ### How to use
+            See [README.md](../../blob/master/README.md) for installation instructions.
+            
+            ### Changes
+            ${{ steps.git_history.outputs.changelog }}
 
   build-ha-addon:
     needs: release
