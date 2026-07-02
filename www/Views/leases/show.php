@@ -38,7 +38,7 @@
                             <p class="font-medium text-gray-800"><?= h($doc['original_name']) ?></p>
                             <p class="text-sm text-gray-500"><?= round($doc['size'] / 1024) ?> KB</p>
                         </div>
-                        <a href="/documents/<?= $doc['id'] ?>/view" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 mr-2">View</a>
+                        <a href="/documents/<?= $doc['id'] ?>/view" target="_blank" rel="noopener" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 mr-2">View</a>
                         <a href="/documents/<?= $doc['id'] ?>/download" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Download</a>
                     </li>
                 <?php endforeach; ?>
