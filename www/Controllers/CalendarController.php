@@ -22,10 +22,18 @@ class CalendarController
         $user = Auth::instance()->user();
         $events = [];
 
-        // Determine accessible property IDs for payment filtering
+        // Determine accessible property IDs for event filtering
         $accessiblePropertyIds = [];
         if ($user['role'] === 'admin') {
             $rows = Database::fetchAll("SELECT id FROM properties WHERE archived_at IS NULL");
+            $accessiblePropertyIds = array_column($rows, 'id');
+        } elseif ($user['role'] === 'tenant') {
+            $rows = Database::fetchAll(
+                "SELECT p.id FROM properties p
+                 JOIN property_tenant pt ON pt.property_id = p.id
+                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
+                [$user['id']]
+            );
             $accessiblePropertyIds = array_column($rows, 'id');
         } else {
             $companyIds = Database::fetchAll(
@@ -43,13 +51,13 @@ class CalendarController
         }
         $accessibleIdList = implode(',', $accessiblePropertyIds ?: ['0']);
 
-        // Tenant move-in dates
+        // Tenant move-in dates (filtered by property access)
         $moveIns = Database::fetchAll(
             "SELECT pt.lease_start, u.name as tenant_name, p.name as property_name, pt.id
              FROM property_tenant pt
              JOIN users u ON u.id = pt.tenant_id
              JOIN properties p ON p.id = pt.property_id
-             WHERE pt.lease_start IS NOT NULL AND u.archived_at IS NULL"
+             WHERE pt.lease_start IS NOT NULL AND u.archived_at IS NULL AND p.id IN ({$accessibleIdList})"
         );
         foreach ($moveIns as $m) {
             $events[] = [
@@ -62,13 +70,13 @@ class CalendarController
             ];
         }
 
-        // Tenant scheduled move-out dates
+        // Tenant scheduled move-out dates (filtered by property access)
         $moveOuts = Database::fetchAll(
             "SELECT pt.move_out_date, u.name as tenant_name, p.name as property_name, pt.id
              FROM property_tenant pt
              JOIN users u ON u.id = pt.tenant_id
              JOIN properties p ON p.id = pt.property_id
-             WHERE pt.move_out_date IS NOT NULL AND pt.moved_out_at IS NULL"
+             WHERE pt.move_out_date IS NOT NULL AND pt.moved_out_at IS NULL AND p.id IN ({$accessibleIdList})"
         );
         foreach ($moveOuts as $m) {
             $events[] = [
@@ -81,13 +89,13 @@ class CalendarController
             ];
         }
 
-        // Lease end dates
+        // Lease end dates (filtered by property access)
         $leaseEnds = Database::fetchAll(
             "SELECT pt.lease_end, u.name as tenant_name, p.name as property_name, pt.id
              FROM property_tenant pt
              JOIN users u ON u.id = pt.tenant_id
              JOIN properties p ON p.id = pt.property_id
-             WHERE pt.lease_end IS NOT NULL AND u.archived_at IS NULL"
+             WHERE pt.lease_end IS NOT NULL AND u.archived_at IS NULL AND p.id IN ({$accessibleIdList})"
         );
         foreach ($leaseEnds as $l) {
             $events[] = [
