@@ -4,10 +4,12 @@
 
 Only the latest release receives security patches. Older versions are not supported.
 
-| Version | Supported |
-|---------|-----------|
-| latest  | ✅        |
-| < latest | ❌       |
+| Version        | Supported |
+|----------------|-----------|
+| master/dev     | ✅        |
+| stable/latest  | ✅        |
+| 1.0.1          | ✅        |
+| < 1.0.1        | ❌        |
 
 ## Reporting a Vulnerability
 
