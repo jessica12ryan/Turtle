@@ -209,6 +209,10 @@
 'Showing' => 'Showing',
 'of' => 'of',
 'Previous' => 'Previous',
-    'Next' => 'Next',
-    'No documents uploaded.' => 'No documents uploaded.',
+'Next' => 'Next',
+'No documents uploaded.' => 'No documents uploaded.',
+'Convert Application' => 'Convert Application',
+'Accept & Create Tenant' => 'Accept & Create Tenant',
+'Required for account access' => 'Required for account access',
+'These tenants will be added as secondary tenants.' => 'These tenants will be added as secondary tenants.',
 ];

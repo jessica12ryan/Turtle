@@ -260,6 +260,8 @@ $router->get('/applications', 'ApplicationController@index', ['auth', 'perm:appl
 $router->get('/applications/{id}', 'ApplicationController@show', ['auth', 'perm:applications.view']);
 $router->post('/applications/{id}/notes', 'ApplicationController@updateNotes', ['auth', 'perm:applications.edit']);
 $router->post('/applications/{id}/status', 'ApplicationController@updateStatus', ['auth', 'perm:applications.edit']);
+$router->get('/applications/{id}/convert', 'ApplicationController@convert', ['auth', 'perm:applications.edit']);
+$router->post('/applications/{id}/convert', 'ApplicationController@processConvert', ['auth', 'perm:applications.edit']);
 $router->post('/applications/{id}/archive', 'ApplicationController@archive', ['auth', 'perm:applications.archive']);
 $router->post('/applications/{id}/restore', 'ApplicationController@restore', ['auth', 'perm:applications.restore']);
 $router->post('/applications/{id}/delete', 'ApplicationController@delete', ['auth', 'perm:applications.delete']);

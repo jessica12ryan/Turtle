@@ -581,4 +581,8 @@ return [
 'of' => 'sur',
 'Previous' => 'Précédent',
 'Next' => 'Suivant',
+'Convert Application' => 'Convertir la demande',
+'Accept & Create Tenant' => 'Accepter et créer le locataire',
+'Required for account access' => 'Requis pour l\'accès au compte',
+'These tenants will be added as secondary tenants.' => 'Ces locataires seront ajoutés comme locataires secondaires.',
 ];

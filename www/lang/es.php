@@ -581,4 +581,8 @@ return [
 'of' => 'de',
 'Previous' => 'Anterior',
 'Next' => 'Siguiente',
+'Convert Application' => 'Convertir solicitud',
+'Accept & Create Tenant' => 'Aceptar y crear inquilino',
+'Required for account access' => 'Requerido para acceso a la cuenta',
+'These tenants will be added as secondary tenants.' => 'Estos inquilinos se agregarán como inquilinos secundarios.',
 ];

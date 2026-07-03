@@ -19,7 +19,10 @@ class ApplicationController
         }
 
         $properties = Database::fetchAll(
-            "SELECT id, name, address, city, province FROM properties WHERE archived_at IS NULL ORDER BY name"
+            "SELECT id, name, address, city, province FROM properties 
+             WHERE archived_at IS NULL 
+             AND id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
+             ORDER BY name"
         );
 
         $view = new View();
@@ -175,6 +178,10 @@ class ApplicationController
             redirect('/applications/' . $id);
         }
 
+        if ($status === 'accepted') {
+            redirect('/applications/' . $id . '/convert');
+        }
+
         Database::execute(
             "UPDATE tenant_applications SET status = ?, updated_at = NOW() WHERE id = ?",
             [$status, $id]
@@ -183,6 +190,251 @@ class ApplicationController
         log_activity('application.status_updated', "Application #{$id} status changed to {$status}");
         flash('success', 'Status updated.');
         redirect('/applications/' . $id);
+    }
+
+    public function convert(int $id): void
+    {
+        $this->ensureTable();
+
+        $application = Database::fetch(
+            "SELECT a.*, p.name as property_name
+             FROM tenant_applications a
+             LEFT JOIN properties p ON p.id = a.property_id
+             WHERE a.id = ?",
+            [$id]
+        );
+        if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $data = json_decode($application['data'], true);
+
+        $user = Auth::instance()->user();
+        if ($user['role'] === 'admin') {
+            $properties = Database::fetchAll(
+                "SELECT p.*, u.name as landlord_name FROM properties p
+                 JOIN users u ON u.id = p.landlord_id
+                 WHERE p.archived_at IS NULL
+                 AND p.id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
+                 ORDER BY p.name"
+            );
+        } else {
+            $companyIds = Database::fetchAll(
+                "SELECT company_id FROM company_user WHERE user_id = ?",
+                [$user['id']]
+            );
+            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $params = $pmClause ? [$user['id']] : [];
+
+            $properties = Database::fetchAll(
+                "SELECT p.*, u.name as landlord_name FROM properties p
+                 JOIN users u ON u.id = p.landlord_id
+                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
+                 AND p.id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
+                 ORDER BY p.name",
+                $params
+            );
+        }
+
+        $view = new View();
+        $view->layout('layouts/main', ['title' => __('Convert Application') . ' #' . $id]);
+        $view->render('applications/convert', compact('application', 'data', 'properties'));
+    }
+
+    public function processConvert(int $id): void
+    {
+        $this->ensureTable();
+
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', 'Invalid form token. Please try again.');
+            redirect('/applications/' . $id . '/convert');
+        }
+
+        $application = Database::fetch("SELECT * FROM tenant_applications WHERE id = ?", [$id]);
+        if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $appData = json_decode($application['data'], true);
+        $mainApplicant = $appData['primary_applicant'] ?? [];
+
+        $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
+        if ($archived) {
+            flash('error', 'Email exists in archived tenant.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/applications/' . $id . '/convert');
+        }
+
+        $validator = new \App\Core\Validator();
+        $rules = [
+            'name' => 'required|max:255',
+            'email' => 'required|email|unique:users,email',
+            'property_id' => 'required|exists:properties,id',
+            'phone' => 'required|max:20',
+            'lease_start' => 'required',
+            'lease_type' => 'required',
+        ];
+        if (!$validator->validate($_POST, $rules)) {
+            $_SESSION['_errors'] = $validator->errors();
+            $_SESSION['_old'] = $_POST;
+            redirect('/applications/' . $id . '/convert');
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $_POST['phone'] ?? '');
+        if (strlen($phone) === 10) {
+            $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
+        }
+
+        $password = bin2hex(random_bytes(6));
+        $timezone = $_POST['timezone'] ?: null;
+        $language = $_POST['language'] ?: null;
+
+        Database::getConnection()->beginTransaction();
+
+        try {
+            $tenantId = Database::insert(
+                "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
+                [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
+            );
+
+            Database::insert(
+                "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, emergency_contact_name, emergency_contact_phone, created_at, updated_at) VALUES (?, ?, 1, NOW(), ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                [
+                    $_POST['property_id'], $tenantId,
+                    $_POST['lease_start'] ?: null,
+                    $_POST['lease_end'] ?: null,
+                    $_POST['move_out_date'] ?: null,
+                    $_POST['lease_type'] ?: null,
+                    $_POST['emergency_contact_name'] ?: null,
+                    $_POST['emergency_contact_phone'] ?: null,
+                ]
+            );
+
+            // Create a lease for the main tenant to house copied documents
+            $leaseTitle = 'Application #' . $id . ' — ' . $_POST['name'];
+            $leaseId = Database::insert(
+                "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, 'Converted from application', ?, NOW(), NOW())",
+                [$_POST['property_id'], $tenantId, $leaseTitle, Auth::instance()->id()]
+            );
+
+            // Copy primary applicant photo to lease documents
+            $uploadDir = base_path('storage/uploads/leases');
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            $leaseDir = $uploadDir . '/' . $leaseId;
+            if (!is_dir($leaseDir)) mkdir($leaseDir, 0777, true);
+
+            $photoPaths = [];
+            if (!empty($mainApplicant['photo_id'])) {
+                $photoPaths[] = ['path' => $mainApplicant['photo_id'], 'label' => ($mainApplicant['first_name'] ?? '') . ' ' . ($mainApplicant['last_name'] ?? '') . ' — Photo ID'];
+            }
+            foreach ($appData['other_tenants'] ?? [] as $i => $ot) {
+                if (!empty($ot['photo_id'])) {
+                    $name = trim(($ot['first_name'] ?? '') . ' ' . ($ot['last_name'] ?? ''));
+                    $photoPaths[] = ['path' => $ot['photo_id'], 'label' => ($name ? $name . ' — ' : '') . 'Photo ID'];
+                }
+            }
+
+            foreach ($photoPaths as $item) {
+                $srcFull = base_path($item['path']);
+                if (!file_exists($srcFull)) continue;
+
+                $ext = pathinfo($srcFull, PATHINFO_EXTENSION);
+                $storedName = uniqid() . '.' . $ext;
+                $destPath = $leaseDir . '/' . $storedName;
+
+                if (copy($srcFull, $destPath)) {
+                    $pathPrefix = str_starts_with($leaseDir, base_path())
+                        ? 'storage/uploads/leases'
+                        : $leaseDir;
+                    $filePath = $pathPrefix . '/' . $leaseId . '/' . $storedName;
+                    Database::insert(
+                        "INSERT INTO documents (documentable_type, documentable_id, file_path, original_name, size, mime_type, uploaded_by, created_at, updated_at) VALUES ('lease', ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                        [$leaseId, $filePath, $item['label'], filesize($destPath), mime_content_type($destPath) ?: 'application/octet-stream', Auth::instance()->id()]
+                    );
+                }
+            }
+
+            // Create secondary tenants
+            $secondaryNames = $_POST['secondary_name'] ?? [];
+            $secondaryEmails = $_POST['secondary_email'] ?? [];
+            $secondaryPhones = $_POST['secondary_phone'] ?? [];
+
+            foreach ($secondaryNames as $i => $secName) {
+                $secName = trim($secName);
+                if ($secName === '') continue;
+
+                $secEmail = trim($secondaryEmails[$i] ?? '');
+                $secPhone = preg_replace('/[^0-9]/', '', $secondaryPhones[$i] ?? '');
+                if (strlen($secPhone) === 10) {
+                    $secPhone = '(' . substr($secPhone, 0, 3) . ') ' . substr($secPhone, 3, 3) . '-' . substr($secPhone, 6, 4);
+                }
+
+                if ($secEmail !== '') {
+                    $existing = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NULL", [$secEmail]);
+                    if ($existing) continue;
+                }
+
+                $secPassword = $secEmail !== '' ? bin2hex(random_bytes(6)) : null;
+                $secTenantId = null;
+
+                if ($secEmail !== '') {
+                    $secTenantId = Database::insert(
+                        "INSERT INTO users (name, email, phone, password, role, theme, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', 1, NOW(), NOW())",
+                        [$secName, $secEmail, $secPhone, password_hash($secPassword, PASSWORD_DEFAULT)]
+                    );
+                } else {
+                    $secTenantId = Database::insert(
+                        "INSERT INTO users (name, email, phone, password, role, theme, must_change_password, created_at, updated_at) VALUES (?, '', ?, ?, 'tenant', 'system', 0, NOW(), NOW())",
+                        [$secName, $secPhone, password_hash(bin2hex(random_bytes(6)), PASSWORD_DEFAULT)]
+                    );
+                }
+
+                Database::insert(
+                    "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, created_at, updated_at) VALUES (?, ?, 0, NOW(), NOW(), NOW())",
+                    [$_POST['property_id'], $secTenantId]
+                );
+
+                if ($secEmail !== '' && !empty($_POST['send_welcome_email'])) {
+                    $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+                    \App\Core\Mailer::sendTemplate(
+                        $secEmail,
+                        'Welcome to Turtle - Your Account Has Been Created',
+                        'Hello ' . h($secName) . ',',
+                        'Your account has been created on the Turtle Portal as part of a new tenancy.<br><br><strong>Your temporary password is: ' . $secPassword . '</strong><br><br>Please log in and change your password immediately.',
+                        $loginUrl,
+                        'Log In'
+                    );
+                }
+            }
+
+            Database::execute(
+                "UPDATE tenant_applications SET status = 'accepted', updated_at = NOW() WHERE id = ?",
+                [$id]
+            );
+
+            Database::getConnection()->commit();
+
+            if (!empty($_POST['send_welcome_email'])) {
+                $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+                \App\Core\Mailer::sendTemplate(
+                    $_POST['email'],
+                    'Welcome to Turtle - Your Account Has Been Created',
+                    'Hello ' . h($_POST['name']) . ',',
+                    'Your tenancy application has been accepted! Your account has been created on the Turtle Portal.<br><br><strong>Your temporary password is: ' . $password . '</strong><br><br>Please log in and change your password immediately.',
+                    $loginUrl,
+                    'Log In'
+                );
+            }
+
+            log_activity('tenant.created', "Tenant '{$_POST['name']}' added from application #{$id}");
+            log_activity('application.status_updated', "Application #{$id} accepted and converted to tenant");
+
+            flash('success', 'Application accepted and tenant created successfully.');
+            redirect('/tenants');
+        } catch (\Throwable $e) {
+            Database::getConnection()->rollBack();
+            error_log('Application conversion failed: ' . $e->getMessage());
+            flash('error', 'Failed to create tenant: ' . $e->getMessage());
+            $_SESSION['_old'] = $_POST;
+            redirect('/applications/' . $id . '/convert');
+        }
     }
 
     public function archive(int $id): void
