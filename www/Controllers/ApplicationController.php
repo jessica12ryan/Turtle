@@ -265,7 +265,7 @@ class ApplicationController
             $timezone = $_POST['timezone'] ?: null;
             $language = $_POST['language'] ?: null;
 
-            Database::getConnection()->beginTransaction();
+            Database::beginTransaction();
 
             $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
             if ($archived) {
@@ -411,7 +411,7 @@ class ApplicationController
                 [$id]
             );
 
-            Database::getConnection()->commit();
+            Database::commit();
 
             if (!empty($_POST['send_welcome_email'])) {
                 $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
