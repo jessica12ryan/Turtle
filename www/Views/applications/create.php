@@ -298,12 +298,12 @@
                             <input type="text" :name="'other_tenant_address_postal_code[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 uppercase" placeholder="<?= default_country() === 'US' ? '12345' : 'A1A 1A1' ?>">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?></label>
-                            <input type="date" :name="'other_tenant_address_date_moved_in[' + i + ']'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Date Moved In') ?> <span class="text-red-500">*</span></label>
+                            <input type="date" :name="'other_tenant_address_date_moved_in[' + i + ']'" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?></label>
-                            <textarea :name="'other_tenant_address_reason_leaving[' + i + ']'" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Reason For Leaving') ?> <span class="text-red-500">*</span></label>
+                            <textarea :name="'other_tenant_address_reason_leaving[' + i + ']'" required rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                     </div>
 
