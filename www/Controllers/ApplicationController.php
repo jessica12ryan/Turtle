@@ -93,12 +93,29 @@ class ApplicationController
 
         try {
             $this->ensureTable();
+
+            $user = Auth::instance()->user();
+            $pmClause = '';
+            $params = [];
+            if ($user['role'] === 'property_manager') {
+                $pmClause = ' AND p.property_manager_id = ?';
+                $params[] = $user['id'];
+            } elseif ($user['role'] !== 'admin') {
+                $companyIds = Database::fetchAll(
+                    "SELECT company_id FROM company_user WHERE user_id = ?",
+                    [$user['id']]
+                );
+                $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+                $pmClause = ' AND p.company_id IN (' . $companyIdList . ')';
+            }
+
             $applications = Database::fetchAll(
                 "SELECT a.*, p.name as property_name 
                  FROM tenant_applications a 
                  LEFT JOIN properties p ON p.id = a.property_id 
-                 WHERE 1=1{$archivedClause}
-                 ORDER BY a.created_at DESC"
+                 WHERE 1=1{$archivedClause}{$pmClause}
+                 ORDER BY a.created_at DESC",
+                $params
             );
         } catch (\Throwable $e) {
             error_log('ApplicationController@index: ' . $e->getMessage());
@@ -118,12 +135,27 @@ class ApplicationController
         try {
             $this->ensureTable();
 
+            $user = Auth::instance()->user();
+            $pmClause = '';
+            $params = [$id];
+            if ($user['role'] === 'property_manager') {
+                $pmClause = ' AND p.property_manager_id = ?';
+                $params[] = $user['id'];
+            } elseif ($user['role'] !== 'admin') {
+                $companyIds = Database::fetchAll(
+                    "SELECT company_id FROM company_user WHERE user_id = ?",
+                    [$user['id']]
+                );
+                $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+                $pmClause = ' AND p.company_id IN (' . $companyIdList . ')';
+            }
+
             $application = Database::fetch(
                 "SELECT a.*, p.name as property_name 
                  FROM tenant_applications a 
                  LEFT JOIN properties p ON p.id = a.property_id 
-                 WHERE a.id = ?",
-                [$id]
+                 WHERE a.id = ?{$pmClause}",
+                $params
             );
         } catch (\Throwable $e) {
             error_log('ApplicationController@show: ' . $e->getMessage());
