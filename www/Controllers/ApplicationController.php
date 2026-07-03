@@ -242,36 +242,36 @@ class ApplicationController
 
     public function processConvert(int $id): void
     {
-        $this->ensureTable();
-
-        if (!verify_csrf($_POST['_csrf'] ?? '')) {
-            flash('error', 'Invalid form token. Please try again.');
-            redirect('/applications/' . $id . '/convert');
-        }
-
-        $application = Database::fetch("SELECT * FROM tenant_applications WHERE id = ?", [$id]);
-        if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
-
-        $appData = json_decode($application['data'], true);
-        $mainApplicant = $appData['primary_applicant'] ?? [];
-
-        $phone = preg_replace('/[^0-9]/', '', $_POST['phone'] ?? '');
-        if (strlen($phone) === 10) {
-            $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
-        }
-
-        $password = bin2hex(random_bytes(6));
-        $timezone = $_POST['timezone'] ?: null;
-        $language = $_POST['language'] ?: null;
-
-        Database::getConnection()->beginTransaction();
-
         try {
+            $this->ensureTable();
+
+            if (!verify_csrf($_POST['_csrf'] ?? '')) {
+                flash('error', 'Invalid form token. Please try again.');
+                redirect('/applications/' . $id . '/convert');
+            }
+
+            $application = Database::fetch("SELECT * FROM tenant_applications WHERE id = ?", [$id]);
+            if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+            $appData = json_decode($application['data'], true);
+            $mainApplicant = $appData['primary_applicant'] ?? [];
+
+            $phone = preg_replace('/[^0-9]/', '', $_POST['phone'] ?? '');
+            if (strlen($phone) === 10) {
+                $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
+            }
+
+            $password = bin2hex(random_bytes(6));
+            $timezone = $_POST['timezone'] ?: null;
+            $language = $_POST['language'] ?: null;
+
+            Database::getConnection()->beginTransaction();
+
             $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
             if ($archived) {
                 flash('error', 'Email exists in archived tenant.');
                 $_SESSION['_old'] = $_POST;
-                Database::getConnection()->rollBack();
+                Database::rollback();
                 redirect('/applications/' . $id . '/convert');
             }
 
@@ -287,9 +287,10 @@ class ApplicationController
             if (!$validator->validate($_POST, $rules)) {
                 $_SESSION['_errors'] = $validator->errors();
                 $_SESSION['_old'] = $_POST;
-                Database::getConnection()->rollBack();
+                Database::rollback();
                 redirect('/applications/' . $id . '/convert');
             }
+
             $tenantId = Database::insert(
                 "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
                 [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
@@ -431,7 +432,7 @@ class ApplicationController
             redirect('/tenants');
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('Application conversion failed: ' . $e->getMessage());
+            error_log('Application conversion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
             flash('error', 'Failed to create tenant: ' . $e->getMessage());
             $_SESSION['_old'] = $_POST;
             redirect('/applications/' . $id . '/convert');
