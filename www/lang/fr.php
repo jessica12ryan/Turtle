@@ -585,4 +585,6 @@ return [
 'Accept & Create Tenant' => 'Accepter et créer le locataire',
 'Required for account access' => 'Requis pour l\'accès au compte',
 'These tenants will be added as secondary tenants.' => 'Ces locataires seront ajoutés comme locataires secondaires.',
+'Expected Move In Date' => 'Date d\'emménagement prévue',
+'When do you plan to move in?' => 'Quand prévoyez-vous d\'emménager?',
 ];

@@ -484,6 +484,7 @@ class ApplicationController
     private function buildData(): array
     {
         return [
+            'expected_move_in_date' => $_POST['expected_move_in_date'] ?? '',
             'primary_applicant' => [
                 'last_name' => $_POST['primary_last_name'] ?? '',
                 'first_name' => $_POST['primary_first_name'] ?? '',

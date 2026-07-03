@@ -215,4 +215,6 @@
 'Accept & Create Tenant' => 'Accept & Create Tenant',
 'Required for account access' => 'Required for account access',
 'These tenants will be added as secondary tenants.' => 'These tenants will be added as secondary tenants.',
+'Expected Move In Date' => 'Expected Move In Date',
+'When do you plan to move in?' => 'When do you plan to move in?',
 ];

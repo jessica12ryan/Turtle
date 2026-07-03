@@ -24,6 +24,11 @@
                 </select>
                 <p class="text-xs text-gray-500 mt-1"><?= __('If you were given a property ID, enter it here.') ?></p>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Expected Move In Date') ?> <span class="text-red-500">*</span></label>
+                <input type="date" name="expected_move_in_date" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1"><?= __('When do you plan to move in?') ?></p>
+            </div>
         </div>
 
         <!-- Applicant Information -->
