@@ -180,31 +180,37 @@ class SettingsController
             redirect('/settings?tab=general');
         }
 
-        $allowedTz = \DateTimeZone::listIdentifiers();
-        $tz = $_POST['timezone'] ?? '';
-        if (!in_array($tz, $allowedTz)) {
-            $tz = 'America/New_York';
+        if (isset($_POST['timezone'])) {
+            $allowedTz = \DateTimeZone::listIdentifiers();
+            $tz = $_POST['timezone'];
+            if (!in_array($tz, $allowedTz)) {
+                $tz = 'America/New_York';
+            }
+
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('timezone', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$tz, $tz]
+            );
         }
 
-        Database::execute(
-            "INSERT INTO settings (`key`, `value`) VALUES ('timezone', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-            [$tz, $tz]
-        );
-
-        $ntpServer = $_POST['ntp_server'] ?? 'time.gov';
-        Database::execute(
-            "INSERT INTO settings (`key`, `value`) VALUES ('ntp_server', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-            [$ntpServer, $ntpServer]
-        );
-
-        $siteName = trim($_POST['site_name'] ?? '');
-        if ($siteName === '') {
-            $siteName = 'Turtle';
+        if (isset($_POST['ntp_server'])) {
+            $ntpServer = $_POST['ntp_server'] ?: 'time.gov';
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('ntp_server', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$ntpServer, $ntpServer]
+            );
         }
-        Database::execute(
-            "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-            [$siteName, $siteName]
-        );
+
+        if (isset($_POST['site_name'])) {
+            $siteName = trim($_POST['site_name']);
+            if ($siteName === '') {
+                $siteName = 'Turtle';
+            }
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('site_name', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$siteName, $siteName]
+            );
+        }
 
         $keepDefault = !empty($_POST['logo_default']);
         if ($keepDefault) {
