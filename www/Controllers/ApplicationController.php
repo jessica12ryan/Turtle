@@ -324,12 +324,13 @@ class ApplicationController
 
             $photoPaths = [];
             if (!empty($mainApplicant['photo_id'])) {
-                $photoPaths[] = ['path' => $mainApplicant['photo_id'], 'label' => ($mainApplicant['first_name'] ?? '') . ' ' . ($mainApplicant['last_name'] ?? '') . ' — Photo ID'];
+                $name = strtoupper(trim(($mainApplicant['first_name'] ?? '') . ' ' . ($mainApplicant['middle_names'] ?? '') . ' ' . ($mainApplicant['last_name'] ?? '')));
+                $photoPaths[] = ['path' => $mainApplicant['photo_id'], 'label' => 'ID - ' . $name];
             }
             foreach ($appData['other_tenants'] ?? [] as $i => $ot) {
                 if (!empty($ot['photo_id'])) {
-                    $name = trim(($ot['first_name'] ?? '') . ' ' . ($ot['last_name'] ?? ''));
-                    $photoPaths[] = ['path' => $ot['photo_id'], 'label' => ($name ? $name . ' — ' : '') . 'Photo ID'];
+                    $name = strtoupper(trim(($ot['first_name'] ?? '') . ' ' . ($ot['middle_names'] ?? '') . ' ' . ($ot['last_name'] ?? '')));
+                    $photoPaths[] = ['path' => $ot['photo_id'], 'label' => 'ID - ' . $name];
                 }
             }
 

@@ -510,31 +510,51 @@ class TenantController
 
     public function destroy(int $id): void
     {
-        $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
-        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
-
-        $pt = Database::fetch(
-            "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
-            [$id]
-        );
-
-        if ($pt) {
-            // Also delete secondary tenants
-            $secondaries = Database::fetchAll(
-                "SELECT tenant_id FROM property_tenant WHERE property_id = ? AND tenant_id != ?",
-                [$pt['property_id'], $id]
-            );
-            foreach ($secondaries as $s) {
-                Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$s['tenant_id']]);
-                Database::execute("DELETE FROM users WHERE id = ?", [$s['tenant_id']]);
+        try {
+            if (!verify_csrf($_POST['_csrf'] ?? '')) {
+                flash('error', 'Invalid form token. Please try again.');
+                redirect('/tenants');
             }
+
+            $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
+            if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+            $pt = Database::fetch(
+                "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
+                [$id]
+            );
+
+            Database::beginTransaction();
+
+            $deleteUser = function (int $userId): void {
+                Database::execute("UPDATE leases SET tenant_id = NULL WHERE tenant_id = ?", [$userId]);
+                Database::execute("DELETE FROM tickets WHERE tenant_id = ?", [$userId]);
+                Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$userId]);
+                Database::execute("DELETE FROM users WHERE id = ?", [$userId]);
+            };
+
+            if ($pt) {
+                $secondaries = Database::fetchAll(
+                    "SELECT tenant_id FROM property_tenant WHERE property_id = ? AND tenant_id != ?",
+                    [$pt['property_id'], $id]
+                );
+                foreach ($secondaries as $s) {
+                    $deleteUser($s['tenant_id']);
+                }
+            }
+
+            $deleteUser($id);
+
+            Database::commit();
+
+            log_activity('tenant.deleted', "Tenant '{$target['name']}' permanently deleted");
+            flash('success', 'Tenant permanently deleted.');
+            redirect('/tenants');
+        } catch (\Throwable $e) {
+            Database::rollback();
+            error_log('Tenant deletion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            flash('error', 'Failed to delete tenant. Please try again.');
+            redirect('/tenants');
         }
-
-        Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$id]);
-        Database::execute("DELETE FROM users WHERE id = ?", [$id]);
-
-        log_activity('tenant.deleted', "Tenant '{$target['name']}' permanently deleted");
-        flash('success', 'Tenant permanently deleted.');
-        redirect('/tenants');
     }
 }
