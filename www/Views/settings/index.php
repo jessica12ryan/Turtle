@@ -50,7 +50,7 @@
         <?php else: ?>
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-red-600 mb-4"><?= __('Reset Data') ?></h2>
-                <p class="text-sm text-gray-600 mb-6"><?= __('Select the data you want to reset. This action cannot be undone. Your admin account will remain active.') ?></p>
+                <p class="text-sm text-gray-600 mb-6"><?= __('Select the data you want to reset. This action cannot be undone.') ?></p>
 
                 <form method="POST" action="/settings/reset" x-data="{
                     resetAll: false,
