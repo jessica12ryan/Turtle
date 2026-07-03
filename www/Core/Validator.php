@@ -65,9 +65,18 @@ class Validator
             $bindings[] = $except;
         }
 
-        $sql .= " AND archived_at IS NULL";
-
-        $exists = Database::fetch($sql, $bindings);
+        try {
+            $sql .= " AND archived_at IS NULL";
+            $exists = Database::fetch($sql, $bindings);
+        } catch (\Throwable $e) {
+            $sql = "SELECT id FROM {$table} WHERE {$column} = ?";
+            $bindings = [$value];
+            if ($except) {
+                $sql .= " AND id != ?";
+                $bindings[] = $except;
+            }
+            $exists = Database::fetch($sql, $bindings);
+        }
         return $exists ? ucfirst(str_replace('_', ' ', $field)) . ' already exists.' : null;
     }
 

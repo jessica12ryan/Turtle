@@ -255,28 +255,6 @@ class ApplicationController
         $appData = json_decode($application['data'], true);
         $mainApplicant = $appData['primary_applicant'] ?? [];
 
-        $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
-        if ($archived) {
-            flash('error', 'Email exists in archived tenant.');
-            $_SESSION['_old'] = $_POST;
-            redirect('/applications/' . $id . '/convert');
-        }
-
-        $validator = new \App\Core\Validator();
-        $rules = [
-            'name' => 'required|max:255',
-            'email' => 'required|email|unique:users,email',
-            'property_id' => 'required|exists:properties,id',
-            'phone' => 'required|max:20',
-            'lease_start' => 'required',
-            'lease_type' => 'required',
-        ];
-        if (!$validator->validate($_POST, $rules)) {
-            $_SESSION['_errors'] = $validator->errors();
-            $_SESSION['_old'] = $_POST;
-            redirect('/applications/' . $id . '/convert');
-        }
-
         $phone = preg_replace('/[^0-9]/', '', $_POST['phone'] ?? '');
         if (strlen($phone) === 10) {
             $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
@@ -289,6 +267,29 @@ class ApplicationController
         Database::getConnection()->beginTransaction();
 
         try {
+            $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
+            if ($archived) {
+                flash('error', 'Email exists in archived tenant.');
+                $_SESSION['_old'] = $_POST;
+                Database::getConnection()->rollBack();
+                redirect('/applications/' . $id . '/convert');
+            }
+
+            $validator = new \App\Core\Validator();
+            $rules = [
+                'name' => 'required|max:255',
+                'email' => 'required|email|unique:users,email',
+                'property_id' => 'required|exists:properties,id',
+                'phone' => 'required|max:20',
+                'lease_start' => 'required',
+                'lease_type' => 'required',
+            ];
+            if (!$validator->validate($_POST, $rules)) {
+                $_SESSION['_errors'] = $validator->errors();
+                $_SESSION['_old'] = $_POST;
+                Database::getConnection()->rollBack();
+                redirect('/applications/' . $id . '/convert');
+            }
             $tenantId = Database::insert(
                 "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
                 [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
@@ -429,7 +430,7 @@ class ApplicationController
             flash('success', 'Application accepted and tenant created successfully.');
             redirect('/tenants');
         } catch (\Throwable $e) {
-            Database::getConnection()->rollBack();
+            Database::rollback();
             error_log('Application conversion failed: ' . $e->getMessage());
             flash('error', 'Failed to create tenant: ' . $e->getMessage());
             $_SESSION['_old'] = $_POST;
