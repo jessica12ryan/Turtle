@@ -42,6 +42,8 @@ class LeaseController
                 [$auth->id()]
             );
             $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
+            $pmParams = $pmClause ? [$auth->id()] : [];
 
             $leases = Database::fetchAll(
                 "SELECT l.*, p.name as property_name, u.name as landlord_name,
@@ -50,8 +52,9 @@ class LeaseController
                  FROM leases l 
                  JOIN properties p ON p.id = l.property_id 
                  JOIN users u ON u.id = p.landlord_id 
-                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}
-                 ORDER BY l.archived_at IS NULL DESC, l.created_at DESC"
+                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}{$pmClause}
+                 ORDER BY l.archived_at IS NULL DESC, l.created_at DESC",
+                $pmParams
             );
         }
 
