@@ -359,7 +359,7 @@ function defaultPermissions(): array
             'documents.download',
             'ai_assistant.access',
             'rents.access', 'rents.payments.create', 'rents.payments.edit', 'rents.payments.archive', 'rents.payments.restore',
-            'applications.view', 'applications.edit', 'applications.archive', 'applications.restore',
+            'applications.view', 'applications.edit', 'applications.archive', 'applications.restore', 'applications.delete',
         ],
         'property_manager' => [
             'home.access',

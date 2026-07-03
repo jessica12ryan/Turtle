@@ -2,6 +2,12 @@
     <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100"><?= __('Application') ?> #<?= $application['id'] ?></h1>
     <div class="flex items-center space-x-3">
         <a href="/applications" class="text-sm text-gray-600 dark:text-gray-400 hover:underline">&larr; <?= __('Back to Applications') ?></a>
+        <?php if (can('applications.delete')): ?>
+            <form method="POST" action="/applications/<?= $application['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Permanently delete this application? This cannot be undone.') ?>')">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="text-sm text-red-600 hover:text-red-800 hover:underline"><?= __('Delete') ?></button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 
