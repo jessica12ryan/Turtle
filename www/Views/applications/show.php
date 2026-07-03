@@ -78,6 +78,12 @@
             <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Email') ?></dt>
             <dd class="text-sm text-gray-900 dark:text-gray-100"><?= h($p['email']) ?></dd>
         </div>
+        <?php if (!empty($data['expected_move_in_date'])): ?>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Expected Move In Date') ?></dt>
+                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= h($data['expected_move_in_date']) ?></dd>
+            </div>
+        <?php endif; ?>
         <?php if (!empty($p['photo_id'])): ?>
             <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Government Issued Photo ID') ?></dt>

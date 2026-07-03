@@ -46,6 +46,12 @@ $otherTenants = $data['other_tenants'] ?? [];
                     <dt class="text-gray-500 dark:text-gray-400"><?= __('Property') ?></dt>
                     <dd class="text-gray-900 dark:text-gray-100"><?= h($application['property_name'] ?? __('Not specified')) ?></dd>
                 </div>
+                <?php if (!empty($data['expected_move_in_date'])): ?>
+                <div>
+                    <dt class="text-gray-500 dark:text-gray-400"><?= __('Expected Move In Date') ?></dt>
+                    <dd class="text-gray-900 dark:text-gray-100"><?= h($data['expected_move_in_date']) ?></dd>
+                </div>
+                <?php endif; ?>
                 <?php if (!empty($applicant['photo_id'])): ?>
                 <div class="sm:col-span-2">
                     <dt class="text-gray-500 dark:text-gray-400 mb-1"><?= __('Government Issued Photo ID') ?></dt>
