@@ -139,7 +139,7 @@ $otherTenants = $data['other_tenants'] ?? [];
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="<?= h(old('name') ?: $fullName) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <input type="text" name="name" value="<?= h(old('name') ?: $fullName) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off" required>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Email') ?> <span class="text-red-500">*</span></label>
