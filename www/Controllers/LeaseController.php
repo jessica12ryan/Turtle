@@ -249,12 +249,12 @@ class LeaseController
             }
 
             Database::commit();
-            log_activity('lease.created', "Lease #{$leaseId} uploaded for property #{$_POST['property_id']}");
-            flash('success', 'Lease uploaded successfully.');
+            log_activity('lease.created', "Document #{$leaseId} uploaded for property #{$_POST['property_id']}");
+            flash('success', 'Document uploaded successfully.');
             redirect('/leases/' . $leaseId);
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('Lease creation failed: ' . $e->getMessage());
+            error_log('Document upload failed: ' . $e->getMessage());
             $_SESSION['_errors'] = ['documents' => [$e->getMessage()]];
             $_SESSION['_old'] = $_POST;
             redirect('/leases/create');
@@ -286,16 +286,16 @@ class LeaseController
     public function restore(int $id): void
     {
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
-        log_activity('lease.restored', "Lease #{$id} restored");
-        flash('success', 'Lease restored successfully.');
+        log_activity('lease.restored', "Document #{$id} restored");
+        flash('success', 'Document restored successfully.');
         redirect('/leases');
     }
 
     public function destroy(int $id): void
     {
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
-        log_activity('lease.archived', "Lease #{$id} archived");
-        flash('success', 'Lease archived successfully.');
+        log_activity('lease.archived', "Document #{$id} archived");
+        flash('success', 'Document archived successfully.');
         redirect('/leases');
     }
 
@@ -314,8 +314,8 @@ class LeaseController
         }
         Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$id]);
         Database::execute("DELETE FROM leases WHERE id = ?", [$id]);
-        log_activity('lease.deleted', "Lease #{$id} permanently deleted");
-        flash('success', 'Lease permanently deleted.');
+        log_activity('lease.deleted', "Document #{$id} permanently deleted");
+        flash('success', 'Document permanently deleted.');
         redirect('/leases');
     }
 }
