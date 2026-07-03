@@ -196,6 +196,11 @@ class ApplicationController
     {
         $this->ensureTable();
 
+        // Clear stale old form data when navigating to a different application
+        if (isset($_SESSION['_old_app_id']) && $_SESSION['_old_app_id'] != $id) {
+            unset($_SESSION['_old'], $_SESSION['_old_app_id']);
+        }
+
         $application = Database::fetch(
             "SELECT a.*, p.name as property_name
              FROM tenant_applications a
@@ -271,6 +276,7 @@ class ApplicationController
             if ($archived) {
                 flash('error', 'Email exists in archived tenant.');
                 $_SESSION['_old'] = $_POST;
+                $_SESSION['_old_app_id'] = $id;
                 Database::rollback();
                 redirect('/applications/' . $id . '/convert');
             }
@@ -287,6 +293,7 @@ class ApplicationController
             if (!$validator->validate($_POST, $rules)) {
                 $_SESSION['_errors'] = $validator->errors();
                 $_SESSION['_old'] = $_POST;
+                $_SESSION['_old_app_id'] = $id;
                 Database::rollback();
                 redirect('/applications/' . $id . '/convert');
             }
@@ -436,6 +443,7 @@ class ApplicationController
             error_log('Application conversion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
             flash('error', 'Failed to create tenant: ' . $e->getMessage());
             $_SESSION['_old'] = $_POST;
+            $_SESSION['_old_app_id'] = $id;
             redirect('/applications/' . $id . '/convert');
         }
     }
