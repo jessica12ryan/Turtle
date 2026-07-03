@@ -171,7 +171,7 @@ When creating a tenant, Lease Start is required and Lease End is optional (leave
 
 The application maintains its own timezone, default country, and NTP configuration for accurate time tracking:
 
-- **Localization** — country + timezone configurable in **Settings → General** (admin only). Default country pre-selects Canada or the US when adding new properties. Timezone is applied via `date_default_timezone_set()` at boot. Default country: `US`, default timezone: `America/New_York`.
+- **Localization** — country + timezone configurable in **Settings → General** (admin only). Default country pre-selects Canada or the US when adding new properties. Timezone is applied via `date_default_timezone_set()` at boot. Default country: `CA`, default timezone: `America/New_York`.
 - **Per-user timezone override** — Staff and tenant create/edit forms include a Timezone dropdown. Users can also set their own timezone on the **Profile** page. When set, it overrides the global default.
 - Property addresses support **Canada** (provinces, A1A 1A1 postal codes) and **the United States** (states, 12345 zip codes). Select the country on the property form to switch between region lists and label formats.
 - **NTP Server** is checked on the home page for admin users. Default: `time.gov`. Results cached for 1 hour. Falls back to `www.google.com` (parsing `Date` header). A yellow warning appears if system time drifts >60 seconds.
@@ -243,9 +243,11 @@ Prospective tenants can submit tenancy applications through a public form linked
 
 ### Application Form Sections
 - **Property** — optional property selector with note "If you were given a property ID, enter it here."
+- **Expected Move In Date** — required; pre-fills Lease Start on conversion
 - **Applicant Information** — last name, first name, middle name(s), birth date, phone, email
-- **Current Address** — street, apt/suite, city/town, province/state, postal/zip code, date moved in, reason for leaving
-- **Other Tenants (18+)** — repeatable section with full name, birth date, phone, email, relationship; each person gets their own address, employment, background, emergency contact, and other info sections
+- **Government Issued Photo ID** — required upload (JPEG, PNG, GIF, WebP, or PDF) for primary applicant and each other tenant
+- **Current Address** — street, apt/suite, city/town, province/state, postal/zip code, date moved in (required), reason for leaving (required)
+- **Other Tenants (18+)** — repeatable with full name, birth date, phone, email, relationship, photo ID; each person gets their own address (date moved in and reason for leaving are required), employment, background, emergency contact, and other info sections
 - **Other Occupants (Under 18)** — repeatable with name, age, relationship
 - **Employment & Income Information** — occupation, employer, address, start date, supervisor, phone, other income sources
 - **Emergency Contact** — name, relationship, phone
@@ -253,12 +255,49 @@ Prospective tenants can submit tenancy applications through a public form linked
 - **Personal References** — repeatable with name, relationship, phone
 - **Other Information** — free text
 
-### Management
-- Accessible to admins, landlords, and property managers via the **Applications** link in the top navigation bar
-- Admins can update application status (pending, reviewed, accepted, rejected) and add internal notes
-- Applications can be archived/restored
-- When applications are disabled, a friendly message is shown instead of a 404 error
-- The `tenant_applications` table is auto-created on first access if it does not exist, and the `archived_at` column is auto-added if missing
+### Permissions
+
+| Permission | Admin | Landlord | Property Manager |
+|---|---|---|---|
+| `applications.view` | ✅ | ✅ | ✅ (scoped to assigned properties) |
+| `applications.edit` | ✅ | ✅ | ✅ |
+| `applications.archive` | ✅ | ✅ | ❌ |
+| `applications.restore` | ✅ | ✅ | ❌ |
+| `applications.delete` | ✅ | ❌ | ❌ |
+
+- **Property Managers** only see applications for properties they are assigned to (via `property_manager_id` on the `properties` table).
+- **Landlords** can view, update status, add notes, archive, and restore applications, but cannot delete them.
+- **Admin** has unrestricted access (bypasses all permission checks), including permanent deletion.
+
+### Statuses
+Applications have one of four statuses: **New**, **In Progress**, **Accepted**, or **Rejected**. Admins and users with `applications.edit` can update the status via the show page.
+
+### Archive / Restore
+Applications can be archived (hidden from the default list) and restored. Landlords and admins can archive and restore; only admins can permanently delete.
+
+### Delete
+Permanent deletion is admin-only. The delete button appears on the show page and on archived entries in the index. This cannot be undone.
+
+### Application-to-Tenant Conversion
+
+Users with `applications.edit` permission can convert an accepted application into a tenant by navigating to `/applications/{id}/convert` (there is no dedicated button — use the URL directly).
+
+The convert page is split into two columns:
+- **Left column** — read-only review of the application data (applicant info, address, employment, emergency contact, other tenants)
+- **Right column** — tenant creation form with pre-filled fields from the application (name, email, phone, property, emergency contact)
+
+On conversion:
+- A **tenant account** is created for the primary applicant (main tenant) with a welcome email option
+- **Secondary tenant accounts** are created for each other tenant listed on the application
+- The **Expected Move In Date** pre-fills the **Lease Start** field
+- Each **Government Issued Photo ID** upload creates a separate lease document in `/leases` titled **`ID - FULL-NAME-ALL-CAPS`** (e.g., `ID - JOHN MICHAEL DOE`)
+- The Full Name field has `autocomplete="off"` to prevent browser autofill from overriding the server-provided value
+- Stale form data from other pages is prevented from leaking into the convert form via session tracking (`_old_app_id`)
+
+### Settings
+Admins can toggle the application form on/off and add custom notes for applicants via **Settings → Applications**. When disabled, a friendly message is shown instead of a 404 error.
+
+The `tenant_applications` table is auto-created on first access if it does not exist, and the `archived_at` column is auto-added if missing.
 
 ## Property Photos
 
