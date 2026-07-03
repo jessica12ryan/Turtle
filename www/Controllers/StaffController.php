@@ -34,33 +34,15 @@ class StaffController
     }
     public function index(): void
     {
-        $auth = Auth::instance();
-        $user = $auth->user();
         $showArchived = !empty($_GET['show_archived']);
         $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
 
-        if ($user['role'] === 'admin' || $user['role'] === 'landlord') {
-            $staff = Database::fetchAll(
-                "SELECT u.* FROM users u
-                 WHERE 1=1{$archivedClause}
-                 AND u.role IN ('admin','landlord','property_manager','maintenance')
-                 ORDER BY u.archived_at IS NULL DESC, u.name"
-            );
-        } else {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$auth->id()]
-            );
-            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
-
-            $staff = Database::fetchAll(
-                "SELECT u.* FROM users u
-                 JOIN company_user cu ON cu.user_id = u.id
-                 WHERE cu.company_id IN ({$companyIdList}){$archivedClause}
-                 AND u.role IN ('admin','landlord','property_manager','maintenance')
-                 ORDER BY u.archived_at IS NULL DESC, u.name"
-            );
-        }
+        $staff = Database::fetchAll(
+            "SELECT u.* FROM users u
+             WHERE 1=1{$archivedClause}
+             AND u.role IN ('admin','landlord','property_manager','maintenance')
+             ORDER BY u.archived_at IS NULL DESC, u.name"
+        );
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Staff']);
