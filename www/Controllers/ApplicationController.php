@@ -316,34 +316,33 @@ class ApplicationController
                 ]
             );
 
-            // Create a lease for the main tenant to house copied documents
-            $leaseTitle = 'Application #' . $id . ' — ' . $_POST['name'];
-            $leaseId = Database::insert(
-                "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, 'Converted from application', ?, NOW(), NOW())",
-                [$_POST['property_id'], $tenantId, $leaseTitle, Auth::instance()->id()]
-            );
-
-            // Copy primary applicant photo to lease documents
+            // Upload each photo ID as a separate lease document
             $uploadDir = base_path('storage/uploads/leases');
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-            $leaseDir = $uploadDir . '/' . $leaseId;
-            if (!is_dir($leaseDir)) mkdir($leaseDir, 0777, true);
 
-            $photoPaths = [];
+            $idDocuments = [];
             if (!empty($mainApplicant['photo_id'])) {
                 $name = strtoupper(trim(($mainApplicant['first_name'] ?? '') . ' ' . ($mainApplicant['middle_names'] ?? '') . ' ' . ($mainApplicant['last_name'] ?? '')));
-                $photoPaths[] = ['path' => $mainApplicant['photo_id'], 'label' => 'ID - ' . $name];
+                $idDocuments[] = ['path' => $mainApplicant['photo_id'], 'label' => 'ID - ' . $name];
             }
             foreach ($appData['other_tenants'] ?? [] as $i => $ot) {
                 if (!empty($ot['photo_id'])) {
                     $name = strtoupper(trim(($ot['first_name'] ?? '') . ' ' . ($ot['middle_names'] ?? '') . ' ' . ($ot['last_name'] ?? '')));
-                    $photoPaths[] = ['path' => $ot['photo_id'], 'label' => 'ID - ' . $name];
+                    $idDocuments[] = ['path' => $ot['photo_id'], 'label' => 'ID - ' . $name];
                 }
             }
 
-            foreach ($photoPaths as $item) {
+            foreach ($idDocuments as $item) {
                 $srcFull = base_path($item['path']);
                 if (!file_exists($srcFull)) continue;
+
+                $leaseId = Database::insert(
+                    "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, 'Converted from application', ?, NOW(), NOW())",
+                    [$_POST['property_id'], $tenantId, $item['label'], Auth::instance()->id()]
+                );
+
+                $leaseDir = $uploadDir . '/' . $leaseId;
+                if (!is_dir($leaseDir)) mkdir($leaseDir, 0777, true);
 
                 $ext = pathinfo($srcFull, PATHINFO_EXTENSION);
                 $storedName = uniqid() . '.' . $ext;
