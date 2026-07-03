@@ -197,7 +197,7 @@ class ApplicationController
         $this->ensureTable();
 
         // Clear stale old form data when navigating to a different application
-        if (isset($_SESSION['_old_app_id']) && $_SESSION['_old_app_id'] != $id) {
+        if (isset($_SESSION['_old']) && (!isset($_SESSION['_old_app_id']) || $_SESSION['_old_app_id'] != $id)) {
             unset($_SESSION['_old'], $_SESSION['_old_app_id']);
         }
 
