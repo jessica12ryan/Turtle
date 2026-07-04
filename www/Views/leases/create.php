@@ -41,8 +41,8 @@
                 return this.docTypeLabels[this.documentType] || "";
             },
             init() {
-                this.$watch('selectedProperty', () => {
-                    this.selectedIdTenant = '';
+                this.$watch("selectedProperty", () => {
+                    this.selectedIdTenant = "";
                     if (this.documentType && this.documentType !== "other") {
                         this.title = this.docTypeLabel;
                     }
