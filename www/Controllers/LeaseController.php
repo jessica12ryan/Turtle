@@ -118,6 +118,21 @@ class LeaseController
             }
         }
 
+        // Fetch all tenants per property (for ID document type tenant selection)
+        $propertyTenants = [];
+        foreach ($properties as $p) {
+            $tenants = Database::fetchAll(
+                "SELECT u.id, u.name FROM users u 
+                 JOIN property_tenant pt ON pt.tenant_id = u.id 
+                 WHERE pt.property_id = ? AND pt.moved_out_at IS NULL 
+                 ORDER BY pt.is_main_tenant DESC, u.name ASC",
+                [$p['id']]
+            );
+            if ($tenants) {
+                $propertyTenants[$p['id']] = $tenants;
+            }
+        }
+
         $noTenantProperties = [];
         if ($user['role'] === 'admin') {
             $noTenantProperties = Database::fetchAll(
@@ -149,7 +164,7 @@ class LeaseController
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Upload Lease']);
-        $view->render('leases/create', compact('properties', 'tenantNames', 'noTenantProperties', 'preselectedPropertyId'));
+        $view->render('leases/create', compact('properties', 'tenantNames', 'propertyTenants', 'noTenantProperties', 'preselectedPropertyId'));
     }
 
     public function store(): void

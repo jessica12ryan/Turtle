@@ -167,7 +167,7 @@ Resources can be categorized as **General** (visible to all users with `resource
 
 When uploading a document, a **Document Type** dropdown appears after the property/tenant section. Options: Lease Agreement, Rental Unit Condition, Government Issued Photo ID, Security Deposit Claim, Notice to Quit, Notice to Enter, and Other.
 
-All selections except **Other** automatically populate and **gray out** the Title field. If **Government Issued Photo ID** is selected, the title is automatically set to `ID - <MAIN_TENANT_NAME>` (in all caps). Selecting **Other** keeps the title field editable for a custom entry.
+All selections except **Other** automatically populate and **gray out** the Title field. If **Government Issued Photo ID** is selected, radio buttons for **all active tenants** at the chosen property appear, and the title is automatically set to `ID - <TENANT_NAME>` (in all caps) based on the selected tenant. Selecting **Other** keeps the title field editable for a custom entry.
 
 The document type is displayed as a badge on the document detail page and as a column in the document list.
 
