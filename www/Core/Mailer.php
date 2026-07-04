@@ -169,9 +169,8 @@ class Mailer
         $logoHtml = '<h1 style="color: white; margin: 0; font-size: 24px;">Turtle</h1>';
         try {
             $logo = \site_logo();
-            if ($logo && isset($_SERVER['HTTP_HOST'])) {
-                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                $logoUrl = $scheme . '://' . $_SERVER['HTTP_HOST'] . $logo;
+            if ($logo) {
+                $logoUrl = \site_url() . $logo;
                 $logoHtml = '<img src="' . $logoUrl . '" alt="Logo" style="max-height: 50px; width: auto;">';
             }
         } catch (\Throwable $e) {}

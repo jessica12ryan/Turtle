@@ -24,6 +24,7 @@ class ResourceController
                     title VARCHAR(255) NOT NULL,
                     url VARCHAR(500) NOT NULL,
                     description TEXT,
+                    type VARCHAR(20) NOT NULL DEFAULT 'general',
                     created_by INT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -35,9 +36,15 @@ class ResourceController
             }
 
             try {
-                $pdo->exec("ALTER TABLE resources ADD CONSTRAINT fk_resources_created_by FOREIGN KEY (created_by) REFERENCES users(id)");
+                $pdo->exec("ALTER TABLE resources ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'general' AFTER description");
             } catch (\Throwable $e3) {
-                error_log('ResourceController ensureTableExists FK failed: ' . $e3->getMessage());
+                error_log('ResourceController ensureTableExists type column: ' . $e3->getMessage());
+            }
+
+            try {
+                $pdo->exec("ALTER TABLE resources ADD CONSTRAINT fk_resources_created_by FOREIGN KEY (created_by) REFERENCES users(id)");
+            } catch (\Throwable $e4) {
+                error_log('ResourceController ensureTableExists FK failed: ' . $e4->getMessage());
             }
         }
     }
@@ -46,15 +53,21 @@ class ResourceController
     {
         try {
             $this->ensureTableExists();
-            $links = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by ORDER BY r.title");
+            $generalLinks = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by WHERE r.type = 'general' ORDER BY r.title");
+            $staffLinks = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by WHERE r.type = 'staff' ORDER BY r.title");
         } catch (\Throwable $e) {
             error_log('ResourceController@index query failed: ' . $e->getMessage());
-            $links = [];
+            $generalLinks = [];
+            $staffLinks = [];
         }
+
+        $auth = \App\Core\Auth::instance();
+        $user = $auth->user();
+        $isStaff = $user && $user['role'] !== 'tenant';
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Resources']);
-        $view->render('resources/index', compact('links'));
+        $view->render('resources/index', compact('generalLinks', 'staffLinks', 'isStaff'));
     }
 
     public function create(): void
@@ -100,10 +113,12 @@ class ResourceController
             redirect('/login');
         }
 
+        $type = in_array($_POST['type'] ?? '', ['general', 'staff']) ? $_POST['type'] : 'general';
+
         try {
             Database::insert(
-                "INSERT INTO resources (title, url, description, created_by) VALUES (?, ?, ?, ?)",
-                [$_POST['title'], $url, $_POST['description'] ?? '', $userId]
+                "INSERT INTO resources (title, url, description, type, created_by) VALUES (?, ?, ?, ?, ?)",
+                [$_POST['title'], $url, $_POST['description'] ?? '', $type, $userId]
             );
         } catch (\Throwable $e) {
             error_log('ResourceController@store insert failed: ' . $e->getMessage());
@@ -160,10 +175,12 @@ class ResourceController
             redirect('/resources/' . $id . '/edit');
         }
 
+        $type = in_array($_POST['type'] ?? '', ['general', 'staff']) ? $_POST['type'] : 'general';
+
         try {
             Database::execute(
-                "UPDATE resources SET title = ?, url = ?, description = ?, updated_at = NOW() WHERE id = ?",
-                [$_POST['title'], $url, $_POST['description'] ?? '', $id]
+                "UPDATE resources SET title = ?, url = ?, description = ?, type = ?, updated_at = NOW() WHERE id = ?",
+                [$_POST['title'], $url, $_POST['description'] ?? '', $type, $id]
             );
         } catch (\Throwable $e) {
             error_log('ResourceController@update failed: ' . $e->getMessage());

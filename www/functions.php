@@ -532,6 +532,31 @@ function site_logo(): string
     return '/assets/logo.svg';
 }
 
+function defaultNotifications(): array
+{
+    return [
+        'ticket_assigned' => ['landlord', 'property_manager', 'maintenance'],
+        'ticket_status_updated' => ['tenant'],
+        'document_uploaded' => ['tenant'],
+        'staff_welcome' => ['admin', 'landlord', 'property_manager', 'maintenance'],
+        'tenant_welcome' => ['tenant'],
+        'password_reset' => ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'],
+        'onboarding' => ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'],
+    ];
+}
+
+function site_url(): string
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'site_url'");
+        if ($row && $row['value'] !== '') {
+            return rtrim($row['value'], '/');
+        }
+    } catch (\Throwable $e) {}
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+}
+
 function display_time(?string $datetime, string $format = 'M j, Y g:i A'): string
 {
     if (!$datetime) return '';

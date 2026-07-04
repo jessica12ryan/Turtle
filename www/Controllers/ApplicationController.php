@@ -184,14 +184,9 @@ class ApplicationController
     {
         $this->ensureTable();
 
-        if (empty($_POST['notes'])) {
-            flash('error', 'Notes cannot be empty.');
-            redirect('/applications/' . $id);
-        }
-
         Database::execute(
             "UPDATE tenant_applications SET notes = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['notes'], $id]
+            [$_POST['notes'] ?? '', $id]
         );
 
         log_activity('application.notes_updated', "Notes updated for application #{$id}");
@@ -433,7 +428,7 @@ class ApplicationController
                 );
 
                 if ($secEmail !== '' && !empty($_POST['send_welcome_email'])) {
-                    $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+                    $loginUrl = \site_url() . '/login';
                     \App\Core\Mailer::sendTemplate(
                         $secEmail,
                         'Welcome to Turtle - Your Account Has Been Created',
@@ -453,7 +448,7 @@ class ApplicationController
             Database::commit();
 
             if (!empty($_POST['send_welcome_email'])) {
-                $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+                $loginUrl = \site_url() . '/login';
                 \App\Core\Mailer::sendTemplate(
                     $_POST['email'],
                     'Welcome to Turtle - Your Account Has Been Created',

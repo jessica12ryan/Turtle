@@ -11,14 +11,14 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications'])) {
             $tab = 'general';
         }
 
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'logo_path', 'default_country', 'default_language', 'openai_api_key'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'site_url', 'logo_path', 'default_country', 'default_language', 'openai_api_key'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -61,6 +61,29 @@ class SettingsController
             $data['defaults'] = defaultPermissions();
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'permissions_mode'");
             $data['permissionsMode'] = $row['value'] ?? 'default';
+        } elseif ($tab === 'notifications') {
+            try {
+                Database::fetchAll("SELECT 1 FROM notification_events LIMIT 1");
+            } catch (\Throwable $e) {
+                try {
+                    \App\Core\Database::instance()->getConnection()->exec("CREATE TABLE IF NOT EXISTS notification_events (
+                        event VARCHAR(100) NOT NULL,
+                        role VARCHAR(50) NOT NULL,
+                        PRIMARY KEY (event, role)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                } catch (\Throwable $e2) {
+                    error_log('Failed to create notification_events table: ' . $e2->getMessage());
+                }
+            }
+            $rows = Database::fetchAll("SELECT event, role FROM notification_events ORDER BY event, role", []);
+            $data['notifOverrides'] = [];
+            foreach ($rows as $row) {
+                $data['notifOverrides'][$row['event']][] = $row['role'];
+            }
+            $data['notifRoles'] = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            $data['notifDefaults'] = defaultNotifications();
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'notification_mode'");
+            $data['notificationMode'] = $row['value'] ?? 'default';
         } elseif ($tab === 'logging') {
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'log_level'");
             $data['logLevel'] = $row['value'] ?? 'debug';
@@ -212,6 +235,14 @@ class SettingsController
             );
         }
 
+        if (isset($_POST['site_url'])) {
+            $siteUrl = trim($_POST['site_url']);
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('site_url', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$siteUrl, $siteUrl]
+            );
+        }
+
         $keepDefault = !empty($_POST['logo_default']);
         if ($keepDefault) {
             Database::execute(
@@ -337,7 +368,7 @@ class SettingsController
             Database::execute("DELETE FROM property_photos WHERE 1=1", []);
             Database::execute("DELETE FROM activity_logs WHERE 1=1", []);
             // Reset all user-configurable settings (setup re-creates what it needs)
-            $settingsKeys = ['site_name', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($settingsKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $settingsKeys);
             // Reset permissions to "Use defaults"
@@ -516,6 +547,50 @@ class SettingsController
         log_activity('settings.permissions_saved', 'Permissions saved');
         flash('success', 'Permissions saved successfully.');
         redirect('/settings?tab=permissions');
+    }
+
+    public function saveNotifications(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=notifications');
+        }
+
+        $mode = $_POST['notification_mode'] ?? 'default';
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('notification_mode', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$mode, $mode]
+        );
+
+        if ($mode === 'custom') {
+            if (isset($_POST['events'])) {
+                $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+                Database::execute("DELETE FROM notification_events WHERE 1=1", []);
+                foreach ($_POST['events'] as $event => $grantedRoles) {
+                    foreach ($grantedRoles as $role) {
+                        if (in_array($role, $roles)) {
+                            Database::execute("INSERT INTO notification_events (event, role) VALUES (?, ?)", [$event, $role]);
+                        }
+                    }
+                }
+            } else {
+                $row = Database::fetch("SELECT COUNT(*) as c FROM notification_events");
+                if ($row && $row['c'] == 0) {
+                    $defaults = defaultNotifications();
+                    foreach ($defaults as $event => $roles) {
+                        foreach ($roles as $role) {
+                            Database::execute("INSERT IGNORE INTO notification_events (event, role) VALUES (?, ?)", [$event, $role]);
+                        }
+                    }
+                }
+            }
+        } else {
+            Database::execute("DELETE FROM notification_events WHERE 1=1", []);
+        }
+
+        log_activity('settings.notifications_saved', 'Notification settings saved');
+        flash('success', 'Notification settings saved successfully.');
+        redirect('/settings?tab=notifications');
     }
 
     public function saveLogging(): void

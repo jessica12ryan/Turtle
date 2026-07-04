@@ -218,6 +218,14 @@ class HomeController
                 "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL"
             )['count'] ?? 0;
 
+            try {
+                $stats['applications'] = Database::fetch(
+                    "SELECT COUNT(*) as count FROM tenant_applications WHERE property_id IN ({$propertyIdList}) AND status IN ('new','in_progress') AND archived_at IS NULL"
+                )['count'] ?? 0;
+            } catch (\Throwable $e) {
+                $stats['applications'] = 0;
+            }
+
             $recentTickets = Database::fetchAll(
                 "SELECT t.*, p.name as property_name, u.name as tenant_name FROM tickets t 
                  JOIN properties p ON p.id = t.property_id 

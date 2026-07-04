@@ -91,7 +91,7 @@ class AuthController
                 [$_POST['email'], $token]
             );
 
-            $resetUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/reset-password/' . $token;
+            $resetUrl = \site_url() . '/reset-password/' . $token;
             Mailer::sendTemplate(
                 $_POST['email'],
                 'Reset Your Password',
@@ -192,7 +192,7 @@ class AuthController
             [password_hash($password, PASSWORD_DEFAULT), $user['id']]
         );
 
-        $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+        $loginUrl = \site_url() . '/login';
         Mailer::sendTemplate(
             $_POST['email'],
             'Welcome to Turtle - Complete Your Onboarding',

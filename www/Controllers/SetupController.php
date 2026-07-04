@@ -117,6 +117,13 @@ class SetupController
                 [$siteName, $siteName]
             );
 
+            // Save site URL
+            $siteUrl = trim($_POST['site_url'] ?? '');
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('site_url', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$siteUrl, $siteUrl]
+            );
+
             // Save logo path
             if ($keepDefault) {
                 Database::execute(

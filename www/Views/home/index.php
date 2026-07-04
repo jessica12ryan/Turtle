@@ -66,6 +66,12 @@
             <p class="text-sm text-gray-500 dark:text-gray-400"><?= __('Open Tickets') ?></p>
         </div>
     <?php endif; ?>
+    <?php if (isset($stats['applications'])): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+            <p class="text-2xl font-bold text-indigo-600"><?= $stats['applications'] ?></p>
+            <p class="text-sm text-gray-500 dark:text-gray-400"><?= __('Applications') ?></p>
+        </div>
+    <?php endif; ?>
 </div>
 
 <?php if (isset($recentTickets) && !empty($recentTickets)): ?>

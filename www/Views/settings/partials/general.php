@@ -18,6 +18,12 @@
         </div>
 
         <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Site URL') ?></label>
+            <input type="text" name="site_url" value="<?= h($mail['site_url'] ?? '') ?>" class="w-full max-w-md border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="<?= h(site_url()) ?>">
+            <p class="text-xs text-gray-400 mt-1"><?= __('Used in email links. Leave blank to use the internal server address.') ?></p>
+        </div>
+
+        <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Logo') ?></label>
             <div class="flex items-center space-x-4 mb-2">
                 <img src="<?= h(site_logo()) ?>" alt="Current logo" class="h-10">

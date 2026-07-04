@@ -117,6 +117,8 @@ The add-on clones the configured branch at build time. Run-time updates can be t
 
 The app includes a lightweight SMTP client (no external mail library). Templates use the custom site logo if one has been uploaded via **Settings → General**.
 
+Email links (password reset, ticket notifications, welcome emails, document uploads) use the **Site URL** setting from **Settings → General → Branding**. If no Site URL is configured, links fall back to the internal server address (`$_SERVER['HTTP_HOST']`).
+
 ### Default (Docker dev)
 Mail runs through the bundled **Mailpit** container — no configuration needed:
 - Host: `mailpit`, Port: `1025`, no authentication
@@ -130,6 +132,8 @@ Mailpit is bundled inside the add-on container and starts automatically. Leave `
 
 ### Via Settings UI (recommended)
 Go to **Settings → General** (admin only) to configure SMTP credentials in the browser. Settings are stored in the database and override `.env` values. Leave username/password blank to connect without authentication.
+
+**Email Notifications** can be configured in **Settings → Notifications**, where admins can choose which roles receive each type of email (ticket assigned, ticket status updated, document uploaded, welcome emails, password reset, onboarding). The page uses a "Use default" / "Custom" toggle, matching the pattern of the Permissions page.
 
 ### Via .env (fallback)
 ```
@@ -156,6 +160,8 @@ Page-level access is enforced by middleware strings on route definitions:
 ## Resources
 
 A shared links page available to all users. Admins, landlords, and property managers can add, edit, and delete resource links (URLs with optional descriptions). Accessible from the top navigation bar.
+
+Resources can be categorized as **General** (visible to all users with `resources.access`) or **Staff** (visible only to staff members — admins, landlords, property managers, and maintenance). Tenants never see Staff Resources. The type is selected on the create/edit resource forms.
 
 ## Tenant Lease Dates & Scheduled Move-Out
 

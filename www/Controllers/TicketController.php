@@ -223,7 +223,7 @@ class TicketController
                     'Ticket Assigned: ' . $ticket['subject'],
                     'Hello ' . h($assignee['name']) . ',',
                     'A ticket has been assigned to you.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>Priority:</strong> ' . ucfirst($ticket['priority']),
-                    'http://' . $_SERVER['HTTP_HOST'] . '/tickets/' . $id,
+                    \site_url() . '/tickets/' . $id,
                     'View Ticket'
                 );
             }
@@ -275,7 +275,7 @@ class TicketController
                 'Ticket Update: ' . $ticket['subject'],
                 'Hello ' . h($tenant['name']) . ',',
                 'Your ticket status has been updated.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>New Status:</strong> ' . ucfirst(str_replace('_', ' ', $_POST['status'])),
-                'http://' . $_SERVER['HTTP_HOST'] . '/tickets/' . $id,
+                \site_url() . '/tickets/' . $id,
                 'View Ticket'
             );
         }

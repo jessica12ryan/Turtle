@@ -246,7 +246,7 @@ class TenantController
         );
 
         if (!empty($_POST['send_welcome_email'])) {
-            $loginUrl = 'http://' . $_SERVER['HTTP_HOST'] . '/login';
+            $loginUrl = \site_url() . '/login';
             Mailer::sendTemplate(
                 $_POST['email'],
                 'Welcome to Turtle - Your Account Has Been Created',
