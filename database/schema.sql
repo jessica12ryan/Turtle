@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS leases (
     property_id INT NOT NULL,
     tenant_id INT DEFAULT NULL,
     title VARCHAR(255) NOT NULL,
+    document_type VARCHAR(50) DEFAULT NULL,
     description TEXT,
     uploaded_by INT NOT NULL,
     archived_at TIMESTAMP NULL DEFAULT NULL,

@@ -240,4 +240,12 @@
 'General resources are visible to all users. Staff resources are only visible to staff members.' => 'General resources are visible to all users. Staff resources are only visible to staff members.',
 'General Resources' => 'General Resources',
 'Staff Resources' => 'Staff Resources',
+'Document Type' => 'Document Type',
+'Select Document Type' => 'Select Document Type',
+'Lease Agreement' => 'Lease Agreement',
+'Rental Unit Condition' => 'Rental Unit Condition',
+'Security Deposit Claim' => 'Security Deposit Claim',
+'Notice to Quit' => 'Notice to Quit',
+'Notice to Enter' => 'Notice to Enter',
+'Type' => 'Type',
 ];

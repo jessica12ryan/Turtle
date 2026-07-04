@@ -163,6 +163,14 @@ A shared links page available to all users. Admins, landlords, and property mana
 
 Resources can be categorized as **General** (visible to all users with `resources.access`) or **Staff** (visible only to staff members — admins, landlords, property managers, and maintenance). Tenants never see Staff Resources. The type is selected on the create/edit resource forms.
 
+## Document Types
+
+When uploading a document, a **Document Type** dropdown appears after the property/tenant section. Options: Lease Agreement, Rental Unit Condition, Government Issued Photo ID, Security Deposit Claim, Notice to Quit, Notice to Enter, and Other.
+
+All selections except **Other** automatically populate and **gray out** the Title field. If **Government Issued Photo ID** is selected, the title is automatically set to `ID - <MAIN_TENANT_NAME>` (in all caps). Selecting **Other** keeps the title field editable for a custom entry.
+
+The document type is displayed as a badge on the document detail page and as a column in the document list.
+
 ## Tenant Lease Dates & Scheduled Move-Out
 
 When creating a tenant, Lease Start is required and Lease End is optional (leave blank for month-to-month). A Scheduled Move-Out date can also be set.

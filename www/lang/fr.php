@@ -610,4 +610,12 @@ return [
 'General resources are visible to all users. Staff resources are only visible to staff members.' => 'Les ressources générales sont visibles par tous les utilisateurs. Les ressources pour le personnel ne sont visibles que par les membres du personnel.',
 'General Resources' => 'Ressources générales',
 'Staff Resources' => 'Ressources pour le personnel',
+'Document Type' => 'Type de document',
+'Select Document Type' => 'Sélectionner le type de document',
+'Lease Agreement' => 'Contrat de location',
+'Rental Unit Condition' => 'État du logement',
+'Security Deposit Claim' => 'Réclamation de dépôt de garantie',
+'Notice to Quit' => 'Avis de quitter',
+'Notice to Enter' => 'Avis d\'entrée',
+'Type' => 'Type',
 ];

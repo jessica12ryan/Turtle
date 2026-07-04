@@ -19,6 +19,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase"><?= __('Title') ?></th>
+                    <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase"><?= __('Type') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase"><?= __('Property') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase"><?= __('Documents') ?></th>
                     <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase"><?= __('Uploaded') ?></th>
@@ -26,6 +27,17 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
+                <?php
+                $docTypeLabels = [
+                    'lease_agreement' => __('Lease Agreement'),
+                    'rental_unit_condition' => __('Rental Unit Condition'),
+                    'government_issued_photo_id' => __('Government Issued Photo ID'),
+                    'security_deposit_claim' => __('Security Deposit Claim'),
+                    'notice_to_quit' => __('Notice to Quit'),
+                    'notice_to_enter' => __('Notice to Enter'),
+                    'other' => __('Other'),
+                ];
+                ?>
                 <?php foreach ($leases as $lease): ?>
                     <tr class="hover:bg-gray-50 <?= $lease['archived_at'] ? 'opacity-60' : '' ?>">
                         <td class="px-6 py-4">
@@ -34,6 +46,7 @@
                                 <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1">Archived</span>
                             <?php endif; ?>
                         </td>
+                        <td class="px-6 py-4 text-sm text-gray-600"><?= $docTypeLabels[$lease['document_type']] ?? h($lease['document_type']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($lease['property_name']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= count($lease['documents']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-500"><?= display_time($lease['created_at'], 'M j, Y') ?></td>

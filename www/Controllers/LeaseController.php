@@ -158,6 +158,7 @@ class LeaseController
         if (!$validator->validate($_POST, [
             'property_id' => 'required|exists:properties,id',
             'tenant_id' => 'required|exists:users,id',
+            'document_type' => 'required|max:50',
             'title' => 'required|max:255',
             'description' => 'max:5000',
         ])) {
@@ -170,8 +171,8 @@ class LeaseController
 
         try {
             $leaseId = Database::insert(
-                "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
-                [$_POST['property_id'], $_POST['tenant_id'], $_POST['title'], $_POST['description'] ?? '', Auth::instance()->id()]
+                "INSERT INTO leases (property_id, tenant_id, title, document_type, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                [$_POST['property_id'], $_POST['tenant_id'], $_POST['title'], $_POST['document_type'], $_POST['description'] ?? '', Auth::instance()->id()]
             );
 
             if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {

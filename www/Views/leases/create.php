@@ -12,9 +12,32 @@
             }, $properties), JSON_HEX_APOS) ?>,
             tenantNames: <?= json_encode($tenantNames, JSON_HEX_APOS) ?>,
             selectedProperty: "<?= $preselectedPropertyId ?? '' ?>",
+            documentType: "<?= old('document_type', '') ?>",
+            title: "<?= old('title', '') ?>",
+            docTypeLabels: <?= json_encode([
+                'lease_agreement' => __('Lease Agreement'),
+                'rental_unit_condition' => __('Rental Unit Condition'),
+                'government_issued_photo_id' => __('Government Issued Photo ID'),
+                'security_deposit_claim' => __('Security Deposit Claim'),
+                'notice_to_quit' => __('Notice to Quit'),
+                'notice_to_enter' => __('Notice to Enter'),
+            ], JSON_HEX_APOS) ?>,
             get mainTenantName() {
                 const prop = this.properties.find(p => p.id == this.selectedProperty);
                 return prop && prop.main_tenant_id ? (this.tenantNames[prop.id] || "Unknown") : null;
+            },
+            get docTypeLabel() {
+                if (!this.documentType || this.documentType === "other") return "";
+                if (this.documentType === "government_issued_photo_id") {
+                    const name = this.mainTenantName;
+                    return "ID - " + (name ? name.toUpperCase() : "");
+                }
+                return this.docTypeLabels[this.documentType] || "";
+            },
+            init() {
+                if (this.documentType && this.documentType !== "other") {
+                    this.title = this.docTypeLabel;
+                }
             }
         }'>
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
@@ -38,8 +61,21 @@
                 <p class="text-red-700 text-sm font-medium"><?= __('No tenant exists for this property.') ?> <a x-bind:href="'/tenants/create?property_id=' + selectedProperty" class="text-blue-600 hover:underline"><?= __('Click here to add a tenant.') ?></a></p>
             </div>
             <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Document Type') ?> <span class="text-red-500">*</span></label>
+                <select name="document_type" x-model="documentType" @change="title = docTypeLabel" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <option value=""><?= __('Select Document Type') ?></option>
+                    <option value="lease_agreement"><?= __('Lease Agreement') ?></option>
+                    <option value="rental_unit_condition"><?= __('Rental Unit Condition') ?></option>
+                    <option value="government_issued_photo_id"><?= __('Government Issued Photo ID') ?></option>
+                    <option value="security_deposit_claim"><?= __('Security Deposit Claim') ?></option>
+                    <option value="notice_to_quit"><?= __('Notice to Quit') ?></option>
+                    <option value="notice_to_enter"><?= __('Notice to Enter') ?></option>
+                    <option value="other"><?= __('Other') ?></option>
+                </select>
+            </div>
+            <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Title') ?> <span class="text-red-500">*</span></label>
-                <input type="text" name="title" value="<?= old('title') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                <input type="text" name="title" x-model="title" x-bind:readonly="documentType && documentType !== 'other'" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" :class="documentType && documentType !== 'other' ? 'bg-gray-100 cursor-not-allowed' : ''" required>
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Description') ?></label>

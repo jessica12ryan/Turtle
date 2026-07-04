@@ -2,6 +2,20 @@
     <div>
         <h1 class="text-2xl font-bold text-gray-800"><?= h($lease['title']) ?></h1>
         <p class="text-gray-500"><?= h($lease['property_name']) ?> — Uploaded by <?= h($lease['uploader_name']) ?> on <?= display_time($lease['created_at'], 'M j, Y') ?></p>
+        <?php if (!empty($lease['document_type'])): ?>
+            <?php
+            $docTypeLabels = [
+                'lease_agreement' => __('Lease Agreement'),
+                'rental_unit_condition' => __('Rental Unit Condition'),
+                'government_issued_photo_id' => __('Government Issued Photo ID'),
+                'security_deposit_claim' => __('Security Deposit Claim'),
+                'notice_to_quit' => __('Notice to Quit'),
+                'notice_to_enter' => __('Notice to Enter'),
+                'other' => __('Other'),
+            ];
+            ?>
+            <span class="inline-block mt-1 text-xs font-medium bg-blue-100 text-blue-800 px-2 py-0.5 rounded"><?= $docTypeLabels[$lease['document_type']] ?? h($lease['document_type']) ?></span>
+        <?php endif; ?>
     </div>
     <div class="flex space-x-3">
         <a href="/properties/<?= $lease['property_id'] ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
