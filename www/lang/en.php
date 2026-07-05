@@ -248,4 +248,5 @@
 'Notice to Quit' => 'Notice to Quit',
 'Notice to Enter' => 'Notice to Enter',
 'Type' => 'Type',
+'The document is attached to this email.' => 'The document is attached to this email.',
 ];

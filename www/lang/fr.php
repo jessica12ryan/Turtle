@@ -618,4 +618,5 @@ return [
 'Notice to Quit' => 'Avis de quitter',
 'Notice to Enter' => 'Avis d\'entrée',
 'Type' => 'Type',
+'The document is attached to this email.' => 'Le document est joint à ce courriel.',
 ];

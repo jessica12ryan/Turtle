@@ -618,4 +618,5 @@ return [
 'Notice to Quit' => 'Aviso de desalojo',
 'Notice to Enter' => 'Aviso de entrada',
 'Type' => 'Tipo',
+'The document is attached to this email.' => 'El documento está adjunto a este correo electrónico.',
 ];

@@ -159,7 +159,7 @@ class Mailer
         return true;
     }
 
-    public static function sendTemplate(string $to, string $subject, string $greeting, string $body, string $actionUrl = '', string $actionText = ''): bool
+    public static function sendTemplate(string $to, string $subject, string $greeting, string $body, string $actionUrl = '', string $actionText = '', array $attachments = []): bool
     {
         $actionHtml = '';
         if ($actionUrl && $actionText) {
@@ -189,6 +189,144 @@ class Mailer
             </div>
         </div>";
 
+        if (!empty($attachments)) {
+            return self::sendWithAttachments($to, $subject, $html, $attachments);
+        }
+
         return self::send($to, $subject, $html);
+    }
+
+    public static function sendWithAttachments(string $to, string $subject, string $htmlBody, array $attachments): bool
+    {
+        $boundary = '----=' . md5(uniqid());
+
+        $body = "--{$boundary}\r\n"
+            . "Content-Type: text/html; charset=UTF-8\r\n"
+            . "Content-Transfer-Encoding: 7bit\r\n\r\n"
+            . $htmlBody . "\r\n";
+
+        foreach ($attachments as $att) {
+            $filePath = $att['path'] ?? '';
+            $fileName = $att['name'] ?? basename($filePath);
+            if (!file_exists($filePath) || !is_readable($filePath)) {
+                continue;
+            }
+            $fileContent = file_get_contents($filePath);
+            if ($fileContent === false) continue;
+            $encoded = chunk_split(base64_encode($fileContent));
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $mimeType = match ($ext) {
+                'pdf' => 'application/pdf',
+                'doc' => 'application/msword',
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'png' => 'image/png',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'gif' => 'image/gif',
+                'txt' => 'text/plain',
+                default => 'application/octet-stream',
+            };
+
+            $body .= "--{$boundary}\r\n"
+                . "Content-Type: {$mimeType}; name=\"{$fileName}\"\r\n"
+                . "Content-Disposition: attachment; filename=\"{$fileName}\"\r\n"
+                . "Content-Transfer-Encoding: base64\r\n\r\n"
+                . $encoded . "\r\n";
+        }
+
+        $body .= "--{$boundary}--\r\n";
+
+        $host = self::getConfig('mail_host', 'mailpit');
+        $port = (int)(self::getConfig('mail_port', '1025'));
+        $username = self::getConfig('mail_username', '') ?: null;
+        $password = self::getConfig('mail_password', '') ?: null;
+        $fromAddress = self::getConfig('mail_from_address', 'noreply@turtleapp.com');
+        $fromName = self::getConfig('mail_from_name', 'Turtle');
+
+        $headers = "From: {$fromName} <{$fromAddress}>\r\n"
+            . "To: {$to}\r\n"
+            . "Subject: {$subject}\r\n"
+            . "MIME-Version: 1.0\r\n"
+            . "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n"
+            . "Message-ID: <" . time() . '.' . uniqid() . "@turtleapp.com>\r\n";
+
+        $mailStr = $headers . "\r\n" . $body;
+
+        $errno = 0;
+        $errstr = '';
+        $socket = @fsockopen($host, $port, $errno, $errstr, 10);
+        if (!$socket) {
+            error_log("Mailer: Failed to connect to {$host}:{$port} — {$errstr}");
+            return false;
+        }
+
+        stream_set_timeout($socket, 10);
+
+        if (!self::readResponse($socket, '220', 'Connection greeting')) {
+            fclose($socket);
+            return false;
+        }
+
+        if (!self::smtpCommand($socket, "EHLO turtle", '250', 'EHLO')) {
+            fclose($socket);
+            return false;
+        }
+
+        if ($username !== null) {
+            if (!self::smtpCommand($socket, "STARTTLS", '220', 'STARTTLS')) {
+                fclose($socket);
+                return false;
+            }
+            stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            if (!self::smtpCommand($socket, "EHLO turtle", '250', 'EHLO after STARTTLS')) {
+                fclose($socket);
+                return false;
+            }
+
+            if (!self::smtpCommand($socket, "AUTH LOGIN", '334', 'AUTH LOGIN')) {
+                fclose($socket);
+                return false;
+            }
+            if (!self::smtpCommand($socket, base64_encode($username), '334', 'AUTH username')) {
+                fclose($socket);
+                return false;
+            }
+            if (!self::smtpCommand($socket, base64_encode($password), '235', 'AUTH password')) {
+                fclose($socket);
+                return false;
+            }
+        }
+
+        if (!self::smtpCommand($socket, "MAIL FROM:<{$fromAddress}>", '250', 'MAIL FROM')) {
+            fclose($socket);
+            return false;
+        }
+        if (!self::smtpCommand($socket, "RCPT TO:<{$to}>", '250', 'RCPT TO')) {
+            fclose($socket);
+            return false;
+        }
+        if (!self::smtpCommand($socket, "DATA", '354', 'DATA')) {
+            fclose($socket);
+            return false;
+        }
+
+        fwrite($socket, $mailStr . "\r\n.\r\n");
+        $response = '';
+        while (true) {
+            $line = fgets($socket, 512);
+            if ($line === false) break;
+            $response .= $line;
+            if (isset($line[3]) && $line[3] === ' ') break;
+        }
+        $code = substr($response, 0, 3);
+        if ($code !== '250') {
+            error_log("Mailer: Message delivery failed — got {$code}. Response: " . trim($response));
+            fclose($socket);
+            return false;
+        }
+
+        fwrite($socket, "QUIT\r\n");
+        fclose($socket);
+
+        return true;
     }
 }

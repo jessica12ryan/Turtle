@@ -171,6 +171,8 @@ All selections except **Other** automatically populate and **gray out** the Titl
 
 The document type is displayed as a badge on the document detail page and as a column in the document list.
 
+When **"Send this document to tenant by email"** is checked during upload, the uploaded files are **attached directly to the email** (instead of sending a download link).
+
 ## Tenant Lease Dates & Scheduled Move-Out
 
 When creating a tenant, Lease Start is required and Lease End is optional (leave blank for month-to-month). A Scheduled Move-Out date can also be set.

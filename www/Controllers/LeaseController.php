@@ -216,6 +216,7 @@ class LeaseController
                 }
 
                 $allOk = true;
+                $emailAttachments = [];
                 foreach ($_FILES['documents']['name'] as $i => $name) {
                     if (empty($name)) continue;
                     if ($_FILES['documents']['error'][$i] !== UPLOAD_ERR_OK) {
@@ -236,6 +237,8 @@ class LeaseController
                         "INSERT INTO documents (documentable_type, documentable_id, file_path, original_name, size, mime_type, uploaded_by, created_at, updated_at) VALUES ('lease', ?, ?, ?, ?, ?, ?, NOW(), NOW())",
                         [$leaseId, $pathPrefix . '/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $_FILES['documents']['type'][$i] ?? '', Auth::instance()->id()]
                     );
+
+                    $emailAttachments[] = ['path' => $destPath, 'name' => $name];
                 }
 
                 if (!$allOk) {
@@ -244,7 +247,7 @@ class LeaseController
             }
 
             // Send notification email to tenant if requested
-            if (!empty($_POST['email_tenant'])) {
+            if (!empty($_POST['email_tenant']) && !empty($emailAttachments)) {
                 $tenant = Database::fetch(
                     "SELECT u.name, u.email FROM users u WHERE u.id = ?",
                     [$_POST['tenant_id']]
@@ -254,14 +257,14 @@ class LeaseController
                         "SELECT name FROM properties WHERE id = ?",
                         [$_POST['property_id']]
                     );
-                    $leaseUrl = \site_url() . '/leases/' . $leaseId;
                     \App\Core\Mailer::sendTemplate(
                         $tenant['email'],
                         __('New document uploaded'),
                         __('Hello') . ' ' . h($tenant['name']) . ',',
-                        __('A new document has been uploaded for your property') . ' ' . h($property['name'] ?? '') . ': <strong>' . h($_POST['title']) . '</strong>.<br><br>' . __('You can view and download the document here:'),
-                        $leaseUrl,
-                        __('View Document')
+                        __('A new document has been uploaded for your property') . ' ' . h($property['name'] ?? '') . ': <strong>' . h($_POST['title']) . '</strong>.<br><br>' . __('The document is attached to this email.'),
+                        '',
+                        '',
+                        $emailAttachments
                     );
                 }
             }
