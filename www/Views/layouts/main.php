@@ -113,7 +113,7 @@ $themePref = $themeUser['theme'] ?? 'system';
         input[type="checkbox"] { accent-color: #2563eb; }
 
         /* Tooltip system */
-        [data-tooltip] { position: relative; cursor: help; }
+        [data-tooltip] { position: relative; }
         #tooltip-el {
             position: fixed; z-index: 9999; pointer-events: none;
             background: #1f2937; color: #fff;
