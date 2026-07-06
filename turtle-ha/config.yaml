@@ -9,13 +9,13 @@ arch:
   - armv7
 init: false
 ports:
-  8099/tcp: 8099
+  80/tcp: 80
   8025/tcp: 8025
 ports_description:
-  8099/tcp: Turtle web UI
+  80/tcp: Turtle web UI
   8025/tcp: Mailpit web UI
 ingress: true
-ingress_port: 8099
+ingress_port: 80
 panel_icon: mdi:turtle
 panel_title: Turtle
 options:

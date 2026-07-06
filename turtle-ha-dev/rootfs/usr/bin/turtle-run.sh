@@ -15,7 +15,7 @@ MAIL_FROM=$(bashio::config 'mail_from_address')
 MAILPIT_PORT=$(bashio::config 'mailpit_port')
 
 if [ -z "$APP_URL" ]; then
-    APP_URL="http://homeassistant.local:8099"
+    APP_URL="http://homeassistant.local:80"
 fi
 
 # ── Persistent directories ─────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ _cleanup() {
 trap '_cleanup' SIGTERM SIGHUP
 
 # ── Start Apache ──────────────────────────────────────────────────────────────
-bashio::log.info "Turtle (Dev) is ready at port 8099"
+bashio::log.info "Turtle (Dev) is ready at port 80"
 httpd -D FOREGROUND &
 APACHE_PID=$!
 wait

@@ -56,9 +56,8 @@ RUN ln -sf /usr/bin/php82 /usr/bin/php
 RUN git clone --depth=1 --branch stable https://github.com/jessica12ryan/Turtle.git /var/www/turtle \
     && chmod -R a+w /var/www/turtle
 
-# Apache: switch to port 8099, enable rewrite
-RUN sed -i 's/^Listen 80$/Listen 8099/' /etc/apache2/httpd.conf \
-    && sed -i 's/#LoadModule rewrite_module/LoadModule rewrite_module/' /etc/apache2/httpd.conf \
+# Apache: enable rewrite
+RUN sed -i 's/#LoadModule rewrite_module/LoadModule rewrite_module/' /etc/apache2/httpd.conf \
     && echo "ServerName localhost" >> /etc/apache2/httpd.conf
 
 # PHP tweaks
