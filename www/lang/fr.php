@@ -623,4 +623,7 @@ return [
 'Unlist Property' => 'Dépublier la propriété',
 'Property listed for applications.' => 'Propriété publiée pour les candidatures.',
 'Property unlisted from applications.' => 'Propriété dépubliée des candidatures.',
+'Listed for applications' => 'Publiée pour les candidatures',
+'Has active tenants' => 'A des locataires actifs',
+'No active tenants' => 'Aucun locataire actif',
 ];

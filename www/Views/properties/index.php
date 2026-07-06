@@ -28,7 +28,16 @@
                         </div>
                     <?php endif; ?>
                     <div class="p-4">
-                        <h3 class="text-lg font-semibold text-gray-800"><?= h($property['name']) ?></h3>
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <?= h($property['name']) ?>
+                            <?php if (!empty($property['listed'])): ?>
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold ml-1" title="<?= __('Listed for applications') ?>">!</span>
+                            <?php elseif (!isset($property['tenants_count']) || $property['tenants_count'] > 0): ?>
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold ml-1" title="<?= __('Has active tenants') ?>">&#10003;</span>
+                            <?php else: ?>
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100 text-red-700 text-xs font-bold ml-1" title="<?= __('No active tenants') ?>">&#10007;</span>
+                            <?php endif; ?>
+                        </h3>
                         <p class="text-sm text-gray-500 mt-1"><?= h($property['landlord_name']) ?></p>
                         <p class="text-sm text-gray-500"><?= h($property['city']) ?>, <?= h($property['province']) ?><?= ($property['country'] ?? 'CA') !== 'CA' ? ', ' . h($property['country']) : '' ?></p>
                         <?php if (isset($property['tenants_count'])): ?>

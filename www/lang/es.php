@@ -623,4 +623,7 @@ return [
 'Unlist Property' => 'No listar propiedad',
 'Property listed for applications.' => 'Propiedad listada para solicitudes.',
 'Property unlisted from applications.' => 'Propiedad no listada para solicitudes.',
+'Listed for applications' => 'Listada para solicitudes',
+'Has active tenants' => 'Tiene inquilinos activos',
+'No active tenants' => 'Sin inquilinos activos',
 ];

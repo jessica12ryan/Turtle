@@ -253,4 +253,7 @@
 'Unlist Property' => 'Unlist Property',
 'Property listed for applications.' => 'Property listed for applications.',
 'Property unlisted from applications.' => 'Property unlisted from applications.',
+'Listed for applications' => 'Listed for applications',
+'Has active tenants' => 'Has active tenants',
+'No active tenants' => 'No active tenants',
 ];

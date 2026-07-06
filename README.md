@@ -165,7 +165,12 @@ Resources can be categorized as **General** (visible to all users with `resource
 
 ## Property Listing
 
-Properties have a **Listed/Unlisted** toggle on the property detail page (visible to users with `properties.edit`). When a property is **listed**, it appears in the Property ID dropdown on the public tenancy application form (`/applications/create`). Unlisted properties are hidden from applicants. New properties are listed by default.
+Properties have a **Listed/Unlisted** toggle on the property detail page (visible to users with `properties.edit`). When a property is **listed**, it appears in the Property ID dropdown on the public tenancy application form (`/applications/create`). Unlisted properties are hidden from applicants. New properties are **unlisted** by default — an admin must explicitly click **List Property** to make them available for applications.
+
+The property index page shows status indicators next to each property name:
+- **Yellow !** — Listed for applications (overrides tenant status)
+- **Green ✓** — Has active tenants
+- **Red ✗** — No active tenants
 
 ## Document Types
 
