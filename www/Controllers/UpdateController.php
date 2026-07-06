@@ -86,7 +86,7 @@ class UpdateController
     {
         $repo = self::repoPath();
         $git = 'git -c safe.directory=' . $repo . ' -C ' . $repo;
-        $branch = trim(shell_exec("{$git} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
+        $branch = escapeshellarg(trim(shell_exec("{$git} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master'));
 
         // Try git fetch first — works when container has outbound git access
         exec("{$git} fetch origin 2>&1", $fetchOutput, $fetchExitCode);
@@ -187,7 +187,7 @@ class UpdateController
         $git = 'git -c safe.directory=' . $repo;
         $cd = 'cd ' . $repo;
 
-        $branch = trim(shell_exec("{$git} -C {$repo} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
+        $branch = escapeshellarg(trim(shell_exec("{$git} -C {$repo} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master'));
 
         $steps = [
             'Fixing permissions...' => "chmod -R a+w {$repo} 2>&1; chmod -R a+w {$repo}/.git 2>&1; (command -v sudo && sudo chmod -R a+w {$repo}) 2>&1 || true; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs 2>&1; true",

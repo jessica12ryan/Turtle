@@ -24,7 +24,7 @@ class NotificationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         Database::execute(
@@ -38,7 +38,7 @@ class NotificationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         Database::execute(

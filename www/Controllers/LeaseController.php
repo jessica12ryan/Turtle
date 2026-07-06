@@ -171,7 +171,7 @@ class LeaseController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $validator = new Validator();
@@ -235,6 +235,11 @@ class LeaseController
                     $storedName = uniqid() . '.' . $ext;
                     $destPath = $leaseDir . '/' . $storedName;
 
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $detectedType = $finfo->file($_FILES['documents']['tmp_name'][$i]);
+                    $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!in_array($detectedType, $allowedMimes, true)) { continue; }
+
                     if (!move_uploaded_file($_FILES['documents']['tmp_name'][$i], $destPath)) {
                         $allOk = false;
                         break;
@@ -242,7 +247,7 @@ class LeaseController
 
                     Database::insert(
                         "INSERT INTO documents (documentable_type, documentable_id, file_path, original_name, size, mime_type, uploaded_by, created_at, updated_at) VALUES ('lease', ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-                        [$leaseId, $pathPrefix . '/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $_FILES['documents']['type'][$i] ?? '', Auth::instance()->id()]
+                        [$leaseId, $pathPrefix . '/' . $leaseId . '/' . $storedName, $name, filesize($destPath), $detectedType, Auth::instance()->id()]
                     );
 
                     $emailAttachments[] = ['path' => $destPath, 'name' => $name];
@@ -315,7 +320,7 @@ class LeaseController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
@@ -328,7 +333,7 @@ class LeaseController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
@@ -341,7 +346,7 @@ class LeaseController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $documents = Database::fetchAll(

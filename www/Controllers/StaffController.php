@@ -72,7 +72,7 @@ class StaffController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $allowedRoles = ['property_manager', 'maintenance'];
@@ -206,7 +206,7 @@ class StaffController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
@@ -296,7 +296,7 @@ class StaffController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
@@ -309,7 +309,7 @@ class StaffController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
@@ -333,7 +333,7 @@ class StaffController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ?", [$id]);

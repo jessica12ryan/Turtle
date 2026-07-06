@@ -119,7 +119,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $validator = new Validator();
@@ -265,7 +265,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $validator = new Validator();
@@ -307,7 +307,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $property = Database::fetch("SELECT id, name, listed FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
@@ -362,10 +362,10 @@ class PropertyController
             return ['dir' => $fallbackDir, 'prefix' => $fallbackBase];
         }
         if (!is_dir($primaryDir)) {
-            @mkdir($primaryDir, 0777, true);
-            @chmod($primaryDir, 0777);
+            @mkdir($primaryDir, 0755, true);
+            @chmod($primaryDir, 0755);
             $escaped = escapeshellarg($primaryDir);
-            exec("chmod -R 777 {$escaped} 2>/dev/null; chown -R www-data:www-data {$escaped} 2>/dev/null");
+            exec("chmod -R 755 {$escaped} 2>/dev/null; chown -R www-data:www-data {$escaped} 2>/dev/null");
         }
         if (is_dir($primaryDir) && is_writable($primaryDir)) {
             return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
@@ -437,7 +437,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensurePhotosTable();
@@ -451,7 +451,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensurePhotosTable();
@@ -526,7 +526,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
@@ -556,7 +556,7 @@ class PropertyController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);

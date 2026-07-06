@@ -194,7 +194,7 @@ class ApplicationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensureTable();
@@ -213,7 +213,7 @@ class ApplicationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensureTable();
@@ -497,7 +497,7 @@ class ApplicationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensureTable();
@@ -516,7 +516,7 @@ class ApplicationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensureTable();
@@ -535,7 +535,7 @@ class ApplicationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $this->ensureTable();
@@ -772,7 +772,7 @@ class ApplicationController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $enabled = !empty($_POST['applications_enabled']) ? '1' : '0';
@@ -883,7 +883,12 @@ class ApplicationController
             exit;
         }
 
-        $fullPath = base_path($filePath);
+        $fullPath = realpath(base_path($filePath));
+        $uploadDir = realpath(base_path('storage/uploads/application_photos/'));
+        if ($fullPath === false || $uploadDir === false || !str_starts_with($fullPath, $uploadDir)) {
+            http_response_code(404);
+            exit;
+        }
         if (!file_exists($fullPath)) {
             http_response_code(404);
             exit;

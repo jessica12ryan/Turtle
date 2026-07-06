@@ -115,7 +115,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $validator = new Validator();
@@ -209,7 +209,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
@@ -255,7 +255,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         Database::execute("UPDATE tickets SET archived_at = NULL WHERE id = ?", [$id]);
@@ -268,7 +268,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
@@ -309,7 +309,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
@@ -423,7 +423,6 @@ class TicketController
             $name = $_FILES['attachments']['name'][$i];
             $tmpName = $_FILES['attachments']['tmp_name'][$i];
             $size = $_FILES['attachments']['size'][$i];
-            $type = $_FILES['attachments']['type'][$i];
 
             if ($name === '' || $tmpName === '') continue;
 
@@ -433,10 +432,15 @@ class TicketController
             $filename = uniqid() . '.' . $ext;
             $destPath = $uploadDir . '/' . $filename;
 
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $detectedType = $finfo->file($tmpName);
+            $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'text/plain'];
+            if (!in_array($detectedType, $allowedMimes, true)) { continue; }
+
             if (move_uploaded_file($tmpName, $destPath)) {
                 Database::insert(
                     "INSERT INTO ticket_files (ticket_id, comment_id, file_path, original_name, size, mime_type, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-                    [$ticketId, $commentId, $storagePrefix . '/' . $filename, $name, $size, $type, $userId]
+                    [$ticketId, $commentId, $storagePrefix . '/' . $filename, $name, $size, $detectedType, $userId]
                 );
             }
         }
@@ -446,7 +450,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
@@ -462,7 +466,7 @@ class TicketController
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
-            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            redirectBack();
             return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$id]);
