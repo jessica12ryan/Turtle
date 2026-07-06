@@ -285,4 +285,6 @@
     'Application status' => 'Application status',
     'Ticket status' => 'Ticket status',
     'Toggle visibility' => 'Toggle visibility',
+    'Please select a property.' => 'Please select a property.',
+    'Selected property is not available.' => 'Selected property is not available.',
 ];

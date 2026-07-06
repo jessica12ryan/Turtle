@@ -119,11 +119,12 @@ $themePref = $themeUser['theme'] ?? 'system';
             background: #1f2937; color: #fff;
             padding: 4px 10px; border-radius: 6px;
             font-size: 12px; line-height: 1.4; white-space: nowrap;
-            opacity: 0; transition: opacity 0.15s;
+            opacity: 0; transition: opacity 0.12s ease;
             max-width: 300px; white-space: normal;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
         }
         #tooltip-el.show { opacity: 1; }
+        #tooltip-el.hiding { opacity: 0; }
         #tooltip-el .tooltip-arrow {
             position: absolute; width: 0; height: 0;
             border: 5px solid transparent;
@@ -170,22 +171,44 @@ $themePref = $themeUser['theme'] ?? 'system';
     var ttp = document.getElementById('tooltip-el');
     var ttpText = document.getElementById('tooltip-text');
     var activeEl = null;
+    var showTimer = null;
+    var hideTimer = null;
+
+    function scheduleShow(el) {
+        if (showTimer) clearTimeout(showTimer);
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        if (activeEl === el && ttp.classList.contains('show')) return;
+        activeEl = el;
+        ttpText.textContent = el.getAttribute('data-tooltip');
+        position(el);
+        showTimer = setTimeout(function() {
+            ttp.classList.remove('hiding');
+            ttp.classList.add('show');
+            showTimer = null;
+        }, 500);
+    }
+
+    function scheduleHide() {
+        if (showTimer) { clearTimeout(showTimer); showTimer = null; }
+        if (!ttp.classList.contains('show')) { activeEl = null; return; }
+        ttp.classList.add('hiding');
+        hideTimer = setTimeout(function() {
+            ttp.classList.remove('show', 'hiding');
+            activeEl = null;
+            hideTimer = null;
+        }, 120);
+    }
 
     function show(e) {
         var el = e.target.closest('[data-tooltip]');
-        if (!el) { hide(); return; }
+        if (!el) { scheduleHide(); return; }
         var text = el.getAttribute('data-tooltip');
-        if (!text) { hide(); return; }
-        if (activeEl === el && ttp.classList.contains('show')) return;
-        activeEl = el;
-        ttpText.textContent = text;
-        position(el);
-        ttp.classList.add('show');
+        if (!text) { scheduleHide(); return; }
+        scheduleShow(el);
     }
 
     function hide() {
-        activeEl = null;
-        ttp.classList.remove('show');
+        scheduleHide();
     }
 
     function position(el) {
@@ -198,10 +221,10 @@ $themePref = $themeUser['theme'] ?? 'system';
         var top, left;
         if (spaceBelow >= spaceAbove) {
             top = rect.bottom + 6;
-            ttp.className = 'tooltip-top show';
+            ttp.className = 'tooltip-top';
         } else {
             top = rect.top - 6 - (tipRect.height || 30);
-            ttp.className = 'tooltip-bottom show';
+            ttp.className = 'tooltip-bottom';
         }
 
         left = rect.left + rect.width / 2 - tipW / 2;
@@ -215,7 +238,7 @@ $themePref = $themeUser['theme'] ?? 'system';
     document.addEventListener('mouseover', show);
     document.addEventListener('mouseout', function(e) {
         var el = e.target.closest('[data-tooltip]');
-        if (!el) hide();
+        if (!el) scheduleHide();
     });
     document.addEventListener('focusin', function(e) {
         var el = e.target.closest('[data-tooltip]');

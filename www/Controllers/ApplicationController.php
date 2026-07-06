@@ -53,13 +53,16 @@ class ApplicationController
             $this->handlePhotoUploads();
 
             $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
-            if ($propertyId) {
-                $listed = Database::fetch("SELECT listed FROM properties WHERE id = ? AND archived_at IS NULL", [$propertyId]);
-                if (!$listed || !$listed['listed']) {
-                    flash('error', __('Selected property is not available.'));
-                    redirect('/applications/create');
-                    return;
-                }
+            if (!$propertyId) {
+                flash('error', __('Please select a property.'));
+                redirect('/applications/create');
+                return;
+            }
+            $listed = Database::fetch("SELECT listed FROM properties WHERE id = ? AND archived_at IS NULL", [$propertyId]);
+            if (!$listed || !$listed['listed']) {
+                flash('error', __('Selected property is not available.'));
+                redirect('/applications/create');
+                return;
             }
             $data = $this->buildData();
 

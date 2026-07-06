@@ -15,14 +15,13 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Property') ?></h2>
             <div class="mb-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Property ID') ?></label>
-                <select name="property_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
-                    <option value=""><?= __('— Select a property (optional) —') ?></option>
+                <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Property') ?> <span class="text-red-500">*</span></label>
+                <select name="property_id" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <option value=""><?= __('— Select —') ?></option>
                     <?php foreach ($properties as $p): ?>
                         <option value="<?= $p['id'] ?>"><?= h($p['name']) ?> — <?= h($p['address']) ?>, <?= h($p['city']) ?>, <?= h($p['province']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <p class="text-xs text-gray-500 mt-1"><?= __('If you were given a property ID, enter it here.') ?></p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Expected Move In Date') ?> <span class="text-red-500">*</span></label>

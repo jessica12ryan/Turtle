@@ -655,4 +655,6 @@ return [
     'Application status' => 'Estado de la solicitud',
     'Ticket status' => 'Estado del ticket',
     'Toggle visibility' => 'Alternar visibilidad',
+    'Please select a property.' => 'Por favor seleccione una propiedad.',
+    'Selected property is not available.' => 'La propiedad seleccionada no está disponible.',
 ];

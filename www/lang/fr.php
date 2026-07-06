@@ -655,4 +655,6 @@ return [
     'Application status' => 'Statut de la candidature',
     'Ticket status' => 'Statut du billet',
     'Toggle visibility' => 'Basculer la visibilité',
+    'Please select a property.' => 'Veuillez sélectionner une propriété.',
+    'Selected property is not available.' => 'La propriété sélectionnée n\'est pas disponible.',
 ];
