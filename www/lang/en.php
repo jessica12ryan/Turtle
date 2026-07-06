@@ -223,7 +223,7 @@
 'Email Notifications' => 'Email Notifications',
 'Choose who receives email notifications for each event.' => 'Choose who receives email notifications for each event.',
 'Use default email notifications' => 'Use default email notifications',
-'Notifications will automatically update when the application is updated.' => 'Notifications will automatically update when the application is updated.',
+'Use the default notifications designed for Turtle.' => 'Use the default notifications designed for Turtle.',
 'Custom email notifications' => 'Custom email notifications',
 'Manually configure who receives each notification.' => 'Manually configure who receives each notification.',
 'Event' => 'Event',

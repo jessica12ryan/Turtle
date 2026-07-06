@@ -10,7 +10,7 @@
                 <input type="radio" name="notification_mode" value="default" <?= ($notificationMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Use default email notifications') ?></span>
             </label>
-            <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Notifications will automatically update when the application is updated.') ?></p>
+            <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use the default notifications designed for Turtle.') ?></p>
             <label class="flex items-center space-x-3 mt-2">
                 <input type="radio" name="notification_mode" value="custom" <?= ($notificationMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Custom email notifications') ?></span>

@@ -591,7 +591,7 @@ return [
 'Email Notifications' => 'Notificaciones por correo electrónico',
 'Choose who receives email notifications for each event.' => 'Elija quién recibe notificaciones por correo electrónico para cada evento.',
 'Use default email notifications' => 'Usar notificaciones por correo electrónico predeterminadas',
-'Notifications will automatically update when the application is updated.' => 'Las notificaciones se actualizarán automáticamente cuando se actualice la aplicación.',
+'Use the default notifications designed for Turtle.' => 'Utilice las notificaciones predeterminadas diseñadas para Turtle.',
 'Custom email notifications' => 'Notificaciones por correo electrónico personalizadas',
 'Manually configure who receives each notification.' => 'Configure manualmente quién recibe cada notificación.',
 'Event' => 'Evento',
