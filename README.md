@@ -1,6 +1,6 @@
 # Turtle — Tenant Management Portal
 
-A web application for managing rental properties, tenants, leases, maintenance tickets, rent payments, and tenancy applications. Designed for Docker and Home Assistant add-on environments with full ingress support.
+A web application for managing rental properties, tenants, leases, maintenance tickets, rent payments, and tenancy applications. Designed for Docker and as a Home Assistant app.
 
 ## Quick Start
 
