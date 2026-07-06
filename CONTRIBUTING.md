@@ -25,9 +25,9 @@ The first boot presents a setup wizard. Choose **New Installation** to configure
 
 **Mailpit** (email testing): http://localhost:8025
 
-### Home Assistant Add-on
+### Home Assistant App
 
-The add-on can be tested locally by pointing the add-on repository to your local clone. See the `turtle-ha/` and `turtle-ha-dev/` directories for add-on configurations.
+The app can be tested locally by pointing the app repository to your local clone. See the `turtle-ha/` and `turtle-ha-dev/` directories for app configurations.
 
 ## Branching Strategy
 
