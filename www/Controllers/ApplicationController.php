@@ -21,7 +21,6 @@ class ApplicationController
         $properties = Database::fetchAll(
             "SELECT id, name, address, city, province FROM properties 
              WHERE archived_at IS NULL AND listed = 1
-             AND id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
              ORDER BY name"
         );
 
@@ -252,8 +251,7 @@ class ApplicationController
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p
                  JOIN users u ON u.id = p.landlord_id
-                 WHERE p.archived_at IS NULL
-                 AND p.id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
+                 WHERE p.archived_at IS NULL AND p.listed = 1
                  ORDER BY p.name"
             );
         } else {
@@ -269,7 +267,7 @@ class ApplicationController
                 "SELECT p.*, u.name as landlord_name FROM properties p
                  JOIN users u ON u.id = p.landlord_id
                  WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
-                 AND p.id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
+                 AND p.listed = 1
                  ORDER BY p.name",
                 $params
             );
