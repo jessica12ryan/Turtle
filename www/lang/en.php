@@ -249,4 +249,8 @@
 'Notice to Enter' => 'Notice to Enter',
 'Type' => 'Type',
 'The document is attached to this email.' => 'The document is attached to this email.',
+'List Property' => 'List Property',
+'Unlist Property' => 'Unlist Property',
+'Property listed for applications.' => 'Property listed for applications.',
+'Property unlisted from applications.' => 'Property unlisted from applications.',
 ];

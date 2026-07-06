@@ -293,6 +293,24 @@ class PropertyController
         redirect('/properties/' . $id);
     }
 
+    public function toggleListed(int $id): void
+    {
+        $property = Database::fetch("SELECT id, name, listed FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$property) {
+            flash('error', 'Property not found.');
+            redirect('/properties');
+            return;
+        }
+
+        $newListed = $property['listed'] ? 0 : 1;
+        Database::execute("UPDATE properties SET listed = ?, updated_at = NOW() WHERE id = ?", [$newListed, $id]);
+
+        $action = $newListed ? 'listed' : 'unlisted';
+        log_activity("property.{$action}", "Property '{$property['name']}' {$action}");
+        flash('success', $newListed ? __('Property listed for applications.') : __('Property unlisted from applications.'));
+        redirect('/properties/' . $id);
+    }
+
     private function ensurePhotosTable(): void
     {
         try {

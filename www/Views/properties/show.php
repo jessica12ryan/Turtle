@@ -16,6 +16,12 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
         <?php if (can('properties.edit')): ?>
             <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
         <?php endif; ?>
+        <?php if (can('properties.edit')): ?>
+            <form method="POST" action="/properties/<?= $property['id'] ?>/listed" class="inline">
+                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                <button type="submit" class="<?= $property['listed'] ? 'bg-gray-500' : 'bg-green-600' ?> text-white px-4 py-2 rounded-lg hover:opacity-90 text-sm"><?= $property['listed'] ? __('Unlist Property') : __('List Property') ?></button>
+            </form>
+        <?php endif; ?>
         <?php if (can('leases.create')): ?>
             <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm"><?= __('Upload Document') ?></a>
         <?php endif; ?>

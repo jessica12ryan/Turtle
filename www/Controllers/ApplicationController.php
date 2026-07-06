@@ -20,7 +20,7 @@ class ApplicationController
 
         $properties = Database::fetchAll(
             "SELECT id, name, address, city, province FROM properties 
-             WHERE archived_at IS NULL 
+             WHERE archived_at IS NULL AND listed = 1
              AND id NOT IN (SELECT property_id FROM property_tenant WHERE moved_out_at IS NULL)
              ORDER BY name"
         );
@@ -54,6 +54,14 @@ class ApplicationController
             $this->handlePhotoUploads();
 
             $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
+            if ($propertyId) {
+                $listed = Database::fetch("SELECT listed FROM properties WHERE id = ? AND archived_at IS NULL", [$propertyId]);
+                if (!$listed || !$listed['listed']) {
+                    flash('error', __('Selected property is not available.'));
+                    redirect('/applications/create');
+                    return;
+                }
+            }
             $data = $this->buildData();
 
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);

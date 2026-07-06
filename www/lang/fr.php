@@ -619,4 +619,8 @@ return [
 'Notice to Enter' => 'Avis d\'entrée',
 'Type' => 'Type',
 'The document is attached to this email.' => 'Le document est joint à ce courriel.',
+'List Property' => 'Publier la propriété',
+'Unlist Property' => 'Dépublier la propriété',
+'Property listed for applications.' => 'Propriété publiée pour les candidatures.',
+'Property unlisted from applications.' => 'Propriété dépubliée des candidatures.',
 ];

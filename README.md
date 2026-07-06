@@ -163,6 +163,10 @@ A shared links page available to all users. Admins, landlords, and property mana
 
 Resources can be categorized as **General** (visible to all users with `resources.access`) or **Staff** (visible only to staff members — admins, landlords, property managers, and maintenance). Tenants never see Staff Resources. The type is selected on the create/edit resource forms.
 
+## Property Listing
+
+Properties have a **Listed/Unlisted** toggle on the property detail page (visible to users with `properties.edit`). When a property is **listed**, it appears in the Property ID dropdown on the public tenancy application form (`/applications/create`). Unlisted properties are hidden from applicants. New properties are listed by default.
+
 ## Document Types
 
 When uploading a document, a **Document Type** dropdown appears after the property/tenant section. Options: Lease Agreement, Rental Unit Condition, Government Issued Photo ID, Security Deposit Claim, Notice to Quit, Notice to Enter, and Other.

@@ -195,6 +195,7 @@ $router->post('/properties', 'PropertyController@store', ['auth', 'perm:properti
 $router->get('/properties/{id}', 'PropertyController@show', ['auth', 'perm:properties.access']);
 $router->get('/properties/{id}/edit', 'PropertyController@edit', ['auth', 'perm:properties.edit']);
 $router->post('/properties/{id}/update', 'PropertyController@update', ['auth', 'perm:properties.edit']);
+$router->post('/properties/{id}/listed', 'PropertyController@toggleListed', ['auth', 'perm:properties.edit']);
 $router->post('/properties/{id}/delete', 'PropertyController@destroy', ['auth', 'perm:properties.archive']);
 $router->post('/properties/{id}/restore', 'PropertyController@restore', ['auth', 'perm:properties.restore']);
 $router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'perm:photos.create']);

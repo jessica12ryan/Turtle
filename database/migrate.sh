@@ -51,6 +51,7 @@ run_sql "ALTER TABLE properties ADD COLUMN rent_amount DECIMAL(10,2) DEFAULT NUL
 run_sql "ALTER TABLE properties ADD COLUMN rent_due_day INT DEFAULT NULL AFTER rent_amount;"
 run_sql "ALTER TABLE properties ADD COLUMN heating_type VARCHAR(50) DEFAULT NULL AFTER rent_due_day;"
 run_sql "ALTER TABLE properties ADD COLUMN security_deposit DECIMAL(10,2) DEFAULT NULL AFTER heating_type;"
+run_sql "ALTER TABLE properties ADD COLUMN listed TINYINT(1) NOT NULL DEFAULT 1 AFTER security_deposit;"
 run_sql "CREATE TABLE IF NOT EXISTS payments (id INT AUTO_INCREMENT PRIMARY KEY, property_tenant_id INT NOT NULL, amount DECIMAL(10,2) NOT NULL, payment_date DATE NOT NULL, payment_method VARCHAR(50) DEFAULT NULL, reference VARCHAR(100) DEFAULT NULL, notes TEXT, recorded_by INT NOT NULL, archived_at TIMESTAMP NULL DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE CASCADE, FOREIGN KEY (recorded_by) REFERENCES users(id), INDEX idx_property_tenant (property_tenant_id), INDEX idx_payment_date (payment_date)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "ALTER TABLE payments ADD COLUMN is_security_deposit TINYINT(1) DEFAULT 0 AFTER notes;"
 run_sql "ALTER TABLE property_tenant ADD COLUMN lease_type VARCHAR(50) DEFAULT NULL AFTER move_out_date;"

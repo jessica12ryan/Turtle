@@ -619,4 +619,8 @@ return [
 'Notice to Enter' => 'Aviso de entrada',
 'Type' => 'Tipo',
 'The document is attached to this email.' => 'El documento está adjunto a este correo electrónico.',
+'List Property' => 'Listar propiedad',
+'Unlist Property' => 'No listar propiedad',
+'Property listed for applications.' => 'Propiedad listada para solicitudes.',
+'Property unlisted from applications.' => 'Propiedad no listada para solicitudes.',
 ];
