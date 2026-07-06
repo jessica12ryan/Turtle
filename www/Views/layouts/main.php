@@ -185,7 +185,7 @@ $themePref = $themeUser['theme'] ?? 'system';
             ttp.classList.remove('hiding');
             ttp.classList.add('show');
             showTimer = null;
-        }, 500);
+        }, 1500);
     }
 
     function scheduleHide() {
