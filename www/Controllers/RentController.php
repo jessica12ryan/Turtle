@@ -131,6 +131,11 @@ class RentController
 
     public function store(int $propertyId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         // Auto-detect main tenant for this property
         $mainTenant = Database::fetch(
             "SELECT id FROM property_tenant WHERE property_id = ? AND is_main_tenant = 1 AND moved_out_at IS NULL",
@@ -177,6 +182,11 @@ class RentController
 
     public function update(int $paymentId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -204,6 +214,11 @@ class RentController
 
     public function archive(int $paymentId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -215,6 +230,11 @@ class RentController
 
     public function restore(int $paymentId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -226,6 +246,11 @@ class RentController
 
     public function destroy(int $paymentId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 

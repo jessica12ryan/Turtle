@@ -251,7 +251,9 @@ class SettingsController
             );
         } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
             $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
-            $type = $_FILES['logo']['type'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
+            finfo_close($finfo);
             if (!in_array($type, $allowed)) {
                 flash('error', 'Logo must be PNG, JPEG, GIF, or SVG.');
                 redirect('/settings?tab=general');
@@ -863,7 +865,7 @@ class SettingsController
             error_log('exportBackup failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             if (isset($tmpDir) && is_dir($tmpDir)) self::_rrmdir($tmpDir);
             if (isset($zipFile) && file_exists($zipFile)) unlink($zipFile);
-            flash('error', 'Backup failed: ' . $e->getMessage());
+            flash('error', 'Backup failed. Please check the error logs for details.');
             redirect('/settings?tab=backup');
         }
     }
@@ -936,7 +938,7 @@ class SettingsController
             $db->exec("SET FOREIGN_KEY_CHECKS = 1");
         } catch (\Throwable $e) {
             self::_rrmdir($tmpDir);
-            flash('error', 'Database restore failed: ' . $e->getMessage());
+            flash('error', 'Database restore failed. Please check the error logs for details.');
             redirect('/settings?tab=backup');
         }
 

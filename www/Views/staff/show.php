@@ -21,14 +21,14 @@
         <dl class="space-y-3">
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500"><?= __('Role') ?></dt>
-                <dd class="text-sm font-medium"><?= ucwords(str_replace('_', ' ', $staff['role'])) ?></dd>
+                <dd class="text-sm font-medium"><?= h(ucwords(str_replace('_', ' ', $staff['role']))) ?></dd>
             </div>
             <?php if (!empty($staff['secondary_roles'])): ?>
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500"><?= __('Secondary Roles') ?></dt>
                 <dd class="text-sm">
                     <?php foreach (explode(',', $staff['secondary_roles']) as $sr): ?>
-                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded"><?= ucfirst(str_replace('_', ' ', $sr)) ?></span>
+                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded"><?= h(ucfirst(str_replace('_', ' ', $sr))) ?></span>
                     <?php endforeach; ?>
                 </dd>
             </div>
@@ -55,7 +55,7 @@
                     <?php foreach ($assignedTickets as $t): ?>
                         <li class="py-3">
                             <a href="/tickets/<?= $t['id'] ?>" class="text-blue-600 hover:underline text-sm"><?= h($t['subject']) ?></a>
-                            <span class="text-xs text-gray-500 block"><?= h($t['property_name']) ?> — <?= ucfirst(str_replace('_', ' ', $t['status'])) ?></span>
+                            <span class="text-xs text-gray-500 block"><?= h($t['property_name']) ?> — <?= h(ucfirst(str_replace('_', ' ', $t['status']))) ?></span>
                         </li>
                     <?php endforeach; ?>
                 </ul>

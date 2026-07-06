@@ -657,4 +657,5 @@ return [
     'Toggle visibility' => 'Alternar visibilidad',
     'Please select a property.' => 'Por favor seleccione una propiedad.',
     'Selected property is not available.' => 'La propiedad seleccionada no está disponible.',
+    'Invalid form token. Please try again.' => 'Token de formulario inválido. Por favor, intente de nuevo.',
 ];

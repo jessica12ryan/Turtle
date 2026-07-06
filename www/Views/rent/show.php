@@ -142,11 +142,11 @@
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Amount') ?></label>
-                                        <input type="number" name="amount" step="0.01" min="0.01" value="<?= $pym['amount'] ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500">
+                                        <input type="number" name="amount" step="0.01" min="0.01" value="<?= h($pym['amount']) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Date') ?></label>
-                                        <input type="date" name="payment_date" value="<?= $pym['payment_date'] ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500">
+                                        <input type="date" name="payment_date" value="<?= h($pym['payment_date']) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Method') ?></label>

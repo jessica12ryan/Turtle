@@ -5,9 +5,9 @@
     <script>
     var staffEditData = function() {
         return {
-            secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
-            checked: <?= json_encode(array_values($staffSecondaryRoles)) ?>,
-            get validSecondary() { return this.secondaryRoleMap['<?= $staff['role'] ?>'] || []; },
+            secondaryRoleMap: <?= json_encode($secondaryRoleMap, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
+            checked: <?= json_encode(array_values($staffSecondaryRoles), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
+            get validSecondary() { return this.secondaryRoleMap['<?= h($staff['role']) ?>'] || []; },
             toggle(sr) {
                 if (this.checked.includes(sr)) {
                     this.checked = this.checked.filter(r => r !== sr);
@@ -37,7 +37,7 @@
         </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Role') ?></label>
-            <p class="text-gray-600"><?= ucwords(str_replace('_', ' ', $staff['role'])) ?></p>
+            <p class="text-gray-600"><?= h(ucwords(str_replace('_', ' ', $staff['role']))) ?></p>
             <p class="text-xs text-gray-500 mt-1"><?= __('Role cannot be changed. Archive and re-invite if needed.') ?></p>
         </div>
         <?php if ((!$editingSelf || $canChangeOwnRoles) && !empty($secondaryRoleMap[$staff['role']])): ?>

@@ -70,6 +70,11 @@ class StaffController
 
     public function store(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $allowedRoles = ['property_manager', 'maintenance'];
         if (Auth::instance()->user()['role'] === 'admin') {
             $allowedRoles[] = 'landlord';
@@ -199,6 +204,11 @@ class StaffController
 
     public function update(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
 
         $staff = Database::fetch(
@@ -284,6 +294,11 @@ class StaffController
 
     public function restore(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
         log_activity('staff.restored', "Staff member #{$id} restored");
         flash('success', 'Staff member restored successfully.');
@@ -292,6 +307,11 @@ class StaffController
 
     public function destroy(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -311,6 +331,11 @@ class StaffController
 
     public function hardDelete(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $target = Database::fetch("SELECT * FROM users WHERE id = ?", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 

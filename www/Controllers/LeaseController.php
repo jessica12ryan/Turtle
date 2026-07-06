@@ -169,6 +169,11 @@ class LeaseController
 
     public function store(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'property_id' => 'required|exists:properties,id',
@@ -187,7 +192,7 @@ class LeaseController
         try {
             $leaseId = Database::insert(
                 "INSERT INTO leases (property_id, tenant_id, title, document_type, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
-                [$_POST['property_id'], $_POST['tenant_id'], $_POST['title'], $_POST['document_type'], $_POST['description'] ?? '', Auth::instance()->id()]
+                [(int)$_POST['property_id'], (int)$_POST['tenant_id'], $_POST['title'], $_POST['document_type'], $_POST['description'] ?? '', Auth::instance()->id()]
             );
 
             if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
@@ -224,7 +229,9 @@ class LeaseController
                         break;
                     }
 
-                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+                    if (!in_array($ext, $allowedExts)) { continue; }
                     $storedName = uniqid() . '.' . $ext;
                     $destPath = $leaseDir . '/' . $storedName;
 
@@ -306,6 +313,11 @@ class LeaseController
 
     public function restore(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
         log_activity('lease.restored', "Document #{$id} restored");
         flash('success', 'Document restored successfully.');
@@ -314,6 +326,11 @@ class LeaseController
 
     public function destroy(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
         log_activity('lease.archived', "Document #{$id} archived");
         flash('success', 'Document archived successfully.');
@@ -322,6 +339,11 @@ class LeaseController
 
     public function hardDelete(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $documents = Database::fetchAll(
             "SELECT file_path FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?",
             [$id]

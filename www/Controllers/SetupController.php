@@ -65,7 +65,9 @@ class SetupController
             $keepDefault = !empty($_POST['logo_default']);
             if (!$keepDefault && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
                 $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
-                $type = $_FILES['logo']['type'];
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
+                finfo_close($finfo);
                 if (in_array($type, $allowed)) {
                     $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
                     $filename = 'logo.' . $ext;

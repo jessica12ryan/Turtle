@@ -117,6 +117,11 @@ class PropertyController
 
     public function store(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
@@ -144,7 +149,7 @@ class PropertyController
 
         $propertyId = Database::insert(
             "INSERT INTO properties (landlord_id, company_id, property_manager_id, name, address, apt_suite, city, province, postal_code, country, rent_amount, rent_due_day, heating_type, security_deposit, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $securityDeposit]
+            [(int)$_POST['landlord_id'], $companyId, (int)$_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $securityDeposit]
         );
 
         log_activity('property.created', "Property '{$_POST['name']}' created");
@@ -258,6 +263,11 @@ class PropertyController
 
     public function update(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
@@ -285,7 +295,7 @@ class PropertyController
 
         Database::execute(
             "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, rent_amount = ?, rent_due_day = ?, heating_type = ?, security_deposit = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['landlord_id'], $companyId, $_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $securityDeposit, $id]
+            [(int)$_POST['landlord_id'], $companyId, (int)$_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $securityDeposit, $id]
         );
 
         log_activity('property.updated', "Property '{$_POST['name']}' updated");
@@ -295,6 +305,11 @@ class PropertyController
 
     public function toggleListed(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $property = Database::fetch("SELECT id, name, listed FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) {
             flash('error', 'Property not found.');
@@ -377,7 +392,9 @@ class PropertyController
         }
 
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $type = $_FILES['photo']['type'] ?? '';
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $type = finfo_file($finfo, $_FILES['photo']['tmp_name']);
+        finfo_close($finfo);
         if (!in_array($type, $allowedTypes)) {
             http_response_code(400);
             echo json_encode(['error' => 'Only JPG, PNG, GIF, and WebP images are allowed.']);
@@ -418,6 +435,11 @@ class PropertyController
 
     public function setMainPhoto(int $id, int $photoId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensurePhotosTable();
         Database::execute("UPDATE property_photos SET is_main = 0 WHERE property_id = ?", [$id]);
         Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
@@ -427,6 +449,11 @@ class PropertyController
 
     public function deletePhoto(int $id, int $photoId): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensurePhotosTable();
         $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
         if ($photo) {
@@ -497,6 +524,11 @@ class PropertyController
 
     public function restore(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -522,6 +554,11 @@ class PropertyController
 
     public function destroy(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 

@@ -22,6 +22,11 @@ class NotificationController
 
     public function read(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute(
             "UPDATE notifications SET read_at = NOW() WHERE id = ? AND user_id = ?",
             [$id, Auth::instance()->id()]
@@ -31,6 +36,11 @@ class NotificationController
 
     public function readAll(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute(
             "UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL",
             [Auth::instance()->id()]

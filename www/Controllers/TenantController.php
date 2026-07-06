@@ -447,6 +447,11 @@ class TenantController
 
     public function restore(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
         $pt = Database::fetch(
             "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NOT NULL",
@@ -473,6 +478,11 @@ class TenantController
 
     public function moveOut(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $pt = Database::fetch(
             "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
             [$id]

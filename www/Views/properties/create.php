@@ -101,7 +101,7 @@
 </div>
 
 <script>
-var regions = <?= json_encode(['CA' => regions('CA'), 'US' => regions('US')]) ?>;
+var regions = <?= json_encode(['CA' => regions('CA'), 'US' => regions('US')], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
 var countrySelect = document.getElementById('property_country');
 var provinceSelect = document.getElementById('property_province');
 var regionLabel = document.getElementById('region_label');

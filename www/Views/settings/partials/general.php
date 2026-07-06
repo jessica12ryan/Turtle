@@ -194,7 +194,7 @@ function testMail() {
 }
 
 // Timezone filtering by country
-var tzByCountry = <?= json_encode($tzByCountry) ?>;
+var tzByCountry = <?= json_encode($tzByCountry, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
 var tzSelect = document.getElementById('timezone');
 var countrySelect = document.getElementById('default_country');
 

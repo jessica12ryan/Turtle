@@ -15,8 +15,8 @@
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <div>
-            <span class="px-3 py-1 text-sm rounded-full <?= $application['status'] === 'new' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($application['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($application['status'] === 'accepted' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : ($application['status'] === 'rejected' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>" data-tooltip="<?= __('Application status') . ': ' . ucfirst(str_replace('_', ' ', $application['status'])) ?>">
-                <?= ucfirst(str_replace('_', ' ', $application['status'])) ?>
+            <span class="px-3 py-1 text-sm rounded-full <?= $application['status'] === 'new' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($application['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($application['status'] === 'accepted' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : ($application['status'] === 'rejected' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>" data-tooltip="<?= __('Application status') . ': ' . h(ucfirst(str_replace('_', ' ', $application['status']))) ?>">
+                <?= h(ucfirst(str_replace('_', ' ', $application['status']))) ?>
             </span>
         </div>
         <div class="text-sm text-gray-500 dark:text-gray-400">

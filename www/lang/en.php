@@ -287,4 +287,5 @@
     'Toggle visibility' => 'Toggle visibility',
     'Please select a property.' => 'Please select a property.',
     'Selected property is not available.' => 'Selected property is not available.',
+    'Invalid form token. Please try again.' => 'Invalid form token. Please try again.',
 ];

@@ -113,6 +113,11 @@ class TicketController
 
     public function store(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'property_id' => 'required|exists:properties,id',
@@ -128,7 +133,7 @@ class TicketController
 
         $ticketId = Database::insert(
             "INSERT INTO tickets (property_id, tenant_id, subject, description, category, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'open', ?, NOW(), NOW())",
-            [$_POST['property_id'], Auth::instance()->id(), $_POST['subject'], $_POST['description'], $_POST['category'], $_POST['priority']]
+            [(int)$_POST['property_id'], Auth::instance()->id(), $_POST['subject'], $_POST['description'], $_POST['category'], $_POST['priority']]
         );
 
         $this->uploadTicketFiles($ticketId, null);
@@ -202,6 +207,11 @@ class TicketController
 
     public function assign(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -243,6 +253,11 @@ class TicketController
 
     public function restore(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         Database::execute("UPDATE tickets SET archived_at = NULL WHERE id = ?", [$id]);
         log_activity('ticket.restored', "Ticket #{$id} restored");
         flash('success', 'Ticket restored successfully.');
@@ -251,6 +266,11 @@ class TicketController
 
     public function status(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -287,6 +307,11 @@ class TicketController
 
     public function comment(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -387,7 +412,9 @@ class TicketController
 
             if ($name === '' || $tmpName === '') continue;
 
-            $ext = pathinfo($name, PATHINFO_EXTENSION);
+            $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt'];
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowedExts)) { continue; }
             $filename = uniqid() . '.' . $ext;
             $destPath = $uploadDir . '/' . $filename;
 
@@ -402,6 +429,11 @@ class TicketController
 
     public function archive(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -413,6 +445,11 @@ class TicketController
 
     public function delete(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 

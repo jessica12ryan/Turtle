@@ -11,7 +11,7 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-red-800 dark:text-red-200"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['link'])): ?>
-                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
+                            <a href="<?= h($a['link']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -27,7 +27,7 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['link'])): ?>
-                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
+                            <a href="<?= h($a['link']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                                 <p class="font-medium text-gray-800 dark:text-gray-200"><?= h($ticket['subject']) ?></p>
                                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1"><?= h($ticket['property_name']) ?> - <?= h($ticket['tenant_name']) ?></p>
                             </div>
-                            <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200' : ($ticket['status'] === 'closed' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200')))) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
+                            <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200' : ($ticket['status'] === 'closed' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200')))) ?>"><?= h(ucfirst(str_replace('_', ' ', $ticket['status']))) ?></span>
                         </div>
                     </a>
                 <?php endforeach; ?>
@@ -161,7 +161,7 @@
                             <p class="font-medium text-gray-800 dark:text-gray-200"><?= h($ticket['subject']) ?></p>
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-1"><?= h($ticket['property_name']) ?> - <?= h($ticket['tenant_name']) ?></p>
                         </div>
-                        <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>"><?= ucfirst(str_replace('_', ' ', $ticket['status'])) ?></span>
+                        <span class="px-2 py-1 text-xs rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>"><?= h(ucfirst(str_replace('_', ' ', $ticket['status']))) ?></span>
                     </div>
                 </a>
             <?php endforeach; ?>

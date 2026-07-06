@@ -13,7 +13,7 @@
         </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Role') ?></label>
-            <input type="text" value="<?= ucwords(str_replace('_', ' ', $user['role'])) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
+            <input type="text" value="<?= h(ucwords(str_replace('_', ' ', $user['role']))) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100" disabled>
         </div>
         <?php if ($user['role'] !== 'tenant' && !empty($user['secondary_roles'])): ?>
         <div class="mb-4">

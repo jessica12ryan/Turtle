@@ -9,10 +9,10 @@
         <form method="POST" action="/leases" enctype="multipart/form-data" x-data='{
             properties: <?= json_encode(array_map(function($p) {
                 return ['id' => $p['id'], 'name' => $p['name'], 'main_tenant_id' => $p['main_tenant_id'] ?? null];
-            }, $properties), JSON_HEX_APOS) ?>,
-            tenantNames: <?= json_encode($tenantNames, JSON_HEX_APOS) ?>,
-            propertyTenants: <?= json_encode($propertyTenants, JSON_HEX_APOS) ?>,
-            selectedProperty: "<?= $preselectedPropertyId ?? '' ?>",
+            }, $properties), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
+            tenantNames: <?= json_encode($tenantNames, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
+            propertyTenants: <?= json_encode($propertyTenants, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
+            selectedProperty: "<?= h($preselectedPropertyId ?? '') ?>",
             documentType: "<?= old('document_type', '') ?>",
             title: "<?= old('title', '') ?>",
             selectedIdTenant: "<?= old('document_type') === 'government_issued_photo_id' ? old('tenant_id', '') : '' ?>",
@@ -23,7 +23,7 @@
                 'security_deposit_claim' => __('Security Deposit Claim'),
                 'notice_to_quit' => __('Notice to Quit'),
                 'notice_to_enter' => __('Notice to Enter'),
-            ], JSON_HEX_APOS) ?>,
+            ], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
             get mainTenantName() {
                 const prop = this.properties.find(p => p.id == this.selectedProperty);
                 return prop && prop.main_tenant_id ? (this.tenantNames[prop.id] || "Unknown") : null;

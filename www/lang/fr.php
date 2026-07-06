@@ -657,4 +657,5 @@ return [
     'Toggle visibility' => 'Basculer la visibilité',
     'Please select a property.' => 'Veuillez sélectionner une propriété.',
     'Selected property is not available.' => 'La propriété sélectionnée n\'est pas disponible.',
+    'Invalid form token. Please try again.' => 'Jeton de formulaire invalide. Veuillez réessayer.',
 ];

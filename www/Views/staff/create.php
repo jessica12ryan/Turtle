@@ -6,8 +6,8 @@
     var staffCreateData = function() {
         return {
             role: '<?= old('role') ?>',
-            secondaryRoleMap: <?= json_encode($secondaryRoleMap) ?>,
-            checked: <?= json_encode(array_values($staffSecondaryRoles)) ?>,
+            secondaryRoleMap: <?= json_encode($secondaryRoleMap, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
+            checked: <?= json_encode(array_values($staffSecondaryRoles), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
             get validSecondary() { return this.secondaryRoleMap[this.role] || []; },
             toggle(sr) {
                 if (this.checked.includes(sr)) {

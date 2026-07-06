@@ -84,7 +84,7 @@ class ApplicationController
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
             error_log('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            flash('error', 'Submission failed: ' . $e->getMessage());
+            flash('error', 'Submission failed. Please try again.');
             redirect('/applications/create');
         }
     }
@@ -192,6 +192,11 @@ class ApplicationController
 
     public function updateNotes(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensureTable();
 
         Database::execute(
@@ -206,6 +211,11 @@ class ApplicationController
 
     public function updateStatus(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensureTable();
 
         $allowed = ['new', 'in_progress', 'accepted', 'rejected'];
@@ -485,6 +495,11 @@ class ApplicationController
 
     public function archive(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensureTable();
 
         Database::execute(
@@ -499,6 +514,11 @@ class ApplicationController
 
     public function restore(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensureTable();
 
         Database::execute(
@@ -513,6 +533,11 @@ class ApplicationController
 
     public function delete(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $this->ensureTable();
 
         Database::execute(
@@ -745,6 +770,11 @@ class ApplicationController
 
     public function saveSettings(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect(isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/');
+            return;
+        }
         $enabled = !empty($_POST['applications_enabled']) ? '1' : '0';
         $notes = $_POST['applications_notes'] ?? '';
 
@@ -802,6 +832,11 @@ class ApplicationController
         if (!in_array($ext, $allowed)) {
             return null;
         }
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+        if (!in_array($mime, $allowedMime)) { return null; }
 
         $filename = uniqid('app_photo_') . '.' . $ext;
         $destPath = $uploadDir . '/' . $filename;
