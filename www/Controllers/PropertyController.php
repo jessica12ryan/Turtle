@@ -516,7 +516,7 @@ class PropertyController
 
         $mime = $photo['mime_type'] ?: 'application/octet-stream';
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: attachment; filename="' . $photo['original_name'] . '"');
+        header('Content-Disposition: attachment; filename="' . sanitize_filename($photo['original_name']) . '"');
         header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
         exit;

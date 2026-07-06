@@ -355,6 +355,21 @@ class TicketController
 
     public function downloadFile(int $ticketId, int $fileId): void
     {
+        $auth = Auth::instance();
+        $user = $auth->user();
+
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$ticketId]);
+        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        // IDOR check: verify user has access to this ticket
+        if ($user['role'] === 'tenant') {
+            if ((int)$ticket['tenant_id'] !== (int)$user['id']) {
+                http_response_code(403); require base_path('www/Views/errors/404.php'); return;
+            }
+        } elseif (!in_array($user['role'], ['admin', 'landlord', 'property_manager', 'maintenance'])) {
+            http_response_code(403); require base_path('www/Views/errors/404.php'); return;
+        }
+
         $file = Database::fetch("SELECT * FROM ticket_files WHERE id = ? AND ticket_id = ?", [$fileId, $ticketId]);
         if (!$file) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
@@ -366,7 +381,7 @@ class TicketController
         }
 
         header('Content-Type: ' . ($file['mime_type'] ?? 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . $file['original_name'] . '"');
+        header('Content-Disposition: attachment; filename="' . sanitize_filename($file['original_name']) . '"');
         header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
         exit;

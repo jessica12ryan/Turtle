@@ -145,7 +145,7 @@ class AiAssistantController
             );
             $companyIds = array_column($companyIds, 'company_id');
             $companyIdList = implode(',', array_map('intval', $companyIds)) ?: '0';
-            $pmClause = $role === 'property_manager' ? " AND property_manager_id = {$auth->id()}" : '';
+            $pmClause = $role === 'property_manager' ? ' AND property_manager_id = ' . (int)$auth->id() : '';
             $propertyIds = "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL{$pmClause}";
         }
 

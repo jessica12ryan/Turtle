@@ -63,6 +63,11 @@ function h($value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function sanitize_filename(string $name): string
+{
+    return str_replace(["\r", "\n"], '', $name);
+}
+
 function old(string $key, string $default = ''): string
 {
     return isset($_SESSION['_old'][$key]) ? h($_SESSION['_old'][$key]) : $default;
@@ -81,6 +86,7 @@ function base_url(): string
 
 function redirect(string $url): void
 {
+    $url = sanitize_filename($url);
     if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
         $url = base_url() . $url;
     }

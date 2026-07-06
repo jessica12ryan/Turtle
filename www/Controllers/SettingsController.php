@@ -718,7 +718,7 @@ class SettingsController
         }
 
         header('Content-Type: text/plain');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Disposition: attachment; filename="' . sanitize_filename($filename) . '"');
         echo $content;
         exit;
     }
@@ -901,6 +901,19 @@ class SettingsController
             self::_rrmdir($tmpDir);
             flash('error', 'Failed to open backup file. It may be corrupted.');
             redirect('/settings?tab=backup');
+        }
+
+        // ZIP slip prevention: verify all entries are within $tmpDir
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $entry = $zip->getNameIndex($i);
+            if ($entry === false) continue;
+            $real = realpath($tmpDir . '/' . $entry);
+            if ($real === false || !str_starts_with($real, $tmpDir)) {
+                $zip->close();
+                self::_rrmdir($tmpDir);
+                flash('error', 'Invalid backup file: contains entries outside extraction directory.');
+                redirect('/settings?tab=backup');
+            }
         }
 
         $zip->extractTo($tmpDir);

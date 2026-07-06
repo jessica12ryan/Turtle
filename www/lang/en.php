@@ -288,4 +288,6 @@
     'Please select a property.' => 'Please select a property.',
     'Selected property is not available.' => 'Selected property is not available.',
     'Invalid form token. Please try again.' => 'Invalid form token. Please try again.',
+    'Use the default permissions designed for Turtle.' => 'Use the default permissions designed for Turtle.',
+    'Use a custom set of permissions. This is for advanced users and could have adverse effects.' => 'Use a custom set of permissions. This is for advanced users and could have adverse effects.',
 ];

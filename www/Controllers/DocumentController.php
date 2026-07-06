@@ -25,7 +25,7 @@ class DocumentController
         }
 
         header('Content-Type: ' . ($document['mime_type'] ?? 'application/octet-stream'));
-        header('Content-Disposition: inline; filename="' . $document['original_name'] . '"');
+        header('Content-Disposition: inline; filename="' . sanitize_filename($document['original_name']) . '"');
         header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
         exit;
@@ -49,7 +49,7 @@ class DocumentController
         }
 
         header('Content-Type: ' . ($document['mime_type'] ?? 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . $document['original_name'] . '"');
+        header('Content-Disposition: attachment; filename="' . sanitize_filename($document['original_name']) . '"');
         header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
         exit;

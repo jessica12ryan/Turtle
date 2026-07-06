@@ -10,12 +10,12 @@
                 <input type="radio" name="permissions_mode" value="default" <?= ($permissionsMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Use default permissions</span>
             </label>
-            <p class="text-xs text-gray-500 ml-7 mt-1">Permissions will automatically update when the application is updated.</p>
+            <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use the default permissions designed for Turtle.') ?></p>
             <label class="flex items-center space-x-3 mt-2">
                 <input type="radio" name="permissions_mode" value="custom" <?= ($permissionsMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Custom permissions</span>
             </label>
-            <p class="text-xs text-gray-500 ml-7 mt-1">Manually configure each role's permissions. These will be preserved on update.</p>
+            <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use a custom set of permissions. This is for advanced users and could have adverse effects.') ?></p>
         </div>
 
         <?php

@@ -55,6 +55,15 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Session idle timeout (1 hour)
+$sessionTimeout = 3600;
+if (isset($_SESSION['_last_activity']) && (time() - $_SESSION['_last_activity']) > $sessionTimeout) {
+    session_unset();
+    session_destroy();
+    session_start();
+}
+$_SESSION['_last_activity'] = time();
+
 // Redirect root
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 if ($requestUri === '/' || $requestUri === '/index.php') {

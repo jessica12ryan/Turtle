@@ -159,7 +159,6 @@ return [
     'Main Tenant:' => 'Locataire principal :',
     'Make this the main tenant' => 'Faire de ce locataire le locataire principal',
     'Manage application updates and version information.' => 'Gérer les mises à jour de l\'application et les informations de version.',
-    'Manually configure each role\'s permissions.' => 'Configurer manuellement les autorisations de chaque rôle.',
     'Mark all as read' => 'Tout marquer comme lu',
     'Mark read' => 'Marquer comme lu',
     'Move In' => 'Emménagement',
@@ -207,7 +206,6 @@ return [
     'Password' => 'Mot de passe',
     'Permission' => 'Autorisation',
     'Permissions' => 'Autorisations',
-    'Permissions will automatically update.' => 'Les autorisations seront mises à jour automatiquement.',
     'Phone' => 'Téléphone',
     'Phone Number' => 'Numéro de téléphone',
     'Photos' => 'Photos',
@@ -658,4 +656,6 @@ return [
     'Please select a property.' => 'Veuillez sélectionner une propriété.',
     'Selected property is not available.' => 'La propriété sélectionnée n\'est pas disponible.',
     'Invalid form token. Please try again.' => 'Jeton de formulaire invalide. Veuillez réessayer.',
+    'Use the default permissions designed for Turtle.' => 'Utilisez les autorisations par défaut conçues pour Turtle.',
+    'Use a custom set of permissions. This is for advanced users and could have adverse effects.' => 'Utilisez un ensemble personnalisé d\'autorisations. Ceci est destiné aux utilisateurs avancés et pourrait avoir des effets indésirables.',
 ];

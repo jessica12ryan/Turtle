@@ -226,9 +226,10 @@ class Mailer
                 default => 'application/octet-stream',
             };
 
+            $safeName = sanitize_filename($fileName);
             $body .= "--{$boundary}\r\n"
-                . "Content-Type: {$mimeType}; name=\"{$fileName}\"\r\n"
-                . "Content-Disposition: attachment; filename=\"{$fileName}\"\r\n"
+                . "Content-Type: {$mimeType}; name=\"{$safeName}\"\r\n"
+                . "Content-Disposition: attachment; filename=\"{$safeName}\"\r\n"
                 . "Content-Transfer-Encoding: base64\r\n\r\n"
                 . $encoded . "\r\n";
         }
