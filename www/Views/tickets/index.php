@@ -2,12 +2,12 @@
     <h1 class="text-2xl font-bold text-black dark:text-white"><?= __('Tickets') ?></h1>
     <div class="flex items-center space-x-3">
         <?php if (can('tickets.archive') || can('tickets.restore')): ?>
-            <a href="/tickets?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
+            <a href="/tickets?show_archived=<?= $showArchived ? '0' : '1' ?>" data-tooltip="<?= __('Show or hide archived') ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
                 <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
             </a>
         <?php endif; ?>
         <?php if (can('tickets.create')): ?>
-            <a href="/tickets/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('New Ticket') ?></a>
+            <a href="/tickets/create" data-tooltip="<?= __('Add new') ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('New Ticket') ?></a>
         <?php endif; ?>
     </div>
 </div>
@@ -31,7 +31,7 @@
                 <?php foreach ($tickets as $ticket): ?>
                     <tr class="hover:bg-gray-50 <?= $ticket['archived_at'] ? 'opacity-60' : '' ?>">
                         <td class="px-6 py-4">
-                            <a href="/tickets/<?= $ticket['id'] ?>" class="text-blue-600 hover:underline font-medium"><?= h($ticket['subject']) ?></a>
+                            <a href="/tickets/<?= $ticket['id'] ?>" data-tooltip="<?= __('View this item') ?>" class="text-blue-600 hover:underline font-medium"><?= h($ticket['subject']) ?></a>
                             <?php if ($ticket['archived_at']): ?>
                                 <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1"><?= __('Archived') ?></span>
                             <?php endif; ?>
@@ -50,19 +50,19 @@
                                 <?php if (can('tickets.archive')): ?>
                                     <form method="POST" action="/tickets/<?= $ticket['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this ticket. Continue?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
+                                        <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if (can('tickets.delete')): ?>
                                     <form method="POST" action="/tickets/<?= $ticket['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this ticket and all associated data. This action cannot be undone. Continue?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                        <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                     </form>
                                 <?php endif; ?>
                             <?php elseif (can('tickets.restore')): ?>
                                 <form method="POST" action="/tickets/<?= $ticket['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                    <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
                                 </form>
                             <?php endif; ?>
                         </td>

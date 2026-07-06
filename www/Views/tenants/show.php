@@ -5,12 +5,12 @@
     </div>
     <div class="flex space-x-3">
         <?php if (can('tenants.edit')): ?>
-            <a href="/tenants/<?= $tenant['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
+            <a href="/tenants/<?= $tenant['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm" data-tooltip="<?= __('Edit this item') ?>"><?= __('Edit') ?></a>
         <?php endif; ?>
         <?php if (can('tenants.edit')): ?>
             <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('<?= __('Archive this tenant? They will be removed from the property and their account disabled.') ?>')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm" data-tooltip="<?= __('Archive this item') ?>"><?= __('Archive') ?></button>
             </form>
         <?php endif; ?>
     </div>

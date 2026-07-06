@@ -111,6 +111,34 @@ $themePref = $themeUser['theme'] ?? 'system';
 
         .dark input[type="checkbox"] { accent-color: #60a5fa; }
         input[type="checkbox"] { accent-color: #2563eb; }
+
+        /* Tooltip system */
+        [data-tooltip] { position: relative; cursor: help; }
+        #tooltip-el {
+            position: fixed; z-index: 9999; pointer-events: none;
+            background: #1f2937; color: #fff;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; line-height: 1.4; white-space: nowrap;
+            opacity: 0; transition: opacity 0.15s;
+            max-width: 300px; white-space: normal;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+        #tooltip-el.show { opacity: 1; }
+        #tooltip-el .tooltip-arrow {
+            position: absolute; width: 0; height: 0;
+            border: 5px solid transparent;
+        }
+        #tooltip-el.tooltip-top .tooltip-arrow {
+            top: 100%; left: 50%; margin-left: -5px;
+            border-top-color: #1f2937;
+        }
+        #tooltip-el.tooltip-bottom .tooltip-arrow {
+            bottom: 100%; left: 50%; margin-left: -5px;
+            border-bottom-color: #1f2937;
+        }
+        .dark #tooltip-el { background: #e2e8f0; color: #0f172a; }
+        .dark #tooltip-el.tooltip-top .tooltip-arrow { border-top-color: #e2e8f0; }
+        .dark #tooltip-el.tooltip-bottom .tooltip-arrow { border-bottom-color: #e2e8f0; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -136,22 +164,68 @@ $themePref = $themeUser['theme'] ?? 'system';
         <?php endif; ?>
         <?= $content ?>
     </main>
+<div id="tooltip-el" role="tooltip"><span class="tooltip-arrow"></span><span id="tooltip-text"></span></div>
 <script>
-document.addEventListener('input', function(e) {
-    if (e.target.tagName === 'INPUT' && e.target.name && e.target.name.indexOf('postal_code') !== -1) {
-        var raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        var parts = raw.match(/^([A-Z])(\d)([A-Z])?(\d)?([A-Z])?(\d)?/);
-        if (parts) {
-            var formatted = parts[1];
-            if (parts[2] !== undefined) formatted += parts[2];
-            if (parts[3] !== undefined) formatted += parts[3];
-            if (parts[4] !== undefined) formatted += ' ' + parts[4];
-            if (parts[5] !== undefined) formatted += parts[5];
-            if (parts[6] !== undefined) formatted += parts[6];
-            if (formatted !== e.target.value) e.target.value = formatted;
-        }
+(function(){
+    var ttp = document.getElementById('tooltip-el');
+    var ttpText = document.getElementById('tooltip-text');
+    var activeEl = null;
+
+    function show(e) {
+        var el = e.target.closest('[data-tooltip]');
+        if (!el) { hide(); return; }
+        var text = el.getAttribute('data-tooltip');
+        if (!text) { hide(); return; }
+        if (activeEl === el && ttp.classList.contains('show')) return;
+        activeEl = el;
+        ttpText.textContent = text;
+        position(el);
+        ttp.classList.add('show');
     }
-});
+
+    function hide() {
+        activeEl = null;
+        ttp.classList.remove('show');
+    }
+
+    function position(el) {
+        var rect = el.getBoundingClientRect();
+        var tipRect = ttp.getBoundingClientRect();
+        var spaceAbove = rect.top;
+        var spaceBelow = window.innerHeight - rect.bottom;
+        var tipW = tipRect.width || 200;
+
+        var top, left;
+        if (spaceBelow >= spaceAbove) {
+            top = rect.bottom + 6;
+            ttp.className = 'tooltip-top show';
+        } else {
+            top = rect.top - 6 - (tipRect.height || 30);
+            ttp.className = 'tooltip-bottom show';
+        }
+
+        left = rect.left + rect.width / 2 - tipW / 2;
+        if (left < 4) left = 4;
+        if (left + tipW > window.innerWidth - 4) left = window.innerWidth - 4 - tipW;
+
+        ttp.style.top = top + 'px';
+        ttp.style.left = left + 'px';
+    }
+
+    document.addEventListener('mouseover', show);
+    document.addEventListener('mouseout', function(e) {
+        var el = e.target.closest('[data-tooltip]');
+        if (!el) hide();
+    });
+    document.addEventListener('focusin', function(e) {
+        var el = e.target.closest('[data-tooltip]');
+        if (el) show({ target: el });
+    });
+    document.addEventListener('focusout', function() { hide(); });
+
+    var ro = new ResizeObserver(function() { if (activeEl) position(activeEl); });
+    ro.observe(document.body);
+})();
 </script>
 </body>
 </html>

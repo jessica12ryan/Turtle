@@ -51,11 +51,11 @@
 
     <!-- Color legend -->
     <div class="mt-4 flex items-center space-x-6 text-sm text-gray-600">
-        <button @click="toggleType('movein')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('movein')}"><span class="w-3 h-3 rounded-full bg-green-100 border border-green-300 inline-block"></span><span><?= __('Move In') ?></span></button>
-        <button @click="toggleType('moveout')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('moveout')}"><span class="w-3 h-3 rounded-full bg-orange-100 border border-orange-300 inline-block"></span><span><?= __('Move Out') ?></span></button>
-        <button @click="toggleType('leaseend')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('leaseend')}"><span class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300 inline-block"></span><span><?= __('Lease Ends') ?></span></button>
-        <button @click="toggleType('payment')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('payment')}"><span class="w-3 h-3 rounded-full bg-blue-100 border border-blue-300 inline-block"></span><span><?= __('Rent Payment') ?></span></button>
-        <button @click="toggleType('deposit')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('deposit')}"><span class="w-3 h-3 rounded-full bg-purple-100 border border-purple-300 inline-block"></span><span><?= __('Security Deposit') ?></span></button>
+        <button @click="toggleType('movein')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('movein')}" data-tooltip="<?= __('Toggle visibility') ?>"><span class="w-3 h-3 rounded-full bg-green-100 border border-green-300 inline-block"></span><span><?= __('Move In') ?></span></button>
+        <button @click="toggleType('moveout')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('moveout')}" data-tooltip="<?= __('Toggle visibility') ?>"><span class="w-3 h-3 rounded-full bg-orange-100 border border-orange-300 inline-block"></span><span><?= __('Move Out') ?></span></button>
+        <button @click="toggleType('leaseend')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('leaseend')}" data-tooltip="<?= __('Toggle visibility') ?>"><span class="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300 inline-block"></span><span><?= __('Lease Ends') ?></span></button>
+        <button @click="toggleType('payment')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('payment')}" data-tooltip="<?= __('Toggle visibility') ?>"><span class="w-3 h-3 rounded-full bg-blue-100 border border-blue-300 inline-block"></span><span><?= __('Rent Payment') ?></span></button>
+        <button @click="toggleType('deposit')" class="flex items-center space-x-1" :class="{'opacity-40': !enabledTypes.includes('deposit')}" data-tooltip="<?= __('Toggle visibility') ?>"><span class="w-3 h-3 rounded-full bg-purple-100 border border-purple-300 inline-block"></span><span><?= __('Security Deposit') ?></span></button>
     </div>
 </div>
 

@@ -22,63 +22,63 @@ function navActive(string $prefix, string $currentUri): string {
             <div class="flex items-center space-x-8">
                 <a href="/home"><img src="<?= h($logoUrl) ?>" alt="<?= h(site_name()) ?>" class="h-8<?= $isDefaultLogo ? ' logo-default' : '' ?>"></a>
                 <div class="hidden md:flex space-x-4">
-                    <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>"><?= __('Home') ?></a>
+                    <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>" data-tooltip="<?= __('Go to dashboard') ?>"><?= __('Home') ?></a>
                     <?php if (can('properties.access')): ?>
-                        <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>"><?= __('Properties') ?></a>
+                        <a href="/properties" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>" data-tooltip="<?= __('Manage properties') ?>"><?= __('Properties') ?></a>
                     <?php endif; ?>
                     <?php if (can('rents.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/rent" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/rent', $currentUri) ?>"><?= __('Rent') ?></a>
+                        <a href="/rent" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/rent', $currentUri) ?>" data-tooltip="<?= __('View rent records') ?>"><?= __('Rent') ?></a>
                     <?php endif; ?>
                     <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>"><?= __('Tenants') ?></a>
+                        <a href="/tenants" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>" data-tooltip="<?= __('Manage tenants') ?>"><?= __('Tenants') ?></a>
                     <?php endif; ?>
                     <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Documents') ?></a>
+                        <a href="/leases" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>" data-tooltip="<?= __('Upload and manage documents') ?>"><?= __('Documents') ?></a>
                     <?php endif; ?>
                     <?php if (can('tickets.access')): ?>
-                        <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>"><?= __('Tickets') ?></a>
+                        <a href="/tickets" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>" data-tooltip="<?= __('View maintenance tickets') ?>"><?= __('Tickets') ?></a>
                     <?php endif; ?>
                     <?php if (can('staff.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>"><?= __('Staff') ?></a>
+                        <a href="/staff" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>" data-tooltip="<?= __('Manage staff members') ?>"><?= __('Staff') ?></a>
                     <?php endif; ?>
                     <?php if (can('resources.access')): ?>
-                        <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>"><?= __('Resources') ?></a>
+                        <a href="/resources" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>" data-tooltip="<?= __('Access resources and links') ?>"><?= __('Resources') ?></a>
                     <?php endif; ?>
                     <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
-                        <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>"><?= __('Calendar') ?></a>
+                        <a href="/calendar" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>" data-tooltip="<?= __('View calendar') ?>"><?= __('Calendar') ?></a>
                     <?php endif; ?>
                     <?php if (can('applications.view')): ?>
-                        <a href="/applications" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/applications', $currentUri) ?>"><?= __('Applications') ?></a>
+                        <a href="/applications" class="px-3 py-2 rounded-md text-sm font-medium <?= navActive('/applications', $currentUri) ?>" data-tooltip="<?= __('Review rental applications') ?>"><?= __('Applications') ?></a>
                     <?php endif; ?>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <label for="menu-toggle" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 cursor-pointer" aria-label="<?= __('Toggle navigation') ?>">
+                <label for="menu-toggle" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 cursor-pointer" aria-label="<?= __('Toggle navigation') ?>" data-tooltip="<?= __('Toggle navigation') ?>">
                     <svg class="menu-icon-hamburger w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg class="menu-icon-close w-6 h-6" style="display:none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </label>
-                <a href="/notifications" class="relative text-gray-600 hover:text-gray-900">
+                <a href="/notifications" class="relative text-gray-600 hover:text-gray-900" data-tooltip="<?= __('View notifications') ?>">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                     <?php if ($unread > 0): ?>
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"><?= $unread ?></span>
                     <?php endif; ?>
                 </a>
                 <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
+                    <button @click="open = !open" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900" data-tooltip="<?= __('Open user menu') ?>">
                         <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <span class="hidden md:block text-sm"><?= h($user['name']) ?></span>
                     </button>
                     <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"><?= __('Profile') ?></a>
+                        <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg" data-tooltip="<?= __('Edit your profile') ?>"><?= __('Profile') ?></a>
                         <?php if (can('ai_assistant.access')): ?>
-                            <a href="/ai-assistant" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><?= __('AI Assistant') ?></a>
+                            <a href="/ai-assistant" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-tooltip="<?= __('Open AI assistant') ?>"><?= __('AI Assistant') ?></a>
                         <?php endif; ?>
                         <?php if ($user['role'] === 'admin'): ?>
-                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><?= __('Settings') ?></a>
+                            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-tooltip="<?= __('Open settings') ?>"><?= __('Settings') ?></a>
                         <?php endif; ?>
                         <form method="POST" action="/logout">
                             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"><?= __('Logout') ?></button>
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg" data-tooltip="<?= __('Sign out') ?>"><?= __('Logout') ?></button>
                         </form>
                     </div>
                 </div>
@@ -87,33 +87,33 @@ function navActive(string $prefix, string $currentUri): string {
     </div>
     <div id="mobile-menu" class="hidden md:hidden" style="display:none">
         <div class="max-w-7xl mx-auto px-4 pb-4 space-y-1">
-            <a href="/home" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>"><?= __('Home') ?></a>
+            <a href="/home" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/home', $currentUri) ?>" data-tooltip="<?= __('Go to dashboard') ?>"><?= __('Home') ?></a>
             <?php if (can('properties.access')): ?>
-                <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>"><?= __('Properties') ?></a>
+                <a href="/properties" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/properties', $currentUri) ?>" data-tooltip="<?= __('Manage properties') ?>"><?= __('Properties') ?></a>
             <?php endif; ?>
             <?php if (can('rents.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/rent" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/rent', $currentUri) ?>"><?= __('Rent') ?></a>
+                <a href="/rent" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/rent', $currentUri) ?>" data-tooltip="<?= __('View rent records') ?>"><?= __('Rent') ?></a>
             <?php endif; ?>
             <?php if (can('tenants.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>"><?= __('Tenants') ?></a>
+                <a href="/tenants" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tenants', $currentUri) ?>" data-tooltip="<?= __('Manage tenants') ?>"><?= __('Tenants') ?></a>
             <?php endif; ?>
             <?php if (can('leases.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>"><?= __('Documents') ?></a>
+                <a href="/leases" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/leases', $currentUri) ?>" data-tooltip="<?= __('Upload and manage documents') ?>"><?= __('Documents') ?></a>
             <?php endif; ?>
             <?php if (can('tickets.access')): ?>
-                <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>"><?= __('Tickets') ?></a>
+                <a href="/tickets" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/tickets', $currentUri) ?>" data-tooltip="<?= __('View maintenance tickets') ?>"><?= __('Tickets') ?></a>
             <?php endif; ?>
             <?php if (can('staff.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/staff" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>"><?= __('Staff') ?></a>
+                <a href="/staff" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/staff', $currentUri) ?>" data-tooltip="<?= __('Manage staff members') ?>"><?= __('Staff') ?></a>
             <?php endif; ?>
             <?php if (can('resources.access')): ?>
-                <a href="/resources" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>"><?= __('Resources') ?></a>
+                <a href="/resources" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/resources', $currentUri) ?>" data-tooltip="<?= __('Access resources and links') ?>"><?= __('Resources') ?></a>
             <?php endif; ?>
             <?php if (can('calendar.access') && $user['role'] !== 'tenant'): ?>
-                <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>"><?= __('Calendar') ?></a>
+                <a href="/calendar" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/calendar', $currentUri) ?>" data-tooltip="<?= __('View calendar') ?>"><?= __('Calendar') ?></a>
             <?php endif; ?>
             <?php if (can('applications.view')): ?>
-                <a href="/applications" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/applications', $currentUri) ?>"><?= __('Applications') ?></a>
+                <a href="/applications" class="block px-3 py-2 rounded-md text-sm font-medium <?= navActive('/applications', $currentUri) ?>" data-tooltip="<?= __('Review rental applications') ?>"><?= __('Applications') ?></a>
             <?php endif; ?>
         </div>
     </div>

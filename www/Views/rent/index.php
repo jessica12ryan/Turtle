@@ -51,11 +51,11 @@
                         <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-200">$<?= number_format((float)($prop['paid_amount'] ?? 0), 2) ?></td>
                         <td class="px-6 py-4">
                             <?php if ($prop['rent_status'] === 'paid'): ?>
-                                <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full font-medium"><?= __('Paid') ?></span>
+                                <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Paid') ?></span>
                             <?php elseif ($prop['rent_status'] === 'partial'): ?>
-                                <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full font-medium"><?= __('Partial') ?></span>
+                                <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Partial') ?></span>
                             <?php else: ?>
-                                <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-1 rounded-full font-medium"><?= __('Unpaid') ?></span>
+                                <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Unpaid') ?></span>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
@@ -67,7 +67,7 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4">
-                            <a href="/properties/<?= $prop['id'] ?>/rent" class="text-blue-600 dark:text-blue-400 hover:underline text-sm"><?= __('Manage') ?></a>
+                            <a href="/properties/<?= $prop['id'] ?>/rent" class="text-blue-600 dark:text-blue-400 hover:underline text-sm" data-tooltip="<?= __('View this item') ?>"><?= __('Manage') ?></a>
                         </td>
                     </tr>
                 <?php endforeach; ?>

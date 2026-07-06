@@ -2,7 +2,7 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Notifications') ?></h1>
     <form method="POST" action="/notifications/read-all">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-        <button type="submit" class="text-sm text-blue-600 hover:underline"><?= __('Mark all as read') ?></button>
+        <button type="submit" class="text-sm text-blue-600 hover:underline" data-tooltip="<?= __('Mark all as read') ?>"><?= __('Mark all as read') ?></button>
     </form>
 </div>
 <div class="bg-white rounded-lg shadow">
@@ -22,7 +22,7 @@
                             <?php if (!$n['read_at']): ?>
                                 <form method="POST" action="/notifications/<?= $n['id'] ?>/read">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-xs text-blue-600 hover:underline"><?= __('Mark read') ?></button>
+                                    <button type="submit" class="text-xs text-blue-600 hover:underline" data-tooltip="<?= __('Mark read') ?>"><?= __('Mark read') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>

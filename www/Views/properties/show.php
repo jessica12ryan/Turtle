@@ -14,24 +14,24 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     </div>
     <div class="flex space-x-3">
         <?php if (can('properties.edit')): ?>
-            <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
+            <a href="/properties/<?= $property['id'] ?>/edit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm" data-tooltip="<?= __('Edit this item') ?>"><?= __('Edit') ?></a>
         <?php endif; ?>
         <?php if (can('properties.edit')): ?>
             <form method="POST" action="/properties/<?= $property['id'] ?>/listed" class="inline">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="<?= $property['listed'] ? 'bg-gray-500' : 'bg-green-600' ?> text-white px-4 py-2 rounded-lg hover:opacity-90 text-sm"><?= $property['listed'] ? __('Unlist Property') : __('List Property') ?></button>
+                <button type="submit" class="<?= $property['listed'] ? 'bg-gray-500' : 'bg-green-600' ?> text-white px-4 py-2 rounded-lg hover:opacity-90 text-sm" data-tooltip="<?= $property['listed'] ? __('Unlist Property') : __('List Property') ?>"><?= $property['listed'] ? __('Unlist Property') : __('List Property') ?></button>
             </form>
         <?php endif; ?>
         <?php if (can('leases.create')): ?>
-            <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm"><?= __('Upload Document') ?></a>
+            <a href="/leases/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm" data-tooltip="<?= __('Upload and manage documents') ?>"><?= __('Upload Document') ?></a>
         <?php endif; ?>
         <?php if (can('tickets.create')): ?>
-            <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm"><?= __('New Ticket') ?></a>
+            <a href="/tickets/create?property_id=<?= $property['id'] ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm" data-tooltip="<?= __('View maintenance tickets') ?>"><?= __('New Ticket') ?></a>
         <?php endif; ?>
         <?php if (can('properties.archive')): ?>
             <form method="POST" action="/properties/<?= $property['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this property and all its associated tenants, leases, and tickets. This is not reversible. Continue?') ?>')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm" data-tooltip="<?= __('Archive this item') ?>"><?= __('Archive') ?></button>
             </form>
         <?php endif; ?>
     </div>

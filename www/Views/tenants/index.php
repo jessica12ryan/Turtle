@@ -2,11 +2,11 @@
     <h1 class="text-2xl font-bold text-black dark:text-white"><?= __('Tenants') ?></h1>
     <div class="flex items-center space-x-3">
         <?php if (can('tenants.archive') || can('tenants.restore')): ?>
-            <a href="/tenants?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
+            <a href="/tenants?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition" data-tooltip="<?= __('Show or hide archived') ?>">
                 <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
             </a>
         <?php endif; ?>
-        <a href="/tenants/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('Add Tenant') ?></a>
+        <a href="/tenants/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium" data-tooltip="<?= __('Add new') ?>"><?= __('Add Tenant') ?></a>
     </div>
 </div>
 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -48,23 +48,23 @@
                         </td>
                         <td class="px-6 py-4 space-x-2">
                             <?php if (!$tenant['archived_at']): ?>
-                                <a href="/tenants/<?= $tenant['id'] ?>/edit" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
+                                <a href="/tenants/<?= $tenant['id'] ?>/edit" class="text-blue-600 hover:underline text-sm" data-tooltip="<?= __('Edit this item') ?>"><?= __('Edit') ?></a>
                                 <?php if (can('tenants.archive')): ?>
                                     <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this tenant and is not reversible. They will be removed from the property and their account disabled. Continue?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
+                                        <button type="submit" class="text-orange-600 hover:underline text-sm" data-tooltip="<?= __('Archive this item') ?>"><?= __('Archive') ?></button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if (can('tenants.delete')): ?>
                                     <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this tenant and all associated data. This action cannot be undone. Continue?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                        <button type="submit" class="text-red-600 hover:underline text-sm" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
                                     </form>
                                 <?php endif; ?>
                             <?php elseif (can('tenants.restore')): ?>
                                 <form method="POST" action="/tenants/<?= $tenant['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                    <button type="submit" class="text-green-600 hover:underline text-sm" data-tooltip="<?= __('Restore this item') ?>"><?= __('Restore') ?></button>
                                 </form>
                             <?php endif; ?>
                         </td>

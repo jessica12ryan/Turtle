@@ -1,7 +1,7 @@
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Resources') ?></h1>
     <?php if (can('resources.create')): ?>
-        <a href="/resources/create" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('Add Resource') ?></a>
+        <a href="/resources/create" data-tooltip="<?= __('Add new') ?>" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 text-sm font-medium"><?= __('Add Resource') ?></a>
     <?php endif; ?>
 </div>
 
@@ -25,12 +25,12 @@
                     <?php if (can('resources.edit') || can('resources.delete')): ?>
                         <div class="mt-3 pt-3 border-t flex space-x-3">
                             <?php if (can('resources.edit')): ?>
-                                <a href="/resources/<?= $link['id'] ?>/edit" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
+                                <a href="/resources/<?= $link['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
                             <?php endif; ?>
                             <?php if (can('resources.delete')): ?>
                                 <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Delete this resource?') ?>')">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                    <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>
@@ -57,12 +57,12 @@
                     <?php if (can('resources.edit') || can('resources.delete')): ?>
                         <div class="mt-3 pt-3 border-t flex space-x-3">
                             <?php if (can('resources.edit')): ?>
-                                <a href="/resources/<?= $link['id'] ?>/edit" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
+                                <a href="/resources/<?= $link['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
                             <?php endif; ?>
                             <?php if (can('resources.delete')): ?>
                                 <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Delete this resource?') ?>')">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                    <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>

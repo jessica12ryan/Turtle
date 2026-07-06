@@ -18,17 +18,17 @@
         <?php endif; ?>
     </div>
     <div class="flex space-x-3">
-        <a href="/properties/<?= $lease['property_id'] ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
+        <a href="/properties/<?= $lease['property_id'] ?>" data-tooltip="<?= __('View this item') ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
         <?php if (can('leases.archive')): ?>
             <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this lease?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="text-orange-600 hover:underline text-sm">Archive</button>
+                <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="text-orange-600 hover:underline text-sm">Archive</button>
             </form>
         <?php endif; ?>
         <?php if (can('leases.delete')): ?>
             <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('WARNING: This will permanently delete this lease and all associated documents. This is NOT reversible. Continue?')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="text-red-800 hover:underline text-sm font-bold">Delete</button>
+                <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-800 hover:underline text-sm font-bold">Delete</button>
             </form>
         <?php endif; ?>
     </div>

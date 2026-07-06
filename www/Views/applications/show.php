@@ -5,7 +5,7 @@
         <?php if (can('applications.delete')): ?>
             <form method="POST" action="/applications/<?= $application['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Permanently delete this application? This cannot be undone.') ?>')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" class="text-sm text-red-600 hover:text-red-800 hover:underline"><?= __('Delete') ?></button>
+                <button type="submit" class="text-sm text-red-600 hover:text-red-800 hover:underline" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
             </form>
         <?php endif; ?>
     </div>
@@ -15,7 +15,7 @@
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <div>
-            <span class="px-3 py-1 text-sm rounded-full <?= $application['status'] === 'new' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($application['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($application['status'] === 'accepted' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : ($application['status'] === 'rejected' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>">
+            <span class="px-3 py-1 text-sm rounded-full <?= $application['status'] === 'new' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : ($application['status'] === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : ($application['status'] === 'accepted' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : ($application['status'] === 'rejected' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'))) ?>" data-tooltip="<?= __('Application status') . ': ' . ucfirst(str_replace('_', ' ', $application['status'])) ?>">
                 <?= ucfirst(str_replace('_', ' ', $application['status'])) ?>
             </span>
         </div>

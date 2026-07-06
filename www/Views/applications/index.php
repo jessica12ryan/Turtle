@@ -2,7 +2,7 @@
     <h1 class="text-2xl font-bold text-black dark:text-white"><?= __('Applications') ?></h1>
     <div class="flex items-center space-x-3">
         <?php if (can('applications.view')): ?>
-            <a href="/applications?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
+            <a href="/applications?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition" data-tooltip="<?= __('Show or hide archived') ?>">
                 <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
             </a>
         <?php endif; ?>
@@ -45,25 +45,25 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 space-x-2 whitespace-nowrap">
-                            <a href="/applications/<?= $app['id'] ?>" class="text-blue-600 dark:text-blue-400 hover:underline text-sm"><?= __('View') ?></a>
+                            <a href="/applications/<?= $app['id'] ?>" class="text-blue-600 dark:text-blue-400 hover:underline text-sm" data-tooltip="<?= __('View this item') ?>"><?= __('View') ?></a>
                             <?php if (!$app['archived_at']): ?>
                                 <?php if (can('applications.archive')): ?>
                                     <form method="POST" action="/applications/<?= $app['id'] ?>/archive" class="inline" onsubmit="return confirm('<?= __('Archive this application?') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
+                                        <button type="submit" class="text-orange-600 hover:underline text-sm" data-tooltip="<?= __('Archive this item') ?>"><?= __('Archive') ?></button>
                                     </form>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <?php if (can('applications.restore')): ?>
                                     <form method="POST" action="/applications/<?= $app['id'] ?>/restore" class="inline">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                        <button type="submit" class="text-green-600 hover:underline text-sm" data-tooltip="<?= __('Restore this item') ?>"><?= __('Restore') ?></button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if (can('applications.delete')): ?>
                                     <form method="POST" action="/applications/<?= $app['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Permanently delete this application? This cannot be undone.') ?>')">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                        <button type="submit" class="text-red-600 hover:underline text-sm" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
                                     </form>
                                 <?php endif; ?>
                             <?php endif; ?>

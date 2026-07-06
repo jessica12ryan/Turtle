@@ -11,7 +11,7 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-red-800 dark:text-red-200"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['link'])): ?>
-                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"><?= __('Take action →') ?></a>
+                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -27,7 +27,7 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['link'])): ?>
-                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block"><?= __('Take action →') ?></a>
+                            <a href="<?= $a['link'] ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -78,7 +78,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
         <div class="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200"><?= __('Recent Tickets') ?></h2>
-            <a href="/tickets" class="text-sm text-blue-600 dark:text-blue-400 hover:underline"><?= __('View all') ?></a>
+            <a href="/tickets" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= __('View all') ?>"><?= __('View all') ?></a>
         </div>
         <div class="p-6">
             <div class="space-y-3">
@@ -114,15 +114,15 @@
                     </div>
                     <div class="text-right">
                         <?php if ($r['status'] === 'paid'): ?>
-                            <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full font-medium"><?= __('Paid') ?></span>
+                            <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Paid') ?></span>
                             <?php if ($r['last_payment_date']): ?>
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><?= h($r['last_payment_date']) ?></p>
                             <?php endif; ?>
                         <?php elseif ($r['status'] === 'partial'): ?>
-                            <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full font-medium"><?= __('Partial') ?></span>
+                            <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Partial') ?></span>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">$<?= number_format($r['paid_amount'], 2) ?> <?= __('paid') ?></p>
                         <?php elseif ($r['status'] === 'unpaid'): ?>
-                            <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-3 py-1 rounded-full font-medium"><?= __('Unpaid') ?></span>
+                            <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Unpaid') ?></span>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow mt-6">
         <div class="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center">
             <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200"><?= __('Open Tickets') ?></h2>
-            <a href="/tickets" class="text-sm text-blue-600 dark:text-blue-400 hover:underline"><?= __('View all') ?></a>
+            <a href="/tickets" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= __('View all') ?>"><?= __('View all') ?></a>
         </div>
         <div class="p-6 space-y-3">
             <?php foreach ($openTickets as $ticket): ?>
