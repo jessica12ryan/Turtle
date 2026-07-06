@@ -17,9 +17,9 @@ The first boot presents a setup wizard. Choose **New Installation** to configure
 
 **Email testing:** http://localhost:8025 (Mailpit)
 
-### Home Assistant Add-on
+### Home Assistant App
 
-Turtle is available as a Home Assistant add-on in two variants:
+Turtle is available as a Home Assistant app in two variants:
 
 | Add-on | Channel | Source |
 |--------|---------|--------|
