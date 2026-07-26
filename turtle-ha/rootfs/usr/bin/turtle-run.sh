@@ -23,6 +23,8 @@ mkdir -p \
     "${DATA_DIR}/mysql" \
     "${DATA_DIR}/uploads/leases" \
     "${DATA_DIR}/uploads/property_photos" \
+    "${DATA_DIR}/uploads/application_photos" \
+    "${DATA_DIR}/uploads/ticket_files" \
     "${DATA_DIR}/logs" \
     "${DATA_DIR}/framework"
 

@@ -355,12 +355,6 @@ class PropertyController
         if (is_dir($primaryDir) && is_writable($primaryDir)) {
             return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
         }
-        if (!is_dir($fallbackDir)) {
-            @mkdir($fallbackDir, 0777, true);
-        }
-        if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
-            return ['dir' => $fallbackDir, 'prefix' => $fallbackBase];
-        }
         if (!is_dir($primaryDir)) {
             @mkdir($primaryDir, 0755, true);
             @chmod($primaryDir, 0755);
@@ -369,6 +363,12 @@ class PropertyController
         }
         if (is_dir($primaryDir) && is_writable($primaryDir)) {
             return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
+        }
+        if (!is_dir($fallbackDir)) {
+            @mkdir($fallbackDir, 0777, true);
+        }
+        if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
+            return ['dir' => $fallbackDir, 'prefix' => $fallbackBase];
         }
         return ['dir' => '', 'prefix' => ''];
     }

@@ -22,7 +22,7 @@ git config --global --add safe.directory /var/www/html 2>/dev/null || true
 git config --global --add safe.directory /var/www/turtle 2>/dev/null || true
 
 # Ensure entire app is writable by www-data (git pull needs to unlink/recreate files)
-mkdir -p storage/uploads/leases storage/uploads/property_photos storage/logs storage/framework www/assets/uploads/logo
+mkdir -p storage/uploads/leases storage/uploads/property_photos storage/uploads/application_photos storage/uploads/ticket_files storage/logs storage/framework www/assets/uploads/logo
 chmod -R a+w . 2>/dev/null || true
 
 # Start queue worker in background
