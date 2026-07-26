@@ -348,27 +348,19 @@ class PropertyController
 
     private function getPhotoUploadDir(int $propertyId): array
     {
-        $primaryDir = base_path('storage/uploads/property_photos/' . $propertyId);
-        $fallbackBase = sys_get_temp_dir() . '/turtle_photos';
-        $fallbackDir = $fallbackBase . '/' . $propertyId;
+        $dir = base_path('storage/uploads/property_photos/' . $propertyId);
 
-        if (is_dir($primaryDir) && is_writable($primaryDir)) {
-            return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
+        if (is_dir($dir) && is_writable($dir)) {
+            return ['dir' => $dir, 'prefix' => 'storage/uploads/property_photos'];
         }
-        if (!is_dir($primaryDir)) {
-            @mkdir($primaryDir, 0755, true);
-            @chmod($primaryDir, 0755);
-            $escaped = escapeshellarg($primaryDir);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+            @chmod($dir, 0755);
+            $escaped = escapeshellarg($dir);
             exec("chmod -R 755 {$escaped} 2>/dev/null; chown -R www-data:www-data {$escaped} 2>/dev/null");
         }
-        if (is_dir($primaryDir) && is_writable($primaryDir)) {
-            return ['dir' => $primaryDir, 'prefix' => 'storage/uploads/property_photos'];
-        }
-        if (!is_dir($fallbackDir)) {
-            @mkdir($fallbackDir, 0777, true);
-        }
-        if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
-            return ['dir' => $fallbackDir, 'prefix' => $fallbackBase];
+        if (is_dir($dir) && is_writable($dir)) {
+            return ['dir' => $dir, 'prefix' => 'storage/uploads/property_photos'];
         }
         return ['dir' => '', 'prefix' => ''];
     }

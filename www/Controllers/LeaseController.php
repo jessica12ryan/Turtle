@@ -196,22 +196,13 @@ class LeaseController
             );
 
             if (!empty($_FILES['documents']) && is_array($_FILES['documents']['name'])) {
-                $primaryDir = base_path('storage/uploads/leases');
-                $fallbackDir = sys_get_temp_dir() . '/turtle_uploads/leases';
-                $uploadDir = '';
+                $uploadDir = base_path('storage/uploads/leases');
+                $pathPrefix = 'storage/uploads/leases';
 
-                if (is_dir($primaryDir) && is_writable($primaryDir)) {
-                    $uploadDir = $primaryDir;
-                    $pathPrefix = 'storage/uploads/leases';
-                } else {
-                    @mkdir($fallbackDir, 0777, true);
-                    if (is_dir($fallbackDir) && is_writable($fallbackDir)) {
-                        $uploadDir = $fallbackDir;
-                        $pathPrefix = $fallbackDir;
-                    }
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
                 }
-
-                if (!$uploadDir) {
+                if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
                     throw new \RuntimeException('Upload directory is not writable. Check permissions.');
                 }
 

@@ -405,16 +405,9 @@ class TicketController
         $uploadDir = base_path('storage/uploads/ticket_files/' . $ticketId);
         if (!is_dir($uploadDir)) {
             if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
-                $uploadDir = sys_get_temp_dir() . '/turtle_ticket_files/' . $ticketId;
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
+                return;
             }
         }
-
-        $storagePrefix = str_starts_with($uploadDir, base_path())
-            ? 'storage/uploads/ticket_files/' . $ticketId
-            : $uploadDir;
 
         $userId = Auth::instance()->id();
         foreach ($_FILES['attachments']['error'] as $i => $error) {
@@ -440,7 +433,7 @@ class TicketController
             if (move_uploaded_file($tmpName, $destPath)) {
                 Database::insert(
                     "INSERT INTO ticket_files (ticket_id, comment_id, file_path, original_name, size, mime_type, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-                    [$ticketId, $commentId, $storagePrefix . '/' . $filename, $name, $size, $detectedType, $userId]
+                    [$ticketId, $commentId, 'storage/uploads/ticket_files/' . $ticketId . '/' . $filename, $name, $size, $detectedType, $userId]
                 );
             }
         }
