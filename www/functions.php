@@ -65,7 +65,18 @@ function h($value): string
 
 function sanitize_filename(string $name): string
 {
-    return str_replace(["\r", "\n"], '', $name);
+    // Strip path traversal, null bytes, and control chars
+    $name = str_replace(["\r", "\n", "\0"], '', $name);
+    $name = str_replace(['/', '\\'], '', $name);
+    // Remove .. sequences and control characters
+    $name = str_replace('..', '', $name);
+    $name = preg_replace('/[\x00-\x1F\x7F]/', '', $name);
+    // Limit length and trim
+    $name = trim($name);
+    if (strlen($name) > 255) {
+        $name = substr($name, 0, 255);
+    }
+    return $name;
 }
 
 function old(string $key, string $default = ''): string
@@ -86,7 +97,13 @@ function base_url(): string
 
 function redirect(string $url): void
 {
-    $url = sanitize_filename($url);
+    // Prevent CRLF injection and open-redirect via // or \/
+    $url = str_replace(["\r", "\n", "\0"], '', $url);
+    $url = trim($url);
+    // Block protocol-relative and absolute external URLs
+    if (str_starts_with($url, '//') || str_starts_with($url, '\\') || preg_match('#^[a-z][a-z0-9+\-.]*:#i', $url)) {
+        $url = '/';
+    }
     if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
         $url = base_url() . $url;
     }
@@ -97,8 +114,18 @@ function redirect(string $url): void
 function redirectBack(): void
 {
     $referer = $_SERVER['HTTP_REFERER'] ?? '/';
+    // Block CRLF and null bytes
+    $referer = str_replace(["\r", "\n", "\0"], '', $referer);
+    // Block protocol-relative URLs like //evil.com
+    if (str_starts_with($referer, '//') || str_starts_with($referer, '\\')) {
+        $referer = '/';
+    }
     $parsed = parse_url($referer);
     if (!empty($parsed['host']) && $parsed['host'] !== ($_SERVER['HTTP_HOST'] ?? '')) {
+        $referer = '/';
+    }
+    // Only allow relative or same-host URLs
+    if (!str_starts_with($referer, '/') && !str_starts_with($referer, base_url() . '/')) {
         $referer = '/';
     }
     redirect($referer);
@@ -160,40 +187,21 @@ function httpGet(string $url, int $timeout = 5): ?string
         ]);
         $body = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
         if ($httpCode >= 200 && $httpCode < 400 && $body !== false) {
             return $body;
         }
-        // Retry with SSL verification disabled
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => 3,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_USERAGENT => 'Turtle/1.0',
-            CURLOPT_HEADER => false,
-        ]);
-        $body = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($httpCode >= 200 && $httpCode < 400 && $body !== false) {
-            return $body;
+        if ($body === false || $httpCode < 200 || $httpCode >= 400) {
+            error_log("httpGet failed for {$url}: HTTP {$httpCode} " . ($curlError ?: ''));
         }
         return null;
     }
 
     if (ini_get('allow_url_fopen')) {
-        $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0']]);
-        $body = @file_get_contents($url, false, $ctx);
-        if ($body !== false) return $body;
-        // Retry with SSL disabled
         $ctx = stream_context_create([
             'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0'],
-            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
         ]);
         $body = @file_get_contents($url, false, $ctx);
         if ($body !== false) return $body;
@@ -212,8 +220,8 @@ function httpGetWithHeaders(string $url, int $timeout = 5): ?array
             CURLOPT_TIMEOUT => $timeout,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS => 3,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => 'Turtle/1.0',
             CURLOPT_HEADER => true,
         ]);
@@ -234,7 +242,7 @@ function httpGetWithHeaders(string $url, int $timeout = 5): ?array
     if (ini_get('allow_url_fopen')) {
         $ctx = stream_context_create([
             'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0'],
-            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
         ]);
         $body = @file_get_contents($url, false, $ctx);
         if ($body !== false) {

@@ -21,9 +21,14 @@ fi
 git config --global --add safe.directory /var/www/html 2>/dev/null || true
 git config --global --add safe.directory /var/www/turtle 2>/dev/null || true
 
-# Ensure entire app is writable by www-data (git pull needs to unlink/recreate files)
+# Ensure writable dirs have correct permissions (least-privilege: no a+w on code)
 mkdir -p storage/uploads/leases storage/uploads/property_photos storage/uploads/application_photos storage/uploads/ticket_files storage/logs storage/framework www/assets/uploads/logo
-chmod -R a+w . 2>/dev/null || true
+chmod 755 storage storage/uploads storage/uploads/* storage/logs storage/framework www/assets/uploads www/assets/uploads/logo 2>/dev/null || true
+# Only make .git writable for pull; keep code read-only
+chmod -R 775 storage storage/logs storage/framework 2>/dev/null || true
+# Allow git to update tracked files without world-writable code
+chown -R www-data:www-data storage www/assets/uploads 2>/dev/null || true
+chmod 775 .git 2>/dev/null || true
 
 # Start queue worker in background
 php -r "

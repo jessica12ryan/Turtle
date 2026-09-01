@@ -91,49 +91,56 @@ try {
     }
 } catch (\Throwable $e) {}
 
-// Process scheduled move-outs (limit: once per hour)
+// Process scheduled move-outs (limit: once per hour) — atomic via conditional update to prevent double-processing
 try {
     $lastCheck = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_moveout_check'");
     $lastTs = $lastCheck['value'] ?? '';
     $now = date('Y-m-d H:i:s');
     if (!$lastTs || (strtotime($now) - strtotime($lastTs)) > 3600) {
-        $expired = \App\Core\Database::fetchAll(
-            "SELECT pt.* FROM property_tenant pt 
-             WHERE pt.move_out_date IS NOT NULL 
-             AND pt.move_out_date <= CURDATE() 
-             AND pt.moved_out_at IS NULL"
+        // Atomic claim: only one concurrent request succeeds in updating the timestamp
+        $claimed = \App\Core\Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('last_moveout_check', ?) ON DUPLICATE KEY UPDATE `value` = IF(TIMESTAMPDIFF(SECOND, `value`, ?) > 3600 OR `value` = '', ?, `value`)",
+            [$now, $now, $now]
         );
-        foreach ($expired as $pt) {
-            \App\Core\Database::execute(
-                "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL",
-                [$pt['id']]
+        // Re-check if we actually claimed the slot (rowCount >0 and value now equals $now)
+        $current = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_moveout_check'");
+        if (($current['value'] ?? '') !== $now) {
+            // Another request already claimed this window — skip processing
+        } else {
+            $expired = \App\Core\Database::fetchAll(
+                "SELECT pt.* FROM property_tenant pt 
+                 WHERE pt.move_out_date IS NOT NULL 
+                 AND pt.move_out_date <= CURDATE() 
+                 AND pt.moved_out_at IS NULL"
             );
-            \App\Core\Database::execute(
-                "UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL",
-                [$pt['tenant_id']]
-            );
-            \App\Core\Database::execute(
-                "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
-                [$pt['tenant_id']]
-            );
-            // If main tenant, cascade to secondary tenants
-            if (!empty($pt['is_main_tenant'])) {
-                $secondaries = \App\Core\Database::fetchAll(
-                    "SELECT tenant_id FROM property_tenant 
-                     WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NULL",
-                    [$pt['property_id'], $pt['tenant_id']]
+            foreach ($expired as $pt) {
+                \App\Core\Database::execute(
+                    "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL",
+                    [$pt['id']]
                 );
-                foreach ($secondaries as $s) {
-                    \App\Core\Database::execute("UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL", [$s['tenant_id']]);
-                    \App\Core\Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL", [$s['tenant_id']]);
-                    \App\Core\Database::execute("UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL", [$s['tenant_id']]);
+                \App\Core\Database::execute(
+                    "UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL",
+                    [$pt['tenant_id']]
+                );
+                \App\Core\Database::execute(
+                    "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
+                    [$pt['tenant_id']]
+                );
+                // If main tenant, cascade to secondary tenants
+                if (!empty($pt['is_main_tenant'])) {
+                    $secondaries = \App\Core\Database::fetchAll(
+                        "SELECT tenant_id FROM property_tenant 
+                         WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NULL",
+                        [$pt['property_id'], $pt['tenant_id']]
+                    );
+                    foreach ($secondaries as $s) {
+                        \App\Core\Database::execute("UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL", [$s['tenant_id']]);
+                        \App\Core\Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL", [$s['tenant_id']]);
+                        \App\Core\Database::execute("UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL", [$s['tenant_id']]);
+                    }
                 }
             }
         }
-        \App\Core\Database::execute(
-            "INSERT INTO settings (`key`, `value`) VALUES ('last_moveout_check', ?) ON DUPLICATE KEY UPDATE `value` = ?",
-            [$now, $now]
-        );
     }
 } catch (\Throwable $e) {
     error_log('Scheduled move-out check failed: ' . $e->getMessage());

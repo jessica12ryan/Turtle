@@ -19,16 +19,16 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=turtle
-      - MYSQL_USER=turtle
-      - MYSQL_PASSWORD=turtle
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-turtle}
+      - MYSQL_USER=${MYSQL_USER:-turtle}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-turtle}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
       retries: 10
       timeout: 5s
     networks:

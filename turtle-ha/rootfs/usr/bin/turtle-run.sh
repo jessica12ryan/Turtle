@@ -84,10 +84,16 @@ fi
 
 # ── Write .env ────────────────────────────────────────────────────────────────
 bashio::log.info "Writing .env..."
+# Generate APP_KEY if missing or empty (base64 32 bytes)
+if [ ! -f "${TURTLE_DIR}/.env" ] || ! grep -q '^APP_KEY=base64:' "${TURTLE_DIR}/.env" 2>/dev/null; then
+    GENERATED_KEY="base64:$(openssl rand -base64 32 | tr -d '\n')"
+else
+    GENERATED_KEY=$(grep '^APP_KEY=' "${TURTLE_DIR}/.env" | cut -d= -f2-)
+fi
 cat > "${TURTLE_DIR}/.env" <<ENV
 APP_NAME=Turtle
 APP_ENV=production
-APP_KEY=
+APP_KEY=${GENERATED_KEY}
 APP_DEBUG=false
 APP_URL=${APP_URL}
 
@@ -172,9 +178,12 @@ INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_from_address', '${MAIL_F
 SQL
 
 # ── Permissions ───────────────────────────────────────────────────────────────
-# Make entire app writable so git pull / in-app updater can modify files
-chmod -R a+w "${TURTLE_DIR}" 2>/dev/null || true
+# Least-privilege: only persistent data dirs writable, not entire code
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
+chown -R root:root "${TURTLE_DIR}" 2>/dev/null || true
+chmod 755 "${TURTLE_DIR}" 2>/dev/null || true
+# Allow updater to write .git and storage only
+chmod -R 775 "${TURTLE_DIR}/.git" "${TURTLE_DIR}/storage" "${TURTLE_DIR}/www/assets/uploads" 2>/dev/null || true
 
 # Allow in-app git pull updater to work
 git config --global --add safe.directory "${TURTLE_DIR}" 2>/dev/null || true

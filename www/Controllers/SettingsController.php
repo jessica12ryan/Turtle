@@ -250,16 +250,18 @@ class SettingsController
                 []
             );
         } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
+            $allowed = ['image/png', 'image/jpeg', 'image/gif'];
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
             finfo_close($finfo);
-            if (!in_array($type, $allowed)) {
-                flash('error', 'Logo must be PNG, JPEG, GIF, or SVG.');
+            if (!in_array($type, $allowed, true)) {
+                flash('error', 'Logo must be PNG, JPEG, or GIF (SVG blocked for XSS).');
                 redirect('/settings?tab=general');
             }
 
-            $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
+            // Derive extension from verified mime, not original filename
+            $extMap = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/gif' => 'gif'];
+            $ext = $extMap[$type] ?? 'png';
             $filename = 'logo.' . $ext;
             $uploadDir = base_path('www/assets/uploads/logo/');
             if (!is_dir($uploadDir)) {
@@ -779,10 +781,11 @@ class SettingsController
 
             file_put_contents("{$tmpDir}/database.sql", $sql);
 
-            // Include .env if available
-            $envFile = base_path('.env');
+            // Do NOT include .env in backup (contains APP_KEY, DB/mail passwords).
+            // Instead, store sanitized env example for reference.
+            $envFile = base_path('.env.example');
             if (file_exists($envFile)) {
-                copy($envFile, "{$tmpDir}/.env");
+                copy($envFile, "{$tmpDir}/.env.example");
             }
 
             // Collect uploaded files recursively (subdirs: propertyId, leaseId, ticketId, etc.)
@@ -903,12 +906,33 @@ class SettingsController
             redirect('/settings?tab=backup');
         }
 
-        // ZIP slip prevention: verify all entries are within $tmpDir
+        // ZIP slip prevention: validate normalized paths before extraction
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entry = $zip->getNameIndex($i);
             if ($entry === false) continue;
-            $real = realpath($tmpDir . '/' . $entry);
-            if ($real === false || !str_starts_with($real, $tmpDir)) {
+            // Reject absolute paths, leading slashes, and .. traversal
+            $normalized = trim($entry);
+            if ($normalized === '' || $normalized[0] === '/' || $normalized[0] === '\\') {
+                $zip->close();
+                self::_rrmdir($tmpDir);
+                flash('error', 'Invalid backup file: absolute path entry detected.');
+                redirect('/settings?tab=backup');
+            }
+            // Normalize separators and check for .. segments
+            $parts = explode('/', str_replace('\\', '/', $normalized));
+            foreach ($parts as $part) {
+                if ($part === '..') {
+                    $zip->close();
+                    self::_rrmdir($tmpDir);
+                    flash('error', 'Invalid backup file: path traversal entry detected.');
+                    redirect('/settings?tab=backup');
+                }
+            }
+            // Also reject entries that would escape tmpDir via string prefix check
+            $target = $tmpDir . '/' . $normalized;
+            $canonicalTmp = rtrim(realpath($tmpDir) ?: $tmpDir, '/') . '/';
+            $canonicalTarget = $canonicalTmp . $normalized;
+            if (!str_starts_with($canonicalTarget, $canonicalTmp)) {
                 $zip->close();
                 self::_rrmdir($tmpDir);
                 flash('error', 'Invalid backup file: contains entries outside extraction directory.');
