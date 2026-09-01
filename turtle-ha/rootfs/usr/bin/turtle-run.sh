@@ -68,7 +68,7 @@ bashio::log.info "Starting Mailpit on port ${MAILPIT_PORT}..."
 mkdir -p "${DATA_DIR}/mailpit"
 /usr/local/bin/mailpit \
     --smtp "127.0.0.1:${MAILPIT_PORT}" \
-    --listen "127.0.0.1:8025" \
+    --listen "0.0.0.0:8025" \
     --database "${DATA_DIR}/mailpit/mailpit.db" &
 bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :8025)"
 

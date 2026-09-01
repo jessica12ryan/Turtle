@@ -38,8 +38,8 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:1025:1025"   # SMTP - localhost/127.0.0.1 only (local IP via host loopback)
-      - "127.0.0.1:8025:8025"   # Web UI - localhost/127.0.0.1 only (local IP via host loopback; LAN access via HA ingress)
+      - "127.0.0.1:1025:1025"   # SMTP - localhost/127.0.0.1 only
+      - "0.0.0.0:8025:8025"     # Web UI - local subnet (LAN) + localhost/127.0.0.1 (WAN blocked by router NAT)
     networks:
       - turtle
 
