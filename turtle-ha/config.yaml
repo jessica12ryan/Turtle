@@ -39,4 +39,6 @@ schema:
 apparmor: true
 map:
   - data:rw
+# Pinned by CI: build.yaml injects digest via `image: ghcr.io/jessica12ryan/turtle/{arch}@sha256:<digest>` on publish.
+# Renovate/dependabot monitors ghcr.io/home-assistant/*-base:3.21.
 image: ghcr.io/jessica12ryan/turtle/{arch}
