@@ -68,7 +68,7 @@ function navActive(string $prefix, string $currentUri): string {
                         <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                         <span class="hidden md:block text-sm"><?= h($user['name']) ?></span>
                     </button>
-                    <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
+                    <div x-show="open" x-cloak x-transition @click.away="open = false" style="display:none" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
                         <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg" data-tooltip="<?= __('Edit your profile') ?>"><?= __('Profile') ?></a>
                         <?php if (can('ai_assistant.access')): ?>
                             <a href="/ai-assistant" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" data-tooltip="<?= __('Open AI assistant') ?>"><?= __('AI Assistant') ?></a>
