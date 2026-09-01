@@ -1,4 +1,4 @@
-FROM php:8.5-apache
+FROM php:8.4-apache
 
 RUN apt-get update && apt-get install -y \
     libpng-dev \
@@ -17,9 +17,9 @@ RUN apt-get update && apt-get install -y \
     && for ext in pdo_mysql mbstring xml bcmath gd zip opcache curl intl; do \
         docker-php-ext-install "$ext" \
         || docker-php-ext-enable "$ext" \
-        || true; \
+        || { echo "Failed to install $ext" >&2; exit 1; }; \
     done \
-    && pecl install redis \
+    && pecl install redis-6.0.2 \
     && docker-php-ext-enable redis \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

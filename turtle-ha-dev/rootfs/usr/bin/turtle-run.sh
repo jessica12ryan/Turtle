@@ -73,8 +73,8 @@ git -C "${TURTLE_DIR}" pull --ff-only origin master 2>/dev/null || \
 bashio::log.info "Starting Mailpit on port ${MAILPIT_PORT}..."
 mkdir -p "${DATA_DIR}/mailpit"
 /usr/local/bin/mailpit \
-    --smtp "0.0.0.0:${MAILPIT_PORT}" \
-    --listen "0.0.0.0:8025" \
+    --smtp "127.0.0.1:${MAILPIT_PORT}" \
+    --listen "127.0.0.1:8025" \
     --database "${DATA_DIR}/mailpit/mailpit.db" &
 bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :8025)"
 

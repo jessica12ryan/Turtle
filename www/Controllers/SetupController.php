@@ -35,6 +35,10 @@ class SetupController
 
     public function store(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect('/setup');
+        }
         try {
             $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
             if ($admin) {
@@ -64,7 +68,7 @@ class SetupController
             $logoPath = '';
             $keepDefault = !empty($_POST['logo_default']);
             if (!$keepDefault && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                $allowed = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml'];
+                $allowed = ['image/png', 'image/jpeg', 'image/gif'];
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
                 finfo_close($finfo);
@@ -200,6 +204,10 @@ class SetupController
 
     public function restore(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect('/setup');
+        }
         if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
             flash('error', __('Please select a backup file.'));
             redirect('/setup');

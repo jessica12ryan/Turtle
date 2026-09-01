@@ -9,12 +9,17 @@ until php -r "new PDO('mysql:host=mysql;port=3306;dbname=turtle', 'turtle', 'tur
     sleep 1
 done
 
-# Run schema on first boot only
-if [ -f database/schema.sql ] && [ ! -f storage/.db_initialized ]; then
-    echo ">>> Setting up database..."
-    bash database/migrate.sh
-    touch storage/.db_initialized
-    echo ">>> Database tables created!"
+# Run schema/migrations — first boot creates tables, every boot runs incremental migrations (idempotent)
+if [ -f database/schema.sql ]; then
+    if [ ! -f storage/.db_initialized ]; then
+        echo ">>> Setting up database (first boot)..."
+        bash database/migrate.sh
+        touch storage/.db_initialized
+        echo ">>> Database tables created!"
+    else
+        echo ">>> Running incremental migrations..."
+        bash database/migrate.sh || echo ">>> Migrations completed with warnings (see logs)"
+    fi
 fi
 
 # Configure git safe directory for mounted repo

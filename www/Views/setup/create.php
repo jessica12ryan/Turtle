@@ -130,8 +130,8 @@
                     <input type="radio" name="logo_default" value="0" <?= old('logo_default', '1') === '0' ? 'checked' : '' ?> class="text-blue-600 focus:ring-blue-500">
                     <span class="text-sm text-gray-700"><?= __('Upload custom logo') ?></span>
                 </div>
-                <input type="file" name="logo" accept="image/png,image/jpeg,image/gif,image/svg+xml" class="block text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                <p class="text-xs text-gray-400 mt-1"><?= __('Recommended: 200x50px PNG, JPEG, GIF, or SVG.') ?></p>
+                <input type="file" name="logo" accept="image/png,image/jpeg,image/gif" class="block text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-xs text-gray-400 mt-1"><?= __('Recommended: 200x50px PNG, JPEG, or GIF.') ?></p>
             </div>
 
             <div class="mb-4">

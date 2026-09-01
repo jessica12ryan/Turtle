@@ -209,7 +209,7 @@ function checkForUpdates() {
     document.getElementById('update-section').classList.add('hidden');
     document.getElementById('up-to-date-section').classList.add('hidden');
 
-    fetch((window.baseUrl || '') + '/updates/check', { method: 'POST' })
+    fetch((window.baseUrl || '') + '/updates/check', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: '_csrf=<?= csrf_token() ?>' })
         .then(r => r.json())
         .then(data => {
             document.getElementById('checking-section').classList.add('hidden');
@@ -232,7 +232,32 @@ function checkForUpdates() {
                     const behindMsg = data.behind_count ? data.behind_count + ' commit(s) behind.' : '';
                     document.getElementById('release-notes').innerHTML = '<pre class="text-xs">' + escapeHtml(behindMsg) + '</pre>';
                 } else if (data.release_body) {
-                    document.getElementById('release-notes').innerHTML = marked ? marked.parse(data.release_body) : '<pre class="text-xs">' + escapeHtml(data.release_body) + '</pre>';
+                    // Sanitize release_body: marked output is not sanitized by default
+                    let rawHtml = '';
+                    try {
+                        rawHtml = marked ? marked.parse(data.release_body) : '<pre class="text-xs">' + escapeHtml(data.release_body) + '</pre>';
+                    } catch (e) {
+                        rawHtml = '<pre class="text-xs">' + escapeHtml(data.release_body) + '</pre>';
+                    }
+                    // Minimal sanitizer: strip script/iframe/on* handlers if DOMPurify not available
+                    if (window.DOMPurify && window.DOMPurify.sanitize) {
+                        rawHtml = window.DOMPurify.sanitize(rawHtml);
+                    } else {
+                        // Fallback: remove script tags and event handlers
+                        const temp = document.createElement('div');
+                        temp.innerHTML = rawHtml;
+                        temp.querySelectorAll('script, iframe, object, embed').forEach(el => el.remove());
+                        temp.querySelectorAll('*').forEach(el => {
+                            [...el.attributes].forEach(attr => {
+                                if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+                            });
+                            if (el.getAttribute('href') && el.getAttribute('href').trim().toLowerCase().startsWith('javascript:')) {
+                                el.removeAttribute('href');
+                            }
+                        });
+                        rawHtml = temp.innerHTML;
+                    }
+                    document.getElementById('release-notes').innerHTML = rawHtml;
                 }
             } else {
                 document.getElementById('update-section').classList.add('hidden');
@@ -244,7 +269,7 @@ function checkForUpdates() {
         .catch(err => {
             document.getElementById('checking-section').classList.add('hidden');
             document.getElementById('check-result').classList.remove('hidden');
-            document.getElementById('check-result').innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><?= __('Failed to check for updates. Error:') ?> ' + err.message + '</div>';
+            document.getElementById('check-result').innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"><?= __('Failed to check for updates. Error:') ?> ' + escapeHtml(err.message) + '</div>';
         });
 }
 
@@ -253,7 +278,7 @@ function applyUpdate() {
     document.getElementById('progress-section').classList.remove('hidden');
     document.getElementById('apply-btn').disabled = true;
 
-    fetch((window.baseUrl || '') + '/updates/apply', { method: 'POST' })
+    fetch((window.baseUrl || '') + '/updates/apply', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: '_csrf=<?= csrf_token() ?>' })
         .then(r => r.json())
         .then(data => {
             updateId = data.update_id;
