@@ -40,8 +40,8 @@ class Validator
         return match ($rule) {
             'required' => ($value === null || $value === '') ? "{$label} is required." : null,
             'email' => (!filter_var($value, FILTER_VALIDATE_EMAIL)) ? "{$label} must be a valid email." : null,
-            'min' => (is_string($value) && strlen($value) < (int)($params[0] ?? 1)) ? "{$label} must be at least {$params[0]} characters." : null,
-            'max' => (is_string($value) && strlen($value) > (int)($params[0] ?? 255)) ? "{$label} must not exceed {$params[0]} characters." : null,
+            'min' => (is_numeric($value) ? $value < (int)($params[0] ?? 0) : (is_string($value) && strlen($value) < (int)($params[0] ?? 1))) ? "{$label} must be at least {$params[0]} characters." : null,
+            'max' => (is_numeric($value) ? $value > (int)($params[0] ?? 255) : (is_string($value) && strlen($value) > (int)($params[0] ?? 255))) ? "{$label} must not exceed {$params[0]} characters." : null,
             'confirmed' => (($data[$field . '_confirmation'] ?? null) !== $value) ? "{$label} confirmation does not match." : null,
             'unique' => $this->validateUnique($field, $value, $params),
             'exists' => $this->validateExists($field, $value, $params),

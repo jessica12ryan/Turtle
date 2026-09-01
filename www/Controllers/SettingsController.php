@@ -123,9 +123,10 @@ class SettingsController
             $totalPages = max(1, (int)ceil($totalLogs / $perPage));
             $offset = ($page - 1) * $perPage;
 
+            // LIMIT/OFFSET must be integers, not bound as strings (PDO with emulate off)
             $data['activityLogs'] = Database::fetchAll(
-                "SELECT * FROM activity_logs{$where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                array_merge($params, [$perPage, $offset])
+                "SELECT * FROM activity_logs{$where} ORDER BY created_at DESC LIMIT {$perPage} OFFSET {$offset}",
+                $params
             );
             $data['totalLogs'] = $totalLogs;
             $data['totalPages'] = $totalPages;

@@ -25,6 +25,24 @@ function __(string $text): string
     return $translations[$text] ?? $text;
 }
 
+function getCachedSetting(string $key, int $ttl = 300): ?string
+{
+    $cacheKey = '_setting_cache_' . $key;
+    $expiryKey = $cacheKey . '_expiry';
+    if (isset($_SESSION[$cacheKey]) && isset($_SESSION[$expiryKey]) && $_SESSION[$expiryKey] > time()) {
+        return $_SESSION[$cacheKey];
+    }
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$key]);
+        $val = $row['value'] ?? null;
+        $_SESSION[$cacheKey] = $val;
+        $_SESSION[$expiryKey] = time() + $ttl;
+        return $val;
+    } catch (\Throwable $e) {
+        return null;
+    }
+}
+
 function current_language(): string
 {
     $sessionLang = $_SESSION['_language'] ?? null;
@@ -40,9 +58,9 @@ function current_language(): string
                 return $userLang['language'];
             }
         }
-        $lang = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'default_language'");
-        if ($lang && in_array($lang['value'], ['en', 'fr', 'es'])) {
-            return $lang['value'];
+        $langVal = getCachedSetting('default_language', 300);
+        if ($langVal && in_array($langVal, ['en', 'fr', 'es'])) {
+            return $langVal;
         }
     } catch (\Throwable $e) {
     }
@@ -161,6 +179,25 @@ function csrf_token(): string
 function verify_csrf(string $token): bool
 {
     return hash_equals($_SESSION['_csrf_token'] ?? '', $token);
+}
+
+function loadEnvFile(string $path): void
+{
+    if (!file_exists($path)) return;
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $trimmed = trim($line);
+        if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
+        $pos = strpos($line, '=');
+        if ($pos === false) continue;
+        $key = trim(substr($line, 0, $pos));
+        $value = trim(substr($line, $pos + 1));
+        if (strlen($value) >= 2 && (($value[0] === '"' && $value[-1] === '"') || ($value[0] === "'" && $value[-1] === "'"))) {
+            $value = substr($value, 1, -1);
+        }
+        $_ENV[$key] = $value;
+        putenv("{$key}={$value}");
+    }
 }
 
 function asset(string $path): string
@@ -538,12 +575,15 @@ function site_logo(): string
         $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'logo_path'");
         if ($row && $row['value'] !== '') {
             $path = $row['value'];
-            $filePath = base_path('www/' . ltrim($path, '/'));
-            $suffix = '';
-            if (file_exists($filePath)) {
-                $suffix = '?v=' . filemtime($filePath);
-            }
-            return '/' . ltrim($path, '/') . $suffix;
+            // Use app_version for cache busting instead of filemtime (avoids mtime leak)
+            $ver = '';
+            try {
+                $vRow = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+                if ($vRow && $vRow['value'] !== '') {
+                    $ver = '?v=' . $vRow['value'];
+                }
+            } catch (\Throwable $e) {}
+            return '/' . ltrim($path, '/') . $ver;
         }
     } catch (\Throwable $e) {}
     return '/assets/logo.svg';
@@ -582,6 +622,6 @@ function display_time(?string $datetime, string $format = 'M j, Y g:i A'): strin
         $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));
         return $dt->format($format);
     } catch (\Throwable $e) {
-        return $datetime;
+        return h($datetime);
     }
 }

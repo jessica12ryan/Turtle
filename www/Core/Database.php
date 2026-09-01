@@ -47,6 +47,11 @@ class Database
 
     private function loadEnv(): void
     {
+        // Unified loader (single source of truth in functions.php)
+        if (function_exists('loadEnvFile')) {
+            loadEnvFile(__DIR__ . '/../../.env');
+            return;
+        }
         $envFile = __DIR__ . '/../../.env';
         if (!file_exists($envFile)) {
             return;

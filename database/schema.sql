@@ -281,5 +281,6 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(id),
     INDEX idx_user (user_id),
     INDEX idx_action (action),
-    INDEX idx_created (created_at)
+    INDEX idx_created (created_at),
+    INDEX idx_created_date (created_at, user_id, action)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

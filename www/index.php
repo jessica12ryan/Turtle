@@ -23,24 +23,7 @@ set_error_handler(function ($severity, $message, $file, $line) {
 require_once __DIR__ . '/autoload.php';
 require_once __DIR__ . '/functions.php';
 
-$envFile = __DIR__ . '/../.env';
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $trimmed = trim($line);
-        if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
-        $pos = strpos($line, '=');
-        if ($pos === false) continue;
-        $key = trim(substr($line, 0, $pos));
-        $value = trim(substr($line, $pos + 1));
-        // Strip surrounding quotes (handles values containing =)
-        if (strlen($value) >= 2 && (($value[0] === '"' && $value[-1] === '"') || ($value[0] === "'" && $value[-1] === "'"))) {
-            $value = substr($value, 1, -1);
-        }
-        $_ENV[$key] = $value;
-        putenv("{$key}={$value}");
-    }
-}
+loadEnvFile(__DIR__ . '/../.env');
 
 // HA ingress support: prepend ingress path to all absolute URLs in output
 $ingressPath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '';
@@ -104,11 +87,11 @@ if ($requestUri === '/' || $requestUri === '/index.php') {
     }
 }
 
-// Set timezone from settings
+// Set timezone from settings (cached 5 min)
 try {
-    $tzSetting = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'timezone'");
-    if ($tzSetting && $tzSetting['value']) {
-        date_default_timezone_set($tzSetting['value']);
+    $tzVal = getCachedSetting('timezone', 300);
+    if ($tzVal) {
+        date_default_timezone_set($tzVal);
     }
 } catch (\Throwable $e) {}
 
