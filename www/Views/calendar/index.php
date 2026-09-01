@@ -143,7 +143,7 @@ function calendar() {
                 const resp = await fetch((window.baseUrl || '') + '/calendar/events');
                 this.events = await resp.json();
             } catch (e) {
-                console.error('Failed to load calendar events:', e);
+                // Calendar load failed silently - logged server-side
             }
         }
     };

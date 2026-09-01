@@ -113,7 +113,6 @@ function chat() {
             })
             .catch(err => {
                 this.error = '<?= __('Connection error') ?>: ' + err.message;
-                console.error('AI Assistant fetch error:', err);
             })
             .finally(() => {
                 this.loading = false;

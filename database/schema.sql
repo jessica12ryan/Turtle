@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS settings (
     `value` TEXT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO settings (`key`, `value`) VALUES ('app_version', '0.0.0'), ('last_update_check', ''), ('latest_version', ''), ('update_channel', 'stable'), ('timezone', 'America/New_York'), ('ntp_server', 'time.gov'), ('last_ntp_check', ''), ('last_ntp_status', '');
+INSERT IGNORE INTO settings (`key`, `value`) VALUES ('app_version', '1.0.4'), ('last_update_check', ''), ('latest_version', ''), ('update_channel', 'stable'), ('timezone', 'America/New_York'), ('ntp_server', 'time.gov'), ('last_ntp_check', ''), ('last_ntp_status', '');
 
 CREATE TABLE IF NOT EXISTS role_permissions (
     role VARCHAR(50) NOT NULL,

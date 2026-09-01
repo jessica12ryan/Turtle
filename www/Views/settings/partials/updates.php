@@ -200,7 +200,10 @@ function toggleChannel() {
             checkForUpdates();
         }
     })
-    .catch(err => console.error('Failed to switch channel:', err));
+    .catch(err => {
+        document.getElementById('check-result').classList.remove('hidden');
+        document.getElementById('check-result').innerHTML = '<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">' + escapeHtml(err.message) + '</div>';
+    });
 }
 
 function checkForUpdates() {
