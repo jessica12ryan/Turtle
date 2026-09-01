@@ -99,7 +99,11 @@ class ApplicationController
     public function index(): void
     {
         $showArchived = !empty($_GET['show_archived']);
+        $showApproved = !empty($_GET['show_approved']);
+        $showRejected = !empty($_GET['show_rejected']);
         $archivedClause = $showArchived ? '' : ' AND a.archived_at IS NULL';
+        $approvedClause = $showApproved ? '' : " AND a.status != 'accepted'";
+        $rejectedClause = $showRejected ? '' : " AND a.status != 'rejected'";
 
         try {
             $this->ensureTable();
@@ -123,7 +127,7 @@ class ApplicationController
                 "SELECT a.*, p.name as property_name 
                  FROM tenant_applications a 
                  LEFT JOIN properties p ON p.id = a.property_id 
-                 WHERE 1=1{$archivedClause}{$pmClause}
+                 WHERE 1=1{$archivedClause}{$approvedClause}{$rejectedClause}{$pmClause}
                  ORDER BY a.created_at DESC",
                 $params
             );
@@ -137,6 +141,8 @@ class ApplicationController
         $view->render('applications/index', [
             'applications' => $applications,
             'showArchived' => $showArchived,
+            'showApproved' => $showApproved,
+            'showRejected' => $showRejected,
         ]);
     }
 

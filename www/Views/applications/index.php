@@ -2,8 +2,30 @@
     <h1 class="text-2xl font-bold text-black dark:text-white"><?= __('Applications') ?></h1>
     <div class="flex items-center space-x-3">
         <?php if (can('applications.view')): ?>
-            <a href="/applications?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition" data-tooltip="<?= __('Show or hide archived') ?>">
+            <?php
+                // Preserve other filter states when toggling one, consistent with show_archived
+                $baseParams = [];
+                if ($showArchived) $baseParams['show_archived'] = 1;
+                if ($showApproved) $baseParams['show_approved'] = 1;
+                if ($showRejected) $baseParams['show_rejected'] = 1;
+                $archivedParams = $baseParams;
+                if ($showArchived) unset($archivedParams['show_archived']); else $archivedParams['show_archived'] = 1;
+                $approvedParams = $baseParams;
+                if ($showApproved) unset($approvedParams['show_approved']); else $approvedParams['show_approved'] = 1;
+                $rejectedParams = $baseParams;
+                if ($showRejected) unset($rejectedParams['show_rejected']); else $rejectedParams['show_rejected'] = 1;
+                $archivedUrl = '/applications' . ($archivedParams ? '?' . http_build_query($archivedParams) : '');
+                $approvedUrl = '/applications' . ($approvedParams ? '?' . http_build_query($approvedParams) : '');
+                $rejectedUrl = '/applications' . ($rejectedParams ? '?' . http_build_query($rejectedParams) : '');
+            ?>
+            <a href="<?= h($archivedUrl) ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition" data-tooltip="<?= __('Show or hide archived') ?>">
                 <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
+            </a>
+            <a href="<?= h($approvedUrl) ?>" class="text-sm <?= $showApproved ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition" data-tooltip="<?= __('Show or hide approved') ?>">
+                <?= $showApproved ? __('Showing approved') : __('Show approved') ?>
+            </a>
+            <a href="<?= h($rejectedUrl) ?>" class="text-sm <?= $showRejected ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition" data-tooltip="<?= __('Show or hide rejected') ?>">
+                <?= $showRejected ? __('Showing rejected') : __('Show rejected') ?>
             </a>
         <?php endif; ?>
     </div>
