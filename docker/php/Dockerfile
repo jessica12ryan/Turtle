@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
         || docker-php-ext-enable "$ext" \
         || { echo "Failed to install $ext" >&2; exit 1; }; \
     done \
-    && pecl install redis-6.0.2 \
+    && pecl install redis \
     && docker-php-ext-enable redis \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
