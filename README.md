@@ -98,6 +98,12 @@ git checkout stable && git pull && docker compose up -d --build
 - MySQL database → `mysql-data` Docker volume
 - Uploaded files (leases, photos, tickets) → `turtle-storage` Docker volume
 
+## License
+
+Dual-licensed: **AGPL-3.0** (`LICENSE-AGPL.md`) for the hosted application (network use) and **MIT** (`LICENSE-MIT.md`) for reusable library code. See `LICENSE-AGPL.md` for AGPL terms and `LICENSE-MIT.md` for MIT terms.
+
+Maintainer: jessica12ryan — jessica12ryan@outlook.com
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, and pull request guidelines.
