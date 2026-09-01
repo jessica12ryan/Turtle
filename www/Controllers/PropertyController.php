@@ -82,13 +82,18 @@ class PropertyController
             );
         }
 
-        // Attach main photo to each property
-        $photoIds = Database::fetchAll(
-            "SELECT property_id, id, file_path, original_name, mime_type FROM property_photos WHERE is_main = 1 AND property_id IN (SELECT id FROM properties WHERE 1=1)"
-        );
+        // Attach main photo to each property — only for visible properties (scoped)
         $photoMap = [];
-        foreach ($photoIds as $ph) {
-            $photoMap[$ph['property_id']] = $ph;
+        if (!empty($properties)) {
+            $ids = array_column($properties, 'id');
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $photoIds = Database::fetchAll(
+                "SELECT property_id, id, file_path, original_name, mime_type FROM property_photos WHERE is_main = 1 AND property_id IN ({$placeholders})",
+                $ids
+            );
+            foreach ($photoIds as $ph) {
+                $photoMap[$ph['property_id']] = $ph;
+            }
         }
         foreach ($properties as &$prop) {
             $prop['main_photo'] = $photoMap[$prop['id']] ?? null;
@@ -451,8 +456,15 @@ class PropertyController
         if ($photo) {
             $path = $photo['file_path'];
             $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+            $allowedBase = realpath(base_path('storage/uploads/property_photos'));
+            $realFull = realpath($fullPath);
+            if ($realFull !== false && $allowedBase !== false && str_starts_with($realFull, $allowedBase) && file_exists($realFull)) {
+                unlink($realFull);
+            } elseif (file_exists($fullPath)) {
+                $normalized = str_replace('\\', '/', $fullPath);
+                if (str_contains($normalized, 'storage/uploads/property_photos/')) {
+                    @unlink($fullPath);
+                }
             }
             Database::execute("DELETE FROM property_photos WHERE id = ?", [$photoId]);
         }

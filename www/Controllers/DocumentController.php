@@ -61,8 +61,16 @@ class DocumentController
         if ($document) {
             $filePath = $document['file_path'];
             $fullPath = str_starts_with($filePath, '/') ? $filePath : base_path($filePath);
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+            $allowedBase = realpath(base_path('storage/uploads'));
+            $realFull = realpath($fullPath);
+            if ($realFull !== false && $allowedBase !== false && str_starts_with($realFull, $allowedBase) && file_exists($realFull)) {
+                unlink($realFull);
+            } elseif (file_exists($fullPath)) {
+                // Fallback: only unlink if path is inside storage/uploads (string check)
+                $normalized = str_replace('\\', '/', $fullPath);
+                if (str_contains($normalized, 'storage/uploads/')) {
+                    @unlink($fullPath);
+                }
             }
             Database::execute("UPDATE documents SET archived_at = NOW() WHERE id = ?", [$id]);
         }

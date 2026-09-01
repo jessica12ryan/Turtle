@@ -27,15 +27,18 @@ $envFile = __DIR__ . '/../.env';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (str_starts_with(trim($line), '#')) continue;
-        if (str_contains($line, '=')) {
-            [$key, $value] = explode('=', $line, 2);
-            $key = trim($key);
-            $value = trim($value);
-            $value = trim($value, '"\'');
-            $_ENV[$key] = $value;
-            putenv("{$key}={$value}");
+        $trimmed = trim($line);
+        if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
+        $pos = strpos($line, '=');
+        if ($pos === false) continue;
+        $key = trim(substr($line, 0, $pos));
+        $value = trim(substr($line, $pos + 1));
+        // Strip surrounding quotes (handles values containing =)
+        if (strlen($value) >= 2 && (($value[0] === '"' && $value[-1] === '"') || ($value[0] === "'" && $value[-1] === "'"))) {
+            $value = substr($value, 1, -1);
         }
+        $_ENV[$key] = $value;
+        putenv("{$key}={$value}");
     }
 }
 
@@ -43,11 +46,19 @@ if (file_exists($envFile)) {
 $ingressPath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '';
 if ($ingressPath !== '') {
     ob_start(function ($buffer) use ($ingressPath) {
-        return preg_replace(
-            '/((?:href|action|src)\s*=\s*["\'])\/(?![\/\s])/i',
+        // href/action/src/srcset
+        $buffer = preg_replace(
+            '/((?:href|action|src|srcset)\s*=\s*["\'])\/(?![\/\s])/i',
             '$1' . $ingressPath . '/',
             $buffer
         );
+        // CSS url(/...) and JS fetch("/...")
+        $buffer = preg_replace(
+            '/(url\(\s*["\']?)\/(?![\/\s])/i',
+            '$1' . $ingressPath . '/',
+            $buffer
+        );
+        return $buffer;
     });
 }
 
@@ -66,6 +77,13 @@ if (session_status() === PHP_SESSION_NONE) {
 // Security headers
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+// Minimal CSP: allow self, tailwind CDN (production uses CDN), inline styles/scripts required by app
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; frame-ancestors 'self';");
 
 // Session idle timeout (1 hour)
 $sessionTimeout = 3600;

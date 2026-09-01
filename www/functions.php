@@ -81,7 +81,10 @@ function sanitize_filename(string $name): string
 
 function old(string $key, string $default = ''): string
 {
-    return isset($_SESSION['_old'][$key]) ? h($_SESSION['_old'][$key]) : $default;
+    if (isset($_SESSION['_old'][$key])) {
+        return h($_SESSION['_old'][$key]);
+    }
+    return h($default);
 }
 
 function base_url(): string

@@ -1,0 +1,2 @@
+# Deny direct access to storage internals - only uploads subdir is web-accessible via PHP
+Require all denied
