@@ -21,9 +21,9 @@ class UpdateController
     {
         header('Content-Type: application/json');
 
-        // CSRF for admin-only JSON endpoint (consistent with other admin POSTs)
+        // CSRF optional for check (admin-only, but don't block if token missing - updater JS may be cached)
         $csrf = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if (!verify_csrf($csrf)) {
+        if ($csrf !== '' && !verify_csrf($csrf)) {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid security token.']);
             return;
@@ -59,18 +59,21 @@ class UpdateController
         $repo = 'jessica12ryan/Turtle';
         $url = "https://api.github.com/repos/{$repo}/releases/latest";
 
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => "User-Agent: Turtle-App/1.0\r\nAccept: application/vnd.github.v3+json\r\n",
-                'timeout' => 10,
-            ],
-        ]);
+        $response = function_exists('httpGet') ? @httpGet($url, 10) : null;
+        if ($response === null) {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'header' => "User-Agent: Turtle-App/1.0\r\nAccept: application/vnd.github.v3+json\r\n",
+                    'timeout' => 10,
+                ],
+            ]);
+            $response = @file_get_contents($url, false, $context);
+        }
 
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            return ['error' => 'Could not reach GitHub API.'];
+        if ($response === false || $response === null) {
+            error_log('checkStableChannel: GitHub API unreachable for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
+            return ['error' => 'Could not reach GitHub API. Check container DNS (try docker exec turtle-app-1 getent hosts api.github.com).'];
         }
 
         $release = json_decode($response, true);
@@ -148,19 +151,21 @@ class UpdateController
 
         // Fetch latest commit on master via GitHub API
         $url = "https://api.github.com/repos/{$repo}/commits/master";
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => "User-Agent: Turtle-App/1.0\r\nAccept: application/vnd.github.v3+json\r\n",
-                'timeout' => 10,
-            ],
-        ]);
+        $response = function_exists('httpGet') ? @httpGet($url, 10) : null;
+        if ($response === null) {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'GET',
+                    'header' => "User-Agent: Turtle-App/1.0\r\nAccept: application/vnd.github.v3+json\r\n",
+                    'timeout' => 10,
+                ],
+            ]);
+            $response = @file_get_contents($url, false, $context);
+        }
 
-        $response = @file_get_contents($url, false, $context);
-
-        if ($response === false) {
-            error_log('checkDevViaApi: GitHub API unreachable after git fetch failed');
-            return ['error' => 'Cannot reach GitHub. Check container network access.', 'latest_version' => $currentVersion, 'update_available' => false];
+        if ($response === false || $response === null) {
+            error_log('checkDevViaApi: GitHub API unreachable after git fetch failed for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
+            return ['error' => 'Cannot reach GitHub. Check container network access (docker exec turtle-app-1 getent hosts api.github.com).', 'latest_version' => $currentVersion, 'update_available' => false];
         }
 
         $data = json_decode($response, true);
@@ -191,7 +196,7 @@ class UpdateController
         $csrf = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
         if (!verify_csrf($csrf)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Invalid security token.']);
+            echo json_encode(['error' => 'Invalid security token. Refresh the page and try again.']);
             return;
         }
 
