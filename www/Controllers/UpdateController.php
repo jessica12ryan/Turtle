@@ -85,12 +85,32 @@ class UpdateController
         $latestVersion = ltrim($release['tag_name'], 'v');
         $updateAvailable = version_compare($latestVersion, $currentVersion, '>');
 
+        $body = $release['body'] ?? '';
+        // Normalize raw commit lines (e.g. "2c9daf7 chore: ...") into markdown list items so marked renders them as <li> instead of a single collapsed paragraph
+        if ($body !== '') {
+            $body = self::normalizeReleaseBody($body);
+        }
+
         return [
             'latest_version' => $latestVersion,
             'update_available' => $updateAvailable,
             'release_url' => $release['html_url'] ?? '',
-            'release_body' => $release['body'] ?? '',
+            'release_body' => $body,
         ];
+    }
+
+    private static function normalizeReleaseBody(string $body): string
+    {
+        $body = str_replace("\r\n", "\n", $body);
+        $lines = explode("\n", $body);
+        foreach ($lines as &$line) {
+            $trimmed = trim($line);
+            if ($trimmed !== '' && preg_match('/^[0-9a-f]{7,40}\s+/', $trimmed) && !preg_match('/^[-*]\s/', $trimmed)) {
+                $line = '- ' . $trimmed;
+            }
+        }
+        unset($line);
+        return implode("\n", $lines);
     }
 
     private function checkDevChannel(string $currentVersion): array

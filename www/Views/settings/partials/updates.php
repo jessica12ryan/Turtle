@@ -57,7 +57,7 @@
             <div class="flex-1">
                 <h2 class="text-lg font-semibold text-gray-800"><?= __('Update Available') ?></h2>
                 <p class="text-sm text-gray-600 mt-1"><?= __('Version') ?> <span id="update-latest-version"></span> <?= __('is available.') ?></p>
-                <div id="release-notes" class="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 max-h-40 overflow-y-auto"></div>
+                <div id="release-notes" class="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 max-h-64 overflow-y-auto prose prose-sm max-w-none"></div>
                 <button id="apply-btn" onclick="applyUpdate()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium">
                     <?= __('Apply Update') ?>
                 </button>
@@ -158,10 +158,41 @@
     </div>
 </div>
 
+<style>
+#release-notes h2 { font-size: 1.1rem; font-weight: 700; margin: 0.75rem 0 0.5rem; color: #111827; }
+#release-notes h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.4rem; color: #1f2937; }
+#release-notes p { margin: 0.5rem 0; line-height: 1.5; }
+#release-notes ul, #release-notes ol { margin: 0.5rem 0; padding-left: 1.25rem; list-style: disc; }
+#release-notes ol { list-style: decimal; }
+#release-notes li { margin: 0.25rem 0; line-height: 1.4; word-break: break-word; }
+#release-notes a { color: #2563eb; text-decoration: underline; }
+#release-notes a:hover { color: #1d4ed8; }
+#release-notes code { background: #e5e7eb; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.85em; }
+#release-notes pre { background: #f3f4f6; padding: 0.5rem; border-radius: 0.375rem; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.dark #release-notes h2, .dark #release-notes h3 { color: #f1f5f9; }
+.dark #release-notes a { color: #60a5fa; }
+.dark #release-notes code { background: #334155; }
+.dark #release-notes pre { background: #1e293b; }
+</style>
 <script>
 let updateId = null;
 let pollTimer = null;
 let currentChannel = '<?= $channel ?>';
+
+function formatReleaseBody(body) {
+    if (!body) return body;
+    const normalized = body.replace(/\r\n/g, '\n');
+    const lines = normalized.split('\n');
+    const out = lines.map(line => {
+        const trimmed = line.trim();
+        // Detect raw commit lines like "2c9daf7 chore: ..." or "f601c6b fix: ..." -> turn into markdown list item
+        if (/^[0-9a-f]{7,40}\s+/.test(trimmed) && !/^[-*]\s/.test(trimmed)) {
+            return '- ' + trimmed;
+        }
+        return line;
+    });
+    return out.join('\n');
+}
 
 function toggleChannel() {
     const newChannel = currentChannel === 'stable' ? 'development' : 'stable';
@@ -233,14 +264,19 @@ function checkForUpdates() {
 
                 if (data.channel === 'development') {
                     const behindMsg = data.behind_count ? data.behind_count + ' commit(s) behind.' : '';
-                    document.getElementById('release-notes').innerHTML = '<pre class="text-xs">' + escapeHtml(behindMsg) + '</pre>';
+                    document.getElementById('release-notes').innerHTML = '<pre class="text-xs whitespace-pre-wrap break-words">' + escapeHtml(behindMsg) + '</pre>';
                 } else if (data.release_body) {
                     // Sanitize release_body: marked output is not sanitized by default
                     let rawHtml = '';
+                    const mdBody = formatReleaseBody(data.release_body);
                     try {
-                        rawHtml = marked ? marked.parse(data.release_body) : '<pre class="text-xs">' + escapeHtml(data.release_body) + '</pre>';
+                        if (typeof marked !== 'undefined' && marked && typeof marked.parse === 'function') {
+                            rawHtml = marked.parse(mdBody, { gfm: true, breaks: true });
+                        } else {
+                            rawHtml = '<pre class="text-xs whitespace-pre-wrap break-words">' + escapeHtml(mdBody) + '</pre>';
+                        }
                     } catch (e) {
-                        rawHtml = '<pre class="text-xs">' + escapeHtml(data.release_body) + '</pre>';
+                        rawHtml = '<pre class="text-xs whitespace-pre-wrap break-words">' + escapeHtml(mdBody) + '</pre>';
                     }
                     // Minimal sanitizer: strip script/iframe/on* handlers if DOMPurify not available
                     if (window.DOMPurify && window.DOMPurify.sanitize) {
