@@ -14,12 +14,11 @@ RUN apt-get update && apt-get install -y \
     git \
     default-mysql-client \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && for ext in pdo_mysql mbstring xml bcmath gd zip opcache curl intl; do \
+    && for ext in pdo_mysql mbstring xml bcmath gd zip curl intl; do \
         docker-php-ext-install "$ext" \
-        || docker-php-ext-enable "$ext" \
         || { echo "Failed to install $ext" >&2; exit 1; }; \
     done \
-    && pecl install redis \
+    && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
