@@ -12,7 +12,9 @@ Only the latest release receives security patches. Older versions are not suppor
 
 ## Reporting a Vulnerability
 
-Report vulnerabilities privately by emailing the maintainer (see commit history or the project's GitHub profile for contact info). **Do not open a public issue.**
+If you discover a security issue in this repo, please open a private issue or
+contact the maintainer via the GitHub repository at
+https://github.com/jessica12ryan/fpp-os/security/advisories
 
 You can expect:
 
@@ -21,6 +23,9 @@ You can expect:
 3. A **fix and advisory** coordinated before public disclosure
 
 Reports are reviewed and triaged within 7 days. If accepted, a patch is released as soon as a fix is ready.
+
+Please do **not** report security issues through the public issue tracker if they
+could be exploited before a fix is released.
 
 ## Security Practices
 
