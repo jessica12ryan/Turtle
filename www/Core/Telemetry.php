@@ -13,20 +13,18 @@ namespace App\Core;
  * Design constraints (production safety):
  * - All methods are fail-silent: never throw, never break page loads.
  * - At most one ping per 24h per install (gated by settings.last_telemetry_sent).
- * - Token resolution order: env TELEMETRY_TOKEN (deploy override) first,
- *   then the bundled default below. Empty everywhere = no send.
- *   The bundled PAT is scoped solely to the private Turtle-Stats repo
- *   (Contents read/write, which GitHub requires for repository_dispatch).
- *   Anyone holding it can write files in Turtle-Stats and forge pings, but
- *   nothing else; if abused, revoke it and ship a replacement string.
+ * - Fully self-contained: the ingest credential below is the only secret and
+ *   it lives here, once. No env vars, no add-on options, no per-deploy setup —
+ *   Docker and Home Assistant run identical code. If the credential is ever
+ *   abused, revoke it and ship a replacement string in this one place.
  * - Short timeouts (5s) so slow/unreachable api.github.com can't hang requests.
  */
 class Telemetry
 {
     public const DEFAULT_REPO = 'jessica12ryan/Turtle-Stats';
     /**
-     * Bundled dispatch-only PAT for the private Turtle-Stats repo.
-     * Env TELEMETRY_TOKEN overrides this when set (rotation, HA option, .env).
+     * Ingest credential for the private Turtle-Stats repo. Embedded here as
+     * the single source of truth — intentionally not configurable per deploy.
      */
     private const BUNDLED_TOKEN = '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';
     public const DISPATCH_EVENT = 'telemetry-ping';
@@ -129,21 +127,11 @@ class Telemetry
 
     public static function repo(): string
     {
-        $env = trim((string) (getenv('TELEMETRY_REPO') ?: ''));
-        $repo = $env !== '' ? $env : self::DEFAULT_REPO;
-        // Strict allowlist: owner/repo, prevents SSRF via env injection
-        if (!preg_match('#^[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+$#', $repo)) {
-            return self::DEFAULT_REPO;
-        }
-        return $repo;
+        return self::DEFAULT_REPO;
     }
 
     public static function token(): string
     {
-        $env = trim((string) (getenv('TELEMETRY_TOKEN') ?: ''));
-        if ($env !== '') {
-            return $env;
-        }
         return self::BUNDLED_TOKEN;
     }
 
