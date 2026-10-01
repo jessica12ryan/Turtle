@@ -167,9 +167,7 @@
             <?php if (!empty($telemetryInstallId ?? '')): ?>
                 <p class="text-xs text-gray-400 mt-2"><?= __('Install ID:') ?> <code><?= h($telemetryInstallId) ?></code></p>
             <?php endif; ?>
-            <?php if (!empty($telemetryLastSent ?? '')): ?>
-                <p class="text-xs text-gray-400 mt-1"><?= __('Last sent:') ?> <?= h($telemetryLastSent) ?></p>
-            <?php endif; ?>
+            <p class="text-xs text-gray-400 mt-1"><?= __('Last sent:') ?> <?= !empty($telemetryLastSent ?? '') ? h(display_time($telemetryLastSent)) : __('Never') ?></p>
         </div>
         <form method="POST" action="<?= base_url() ?>/settings/telemetry" class="flex items-center space-x-3 flex-shrink-0">
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
