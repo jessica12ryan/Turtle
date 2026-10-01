@@ -27,6 +27,7 @@ options:
   mail_password: ""
   mail_from_address: "noreply@turtle.local"
   mailpit_port: 1025
+  telemetry_token: ""
 schema:
   db_password: str
   app_url: str?
@@ -36,6 +37,7 @@ schema:
   mail_password: str?
   mail_from_address: str
   mailpit_port: int
+  telemetry_token: str?
 apparmor: true
 map:
   - data:rw

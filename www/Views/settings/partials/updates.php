@@ -158,6 +158,35 @@
     </div>
 </div>
 
+<!-- Anonymous System Stats (opt-out, default ON) -->
+<div class="bg-white rounded-lg shadow p-6 mt-6">
+    <div class="flex items-start justify-between gap-4">
+        <div>
+            <h3 class="text-sm font-medium text-gray-700"><?= __('Anonymous System Stats') ?></h3>
+            <p class="text-xs text-gray-500 mt-1"><?= __('Helps development: version, update channel, PHP, OS, architecture, Docker vs Home Assistant. No users, tenants, properties, names, emails, or addresses are ever sent. Max once per day to a private stats repo.') ?></p>
+            <?php if (!empty($telemetryInstallId ?? '')): ?>
+                <p class="text-xs text-gray-400 mt-2"><?= __('Install ID:') ?> <code><?= h($telemetryInstallId) ?></code></p>
+            <?php endif; ?>
+            <?php if (!empty($telemetryLastSent ?? '')): ?>
+                <p class="text-xs text-gray-400 mt-1"><?= __('Last sent:') ?> <?= h($telemetryLastSent) ?></p>
+            <?php endif; ?>
+        </div>
+        <form method="POST" action="<?= base_url() ?>/settings/telemetry" class="flex items-center space-x-3 flex-shrink-0">
+            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+            <label class="flex items-center space-x-2 text-sm text-gray-600">
+                <input type="checkbox" name="telemetry_enabled" value="1" <?= !empty($telemetryEnabled ?? true) ? 'checked' : '' ?> onchange="this.form.submit()" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                <span><?= __('Share stats') ?></span>
+            </label>
+        </form>
+    </div>
+    <?php if (!empty($telemetryInstallId ?? '')): ?>
+    <form method="POST" action="<?= base_url() ?>/settings/telemetry/regenerate" class="mt-3">
+        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+        <button type="submit" class="text-xs text-gray-500 underline hover:text-gray-700"><?= __('Regenerate install ID (unlink past stats from this install)') ?></button>
+    </form>
+    <?php endif; ?>
+</div>
+
 <style>
 #release-notes h2 { font-size: 1.1rem; font-weight: 700; margin: 0.75rem 0 0.5rem; color: #111827; }
 #release-notes h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.4rem; color: #1f2937; }

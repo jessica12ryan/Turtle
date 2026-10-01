@@ -305,6 +305,63 @@ function parseHttpDateHeader(string $headerStr): ?int
     return null;
 }
 
+/**
+ * POST a raw JSON body. Returns ['http_code'=>int,'body'=>string] or null.
+ * Never logs headers/body (may contain Authorization bearer token).
+ */
+function httpPostJson(string $url, string $jsonBody, array $headers = [], int $timeout = 5): ?array
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        $defaultHeaders = ['Content-Type: application/json', 'Content-Length: ' . strlen($jsonBody)];
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => min($timeout, 5),
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $jsonBody,
+            CURLOPT_HTTPHEADER => array_merge($defaultHeaders, $headers),
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_USERAGENT => 'Turtle/1.0',
+            CURLOPT_HEADER => false,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($body === false) {
+            return null;
+        }
+        return ['http_code' => $httpCode, 'body' => (string) $body];
+    }
+
+    if (ini_get('allow_url_fopen')) {
+        $ctx = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => implode("\r\n", array_merge(['Content-Type: application/json'], $headers)),
+                'content' => $jsonBody,
+                'timeout' => $timeout,
+                'ignore_errors' => true,
+            ],
+            'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
+        ]);
+        $body = @file_get_contents($url, false, $ctx);
+        if ($body === false) {
+            return null;
+        }
+        $code = 0;
+        $respHeaders = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?: []) : [];
+        if (isset($respHeaders[0]) && preg_match('#HTTP/\S+\s+(\d+)#', $respHeaders[0], $m)) {
+            $code = (int) $m[1];
+        }
+        return ['http_code' => $code, 'body' => (string) $body];
+    }
+
+    return null;
+}
+
 function checkNtpTime(): ?array
 {
     try {

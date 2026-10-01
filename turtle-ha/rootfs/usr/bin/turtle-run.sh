@@ -13,6 +13,9 @@ MAIL_USER=$(bashio::config 'mail_username')
 MAIL_PASS=$(bashio::config 'mail_password')
 MAIL_FROM=$(bashio::config 'mail_from_address')
 MAILPIT_PORT=$(bashio::config 'mailpit_port')
+# Optional: anonymous stats token (empty = telemetry silently disabled).
+# bashio::config fails if the key is missing on old installs — default to empty.
+TELEMETRY_TOKEN=$(bashio::config 'telemetry_token' 2>/dev/null || echo "")
 
 if [ -z "$APP_URL" ]; then
     APP_URL="http://homeassistant.local:80"
@@ -115,6 +118,11 @@ MAIL_USERNAME=${MAIL_USER}
 MAIL_PASSWORD=${MAIL_PASS}
 MAIL_FROM_ADDRESS=${MAIL_FROM}
 MAIL_FROM_NAME=Turtle
+
+# Anonymous usage telemetry (opt-out in-app; empty token = no sends).
+TELEMETRY_ENABLED=true
+TELEMETRY_REPO=jessica12ryan/Turtle-Stats
+TELEMETRY_TOKEN=${TELEMETRY_TOKEN}
 ENV
 
 # Export env vars for Apache/PHP and ensure .env is readable by apache user

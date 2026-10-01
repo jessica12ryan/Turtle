@@ -46,11 +46,18 @@ class SettingsController
             $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
             $lastCheck = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
             $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+            $telemetryEnabled = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'telemetry_enabled'");
+            $telemetryInstallId = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'telemetry_install_id'");
+            $telemetryLastSent = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_telemetry_sent'");
 
             $data['currentVersion'] = $currentVersion['value'] ?? '0.0.0';
             $data['latestVersion'] = $latestVersion['value'] ?? '';
             $data['lastCheck'] = $lastCheck['value'] ?? '';
             $data['channel'] = $channel['value'] ?? 'stable';
+            // Opt-out default ON: missing row => enabled
+            $data['telemetryEnabled'] = ($telemetryEnabled['value'] ?? '1') !== '0';
+            $data['telemetryInstallId'] = $telemetryInstallId['value'] ?? '';
+            $data['telemetryLastSent'] = $telemetryLastSent['value'] ?? '';
         } elseif ($tab === 'permissions') {
             $rows = Database::fetchAll("SELECT role, permission FROM role_permissions ORDER BY role, permission", []);
             $data['overrides'] = [];
@@ -509,6 +516,44 @@ class SettingsController
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'channel' => $channel]);
+    }
+
+    public function saveTelemetry(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=updates');
+        }
+
+        // Checkbox unchecked => key absent => disabled (opt-out respected)
+        $enabled = isset($_POST['telemetry_enabled']) && $_POST['telemetry_enabled'] === '1';
+        try {
+            \App\Core\Telemetry::setEnabled($enabled);
+            log_activity('settings.telemetry_saved', 'Telemetry ' . ($enabled ? 'enabled' : 'disabled'));
+            flash('success', $enabled ? 'Anonymous system stats sharing enabled.' : 'Anonymous system stats sharing disabled. No further stats will be sent.');
+        } catch (\Throwable $e) {
+            error_log('saveTelemetry failed: ' . $e->getMessage());
+            flash('error', 'Could not save telemetry preference.');
+        }
+        redirect('/settings?tab=updates');
+    }
+
+    public function regenerateTelemetryId(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=updates');
+        }
+
+        try {
+            \App\Core\Telemetry::regenerateInstallId();
+            log_activity('settings.telemetry_regenerated', 'Telemetry install ID regenerated');
+            flash('success', 'Install ID regenerated. Past stats can no longer be linked to this install.');
+        } catch (\Throwable $e) {
+            error_log('regenerateTelemetryId failed: ' . $e->getMessage());
+            flash('error', 'Could not regenerate install ID.');
+        }
+        redirect('/settings?tab=updates');
     }
 
     public function savePermissions(): void
