@@ -26,7 +26,7 @@ class Telemetry
      * Ingest credential for the private Turtle-Stats repo. Embedded here as
      * the single source of truth — intentionally not configurable per deploy.
      */
-    private const BUNDLED_TOKEN = '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';
+    private const BUNDLED_TOKEN = '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';
     public const DISPATCH_EVENT = 'telemetry-ping';
     public const INTERVAL_SECONDS = 86400;
     public const TIMEOUT_SECONDS = 5;
