@@ -538,24 +538,6 @@ class SettingsController
         redirect('/settings?tab=updates');
     }
 
-    public function regenerateTelemetryId(): void
-    {
-        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
-            redirect('/settings?tab=updates');
-        }
-
-        try {
-            \App\Core\Telemetry::regenerateInstallId();
-            log_activity('settings.telemetry_regenerated', 'Telemetry install ID regenerated');
-            flash('success', 'Install ID regenerated. Past stats can no longer be linked to this install.');
-        } catch (\Throwable $e) {
-            error_log('regenerateTelemetryId failed: ' . $e->getMessage());
-            flash('error', 'Could not regenerate install ID.');
-        }
-        redirect('/settings?tab=updates');
-    }
-
     public function savePermissions(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {

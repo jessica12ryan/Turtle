@@ -179,12 +179,6 @@
             </label>
         </form>
     </div>
-    <?php if (!empty($telemetryInstallId ?? '')): ?>
-    <form method="POST" action="<?= base_url() ?>/settings/telemetry/regenerate" class="mt-3">
-        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-        <button type="submit" class="text-xs text-gray-500 underline hover:text-gray-700"><?= __('Regenerate install ID (unlink past stats from this install)') ?></button>
-    </form>
-    <?php endif; ?>
 </div>
 
 <style>

@@ -321,7 +321,6 @@ $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:ad
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 $router->post('/settings/telemetry', 'SettingsController@saveTelemetry', ['auth', 'role:admin']);
-$router->post('/settings/telemetry/regenerate', 'SettingsController@regenerateTelemetryId', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
 $router->post('/settings/notifications', 'SettingsController@saveNotifications', ['auth', 'role:admin']);
 $router->post('/settings/logging', 'SettingsController@saveLogging', ['auth', 'role:admin']);
