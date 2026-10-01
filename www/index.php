@@ -162,6 +162,18 @@ if ($needsSetup && !str_starts_with($requestUri, '/setup')) {
     redirect('/setup');
 }
 
+// Anonymous usage telemetry (opt-out, default ON): at most 1 ping/day to the
+// private Turtle-Stats repo. Fail-silent, short timeout — never breaks requests.
+// Skipped during setup wizard (no install_id yet) and for guest/public routes
+// is fine to run — payload contains no PII or business data.
+if (!$needsSetup) {
+    try {
+        \App\Core\Telemetry::maybeSend();
+    } catch (\Throwable $e) {
+        error_log('Telemetry hook failed: ' . $e->getMessage());
+    }
+}
+
 $router = new \App\Core\Router();
 
 // Setup (no middleware — boot check handles redirects)
@@ -308,6 +320,8 @@ $router->post('/settings/general', 'SettingsController@saveGeneral', ['auth', 'r
 $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:admin']);
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
+$router->post('/settings/telemetry', 'SettingsController@saveTelemetry', ['auth', 'role:admin']);
+$router->post('/settings/telemetry/regenerate', 'SettingsController@regenerateTelemetryId', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
 $router->post('/settings/notifications', 'SettingsController@saveNotifications', ['auth', 'role:admin']);
 $router->post('/settings/logging', 'SettingsController@saveLogging', ['auth', 'role:admin']);

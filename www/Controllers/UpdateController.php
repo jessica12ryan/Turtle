@@ -43,6 +43,14 @@ class UpdateController
 
         Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
 
+        // Opportunistic telemetry: admin is online + network is known-good.
+        // Still gated to 1 ping/day and opt-out inside Telemetry::maybeSend().
+        try {
+            \App\Core\Telemetry::maybeSend();
+        } catch (\Throwable $e) {
+            error_log('Telemetry hook (update check) failed: ' . $e->getMessage());
+        }
+
         if (isset($result['latest_version'])) {
             Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$result['latest_version']]);
         }
