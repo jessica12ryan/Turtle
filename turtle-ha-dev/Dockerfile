@@ -33,7 +33,8 @@ RUN apk add --no-cache \
     php82-xmlwriter \
     git \
     curl \
-    bash
+    bash \
+    openssl
 
 # Install Mailpit (multi-arch) — pinned to v1.30.2
 ARG BUILD_ARCH

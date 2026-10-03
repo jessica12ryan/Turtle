@@ -13,6 +13,7 @@ MAIL_USER=$(bashio::config 'mail_username')
 MAIL_PASS=$(bashio::config 'mail_password')
 MAIL_FROM=$(bashio::config 'mail_from_address')
 MAILPIT_PORT=$(bashio::config 'mailpit_port')
+MAILPIT_UI_PORT=$(bashio::config 'mailpit_ui_port')
 
 if [ -z "$APP_URL" ]; then
     APP_URL="http://homeassistant.local:80"
@@ -70,13 +71,64 @@ git -C "${TURTLE_DIR}" pull --ff-only origin master 2>/dev/null || \
     bashio::log.warning "Git pull failed — using cached code. Schema may be outdated."
 
 # ── Start Mailpit ──────────────────────────────────────────────────────────────
+# A backgrounded mailpit is not supervised by s6, so a previous crashed boot
+# can leave an orphan holding the ports — reap it or the new instance dies.
+for _mp_exe in /proc/[0-9]*/exe; do
+    if [ "$(readlink "${_mp_exe}" 2>/dev/null)" = "/usr/local/bin/mailpit" ]; then
+        _mp_pid="${_mp_exe#/proc/}"
+        _mp_pid="${_mp_pid%/exe}"
+        kill -TERM "${_mp_pid}" 2>/dev/null || true
+    fi
+done
+unset _mp_exe _mp_pid
+sleep 1
+# Validate the configured UI port (default preserves historical behaviour).
+case "${MAILPIT_UI_PORT}" in
+    ''|*[!0-9]*|??????*)
+        bashio::log.warning "Invalid mailpit_ui_port — falling back to 8025."
+        MAILPIT_UI_PORT=8025
+        ;;
+esac
+if [ "${MAILPIT_UI_PORT}" -lt 1 ] || [ "${MAILPIT_UI_PORT}" -gt 65535 ]; then
+    bashio::log.warning "mailpit_ui_port out of range — falling back to 8025."
+    MAILPIT_UI_PORT=8025
+fi
+# Pick a free UI port: configured port, then the next two. A busy UI port is
+# non-fatal — SMTP delivery must still work, so as a last resort bind the UI
+# to an OS-assigned ephemeral port (effectively UI-unavailable, SMTP intact).
+_port_busy() {
+    php -r '$s = @fsockopen("127.0.0.1", (int) $argv[1], $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);' "$1" 2>/dev/null
+}
+MAILPIT_UI_ACTUAL=""
+_mp_candidate="${MAILPIT_UI_PORT}"
+_mp_tries=0
+while [ "${_mp_tries}" -lt 3 ]; do
+    if _port_busy "${_mp_candidate}"; then
+        bashio::log.warning "Port ${_mp_candidate} is busy — trying next port for Mailpit UI."
+        _mp_candidate=$((_mp_candidate + 1))
+        _mp_tries=$((_mp_tries + 1))
+    else
+        MAILPIT_UI_ACTUAL="${_mp_candidate}"
+        break
+    fi
+done
 bashio::log.info "Starting Mailpit on port ${MAILPIT_PORT}..."
 mkdir -p "${DATA_DIR}/mailpit"
-/usr/local/bin/mailpit \
-    --smtp "127.0.0.1:${MAILPIT_PORT}" \
-    --listen "0.0.0.0:8025" \
-    --database "${DATA_DIR}/mailpit/mailpit.db" &
-bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :8025)"
+if [ -z "${MAILPIT_UI_ACTUAL}" ]; then
+    bashio::log.warning "No free Mailpit UI port near ${MAILPIT_UI_PORT} — starting SMTP-only (UI unavailable)."
+    # Port 0 asks the OS for a free ephemeral port; UI effectively unavailable.
+    /usr/local/bin/mailpit \
+        --smtp "127.0.0.1:${MAILPIT_PORT}" \
+        --listen "127.0.0.1:0" \
+        --database "${DATA_DIR}/mailpit/mailpit.db" &
+else
+    /usr/local/bin/mailpit \
+        --smtp "127.0.0.1:${MAILPIT_PORT}" \
+        --listen "0.0.0.0:${MAILPIT_UI_ACTUAL}" \
+        --database "${DATA_DIR}/mailpit/mailpit.db" &
+fi
+unset _mp_candidate _mp_tries
+bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :${MAILPIT_UI_ACTUAL:-unavailable})"
 
 # ── Derive mail defaults ───────────────────────────────────────────────────────
 if [ -z "$MAIL_HOST" ]; then
@@ -90,8 +142,18 @@ fi
 
 # ── Write .env ────────────────────────────────────────────────────────────────
 bashio::log.info "Writing .env..."
-if [ ! -f "${TURTLE_DIR}/.env" ] || ! grep -q '^APP_KEY=base64:' "${TURTLE_DIR}/.env" 2>/dev/null; then
-    GENERATED_KEY="base64:$(openssl rand -base64 32 | tr -d '\n')"
+# Generate APP_KEY if missing or effectively empty (a bare "base64:" prefix
+# from a failed keygen must NOT be reused — it would persist a null key).
+if [ ! -f "${TURTLE_DIR}/.env" ] || ! grep -Eq '^APP_KEY=base64:.{20,}' "${TURTLE_DIR}/.env" 2>/dev/null; then
+    if command -v openssl >/dev/null 2>&1; then
+        GENERATED_KEY="base64:$(openssl rand -base64 32 2>/dev/null | tr -d '\n')"
+    else
+        GENERATED_KEY=""
+    fi
+    if [ "${#GENERATED_KEY}" -lt 27 ]; then
+        # openssl missing or failed — fall back to PHP CSPRNG (always present)
+        GENERATED_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));" 2>/dev/null)
+    fi
 else
     GENERATED_KEY=$(grep '^APP_KEY=' "${TURTLE_DIR}/.env" | cut -d= -f2-)
 fi
@@ -163,18 +225,21 @@ sed \
     -e 's|mysql -h mysql -u root -proot turtle|mysql --socket=/tmp/mysql.sock -u root turtle|g' \
     "${TURTLE_DIR}/database/migrate.sh" > "${PATCHED_MIGRATE}"
 chmod +x "${PATCHED_MIGRATE}"
-bash "${PATCHED_MIGRATE}"
+# Guarded: a migration failure must not kill the boot (set -e) — warn and continue.
+bash "${PATCHED_MIGRATE}" || bashio::log.warning "Migrations exited non-zero — continuing boot; check add-on log."
 rm -f "${PATCHED_MIGRATE}"
 touch "${DATA_DIR}/.db_initialized"
 
 # ── Dev defaults ──────────────────────────────────────────────────────────────
 bashio::log.info "Setting dev defaults (update_channel=development)..."
-mysql --socket=/tmp/mysql.sock -u root turtle -e "INSERT INTO settings (\`key\`, \`value\`) VALUES ('update_channel', 'development') ON DUPLICATE KEY UPDATE \`value\` = 'development';"
+mysql --socket=/tmp/mysql.sock -u root turtle -e "INSERT INTO settings (\`key\`, \`value\`) VALUES ('update_channel', 'development') ON DUPLICATE KEY UPDATE \`value\` = 'development';" \
+    || bashio::log.warning "Setting update_channel default failed — continuing boot."
 
 # ── Sync mail settings to database ────────────────────────────────────────────
 # The Mailer reads DB first, so upsert the add-on config values
 bashio::log.info "Syncing mail settings to database..."
-mysql --socket=/tmp/mysql.sock -u root turtle <<SQL
+# Guarded: mail sync is best-effort — the Mailer falls back to .env values.
+mysql --socket=/tmp/mysql.sock -u root turtle <<SQL || bashio::log.warning "Mail settings sync failed — continuing boot."
 INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_host', '${MAIL_HOST}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_HOST}';
 INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_port', '${MAIL_PORT}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PORT}';
 INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_username', '${MAIL_USER}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_USER}';
