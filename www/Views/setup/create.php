@@ -368,6 +368,31 @@ function validateStep(n) {
             confirm.classList.remove('border-gray-300');
             valid = false;
         }
+        // Mirror server rules (email format, min:8): without this, Next lets
+        // bad values through, then native validation silently blocks Finish
+        // on the now-hidden fields ("click does nothing", no bubble).
+        var email = document.getElementById('email');
+        if (email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+            email.classList.add('border-red-500');
+            email.classList.remove('border-gray-300');
+            valid = false;
+        }
+        if (pw.value && pw.value.length < 8) {
+            pw.classList.add('border-red-500');
+            pw.classList.remove('border-gray-300');
+            valid = false;
+        }
+    }
+
+    if (n === 4) {
+        // Optional fields, but a non-empty From Address must still be an email
+        // or native validation will silently block Finish later.
+        var fromAddr = document.getElementById('mail_from_address');
+        if (fromAddr.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromAddr.value.trim())) {
+            fromAddr.classList.add('border-red-500');
+            fromAddr.classList.remove('border-gray-300');
+            valid = false;
+        }
     }
 
     if (!valid) {
