@@ -247,6 +247,129 @@ class Telemetry
         } catch (\Throwable $e) {
         }
 
+        // Stack versions — compat floor only (major.minor / capped strings).
+        $dbVersion = '';
+        $webServer = '';
+        $phpMemory = '';
+        $phpUploadMax = '';
+        try {
+            $row = Database::fetch("SELECT VERSION() AS v");
+            $raw = trim((string) (self::firstCell($row) ?? ''));
+            if (preg_match('/^(\d{1,3})\.(\d{1,3})/', $raw, $m)) {
+                $dbVersion = $m[1] . '.' . $m[2];
+            }
+        } catch (\Throwable $e) {
+        }
+        try {
+            $webServer = substr((string) ($_SERVER['SERVER_SOFTWARE'] ?? ''), 0, 32);
+        } catch (\Throwable $e) {
+        }
+        try {
+            $mem = trim((string) ini_get('memory_limit'));
+            if (preg_match('/^-?\d+([KMG])?$/', $mem)) {
+                $phpMemory = substr($mem, 0, 16);
+            }
+            $up = trim((string) ini_get('upload_max_filesize'));
+            if (preg_match('/^-?\d+([KMG])?$/', $up)) {
+                $phpUploadMax = substr($up, 0, 16);
+            }
+        } catch (\Throwable $e) {
+        }
+
+        // Feature flags — booleans only. Values (hosts, keys) never leave the box.
+        $mailConfigured = false;
+        $aiConfigured = false;
+        $applicationsOn = false;
+        $permissionsMode = '';
+        try {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'mail_host'");
+            $host = strtolower(trim($row['value'] ?? ''));
+            if (str_starts_with($host, '[')) {
+                $end = strpos($host, ']');
+                if ($end !== false) {
+                    $host = substr($host, 1, $end - 1); // [::1] or [::1]:587 -> ::1
+                }
+            } elseif (substr_count($host, ':') === 1) {
+                $host = (string) preg_replace('/:\d+$/', '', $host); // host:port -> host (not IPv6)
+            }
+            $mailConfigured = $host !== '' && !in_array($host, ['mailpit', '127.0.0.1', 'localhost', '::1'], true);
+        } catch (\Throwable $e) {
+        }
+        try {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'openai_api_key'");
+            $aiConfigured = trim($row['value'] ?? '') !== '';
+        } catch (\Throwable $e) {
+        }
+        try {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
+            $applicationsOn = ($row['value'] ?? '') === '1';
+        } catch (\Throwable $e) {
+        }
+        try {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'permissions_mode'");
+            if ($row && in_array($row['value'] ?? '', ['default', 'custom'], true)) {
+                $permissionsMode = $row['value'];
+            }
+        } catch (\Throwable $e) {
+        }
+
+        // Scale buckets — coarse bands only, never exact numbers.
+        $dbSizeBucket = '';
+        try {
+            $row = Database::fetch("SELECT SUM(data_length + index_length) AS bytes FROM information_schema.TABLES WHERE table_schema = DATABASE()");
+            $bytes = self::firstCell($row);
+            if ($bytes !== null) {
+                $bytes = (int) $bytes;
+                $dbSizeBucket = $bytes < 10 * 1024 * 1024 ? '<10MB'
+                    : ($bytes < 100 * 1024 * 1024 ? '10-100MB'
+                    : ($bytes < 1024 * 1024 * 1024 ? '100MB-1GB' : '>1GB'));
+            }
+        } catch (\Throwable $e) {
+        }
+        $ntpBucket = '';
+        try {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_ntp_status'");
+            $st = trim($row['value'] ?? '');
+            if ($st !== '') {
+                $ntpBucket = $st === 'unreachable' ? 'unreachable'
+                    : ((int) $st > 60 ? 'drifted' : 'ok');
+            }
+        } catch (\Throwable $e) {
+        }
+        // Entity counts stay in the DB: each count is banded and only the max
+        // band across entities is sent, so no exact number for any entity
+        // (or which entity drove the band) ever leaves the box.
+        $scaleBucket = '';
+        try {
+            $bands = [];
+            foreach ([
+                "SELECT COUNT(*) AS cnt FROM users WHERE archived_at IS NULL",
+                "SELECT COUNT(*) AS cnt FROM properties WHERE archived_at IS NULL",
+                "SELECT COUNT(*) AS cnt FROM property_tenant WHERE moved_out_at IS NULL",
+                "SELECT COUNT(*) AS cnt FROM tickets WHERE archived_at IS NULL",
+            ] as $q) {
+                try {
+                    $row = Database::fetch($q);
+                    if ($row !== null) {
+                        $bands[] = self::countBand(max(0, (int) (self::firstCell($row) ?? 0)));
+                    }
+                } catch (\Throwable $e) {
+                }
+            }
+            $rank = ['0' => 1, '1-5' => 2, '6-20' => 3, '21-100' => 4, '100+' => 5];
+            $best = 0;
+            $bestBand = '';
+            foreach ($bands as $b) {
+                $r = $rank[$b] ?? 0;
+                if ($r > $best) {
+                    $best = $r;
+                    $bestBand = $b;
+                }
+            }
+            $scaleBucket = $bestBand;
+        } catch (\Throwable $e) {
+        }
+
         return [
             'install_id' => self::installId(),
             'app_version' => $appVersion,
@@ -261,10 +384,50 @@ class Telemetry
             'country' => $country,
             'language' => $language,
             'timezone' => $timezone,
+            'db_version' => $dbVersion,
+            'web_server' => $webServer,
+            'php_memory' => $phpMemory,
+            'php_upload_max' => $phpUploadMax,
+            'mail_configured' => $mailConfigured,
+            'ai_configured' => $aiConfigured,
+            'applications_on' => $applicationsOn,
+            'permissions_mode' => $permissionsMode,
+            'db_size_bucket' => $dbSizeBucket,
+            'ntp_bucket' => $ntpBucket,
+            'scale_bucket' => $scaleBucket,
             '$lib' => 'turtle-php',
             '$lib_version' => substr($appVersion, 0, 32),
             'sent_at' => gmdate('Y-m-d\TH:i:s\Z'),
         ];
+    }
+
+    /**
+     * First column of a fetched row, or null. Avoids "undefined array key"
+     * warnings on drivers/edge cases that return no row for aggregates.
+     */
+    private static function firstCell(?array $row): mixed
+    {
+        if ($row === null || $row === []) {
+            return null;
+        }
+        return array_values($row)[0];
+    }
+
+    /**
+     * Map an exact count to a coarse band. Exact numbers never leave the box.
+     */
+    private static function countBand(int $n): string
+    {
+        if ($n <= 0) {
+            return '0';
+        } elseif ($n <= 5) {
+            return '1-5';
+        } elseif ($n <= 20) {
+            return '6-20';
+        } elseif ($n <= 100) {
+            return '21-100';
+        }
+        return '100+';
     }
 
     private static function dueForSend(): bool
