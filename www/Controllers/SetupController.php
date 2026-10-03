@@ -184,6 +184,9 @@ class SetupController
                 [$lang, $lang]
             );
 
+            // Save telemetry preference (opt-out, default ON: checkbox absent => disabled)
+            \App\Core\Telemetry::setEnabled(isset($_POST['telemetry_enabled']) && $_POST['telemetry_enabled'] === '1');
+
             // Save mail settings
             $mailKeys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             foreach ($mailKeys as $key) {

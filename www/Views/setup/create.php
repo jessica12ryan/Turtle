@@ -272,6 +272,16 @@
                 </label>
             </div>
 
+            <div class="mb-6">
+                <label class="flex items-start space-x-3">
+                    <input type="checkbox" name="telemetry_enabled" value="1" <?= old('telemetry_enabled', '1') === '1' ? 'checked' : '' ?> class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <span class="text-sm text-gray-600">
+                        <strong class="text-gray-800"><?= __('Share telemetry data') ?></strong><br>
+                        <?= __('Sends anonymous system stats (version, update channel, PHP, OS, architecture, Docker vs Home Assistant) at most once per day. No users, tenants, properties, names, emails, or addresses are ever sent. You can change this later in Settings.') ?>
+                    </span>
+                </label>
+            </div>
+
             <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p class="text-sm text-yellow-800">
                     <strong><?= __('After setup') ?></strong> — <?= __('You can configure email, permissions, and branding settings at any time from') ?> <strong><?= __('Settings → General') ?></strong>. <?= __('Additional staff, tenants, and properties can be added through their respective pages.') ?>
