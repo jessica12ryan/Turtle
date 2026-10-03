@@ -41,7 +41,8 @@ class UpdateController
             $result = $this->checkStableChannel($currentVersion);
         }
 
-        Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
+        // Contract: last_update_check is stored in UTC (display_time() reads UTC).
+        Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [gmdate('Y-m-d H:i:s')]);
 
         // Opportunistic telemetry: admin is online + network is known-good.
         // Still gated to 1 ping/day and opt-out inside Telemetry::maybeSend().

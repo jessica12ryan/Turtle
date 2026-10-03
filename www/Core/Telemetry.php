@@ -438,7 +438,10 @@ class Telemetry
             if ($last === '') {
                 return true;
             }
-            $lastTs = strtotime($last);
+            // Stored values are UTC (see markSent). Pre-fix rows were local
+            // wall time; interpreting one of those as UTC skews a single
+            // cycle by the UTC offset, then the next markSent self-corrects.
+            $lastTs = strtotime($last . ' UTC');
             if ($lastTs === false) {
                 return true;
             }
@@ -451,7 +454,10 @@ class Telemetry
     private static function markSent(): void
     {
         try {
-            $now = date('Y-m-d H:i:s');
+            // Contract: last_telemetry_sent is stored in UTC. display_time()
+            // interprets stored values as UTC, so date() (local TZ) here
+            // would double-apply the offset on render.
+            $now = gmdate('Y-m-d H:i:s');
             Database::execute(
                 "INSERT INTO settings (`key`, `value`) VALUES ('last_telemetry_sent', ?) ON DUPLICATE KEY UPDATE `value` = ?",
                 [$now, $now]
