@@ -5,29 +5,35 @@ namespace App\Core;
 /**
  * Anonymous usage telemetry — opt-out (default ON).
  *
- * Sends system + application context ONLY to a private stats repo via
- * GitHub repository_dispatch. Never collects users, tenants, properties,
- * tickets, names, emails, URLs, or IPs (sender IP is visible to GitHub
- * at transport level but is never persisted by the ingest workflow).
+ * Sends system + application context ONLY to PostHog Cloud via the
+ * public write-only capture API (phc_ key is safe to ship in code —
+ * unlike the old GitHub PAT, it cannot be revoked by secret scanning).
+ * Never collects users, tenants, properties, tickets, names, emails,
+ * URLs, or IPs (sender IP is visible at transport level; project is
+ * configured to discard IP data before storage).
  *
  * Design constraints (production safety):
  * - All methods are fail-silent: never throw, never break page loads.
  * - At most one ping per 24h per install (gated by settings.last_telemetry_sent).
- * - Fully self-contained: the ingest credential below is the only secret and
- *   it lives here, once. No env vars, no add-on options, no per-deploy setup —
- *   Docker and Home Assistant run identical code. If the credential is ever
- *   abused, revoke it and ship a replacement string in this one place.
- * - Short timeouts (5s) so slow/unreachable api.github.com can't hang requests.
+ * - Fully self-contained: the public capture key below is the only
+ *   credential and it lives here, once. No per-deploy setup —
+ *   Docker and Home Assistant run identical code.
+ * - Short timeouts (5s) so slow/unreachable capture host can't hang requests.
  */
 class Telemetry
 {
-    public const DEFAULT_REPO = 'jessica12ryan/Turtle-Stats';
+    /** PostHog Cloud capture host. Override with env POSTHOG_HOST for EU (https://eu.i.posthog.com). */
+    public const POSTHOG_HOST = 'https://us.i.posthog.com';
     /**
-     * Ingest credential for the private Turtle-Stats repo. Embedded here as
-     * the single source of truth — intentionally not configurable per deploy.
+     * Public write-only Project API key. Safe to embed — it can only
+     * capture anonymous events, never read data or manage the project.
      */
-    private const BUNDLED_TOKEN = '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';
-    public const DISPATCH_EVENT = 'telemetry-ping';
+    public const POSTHOG_KEY = 'phc_ySQFxrsfwFLVp2J32mAo5FzyoGHC3znmKp6hkPUobw5H';
+    public const EVENT = 'turtle-ping';
+    /** @deprecated Kept for backward compatibility; no longer used as ingest target. */
+    public const DEFAULT_REPO = 'jessica12ryan/Turtle-Stats';
+    /** @deprecated Kept for backward compatibility; GitHub dispatch removed (PAT revoked by secret scanning). */
+    public const DISPATCH_EVENT = 'turtle-ping';
     public const INTERVAL_SECONDS = 86400;
     public const TIMEOUT_SECONDS = 5;
 
@@ -69,15 +75,20 @@ class Telemetry
     /**
      * Stable anonymous install identifier. Generated once, stored in settings.
      * Random UUID v4 — not derived from any user/system data.
+     * Self-healing: a non-empty value that fails validation (e.g. written by
+     * an older build or edited by hand) is replaced with a fresh UUID once;
+     * valid IDs are never rotated.
      */
     public static function installId(): string
     {
+        $corrupt = false;
         try {
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'telemetry_install_id'");
             $existing = trim($row['value'] ?? '');
             if ($existing !== '' && preg_match('/^[A-Za-z0-9\-_]{8,64}$/', $existing)) {
                 return $existing;
             }
+            $corrupt = ($existing !== '');
         } catch (\Throwable $e) {
             return '';
         }
@@ -94,10 +105,21 @@ class Telemetry
                 random_int(0, 0xffff),
                 random_int(0, 0xffff)
             );
-            Database::execute(
-                "INSERT INTO settings (`key`, `value`) VALUES ('telemetry_install_id', ?) ON DUPLICATE KEY UPDATE `value` = IF(`value` = '', ?, `value`)",
-                [$uuid, $uuid]
-            );
+            if ($corrupt) {
+                // Repair path: overwrite the invalid value exactly once so a
+                // corrupt ID can't permanently wedge telemetry into silent-off.
+                Database::execute(
+                    "INSERT INTO settings (`key`, `value`) VALUES ('telemetry_install_id', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                    [$uuid, $uuid]
+                );
+                error_log('Telemetry install_id regenerated (previous value had invalid format).');
+            } else {
+                // First-run path: keep first-writer on concurrent boots.
+                Database::execute(
+                    "INSERT INTO settings (`key`, `value`) VALUES ('telemetry_install_id', ?) ON DUPLICATE KEY UPDATE `value` = IF(`value` = '', ?, `value`)",
+                    [$uuid, $uuid]
+                );
+            }
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'telemetry_install_id'");
             return trim($row['value'] ?? $uuid);
         } catch (\Throwable $e) {
@@ -105,14 +127,40 @@ class Telemetry
         }
     }
 
+    public static function captureHost(): string
+    {
+        try {
+            $env = getenv('POSTHOG_HOST');
+            if ($env !== false && preg_match('#^https://[A-Za-z0-9.\-]+$#', trim((string) $env))) {
+                return rtrim(trim((string) $env), '/');
+            }
+        } catch (\Throwable $e) {
+        }
+        return self::POSTHOG_HOST;
+    }
+
+    public static function captureKey(): string
+    {
+        try {
+            $env = getenv('POSTHOG_KEY');
+            if ($env !== false && preg_match('/^phc_[A-Za-z0-9]{10,128}$/', trim((string) $env))) {
+                return trim((string) $env);
+            }
+        } catch (\Throwable $e) {
+        }
+        return self::POSTHOG_KEY;
+    }
+
+    /** @deprecated GitHub ingest removed; returns legacy repo name for BC only. */
     public static function repo(): string
     {
         return self::DEFAULT_REPO;
     }
 
+    /** @deprecated GitHub PAT removed (revoked by secret scanning); always returns ''. */
     public static function token(): string
     {
-        return self::BUNDLED_TOKEN;
+        return '';
     }
 
     /**
@@ -140,6 +188,7 @@ class Telemetry
 
     /**
      * Build the anonymous payload. No PII, no business data.
+     * Shape is additive-only: existing keys are never renamed/removed.
      */
     public static function payload(): array
     {
@@ -147,6 +196,7 @@ class Telemetry
         $channel = 'stable';
         $country = '';
         $language = '';
+        $timezone = '';
         try {
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             if ($row && trim($row['value'] ?? '') !== '') {
@@ -163,6 +213,11 @@ class Telemetry
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'default_language'");
             if ($row && in_array($row['value'] ?? '', ['en', 'fr', 'es'], true)) {
                 $language = $row['value'];
+            }
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'timezone'");
+            $tz = trim($row['value'] ?? '');
+            if ($tz !== '' && preg_match('#^[A-Za-z0-9_+\-/]{1,48}$#', $tz)) {
+                $timezone = $tz;
             }
         } catch (\Throwable $e) {
         }
@@ -205,6 +260,9 @@ class Telemetry
             'runtime' => self::runtime(),
             'country' => $country,
             'language' => $language,
+            'timezone' => $timezone,
+            '$lib' => 'turtle-php',
+            '$lib_version' => substr($appVersion, 0, 32),
             'sent_at' => gmdate('Y-m-d\TH:i:s\Z'),
         ];
     }
@@ -240,9 +298,9 @@ class Telemetry
     }
 
     /**
-     * Opportunistic daily send. Never throws. Returns true on dispatch accept.
+     * Opportunistic daily send. Never throws. Returns true on capture accept.
      *
-     * @param bool $force Bypass the 24h gate (used only for manual "Send now" testing; still respects opt-out + token).
+     * @param bool $force Bypass the 24h gate (used only for manual "Send now" testing; still respects opt-out + key).
      */
     public static function maybeSend(bool $force = false): bool
     {
@@ -250,8 +308,8 @@ class Telemetry
             if (!self::isEnabled()) {
                 return false;
             }
-            $token = self::token();
-            if ($token === '') {
+            $apiKey = self::captureKey();
+            if ($apiKey === '') {
                 return false; // telemetry fully unconfigured — silent, no error spam
             }
             if (!$force && !self::dueForSend()) {
@@ -259,35 +317,39 @@ class Telemetry
             }
 
             $payload = self::payload();
-            if (($payload['install_id'] ?? '') === '') {
-                return false;
+            $installId = $payload['install_id'] ?? '';
+            if (!is_string($installId) || !preg_match('/^[A-Za-z0-9\-_]{8,64}$/', $installId)) {
+                return false; // rate-limit/validation: malformed identity never leaves the box
             }
 
-            $repo = self::repo();
-            $url = "https://api.github.com/repos/{$repo}/dispatches";
-            $body = json_encode(['event_type' => self::DISPATCH_EVENT, 'client_payload' => $payload]);
+            $url = self::captureHost() . '/capture/';
+            $body = json_encode([
+                'api_key' => $apiKey,
+                'event' => self::EVENT,
+                'distinct_id' => $installId,
+                'properties' => $payload,
+                'timestamp' => $payload['sent_at'] ?? gmdate('Y-m-d\TH:i:s\Z'),
+            ]);
             if ($body === false) {
                 return false;
             }
 
             $result = function_exists('httpPostJson')
                 ? @httpPostJson($url, $body, [
-                    'Accept: application/vnd.github+json',
-                    'X-GitHub-Api-Version: 2022-11-28',
+                    'Accept: application/json',
                     'User-Agent: Turtle-Telemetry/1.0',
-                    'Authorization: Bearer ' . $token,
                 ], self::TIMEOUT_SECONDS)
                 : null;
 
-            // repository_dispatch returns 204 No Content on success
+            // PostHog /capture/ returns 200 with {"status":1} on success
             if (is_array($result) && ($result['http_code'] ?? 0) >= 200 && ($result['http_code'] ?? 0) < 300) {
                 self::markSent();
                 return true;
             }
 
-            // Log at most a one-liner; never include token or payload
+            // Log at most a one-liner; never include key, install_id, or payload
             if (is_array($result)) {
-                error_log('Telemetry dispatch failed: HTTP ' . ($result['http_code'] ?? '?') . ' for repo ' . $repo);
+                error_log('Telemetry capture failed: HTTP ' . ($result['http_code'] ?? '?'));
             }
             return false;
         } catch (\Throwable $e) {

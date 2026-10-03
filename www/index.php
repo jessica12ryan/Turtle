@@ -162,8 +162,9 @@ if ($needsSetup && !str_starts_with($requestUri, '/setup')) {
     redirect('/setup');
 }
 
-// Anonymous usage telemetry (opt-out, default ON): at most 1 ping/day to the
-// private Turtle-Stats repo. Fail-silent, short timeout — never breaks requests.
+// Anonymous usage telemetry (opt-out, default ON): at most 1 ping/day to
+// PostHog Cloud capture API (public write-only key). Fail-silent, short
+// timeout — never breaks requests.
 // Skipped during setup wizard (no install_id yet) and for guest/public routes
 // is fine to run — payload contains no PII or business data.
 if (!$needsSetup) {

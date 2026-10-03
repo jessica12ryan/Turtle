@@ -163,7 +163,7 @@
     <div class="flex items-start justify-between gap-4">
         <div>
             <h3 class="text-sm font-medium text-gray-700"><?= __('Anonymous System Stats') ?></h3>
-            <p class="text-xs text-gray-500 mt-1"><?= __('Helps development: version, update channel, PHP, OS, architecture, Docker vs Home Assistant. No users, tenants, properties, names, emails, or addresses are ever sent. Max once per day to a private stats repo.') ?></p>
+            <p class="text-xs text-gray-500 mt-1"><?= __('Helps development: version, update channel, PHP, OS, architecture, Docker vs Home Assistant. No users, tenants, properties, names, emails, or addresses are ever sent. Max once per day to PostHog Cloud (IP discarded).') ?></p>
             <?php if (!empty($telemetryInstallId ?? '')): ?>
                 <p class="text-xs text-gray-400 mt-2"><?= __('Install ID:') ?> <code><?= h($telemetryInstallId) ?></code></p>
             <?php endif; ?>
