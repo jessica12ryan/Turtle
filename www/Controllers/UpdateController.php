@@ -342,6 +342,18 @@ class UpdateController
                 Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'app_version'", [$version]);
             }
 
+            // Clean update completed: resend telemetry once so the new version/
+            // commit is reported immediately (bypasses the 24h gate, still
+            // respects opt-out; fail-silent). Files are unlinked below, so a
+            // later poll can never resend.
+            if (trim($error) === '') {
+                try {
+                    \App\Core\Telemetry::maybeSend(true);
+                } catch (\Throwable $e) {
+                    error_log('Telemetry hook (post-update) failed: ' . $e->getMessage());
+                }
+            }
+
             @unlink($logFile);
             @unlink($pidFile);
             @unlink($scriptFile);
