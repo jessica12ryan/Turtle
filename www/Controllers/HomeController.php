@@ -99,6 +99,14 @@ class HomeController
 
         $alerts = [];
 
+        // Telemetry opt-in nudge: everyone except tenants (tenant branch returns above).
+        // Link to Settings only for admins — other roles cannot access /settings.
+        if ($role !== 'tenant' && !\App\Core\Telemetry::isEnabled()) {
+            $alerts['critical'][] = [
+                'msg' => 'Sharing telemetry data is turned off. Turn it on to help with development.',
+            ] + ($role === 'admin' ? ['link' => '/settings?tab=updates'] : []);
+        }
+
         if ($role === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL");
             if (!$adminCount || $adminCount['cnt'] === 0) {
