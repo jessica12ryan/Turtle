@@ -348,15 +348,25 @@ function showStep(n) {
 function validateStep(n) {
     var container = document.querySelector('.step-content[data-step="' + n + '"]');
     var required = container.querySelectorAll('[required]');
-    var valid = true;
+    var problems = [];
+    var labels = {name: 'Name', email: 'Email address', password: 'Password', password_confirmation: 'Password confirmation'};
+    function labelFor(el) {
+        return labels[el.id] || labels[el.name] || 'This field';
+    }
+    function markBad(el) {
+        el.classList.add('border-red-500');
+        el.classList.remove('border-gray-300');
+    }
+    function markOk(el) {
+        el.classList.remove('border-red-500');
+        el.classList.add('border-gray-300');
+    }
     for (var i = 0; i < required.length; i++) {
         if (!required[i].value.trim()) {
-            required[i].classList.add('border-red-500');
-            required[i].classList.remove('border-gray-300');
-            valid = false;
+            markBad(required[i]);
+            problems.push(labelFor(required[i]) + ' is required.');
         } else {
-            required[i].classList.remove('border-red-500');
-            required[i].classList.add('border-gray-300');
+            markOk(required[i]);
         }
     }
 
@@ -364,23 +374,20 @@ function validateStep(n) {
         var pw = document.getElementById('password');
         var confirm = document.getElementById('password_confirmation');
         if (pw.value && confirm.value && pw.value !== confirm.value) {
-            confirm.classList.add('border-red-500');
-            confirm.classList.remove('border-gray-300');
-            valid = false;
+            markBad(confirm);
+            problems.push('Password confirmation does not match.');
         }
         // Mirror server rules (email format, min:8): without this, Next lets
         // bad values through, then native validation silently blocks Finish
         // on the now-hidden fields ("click does nothing", no bubble).
         var email = document.getElementById('email');
         if (email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
-            email.classList.add('border-red-500');
-            email.classList.remove('border-gray-300');
-            valid = false;
+            markBad(email);
+            problems.push('Email address must be a valid email.');
         }
         if (pw.value && pw.value.length < 8) {
-            pw.classList.add('border-red-500');
-            pw.classList.remove('border-gray-300');
-            valid = false;
+            markBad(pw);
+            problems.push('Password must be at least 8 characters.');
         }
     }
 
@@ -389,16 +396,17 @@ function validateStep(n) {
         // or native validation will silently block Finish later.
         var fromAddr = document.getElementById('mail_from_address');
         if (fromAddr.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromAddr.value.trim())) {
-            fromAddr.classList.add('border-red-500');
-            fromAddr.classList.remove('border-gray-300');
-            valid = false;
+            markBad(fromAddr);
+            problems.push('From Address must be a valid email.');
+        } else {
+            markOk(fromAddr);
         }
     }
 
-    if (!valid) {
-        alert('<?= __('Please fill in all required fields before continuing.') ?>');
+    if (problems.length) {
+        alert(problems.join('\n'));
     }
-    return valid;
+    return problems.length === 0;
 }
 
 function nextStep() {
