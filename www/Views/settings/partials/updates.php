@@ -169,7 +169,7 @@
             <?php endif; ?>
             <p class="text-xs text-gray-400 mt-1"><?= __('Last sent:') ?> <?= !empty($telemetryLastSent ?? '') ? h(display_time($telemetryLastSent)) : __('Never') ?></p>
         </div>
-        <form method="POST" action="<?= base_url() ?>/settings/telemetry" class="flex items-center space-x-3 flex-shrink-0">
+        <form method="POST" action="/settings/telemetry" class="flex items-center space-x-3 flex-shrink-0">
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <label class="flex items-center space-x-2 text-sm text-gray-600">
                 <input type="checkbox" name="telemetry_enabled" value="1" <?= !empty($telemetryEnabled ?? true) ? 'checked' : '' ?> onchange="this.form.submit()" class="h-4 w-4 rounded border-gray-300 text-blue-600">
