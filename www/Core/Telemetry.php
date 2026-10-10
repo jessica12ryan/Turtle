@@ -241,6 +241,11 @@ class Telemetry
 
         $os = '';
         $arch = '';
+        $runtime = 'unknown';
+        try {
+            $runtime = self::runtime();
+        } catch (\Throwable $e) {
+        }
         try {
             $os = substr((string) php_uname('s'), 0, 32);
             $arch = substr((string) php_uname('m'), 0, 32);
@@ -370,8 +375,14 @@ class Telemetry
         } catch (\Throwable $e) {
         }
 
+        // Single stable identity for this payload: event distinct_id and
+        // $set_once must agree, and one DB hit beats two on first run.
+        // maybeSend() drops the whole ping if this is malformed/empty,
+        // so a poisoned $set_once can never be sent.
+        $installId = self::installId();
+
         return [
-            'install_id' => self::installId(),
+            'install_id' => $installId,
             'app_version' => $appVersion,
             'channel' => $channel,
             'branch' => $branch,
@@ -380,7 +391,7 @@ class Telemetry
             'sapi' => substr(PHP_SAPI, 0, 16),
             'os' => $os,
             'arch' => $arch,
-            'runtime' => self::runtime(),
+            'runtime' => $runtime,
             'country' => $country,
             'language' => $language,
             'timezone' => $timezone,
@@ -398,6 +409,38 @@ class Telemetry
             '$lib' => 'turtle-php',
             '$lib_version' => substr($appVersion, 0, 32),
             'sent_at' => gmdate('Y-m-d\TH:i:s\Z'),
+            // Person profile (latest value per install). PostHog merges these
+            // onto the Person for distinct_id on each capture, so Trends
+            // broken down by Person property reflects current state (sums to
+            // total) instead of event-time history (same install in N buckets
+            // after toggles/upgrades). Event keys above are unchanged.
+            // Excludes high-churn branch/commit/sent_at + reserved $lib keys.
+            '$set' => [
+                'app_version' => $appVersion,
+                'channel' => $channel,
+                'php' => substr(PHP_VERSION, 0, 16),
+                'sapi' => substr(PHP_SAPI, 0, 16),
+                'os' => $os,
+                'arch' => $arch,
+                'runtime' => $runtime,
+                'country' => $country,
+                'language' => $language,
+                'timezone' => $timezone,
+                'db_version' => $dbVersion,
+                'web_server' => $webServer,
+                'php_memory' => $phpMemory,
+                'php_upload_max' => $phpUploadMax,
+                'mail_configured' => $mailConfigured,
+                'ai_configured' => $aiConfigured,
+                'applications_on' => $applicationsOn,
+                'permissions_mode' => $permissionsMode,
+                'db_size_bucket' => $dbSizeBucket,
+                'ntp_bucket' => $ntpBucket,
+                'scale_bucket' => $scaleBucket,
+            ],
+            '$set_once' => [
+                'install_id' => $installId,
+            ],
         ];
     }
 
