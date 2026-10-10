@@ -266,6 +266,17 @@ class UpdateController
 
         $escapedLogFile = escapeshellarg($logFile);
         $escapedScript = escapeshellarg($scriptFile);
+
+        // Durable post-update telemetry: the progress-poll resend below is a
+        // single-shot window, so flag the ping now. The next request after the
+        // update sends once with the new version even if the tab was closed.
+        // Fail-silent by contract — never blocks the update itself.
+        try {
+            \App\Core\Telemetry::flagPostUpdatePing();
+        } catch (\Throwable $e) {
+            error_log('Telemetry flag (pre-update) failed: ' . $e->getMessage());
+        }
+
         exec("nohup {$escapedScript} > {$escapedLogFile} 2>&1 & echo $!", $pidOutput);
 
         $pid = (int)($pidOutput[0] ?? 0);

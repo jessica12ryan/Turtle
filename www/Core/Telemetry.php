@@ -510,6 +510,42 @@ class Telemetry
     }
 
     /**
+     * Mark that an update was kicked off so the next request sends one ping
+     * with the new version even if the update-progress poll (which does the
+     * one-shot forced resend) never runs — e.g. the user closed the tab.
+     * Fail-silent: telemetry must never break updates.
+     */
+    public static function flagPostUpdatePing(): void
+    {
+        try {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('pending_post_update_ping', '1') ON DUPLICATE KEY UPDATE `value` = '1'"
+            );
+        } catch (\Throwable $e) {
+        }
+    }
+
+    private static function hasPendingPostUpdatePing(): bool
+    {
+        try {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'pending_post_update_ping'");
+            return ($row['value'] ?? '0') === '1';
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    private static function clearPendingPostUpdatePing(): void
+    {
+        try {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('pending_post_update_ping', '0') ON DUPLICATE KEY UPDATE `value` = '0'"
+            );
+        } catch (\Throwable $e) {
+        }
+    }
+
+    /**
      * Opportunistic daily send. Never throws. Returns true on capture accept.
      *
      * @param bool $force Bypass the 24h gate (used only for manual "Send now" testing; still respects opt-out + key).
@@ -525,7 +561,15 @@ class Telemetry
                 return false; // telemetry fully unconfigured — silent, no error spam
             }
             if (!$force && !self::dueForSend()) {
-                return false;
+                // Durable post-update ping: UpdateController::apply() sets the
+                // flag when an update starts. The progress-poll resend is a
+                // single-shot window (files unlinked after first done poll),
+                // so without this, closing the tab means up to 24h of silence.
+                // Checked only when not otherwise due: zero extra cost on the
+                // steady-state path. Opt-out above still applies.
+                if (!self::hasPendingPostUpdatePing()) {
+                    return false;
+                }
             }
 
             $payload = self::payload();
@@ -555,6 +599,7 @@ class Telemetry
 
             // PostHog /capture/ returns 200 with {"status":1} on success
             if (is_array($result) && ($result['http_code'] ?? 0) >= 200 && ($result['http_code'] ?? 0) < 300) {
+                self::clearPendingPostUpdatePing();
                 self::markSent();
                 return true;
             }
