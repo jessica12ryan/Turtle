@@ -87,6 +87,19 @@ if ($requestUri === '/' || $requestUri === '/index.php') {
     }
 }
 
+// Keep the current user marked as online for the messenger overlay.
+if (\App\Core\Auth::instance()->check()) {
+    try {
+        \App\Core\Database::execute(
+            "INSERT INTO user_presence (user_id, last_seen) VALUES (?, NOW())
+             ON DUPLICATE KEY UPDATE last_seen = NOW()",
+            [\App\Core\Auth::instance()->id()]
+        );
+    } catch (\Throwable $e) {
+        // Presence table may not exist until migrations run.
+    }
+}
+
 // Set timezone from settings (cached 5 min)
 try {
     $tzVal = getCachedSetting('timezone', 300);
@@ -290,6 +303,12 @@ $router->get('/documents/{id}/download', 'DocumentController@download', ['auth',
 $router->post('/documents/{id}/delete', 'DocumentController@destroy', ['auth', 'perm:documents.delete']);
 $router->post('/documents/{id}/restore', 'DocumentController@restore', ['auth', 'perm:leases.restore']);
 $router->post('/documents/{id}/hard-delete', 'DocumentController@hardDelete', ['auth', 'perm:documents.delete']);
+
+// Messaging
+$router->get('/messages/users', 'MessageController@users', ['auth']);
+$router->get('/messages/thread', 'MessageController@thread', ['auth']);
+$router->get('/messages/unread', 'MessageController@unread', ['auth']);
+$router->post('/messages/send', 'MessageController@send', ['auth']);
 
 // Notifications
 $router->get('/notifications', 'NotificationController@index', ['auth']);

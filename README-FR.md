@@ -40,6 +40,7 @@ Les deux prennent en charge l'**ingress** (intégré dans l'interface HA) et l'*
 - **Calendrier** — dates d'emménagement, de fin de bail et de départ planifié
 - **Ressources** — page de liens partagés, catégories générales et réservées au personnel
 - **Sauvegarde et restauration** — sauvegarde complète du système (format `.turtle`) via les paramètres admin
+- **Messagerie** — panneau latéral avec utilisateurs en ligne, messages directs, badges de non-lus et alertes sonores
 - **Courriel** — client SMTP léger, préférences de notification par rôle
 - **Contrôle d'accès** — Administrateur, Propriétaire, Gestionnaire immobilier, Maintenance, Locataire
 
