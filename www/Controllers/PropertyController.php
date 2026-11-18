@@ -585,4 +585,35 @@ class PropertyController
         flash('success', 'Property archived successfully. Related tenants, leases, and tickets have also been archived.');
         redirect('/properties');
     }
+
+    public function hardDelete(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
+        $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
+        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        try {
+            Database::beginTransaction();
+            // Related leases, tickets, property_tenant rows and their children
+            // are removed by ON DELETE CASCADE.
+            Database::execute("DELETE FROM property_photos WHERE property_id = ?", [$id]);
+            Database::execute("DELETE FROM documents WHERE documentable_type = 'property' AND documentable_id = ?", [$id]);
+            Database::execute("DELETE FROM properties WHERE id = ?", [$id]);
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollback();
+            error_log('property hardDelete failed: ' . $e->getMessage());
+            flash('error', __('Could not permanently delete this property. No changes were made.'));
+            redirect('/properties?show_archived=1');
+            return;
+        }
+
+        log_activity('property.deleted', "Property '{$property['name']}' permanently deleted");
+        flash('success', __('Property permanently deleted.'));
+        redirect('/properties?show_archived=1');
+    }
 }

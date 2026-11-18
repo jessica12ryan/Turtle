@@ -56,16 +56,17 @@
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
                                 </form>
-                                <?php if (can('leases.delete')): ?>
-                                    <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this lease and all associated documents. This action cannot be undone. Continue?') ?>')">
-                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                        <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
-                                    </form>
-                                <?php endif; ?>
-                            <?php elseif ($lease['archived_at'] && can('leases.restore')): ?>
+                            <?php endif; ?>
+                            <?php if ($lease['archived_at'] && can('leases.restore')): ?>
                                 <form method="POST" action="/leases/<?= $lease['id'] ?>/restore" class="inline">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                </form>
+                            <?php endif; ?>
+                            <?php if (can('leases.delete')): ?>
+                                <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this lease and all associated documents. This action cannot be undone. Continue?') ?>')">
+                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                    <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                 </form>
                             <?php endif; ?>
                         </td>

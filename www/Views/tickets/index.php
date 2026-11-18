@@ -59,11 +59,19 @@
                                         <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                     </form>
                                 <?php endif; ?>
-                            <?php elseif (can('tickets.restore')): ?>
-                                <form method="POST" action="/tickets/<?= $ticket['id'] ?>/restore" class="inline">
-                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
-                                </form>
+                            <?php else: ?>
+                                <?php if (can('tickets.restore')): ?>
+                                    <form method="POST" action="/tickets/<?= $ticket['id'] ?>/restore" class="inline">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                    </form>
+                                <?php endif; ?>
+                                <?php if (can('tickets.delete')): ?>
+                                    <form method="POST" action="/tickets/<?= $ticket['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this ticket and all associated data. This action cannot be undone. Continue?') ?>')">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                    </form>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>

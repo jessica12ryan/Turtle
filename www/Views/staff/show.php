@@ -16,6 +16,12 @@
                     <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"><?= __('Restore') ?></button>
                 </form>
             <?php endif; ?>
+            <?php if (can('staff.delete')): ?>
+                <form method="POST" action="/staff/<?= $staff['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this staff member. This action cannot be undone. Continue?') ?>')">
+                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                    <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"><?= __('Delete') ?></button>
+                </form>
+            <?php endif; ?>
         <?php else: ?>
             <?php if (can('staff.edit')): ?>
                 <a href="/staff/<?= $staff['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>

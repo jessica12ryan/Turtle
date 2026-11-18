@@ -59,11 +59,19 @@
                                         <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                     </form>
                                 <?php endif; ?>
-                            <?php elseif (can('staff.restore')): ?>
-                                <form method="POST" action="/staff/<?= $s['id'] ?>/restore" class="inline">
-                                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                                    <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
-                                </form>
+                            <?php else: ?>
+                                <?php if (can('staff.restore')): ?>
+                                    <form method="POST" action="/staff/<?= $s['id'] ?>/restore" class="inline">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                                    </form>
+                                <?php endif; ?>
+                                <?php if (can('staff.delete')): ?>
+                                    <form method="POST" action="/staff/<?= $s['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this staff member. This action cannot be undone. Continue?') ?>')">
+                                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                                        <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                                    </form>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>
