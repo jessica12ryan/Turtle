@@ -14,8 +14,8 @@
                 <li class="px-6 py-4 <?= $n['read_at'] ? '' : 'bg-blue-50' ?>">
                     <div class="flex justify-between items-start">
                         <div>
-                            <p class="text-sm font-medium text-gray-800"><?= h($n['type']) ?></p>
-                            <p class="text-sm text-gray-600 mt-1"><?= h($n['data']) ?></p>
+                            <p class="text-sm font-medium text-gray-800"><?= $n['type'] === 'email' ? __('Email') : h($n['type']) ?></p>
+                            <p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap"><?= h($n['data']) ?></p>
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="text-xs text-gray-500"><?= display_time($n['created_at']) ?></span>

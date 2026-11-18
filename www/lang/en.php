@@ -21,6 +21,7 @@
     'Download' => 'Download',
     'Document Details' => 'Document Details',
     'Messenger' => 'Messenger',
+    'Email' => 'Email',
     'Chat History' => 'Chat History',
     'Search messages' => 'Search messages',
     'Message' => 'Message',
