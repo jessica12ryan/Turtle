@@ -1,7 +1,7 @@
 <?php
 $user = \App\Core\Auth::instance()->user();
 $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL", [$user['id']])['count'] ?? 0;
+$unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL AND (type IS NULL OR type != 'message')", [$user['id']])['count'] ?? 0;
 $logoUrl = site_logo();
 $isDefaultLogo = $logoUrl === '/assets/logo.svg';
 

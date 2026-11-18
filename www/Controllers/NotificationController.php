@@ -11,7 +11,7 @@ class NotificationController
     public function index(): void
     {
         $notifications = Database::fetchAll(
-            "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC",
+            "SELECT * FROM notifications WHERE user_id = ? AND (type IS NULL OR type != 'message') ORDER BY created_at DESC",
             [Auth::instance()->id()]
         );
 

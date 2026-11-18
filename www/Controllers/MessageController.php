@@ -110,7 +110,7 @@ class MessageController
             [$me]
         )['count'] ?? 0;
         $notifications = Database::fetch(
-            "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL",
+            "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL AND (type IS NULL OR type != 'message')",
             [$me]
         )['count'] ?? 0;
 
@@ -160,17 +160,32 @@ class MessageController
             return;
         }
 
+        // Rate limit: at most 10 messages per 30 seconds per sender.
+        $recent = Database::fetch(
+            "SELECT COUNT(*) as cnt FROM messages WHERE sender_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 SECOND)",
+            [$me]
+        );
+        if ($recent && (int)$recent['cnt'] >= 10) {
+            http_response_code(429);
+            echo json_encode(['error' => 'Message limit reached. Please wait a moment.']);
+            return;
+        }
+
         $id = Database::insert(
             "INSERT INTO messages (sender_id, recipient_id, body, created_at) VALUES (?, ?, ?, NOW())",
             [$me, $recipientId, $body]
         );
         $saved = Database::fetch("SELECT created_at FROM messages WHERE id = ?", [$id]);
 
-        $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
-        Database::execute(
-            "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, 'message', ?, NOW())",
-            [$recipientId, $sender['name'] . ': ' . $snippet]
-        );
+        // Online recipients are notified by the messenger overlay (badge + sound).
+        // Only offline recipients get a persisted notification record.
+        if (!$this->isOnline($recipientId)) {
+            $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
+            Database::execute(
+                "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, 'message', ?, NOW())",
+                [$recipientId, $sender['name'] . ': ' . $snippet]
+            );
+        }
 
         echo json_encode([
             'success' => true,
@@ -182,5 +197,15 @@ class MessageController
                 'time' => display_time($saved['created_at'] ?? date('Y-m-d H:i:s')),
             ],
         ]);
+    }
+
+    private function isOnline(int $userId): bool
+    {
+        $row = Database::fetch(
+            "SELECT user_id FROM user_presence
+             WHERE user_id = ? AND last_seen >= DATE_SUB(NOW(), INTERVAL 60 SECOND)",
+            [$userId]
+        );
+        return $row !== null;
     }
 }

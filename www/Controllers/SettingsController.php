@@ -11,7 +11,7 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications', 'messenger'])) {
             $tab = 'general';
         }
 
@@ -197,6 +197,28 @@ class SettingsController
                     $data['mysqlLogs'][basename($mp)] = array_slice($lines, -100);
                 }
             }
+        }
+
+        if ($tab === 'messenger') {
+            $search = trim((string)($_GET['q'] ?? ''));
+            $conditions = [];
+            $params = [];
+            if ($search !== '') {
+                $conditions[] = '(sender.name LIKE ? OR recipient.name LIKE ? OR m.body LIKE ?)';
+                $like = '%' . $search . '%';
+                $params = [$like, $like, $like];
+            }
+            $where = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
+            $data['messageSearch'] = $search;
+            $data['messages'] = Database::fetchAll(
+                "SELECT m.id, m.body, m.created_at, sender.name AS sender_name, recipient.name AS recipient_name
+                 FROM messages m
+                 JOIN users sender ON sender.id = m.sender_id
+                 JOIN users recipient ON recipient.id = m.recipient_id{$where}
+                 ORDER BY m.created_at DESC
+                 LIMIT 500",
+                $params
+            );
         }
 
         $view = new View();
