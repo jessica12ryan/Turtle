@@ -528,7 +528,7 @@ function can(string $permission): bool
 
     $rolesToCheck = [$user['role']];
     if (!empty($user['secondary_roles'])) {
-        $secondary = explode(',', $user['secondary_roles']);
+        $secondary = array_map('trim', explode(',', $user['secondary_roles']));
         $rolesToCheck = array_merge($rolesToCheck, $secondary);
     }
 

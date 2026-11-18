@@ -14,7 +14,7 @@ $resolverConfig = [
     'propertyTickets' => $propertyTickets ?? [],
     'ticketProperty' => $ticketProperty ?? [],
     'ticketAccess' => $ticketAccess ?? [],
-    'companyManagersByProperty' => $companyManagersByProperty ?? [],
+    'managersByProperty' => $managersByProperty ?? [],
 ];
 ?>
 <div class="flex justify-between items-center mb-6">
@@ -143,7 +143,7 @@ function archiveConflictResolver(config) {
         propertyTickets: config.propertyTickets,
         ticketProperty: config.ticketProperty,
         ticketAccess: config.ticketAccess,
-        companyManagersByProperty: config.companyManagersByProperty,
+        managersByProperty: config.managersByProperty,
         // Reactive: re-evaluates whenever any x-model value above changes
         get canSubmit() {
             if (!this.hasManagers) return false;
@@ -159,7 +159,7 @@ function archiveConflictResolver(config) {
         },
         companyManagerIdsFor(ticketId) {
             const propertyId = this.ticketProperty[ticketId];
-            const allowed = new Set(this.companyManagersByProperty[propertyId] || []);
+            const allowed = new Set(this.managersByProperty[propertyId] || []);
             const selected = this.propertyValues[propertyId];
             if (selected) allowed.add(String(selected));
             return allowed;

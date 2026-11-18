@@ -195,7 +195,9 @@ class StaffController
         foreach ($roles as $r) {
             $secondaryRoleMap[$r] = $this->validSecondaryRoles($r);
         }
-        $staffSecondaryRoles = !empty($staff['secondary_roles']) ? explode(',', $staff['secondary_roles']) : [];
+        $staffSecondaryRoles = !empty($staff['secondary_roles'])
+            ? array_map('trim', explode(',', $staff['secondary_roles']))
+            : [];
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Staff']);
@@ -342,7 +344,7 @@ class StaffController
         if (!empty($properties) || !empty($tickets)) {
             $availableManagers = Database::fetchAll(
                 "SELECT id, name, email, role, secondary_roles FROM users
-                 WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
+                 WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', REPLACE(COALESCE(secondary_roles, ''), ' ', '')))
                  AND archived_at IS NULL AND id != ?
                  ORDER BY name",
                 [$id]
@@ -389,44 +391,19 @@ class StaffController
                 }
             }
 
-            // For the "assign all" dropdowns, a manager "exists in" a property
-            // when they belong to the property's company (company_user).
+            // Every available manager is a property manager, whether that is
+            // their primary role or a secondary role. They are therefore valid
+            // choices for both "assign all" dropdowns.
             $allManagerIds = array_map(fn($m) => (string)$m['id'], $availableManagers);
-            $companyManagersByProperty = [];
+            $managersByProperty = [];
             foreach ($properties as $prop) {
-                $allowed = [];
-                foreach ($availableManagers as $manager) {
-                    if (in_array((int)$prop['company_id'], $managerCompanyMap[(int)$manager['id']] ?? [], true)) {
-                        $allowed[] = (string)$manager['id'];
-                    }
-                }
-                $companyManagersByProperty[(string)$prop['id']] = $allowed;
+                $managersByProperty[(string)$prop['id']] = $allManagerIds;
             }
             foreach ($tickets as $ticket) {
-                $allowed = [];
-                foreach ($availableManagers as $manager) {
-                    if (in_array((int)$ticket['company_id'], $managerCompanyMap[(int)$manager['id']] ?? [], true)) {
-                        $allowed[] = (string)$manager['id'];
-                    }
-                }
-                $companyManagersByProperty[(string)$ticket['property_id']] = $allowed;
+                $managersByProperty[(string)$ticket['property_id']] = $allManagerIds;
             }
-
-            // Managers common to every conflicting property / ticket property.
             $commonPropertyManagers = $allManagerIds;
-            foreach ($properties as $prop) {
-                $commonPropertyManagers = array_values(array_intersect(
-                    $commonPropertyManagers,
-                    $companyManagersByProperty[(string)$prop['id']]
-                ));
-            }
             $commonTicketManagers = $allManagerIds;
-            foreach ($tickets as $ticket) {
-                $commonTicketManagers = array_values(array_intersect(
-                    $commonTicketManagers,
-                    $companyManagersByProperty[(string)$ticket['property_id']]
-                ));
-            }
 
             $view = new View();
             $view->layout('layouts/main', ['title' => __('Archive Staff Member')]);
@@ -438,7 +415,7 @@ class StaffController
                 'ticketAccess',
                 'ticketProperty',
                 'propertyTickets',
-                'companyManagersByProperty',
+                'managersByProperty',
                 'commonPropertyManagers',
                 'commonTicketManagers'
             ));
@@ -486,7 +463,7 @@ class StaffController
         // Managers that conflicts may be reassigned to (must match the form's list)
         $availableManagers = Database::fetchAll(
             "SELECT id, role, secondary_roles FROM users
-             WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
+             WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', REPLACE(COALESCE(secondary_roles, ''), ' ', '')))
              AND archived_at IS NULL AND id != ?",
             [$id]
         );
