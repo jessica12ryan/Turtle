@@ -146,7 +146,8 @@ class TicketController
     public function show(int $id): void
     {
         $ticket = Database::fetch(
-            "SELECT t.*, p.name as property_name, p.landlord_id, u.name as tenant_name, a.name as assignee_name 
+            "SELECT t.*, p.name as property_name, p.landlord_id, p.company_id, p.property_manager_id,
+                    u.name as tenant_name, a.name as assignee_name 
              FROM tickets t 
              JOIN properties p ON p.id = t.property_id 
              JOIN users u ON u.id = t.tenant_id 
@@ -182,13 +183,31 @@ class TicketController
         );
 
         $staffUsers = [];
-        if (in_array(Auth::instance()->user()['role'], ['admin', 'landlord', 'property_manager'])) {
+        if (can('tickets.assign')) {
             $staffUsers = Database::fetchAll(
                 "SELECT u.* FROM users u 
                  WHERE u.archived_at IS NULL 
                    AND u.role IN ('admin','landlord','property_manager','maintenance')
                  ORDER BY u.name"
             );
+
+            // Only offer staff members who can actually access this property.
+            $staffIds = array_column($staffUsers, 'id');
+            $companyMap = [];
+            if (!empty($staffIds)) {
+                $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
+                $companyRows = Database::fetchAll(
+                    "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
+                    $staffIds
+                );
+                foreach ($companyRows as $row) {
+                    $companyMap[(int)$row['user_id']][] = (int)$row['company_id'];
+                }
+            }
+            $staffUsers = array_values(array_filter(
+                $staffUsers,
+                fn($u) => user_can_access_property($u, $ticket, $companyMap[(int)$u['id']] ?? [])
+            ));
         }
 
         $files = Database::fetchAll(
@@ -215,30 +234,53 @@ class TicketController
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        // The "Unassigned" option submits an empty string; normalize it to NULL.
         $assignedTo = $_POST['assigned_to'] ?? null;
+        $assignedTo = ($assignedTo === '' || $assignedTo === null) ? null : (int)$assignedTo;
 
+        $assignee = null;
+        if ($assignedTo !== null) {
+            $assignee = Database::fetch(
+                "SELECT name, email, role, secondary_roles FROM users WHERE id = ? AND archived_at IS NULL",
+                [$assignedTo]
+            );
+            if (!$assignee) {
+                flash('error', 'Selected assignee is invalid.');
+                redirectBack();
+                return;
+            }
+
+            $property = Database::fetch(
+                "SELECT company_id, property_manager_id FROM properties WHERE id = ?",
+                [$ticket['property_id']]
+            );
+            if (!$property || !user_can_access_property($assignee, $property)) {
+                flash('error', 'Selected assignee does not have access to this property.');
+                redirectBack();
+                return;
+            }
+        }
+
+        // Assigning moves the ticket to in progress; unassigning leaves the status untouched.
+        $status = $assignedTo !== null ? 'in_progress' : $ticket['status'];
         Database::execute(
-            "UPDATE tickets SET assigned_to = ?, status = 'in_progress', updated_at = NOW() WHERE id = ?",
-            [$assignedTo, $id]
+            "UPDATE tickets SET assigned_to = ?, status = ?, updated_at = NOW() WHERE id = ?",
+            [$assignedTo, $status, $id]
         );
 
         $user = Auth::instance()->user();
-        if ($assignedTo) {
-            $assignee = Database::fetch("SELECT name, email FROM users WHERE id = ?", [$assignedTo]);
-            $assigneeName = $assignee ? $assignee['name'] : 'Unknown';
-            $commentBody = $user['name'] . ' assigned ticket to ' . $assigneeName;
-            if ($assignee) {
-                Mailer::sendTemplate(
-                    $assignee['email'],
-                    'Ticket Assigned: ' . $ticket['subject'],
-                    'Hello ' . h($assignee['name']) . ',',
-                    'A ticket has been assigned to you.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>Priority:</strong> ' . ucfirst($ticket['priority']),
-                    \site_url() . '/tickets/' . $id,
-                    'View Ticket'
-                );
-            }
+        if ($assignee) {
+            $commentBody = $user['name'] . ' assigned ticket to ' . $assignee['name'];
+            Mailer::sendTemplate(
+                $assignee['email'],
+                'Ticket Assigned: ' . $ticket['subject'],
+                'Hello ' . h($assignee['name']) . ',',
+                'A ticket has been assigned to you.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>Priority:</strong> ' . ucfirst($ticket['priority']),
+                \site_url() . '/tickets/' . $id,
+                'View Ticket'
+            );
         } else {
-            $commentBody = $user['name'] . ' assigned ticket to Unassigned';
+            $commentBody = $user['name'] . ' unassigned the ticket';
         }
 
         Database::insert(

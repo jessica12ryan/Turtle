@@ -1,3 +1,21 @@
+<?php
+$managersById = [];
+foreach ($availableManagers ?? [] as $m) {
+    $managersById[(int)$m['id']] = $m;
+}
+$resolverConfig = [
+    'properties' => array_map(fn($p) => (string)$p['id'], $properties ?? []),
+    'tickets' => array_map(fn($t) => (string)$t['id'], $tickets ?? []),
+    'hasManagers' => !empty($availableManagers),
+    'managers' => array_map(fn($m) => [
+        'id' => (string)$m['id'],
+        'label' => $m['name'] . ' (' . $m['email'] . ')',
+    ], $availableManagers ?? []),
+    'propertyTickets' => $propertyTickets ?? [],
+    'ticketProperty' => $ticketProperty ?? [],
+    'ticketAccess' => $ticketAccess ?? [],
+];
+?>
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Archive Staff Member') ?></h1>
 </div>
@@ -8,11 +26,7 @@
         <p class="text-yellow-700"><?= __('This staff member has properties and/or tickets assigned to them. You must resolve these before archiving.') ?></p>
     </div>
 
-    <form method="POST" action="/staff/<?= $target['id'] ?>/archive-resolve" x-data='archiveConflictResolver(<?= json_encode([
-          "properties" => array_map(fn($p) => (string)$p["id"], $properties ?? []),
-          "tickets" => array_map(fn($t) => (string)$t["id"], $tickets ?? []),
-          "hasManagers" => !empty($availableManagers),
-      ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>
+    <form method="POST" action="/staff/<?= $target['id'] ?>/archive-resolve" x-data='archiveConflictResolver(<?= json_encode($resolverConfig, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <?php if (empty($availableManagers)): ?>
@@ -46,7 +60,7 @@
                         <span class="font-medium text-gray-800"><?= h($prop['name']) ?></span>
                         <span class="text-xs text-gray-500">ID: #<?= $prop['id'] ?></span>
                     </div>
-                    <select name="property_assignments[<?= $prop['id'] ?>]" x-model="propertyValues['<?= (int)$prop['id'] ?>']" class="w-full md:w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <select name="property_assignments[<?= $prop['id'] ?>]" x-model="propertyValues['<?= (int)$prop['id'] ?>']" @change="onPropertyChange('<?= (int)$prop['id'] ?>', $event)" class="w-full md:w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                         <option value=""><?= __('— Select Property Manager —') ?></option>
                         <?php foreach ($availableManagers as $mgr): ?>
                             <option value="<?= $mgr['id'] ?>"><?= h($mgr['name']) ?> (<?= h($mgr['email']) ?>)</option>
@@ -88,7 +102,8 @@
                     <select name="ticket_assignments[<?= $ticket['id'] ?>]" x-model="ticketValues['<?= (int)$ticket['id'] ?>']" class="w-full md:w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                         <option value=""><?= __('— Select Property Manager —') ?></option>
                         <option value="unassign"><?= __('Unassign (leave unassigned)') ?></option>
-                        <?php foreach ($availableManagers as $mgr): ?>
+                        <?php foreach (($ticketAccess[$ticket['id']] ?? []) as $mgrId): ?>
+                            <?php $mgr = $managersById[(int)$mgrId] ?? null; if (!$mgr) continue; ?>
                             <option value="<?= $mgr['id'] ?>"><?= h($mgr['name']) ?> (<?= h($mgr['email']) ?>)</option>
                         <?php endforeach; ?>
                     </select>
@@ -119,21 +134,79 @@ function archiveConflictResolver(config) {
     const blank = (ids) => Object.fromEntries(ids.map(id => [id, '']));
     return {
         hasManagers: config.hasManagers,
+        managers: config.managers,
         propertyValues: blank(config.properties),
         ticketValues: blank(config.tickets),
+        propertyTickets: config.propertyTickets,
+        ticketProperty: config.ticketProperty,
+        ticketAccess: config.ticketAccess,
         // Reactive: re-evaluates whenever any x-model value above changes
         get canSubmit() {
             if (!this.hasManagers) return false;
             return Object.values(this.propertyValues).every(v => v !== '')
                 && Object.values(this.ticketValues).every(v => v !== '');
         },
+        allowedManagerIdsFor(ticketId) {
+            const allowed = new Set(this.ticketAccess[ticketId] || []);
+            const propertyId = this.ticketProperty[ticketId];
+            const selected = this.propertyValues[propertyId];
+            if (selected) allowed.add(String(selected));
+            return allowed;
+        },
+        refreshTicketOptions(ticketId) {
+            const select = document.querySelector(`select[name="ticket_assignments[${ticketId}]"]`);
+            if (!select) return;
+            const allowed = this.allowedManagerIdsFor(ticketId);
+            let current = String(this.ticketValues[ticketId] || '');
+
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = <?= json_encode(__('— Select Property Manager —'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            select.appendChild(placeholder);
+
+            const unassign = document.createElement('option');
+            unassign.value = 'unassign';
+            unassign.textContent = <?= json_encode(__('Unassign (leave unassigned)'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            select.appendChild(unassign);
+
+            for (const manager of this.managers) {
+                if (!allowed.has(String(manager.id))) continue;
+                const option = document.createElement('option');
+                option.value = manager.id;
+                option.textContent = manager.label;
+                select.appendChild(option);
+            }
+
+            if (current !== '' && current !== 'unassign' && !allowed.has(current)) {
+                this.ticketValues[ticketId] = '';
+                current = '';
+            }
+            select.value = current;
+        },
+        onPropertyChange(propertyId, event) {
+            this.propertyValues[propertyId] = event.target.value;
+            for (const ticketId of (this.propertyTickets[propertyId] || [])) {
+                this.refreshTicketOptions(ticketId);
+            }
+        },
         assignAllProperties(value) {
             if (!value) return;
-            for (const id in this.propertyValues) this.propertyValues[id] = value;
+            for (const id in this.propertyValues) {
+                this.propertyValues[id] = value;
+                this.onPropertyChange(id, { target: { value } });
+            }
         },
         assignAllTickets(value) {
             if (!value) return;
-            for (const id in this.ticketValues) this.ticketValues[id] = value;
+            for (const id in this.ticketValues) {
+                const allowed = this.allowedManagerIdsFor(id);
+                if (value === 'unassign' || allowed.has(String(value))) {
+                    this.ticketValues[id] = value;
+                } else {
+                    this.ticketValues[id] = '';
+                }
+            }
         }
     };
 }

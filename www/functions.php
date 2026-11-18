@@ -554,6 +554,74 @@ function can(string $permission): bool
     return false;
 }
 
+function effective_roles(array $user): array
+{
+    $roles = [];
+    if (!empty($user['role'])) {
+        $roles[] = $user['role'];
+    }
+    if (!empty($user['secondary_roles'])) {
+        foreach (explode(',', (string)$user['secondary_roles']) as $role) {
+            $role = trim($role);
+            if ($role !== '') {
+                $roles[] = $role;
+            }
+        }
+    }
+    return array_values(array_unique($roles));
+}
+
+function user_company_ids(int $userId): array
+{
+    try {
+        $rows = \App\Core\Database::fetchAll(
+            "SELECT company_id FROM company_user WHERE user_id = ?",
+            [$userId]
+        );
+    } catch (\Throwable $e) {
+        return [];
+    }
+    return array_map('intval', array_column($rows, 'company_id'));
+}
+
+/**
+ * Whether a staff member can access a property.
+ *
+ * Access is the union of the rights granted by the user's primary and
+ * secondary roles:
+ *  - admin: every property
+ *  - landlord / maintenance: properties belonging to one of the user's companies
+ *  - property_manager: properties the user manages
+ */
+function user_can_access_property(array $user, array $property, ?array $companyIds = null): bool
+{
+    $roles = effective_roles($user);
+    if (in_array('admin', $roles, true)) {
+        return true;
+    }
+
+    $companyId = (int)($property['company_id'] ?? 0);
+    if ($companyId === 0) {
+        return false;
+    }
+
+    if ($companyIds === null) {
+        $companyIds = user_company_ids((int)($user['id'] ?? 0));
+    }
+
+    if (in_array($companyId, $companyIds, true)
+        && (in_array('landlord', $roles, true) || in_array('maintenance', $roles, true))) {
+        return true;
+    }
+
+    if (in_array('property_manager', $roles, true)
+        && (int)($property['property_manager_id'] ?? 0) === (int)($user['id'] ?? 0)) {
+        return true;
+    }
+
+    return false;
+}
+
 function provinces(): array
 {
     return regions('CA');

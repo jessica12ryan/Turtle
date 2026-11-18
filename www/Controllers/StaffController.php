@@ -325,11 +325,14 @@ class StaffController
 
         // Check for conflicts: properties and tickets assigned to this staff member
         $properties = Database::fetchAll(
-            "SELECT p.id, p.name FROM properties p WHERE p.property_manager_id = ? AND p.archived_at IS NULL",
+            "SELECT p.id, p.name, p.company_id, p.property_manager_id FROM properties p
+             WHERE p.property_manager_id = ? AND p.archived_at IS NULL",
             [$id]
         );
         $tickets = Database::fetchAll(
-            "SELECT t.id, t.subject, p.name as property_name FROM tickets t
+            "SELECT t.id, t.subject, p.id as property_id, p.name as property_name,
+                    p.company_id, p.property_manager_id
+             FROM tickets t
              JOIN properties p ON p.id = t.property_id
              WHERE t.assigned_to = ? AND t.archived_at IS NULL",
             [$id]
@@ -338,16 +341,65 @@ class StaffController
         // If there are conflicts, show the conflict resolution modal
         if (!empty($properties) || !empty($tickets)) {
             $availableManagers = Database::fetchAll(
-                "SELECT id, name, email FROM users
+                "SELECT id, name, email, role, secondary_roles FROM users
                  WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
                  AND archived_at IS NULL AND id != ?
                  ORDER BY name",
                 [$id]
             );
 
+            // Managers who can already access each conflicting ticket's property.
+            // The view adds the manager selected for a property reassignment
+            // dynamically, since that assignment happens in the same form.
+            $managerIds = array_column($availableManagers, 'id');
+            $managerCompanyMap = [];
+            if (!empty($managerIds)) {
+                $placeholders = implode(',', array_fill(0, count($managerIds), '?'));
+                $companyRows = Database::fetchAll(
+                    "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
+                    $managerIds
+                );
+                foreach ($companyRows as $row) {
+                    $managerCompanyMap[(int)$row['user_id']][] = (int)$row['company_id'];
+                }
+            }
+
+            $ticketAccess = [];
+            $ticketProperty = [];
+            $propertyTickets = [];
+            foreach ($tickets as $ticket) {
+                $ticketId = (string)$ticket['id'];
+                $propertyId = (string)$ticket['property_id'];
+                $ticketProperty[$ticketId] = $propertyId;
+                $propertyTickets[$propertyId][] = $ticketId;
+
+                $property = [
+                    'company_id' => $ticket['company_id'],
+                    'property_manager_id' => $ticket['property_manager_id'],
+                ];
+                $ticketAccess[$ticketId] = [];
+                foreach ($availableManagers as $manager) {
+                    if (user_can_access_property(
+                        $manager,
+                        $property,
+                        $managerCompanyMap[(int)$manager['id']] ?? []
+                    )) {
+                        $ticketAccess[$ticketId][] = (string)$manager['id'];
+                    }
+                }
+            }
+
             $view = new View();
             $view->layout('layouts/main', ['title' => __('Archive Staff Member')]);
-            $view->render('staff/archive_conflict', compact('target', 'properties', 'tickets', 'availableManagers'));
+            $view->render('staff/archive_conflict', compact(
+                'target',
+                'properties',
+                'tickets',
+                'availableManagers',
+                'ticketAccess',
+                'ticketProperty',
+                'propertyTickets'
+            ));
             return;
         }
 
@@ -382,22 +434,38 @@ class StaffController
             [$id]
         );
         $tickets = Database::fetchAll(
-            "SELECT t.id FROM tickets t
+            "SELECT t.id, p.id as property_id, p.company_id, p.property_manager_id
+             FROM tickets t
              JOIN properties p ON p.id = t.property_id
              WHERE t.assigned_to = ? AND t.archived_at IS NULL",
             [$id]
         );
 
         // Managers that conflicts may be reassigned to (must match the form's list)
-        $validManagerIds = array_map(
-            fn($m) => (string)$m['id'],
-            Database::fetchAll(
-                "SELECT id FROM users
-                 WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
-                 AND archived_at IS NULL AND id != ?",
-                [$id]
-            )
+        $availableManagers = Database::fetchAll(
+            "SELECT id, role, secondary_roles FROM users
+             WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
+             AND archived_at IS NULL AND id != ?",
+            [$id]
         );
+        $validManagerIds = [];
+        $managersById = [];
+        foreach ($availableManagers as $manager) {
+            $validManagerIds[] = (string)$manager['id'];
+            $managersById[(int)$manager['id']] = $manager;
+        }
+
+        $managerCompanyMap = [];
+        if (!empty($availableManagers)) {
+            $managerIds = array_column($availableManagers, 'id');
+            $placeholders = implode(',', array_fill(0, count($managerIds), '?'));
+            foreach (Database::fetchAll(
+                "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
+                $managerIds
+            ) as $row) {
+                $managerCompanyMap[(int)$row['user_id']][] = (int)$row['company_id'];
+            }
+        }
 
         $propertyAssignments = is_array($_POST['property_assignments'] ?? null) ? $_POST['property_assignments'] : [];
         $ticketAssignments = is_array($_POST['ticket_assignments'] ?? null) ? $_POST['ticket_assignments'] : [];
@@ -405,6 +473,7 @@ class StaffController
         // Validate: every conflicting property needs a valid manager,
         // every conflicting ticket needs a valid manager or an explicit "unassign".
         $errorRedirect = '/staff/' . $id;
+        $pendingByProperty = [];
         foreach ($properties as $prop) {
             $value = (string)($propertyAssignments[(string)$prop['id']] ?? '');
             if ($value === '' || !in_array($value, $validManagerIds, true)) {
@@ -412,11 +481,34 @@ class StaffController
                 redirect($errorRedirect);
                 return;
             }
+            $pendingByProperty[(int)$prop['id']] = (int)$value;
         }
         foreach ($tickets as $ticket) {
             $value = (string)($ticketAssignments[(string)$ticket['id']] ?? '');
-            if ($value !== 'unassign' && ($value === '' || !in_array($value, $validManagerIds, true))) {
+            if ($value === 'unassign') {
+                continue;
+            }
+            if ($value === '' || !in_array($value, $validManagerIds, true)) {
                 flash('error', __('Each ticket must be assigned or explicitly unassigned.'));
+                redirect($errorRedirect);
+                return;
+            }
+
+            $assigneeId = (int)$value;
+            $property = [
+                'company_id' => $ticket['company_id'],
+                'property_manager_id' => $ticket['property_manager_id'],
+            ];
+            $hasAccess = user_can_access_property(
+                $managersById[$assigneeId],
+                $property,
+                $managerCompanyMap[$assigneeId] ?? []
+            );
+            // A property being reassigned to a manager in this same request
+            // grants that manager access to its tickets.
+            $isPendingManager = ($pendingByProperty[(int)$ticket['property_id']] ?? 0) === $assigneeId;
+            if (!$hasAccess && !$isPendingManager) {
+                flash('error', 'Each ticket must be assigned to a property manager with access to its property.');
                 redirect($errorRedirect);
                 return;
             }
