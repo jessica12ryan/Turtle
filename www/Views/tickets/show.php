@@ -11,12 +11,31 @@ foreach ($files ?? [] as $f) {
 <div class="mb-6">
     <div class="flex justify-between items-start">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800"><?= h($ticket['subject']) ?></h1>
+            <h1 class="text-2xl font-bold text-gray-800">
+                <?= h($ticket['subject']) ?>
+                <?php if ($ticket['archived_at']): ?>
+                    <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1 align-middle"><?= __('Archived') ?></span>
+                <?php endif; ?>
+            </h1>
             <p class="text-gray-500 mt-1"><?= h($ticket['property_name']) ?> — <?= __('Opened by') ?> <?= h($ticket['tenant_name']) ?> <?= __('on') ?> <?= display_time($ticket['created_at']) ?></p>
         </div>
         <div class="flex items-center space-x-2">
             <span data-tooltip="<?= __('Ticket status') . ': ' . h(ucfirst(str_replace('_', ' ', $ticket['status']))) ?>" class="px-3 py-1 text-sm rounded-full <?= $ticket['status'] === 'open' ? 'bg-yellow-100 text-yellow-800' : ($ticket['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800' : ($ticket['status'] === 'awaiting_parts' ? 'bg-purple-100 text-purple-800' : ($ticket['status'] === 'awaiting_contractor' ? 'bg-indigo-100 text-indigo-800' : ($ticket['status'] === 'closed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')))) ?>"><?= h(ucfirst(str_replace('_', ' ', $ticket['status']))) ?></span>
             <span data-tooltip="<?= __('Priority') . ': ' . h(ucfirst($ticket['priority'])) ?>" class="px-3 py-1 text-sm rounded-full <?= $ticket['priority'] === 'emergency' ? 'bg-red-100 text-red-800' : ($ticket['priority'] === 'high' ? 'bg-orange-100 text-orange-800' : ($ticket['priority'] === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800')) ?>"><?= h(ucfirst($ticket['priority'])) ?></span>
+            <?php if ($ticket['archived_at']): ?>
+                <?php if (can('tickets.restore')): ?>
+                    <form method="POST" action="/tickets/<?= $ticket['id'] ?>/restore" class="inline">
+                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                        <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                    </form>
+                <?php endif; ?>
+                <?php if (can('tickets.delete')): ?>
+                    <form method="POST" action="/tickets/<?= $ticket['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this ticket and all associated data. This action cannot be undone. Continue?') ?>')">
+                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                        <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
+                    </form>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -97,6 +116,7 @@ foreach ($files ?? [] as $f) {
                 <?php endif; ?>
             </div>
         </div>
+        <?php if (!$ticket['archived_at']): ?>
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Add Comment') ?></h2>
             <form method="POST" action="/tickets/<?= $ticket['id'] ?>/comment" enctype="multipart/form-data">
@@ -121,9 +141,10 @@ foreach ($files ?? [] as $f) {
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Post Comment') ?></button>
             </form>
         </div>
+        <?php endif; ?>
     </div>
     <div class="space-y-6">
-        <?php if (can('tickets.assign')): ?>
+        <?php if (!$ticket['archived_at'] && can('tickets.assign')): ?>
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Assign') ?></h2>
                 <form method="POST" action="/tickets/<?= $ticket['id'] ?>/assign">
@@ -138,7 +159,7 @@ foreach ($files ?? [] as $f) {
                 </form>
             </div>
         <?php endif; ?>
-        <?php if (can('tickets.update_status')): ?>
+        <?php if (!$ticket['archived_at'] && can('tickets.update_status')): ?>
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Status') ?></h2>
                 <form method="POST" action="/tickets/<?= $ticket['id'] ?>/status">

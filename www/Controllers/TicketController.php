@@ -152,7 +152,7 @@ class TicketController
              JOIN properties p ON p.id = t.property_id 
              JOIN users u ON u.id = t.tenant_id 
              LEFT JOIN users a ON a.id = t.assigned_to 
-             WHERE t.id = ? AND t.archived_at IS NULL",
+             WHERE t.id = ?",
             [$id]
         );
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -183,7 +183,7 @@ class TicketController
         );
 
         $staffUsers = [];
-        if (can('tickets.assign')) {
+        if (!$ticket['archived_at'] && can('tickets.assign')) {
             $staffUsers = $this->assignableStaffForProperty($ticket);
         }
 
