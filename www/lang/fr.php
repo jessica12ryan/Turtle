@@ -361,6 +361,8 @@ return [
     '12345' => '12345',
     'time.gov' => 'time.gov',
     'Language' => 'Langue',
+    'Could not archive this staff member. No changes were made.' => 'Impossible d\'archiver ce membre du personnel. Aucune modification n\'a été effectuée.',
+    'There are no other active property managers to reassign to. Create or restore one first.' => 'Il n\'y a aucun autre gestionnaire immobilier actif à qui réassigner. Créez-en ou restaurez-en un d\'abord.',
     'Use default language' => 'Utiliser la langue par défaut',
     'Last updated' => 'Dernière mise à jour',
     'Secondary Roles' => 'Rôles secondaires',

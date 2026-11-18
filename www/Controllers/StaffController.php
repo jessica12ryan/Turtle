@@ -388,40 +388,69 @@ class StaffController
             [$id]
         );
 
-        // Validate property assignments (required)
-        $propertyAssignments = $_POST['property_assignments'] ?? [];
+        // Managers that conflicts may be reassigned to (must match the form's list)
+        $validManagerIds = array_map(
+            fn($m) => (string)$m['id'],
+            Database::fetchAll(
+                "SELECT id FROM users
+                 WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
+                 AND archived_at IS NULL AND id != ?",
+                [$id]
+            )
+        );
+
+        $propertyAssignments = is_array($_POST['property_assignments'] ?? null) ? $_POST['property_assignments'] : [];
+        $ticketAssignments = is_array($_POST['ticket_assignments'] ?? null) ? $_POST['ticket_assignments'] : [];
+
+        // Validate: every conflicting property needs a valid manager,
+        // every conflicting ticket needs a valid manager or an explicit "unassign".
+        $errorRedirect = '/staff/' . $id;
         foreach ($properties as $prop) {
-            $propId = (string)$prop['id'];
-            if (!isset($propertyAssignments[$propId]) || empty($propertyAssignments[$propId])) {
+            $value = (string)($propertyAssignments[(string)$prop['id']] ?? '');
+            if ($value === '' || !in_array($value, $validManagerIds, true)) {
                 flash('error', __('Each property must be assigned to a property manager.'));
-                redirect('/staff/' . $id . '/delete');
+                redirect($errorRedirect);
+                return;
+            }
+        }
+        foreach ($tickets as $ticket) {
+            $value = (string)($ticketAssignments[(string)$ticket['id']] ?? '');
+            if ($value !== 'unassign' && ($value === '' || !in_array($value, $validManagerIds, true))) {
+                flash('error', __('Each ticket must be assigned or explicitly unassigned.'));
+                redirect($errorRedirect);
                 return;
             }
         }
 
-        // Process property reassignments
-        foreach ($propertyAssignments as $propertyId => $newManagerId) {
-            if (!empty($newManagerId)) {
+        try {
+            Database::beginTransaction();
+
+            // Only touch properties/tickets that actually belong to this staff member
+            foreach ($properties as $prop) {
                 Database::execute(
-                    "UPDATE properties SET property_manager_id = ?, updated_at = NOW() WHERE id = ?",
-                    [(int)$newManagerId, (int)$propertyId]
+                    "UPDATE properties SET property_manager_id = ?, updated_at = NOW() WHERE id = ? AND property_manager_id = ?",
+                    [(int)$propertyAssignments[(string)$prop['id']], (int)$prop['id'], $id]
                 );
             }
+            foreach ($tickets as $ticket) {
+                $value = (string)$ticketAssignments[(string)$ticket['id']];
+                $assigneeId = $value === 'unassign' ? null : (int)$value;
+                Database::execute(
+                    "UPDATE tickets SET assigned_to = ?, updated_at = NOW() WHERE id = ? AND assigned_to = ?",
+                    [$assigneeId, (int)$ticket['id'], $id]
+                );
+            }
+
+            Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollback();
+            error_log('archiveWithResolution failed: ' . $e->getMessage());
+            flash('error', __('Could not archive this staff member. No changes were made.'));
+            redirect('/staff/' . $id);
+            return;
         }
 
-        // Process ticket reassignments
-        $ticketAssignments = $_POST['ticket_assignments'] ?? [];
-        foreach ($ticketAssignments as $ticketId => $newAssigneeId) {
-            // Empty string means unassign
-            $assigneeId = $newAssigneeId !== '' ? (int)$newAssigneeId : null;
-            Database::execute(
-                "UPDATE tickets SET assigned_to = ?, updated_at = NOW() WHERE id = ?",
-                [$assigneeId, (int)$ticketId]
-            );
-        }
-
-        // Archive the staff member
-        Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
         log_activity('staff.archived', "Staff member #{$id} archived with conflict resolution");
         flash('success', 'Staff member archived successfully.');
         redirect('/staff');

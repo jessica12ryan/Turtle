@@ -16,6 +16,8 @@
     'WARNING: This will archive this staff member and is not reversible. They will no longer be able to log in.' => 'WARNING: This will archive this staff member and is not reversible. They will no longer be able to log in.',
     'Each property must be assigned to a property manager.' => 'Each property must be assigned to a property manager.',
     'Each ticket must be assigned or explicitly unassigned.' => 'Each ticket must be assigned or explicitly unassigned.',
+    'Could not archive this staff member. No changes were made.' => 'Could not archive this staff member. No changes were made.',
+    'There are no other active property managers to reassign to. Create or restore one first.' => 'There are no other active property managers to reassign to. Create or restore one first.',
     'Use default language' => 'Use default language',
     'Last updated' => 'Last updated',
     'Secondary Roles' => 'Secondary Roles',
