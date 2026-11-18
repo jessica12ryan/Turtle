@@ -23,7 +23,9 @@
         <?php endif; ?>
     </div>
     <div class="flex space-x-3">
-        <a href="/properties/<?= $lease['property_id'] ?>" data-tooltip="<?= __('View this item') ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
+        <?php if (!$lease['archived_at']): ?>
+            <a href="/properties/<?= $lease['property_id'] ?>" data-tooltip="<?= __('View this item') ?>" class="text-blue-600 hover:underline text-sm"><?= __('View Property') ?></a>
+        <?php endif; ?>
         <?php if ($lease['archived_at']): ?>
             <?php if (can('leases.restore')): ?>
                 <form method="POST" action="/leases/<?= $lease['id'] ?>/restore" class="inline">

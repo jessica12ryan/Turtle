@@ -21,6 +21,7 @@
     'Download' => 'Download',
     'Document Details' => 'Document Details',
     'Archive' => 'Archive',
+    'View Property' => 'View Property',
     'Archive this lease?' => 'Archive this lease?',
     'File Name' => 'File Name',
     'Size' => 'Size',
