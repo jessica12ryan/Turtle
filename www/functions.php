@@ -732,6 +732,16 @@ function defaultNotifications(): array
     ];
 }
 
+function messaging_enabled(): bool
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'messaging_enabled'");
+        return ($row['value'] ?? '1') !== '0';
+    } catch (\Throwable $e) {
+        return true;
+    }
+}
+
 function notificationEventLabels(): array
 {
     return [

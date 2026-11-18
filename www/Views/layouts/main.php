@@ -168,7 +168,9 @@ $themePref = $themeUser['theme'] ?? 'system';
         <?= $content ?>
     </main>
 <div id="tooltip-el" role="tooltip"><span class="tooltip-arrow"></span><span id="tooltip-text"></span></div>
+<?php if (messaging_enabled()): ?>
 <?php require base_path('www/Views/partials/messenger.php'); ?>
+<?php endif; ?>
 <script>
 (function(){
     var ttp = document.getElementById('tooltip-el');

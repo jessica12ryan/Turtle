@@ -223,25 +223,69 @@ class SettingsController
         }
 
         if ($tab === 'messenger') {
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'messaging_enabled'");
+            $data['messagingEnabled'] = ($row['value'] ?? '1') !== '0';
+
             $search = trim((string)($_GET['q'] ?? ''));
-            $conditions = [];
-            $params = [];
-            if ($search !== '') {
-                $conditions[] = '(sender.name LIKE ? OR recipient.name LIKE ? OR m.body LIKE ?)';
-                $like = '%' . $search . '%';
-                $params = [$like, $like, $like];
-            }
-            $where = $conditions ? ' WHERE ' . implode(' AND ', $conditions) : '';
             $data['messageSearch'] = $search;
-            $data['messages'] = Database::fetchAll(
-                "SELECT m.id, m.body, m.created_at, sender.name AS sender_name, recipient.name AS recipient_name
+
+            $rows = Database::fetchAll(
+                "SELECT m.id, m.sender_id, m.recipient_id, m.body, m.created_at,
+                        sender.name AS sender_name, recipient.name AS recipient_name
                  FROM messages m
                  JOIN users sender ON sender.id = m.sender_id
-                 JOIN users recipient ON recipient.id = m.recipient_id{$where}
+                 JOIN users recipient ON recipient.id = m.recipient_id
                  ORDER BY m.created_at DESC
-                 LIMIT 500",
-                $params
+                 LIMIT 2000",
+                []
             );
+
+            $needle = $search !== '' ? mb_strtolower($search) : '';
+            $conversations = [];
+            $matchedRows = [];
+            foreach ($rows as $row) {
+                $a = (int)$row['sender_id'];
+                $b = (int)$row['recipient_id'];
+                $low = min($a, $b);
+                $high = max($a, $b);
+                $key = $low . '-' . $high;
+                if ($needle !== '') {
+                    $haystack = mb_strtolower($row['sender_name'] . ' ' . $row['recipient_name'] . ' ' . $row['body']);
+                    if (strpos($haystack, $needle) === false) continue;
+                }
+                $matchedRows[] = $row;
+                if (!isset($conversations[$key])) {
+                    $conversations[$key] = [
+                        'key' => $key,
+                        'name' => $a < $b
+                            ? $row['sender_name'] . ' / ' . $row['recipient_name']
+                            : $row['recipient_name'] . ' / ' . $row['sender_name'],
+                        'count' => 0,
+                        'last_at' => $row['created_at'],
+                        'last_body' => $row['body'],
+                    ];
+                }
+                $conversations[$key]['count']++;
+            }
+
+            $selectedKey = (string)($_GET['conversation'] ?? '');
+            if ($selectedKey === '' || !isset($conversations[$selectedKey])) {
+                $selectedKey = array_key_first($conversations) ?? '';
+            }
+            $thread = [];
+            foreach ($matchedRows as $row) {
+                $low = min((int)$row['sender_id'], (int)$row['recipient_id']);
+                $high = max((int)$row['sender_id'], (int)$row['recipient_id']);
+                if ($low . '-' . $high === $selectedKey) {
+                    $thread[] = $row;
+                }
+            }
+            $thread = array_reverse($thread);
+
+            $data['messageSearch'] = $search;
+            $data['conversations'] = $conversations;
+            $data['selectedConversation'] = $selectedKey;
+            $data['threadMessages'] = $thread;
         }
 
         $view = new View();
@@ -706,6 +750,26 @@ class SettingsController
         log_activity('settings.inapp_notifications_saved', 'In-app notification settings saved');
         flash('success', 'In-app notification settings saved successfully.');
         redirect('/settings?tab=notifications');
+    }
+
+    public function saveMessenger(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=messenger');
+            return;
+        }
+
+        $enabled = !empty($_POST['messaging_enabled']) ? '1' : '0';
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('messaging_enabled', ?)
+             ON DUPLICATE KEY UPDATE `value` = ?",
+            [$enabled, $enabled]
+        );
+
+        log_activity('settings.messenger_saved', 'Messenger settings saved');
+        flash('success', 'Messenger settings saved successfully.');
+        redirect('/settings?tab=messenger');
     }
 
     public function saveLogging(): void

@@ -40,7 +40,7 @@ Both support **ingress** (embedded in HA UI) and **direct access** via port.
 - **Calendar** — move-in, lease end, and scheduled move-out dates
 - **Resources** — shared links page, general and staff-only categories
 - **Backup & Restore** — full system backup (`.turtle` format) via admin settings
-- **Messaging** — side overlay with online users, direct messages, unread badges, sound alerts, rate limiting, and admin chat history in Settings
+- **Messaging** — side overlay with online users, direct messages, unread badges, sound alerts, rate limiting, admin toggle, and searchable conversation history in Settings
 - **Email** — lightweight SMTP client, email and in-app notification preferences per role
 - **Role-Based Access** — Admin, Landlord, Property Manager, Maintenance, Tenant
 

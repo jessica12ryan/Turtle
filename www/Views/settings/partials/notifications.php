@@ -1,3 +1,9 @@
+<?php
+$hideNotifCell = function (string $event, string $role): bool {
+    return ($event === 'staff_welcome' && $role === 'tenant')
+        || ($event === 'tenant_welcome' && in_array($role, ['landlord', 'property_manager', 'maintenance'], true));
+};
+?>
 <div class="bg-white rounded-lg shadow p-6">
     <h2 class="text-lg font-semibold mb-4"><?= __('Email Notifications') ?></h2>
     <p class="text-sm text-gray-600 mb-6"><?= __('Choose who receives email notifications for each event.') ?></p>
@@ -47,18 +53,22 @@
                         <tr class="border-t border-gray-100 hover:bg-gray-50 <?= $isDefault ? 'opacity-60' : '' ?>">
                             <td class="py-1.5 pr-4 text-blue-600 font-medium"><?= h($label) ?></td>
                             <?php foreach ($notifRoles as $role): ?>
-                                <?php $defaultGranted = in_array($role, $notifDefaults[$event] ?? []); ?>
-                                <?php $overridden = isset($notifOverrides[$event]) && in_array($role, $notifOverrides[$event]); ?>
-                                <?php $checked = $isDefault ? $defaultGranted : $overridden; ?>
-                                <td class="text-center py-1.5 px-3">
-                                    <input type="checkbox"
-                                           name="events[<?= h($event) ?>][]"
-                                           value="<?= h($role) ?>"
-                                           <?= $checked ? 'checked' : '' ?>
-                                           <?= $isDefault ? 'disabled' : '' ?>
-                                           onchange="this.form.submit()"
-                                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                                </td>
+                                <?php if ($hideNotifCell($event, $role)): ?>
+                                    <td class="text-center py-1.5 px-3 text-gray-300">—</td>
+                                <?php else: ?>
+                                    <?php $defaultGranted = in_array($role, $notifDefaults[$event] ?? []); ?>
+                                    <?php $overridden = isset($notifOverrides[$event]) && in_array($role, $notifOverrides[$event]); ?>
+                                    <?php $checked = $isDefault ? $defaultGranted : $overridden; ?>
+                                    <td class="text-center py-1.5 px-3">
+                                        <input type="checkbox"
+                                               name="events[<?= h($event) ?>][]"
+                                               value="<?= h($role) ?>"
+                                               <?= $checked ? 'checked' : '' ?>
+                                               <?= $isDefault ? 'disabled' : '' ?>
+                                               onchange="this.form.submit()"
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                                    </td>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </tr>
                     <?php endforeach; ?>
@@ -108,18 +118,22 @@
                         <tr class="border-t border-gray-100 hover:bg-gray-50 <?= $inappIsDefault ? 'opacity-60' : '' ?>">
                             <td class="py-1.5 pr-4 text-blue-600 font-medium"><?= h($label) ?></td>
                             <?php foreach (($inappRoles ?? []) as $role): ?>
-                                <?php $defaultGranted = in_array($role, ($inappDefaults ?? [])[$event] ?? []); ?>
-                                <?php $overridden = isset($inappOverrides[$event]) && in_array($role, $inappOverrides[$event]); ?>
-                                <?php $checked = $inappIsDefault ? $defaultGranted : $overridden; ?>
-                                <td class="text-center py-1.5 px-3">
-                                    <input type="checkbox"
-                                           name="inapp_events[<?= h($event) ?>][]"
-                                           value="<?= h($role) ?>"
-                                           <?= $checked ? 'checked' : '' ?>
-                                           <?= $inappIsDefault ? 'disabled' : '' ?>
-                                           onchange="this.form.submit()"
-                                           class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 <?= $inappIsDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
-                                </td>
+                                <?php if ($hideNotifCell($event, $role)): ?>
+                                    <td class="text-center py-1.5 px-3 text-gray-300">—</td>
+                                <?php else: ?>
+                                    <?php $defaultGranted = in_array($role, ($inappDefaults ?? [])[$event] ?? []); ?>
+                                    <?php $overridden = isset($inappOverrides[$event]) && in_array($role, $inappOverrides[$event]); ?>
+                                    <?php $checked = $inappIsDefault ? $defaultGranted : $overridden; ?>
+                                    <td class="text-center py-1.5 px-3">
+                                        <input type="checkbox"
+                                               name="inapp_events[<?= h($event) ?>][]"
+                                               value="<?= h($role) ?>"
+                                               <?= $checked ? 'checked' : '' ?>
+                                               <?= $inappIsDefault ? 'disabled' : '' ?>
+                                               onchange="this.form.submit()"
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 <?= $inappIsDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
+                                    </td>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </tr>
                     <?php endforeach; ?>

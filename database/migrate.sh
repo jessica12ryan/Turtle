@@ -46,6 +46,7 @@ run_sql "ALTER TABLE resources ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'gen
 run_sql "CREATE TABLE IF NOT EXISTS notification_events (event VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL, PRIMARY KEY (event, role)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "CREATE TABLE IF NOT EXISTS inapp_notification_events (event VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL, PRIMARY KEY (event, role)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('inapp_notification_mode', 'default');"
+run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('messaging_enabled', '1');"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('notification_mode', 'default');"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('site_url', '');"
 run_sql "CREATE TABLE IF NOT EXISTS role_permissions (role VARCHAR(50) NOT NULL, permission VARCHAR(100) NOT NULL, PRIMARY KEY (role, permission)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"

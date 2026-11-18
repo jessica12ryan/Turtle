@@ -351,6 +351,7 @@ $router->post('/settings/telemetry', 'SettingsController@saveTelemetry', ['auth'
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
 $router->post('/settings/notifications', 'SettingsController@saveNotifications', ['auth', 'role:admin']);
 $router->post('/settings/inapp-notifications', 'SettingsController@saveInAppNotifications', ['auth', 'role:admin']);
+$router->post('/settings/messenger', 'SettingsController@saveMessenger', ['auth', 'role:admin']);
 $router->post('/settings/logging', 'SettingsController@saveLogging', ['auth', 'role:admin']);
 $router->post('/settings/applications', 'ApplicationController@saveSettings', ['auth', 'role:admin']);
 $router->get('/settings/logs/download/{type}', 'SettingsController@downloadLogs', ['auth', 'role:admin']);

@@ -40,7 +40,7 @@ Ambos soportan **ingress** (integrado en la interfaz de HA) y **acceso directo**
 - **Calendario** — fechas de mudanza, fin de contrato y mudanza programada
 - **Recursos** — página de enlaces compartidos, categorías generales y solo para el personal
 - **Copia de seguridad y restauración** — copia de seguridad completa del sistema (formato `.turtle`) desde la configuración de administración
-- **Mensajería** — panel lateral con usuarios en línea, mensajes directos, insignias de no leídos, alertas de sonido, límite de frecuencia e historial de chats para administradores en Ajustes
+- **Mensajería** — panel lateral con usuarios en línea, mensajes directos, insignias de no leídos, alertas de sonido, límite de frecuencia, activación por administrador e historial de conversaciones con búsqueda en Ajustes
 - **Correo electrónico** — cliente SMTP ligero, preferencias de notificación por correo y en la aplicación según el rol
 - **Control de acceso** — Administrador, Propietario, Gestor de propiedades, Mantenimiento, Inquilino
 

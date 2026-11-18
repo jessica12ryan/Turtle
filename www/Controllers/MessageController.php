@@ -10,6 +10,11 @@ class MessageController
     public function users(): void
     {
         header('Content-Type: application/json');
+        if (!messaging_enabled()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Messaging is disabled.']);
+            return;
+        }
         $me = Auth::instance()->id();
         $cutoff = time() - 60;
         $senderRole = Auth::instance()->user()['role'] ?? '';
@@ -49,6 +54,11 @@ class MessageController
     public function thread(): void
     {
         header('Content-Type: application/json');
+        if (!messaging_enabled()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Messaging is disabled.']);
+            return;
+        }
         $me = (int)Auth::instance()->id();
         $other = (int)($_GET['user_id'] ?? 0);
 
@@ -103,6 +113,11 @@ class MessageController
     public function unread(): void
     {
         header('Content-Type: application/json');
+        if (!messaging_enabled()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Messaging is disabled.']);
+            return;
+        }
         $me = Auth::instance()->id();
 
         $messages = Database::fetch(
@@ -123,6 +138,11 @@ class MessageController
     public function send(): void
     {
         header('Content-Type: application/json');
+        if (!messaging_enabled()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Messaging is disabled.']);
+            return;
+        }
 
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             http_response_code(400);
