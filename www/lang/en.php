@@ -21,6 +21,8 @@
     'Download' => 'Download',
     'Document Details' => 'Document Details',
     'Messages' => 'Messages',
+    'Last Seen:' => 'Last Seen:',
+    'Never' => 'Never',
     'Send' => 'Send',
     'Online' => 'Online',
     'Offline' => 'Offline',

@@ -239,6 +239,7 @@ return [
     'Property permanently deleted.' => 'Propiedad eliminada permanentemente.',
     'Document Details' => 'Detalles del documento',
     'Messages' => 'Mensajes',
+    'Last Seen:' => 'Última conexión:',
     'Online' => 'En línea',
     'Offline' => 'Desconectado',
     'No other users available.' => 'No hay otros usuarios disponibles.',

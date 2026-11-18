@@ -3,6 +3,8 @@ $messengerStrings = [
     'messages' => __('Messages'),
     'online' => __('Online'),
     'offline' => __('Offline'),
+    'lastSeen' => __('Last Seen:'),
+    'never' => __('Never'),
     'noUsers' => __('No other users available.'),
     'selectUser' => __('Select a user to start a conversation.'),
     'noMessages' => __('No messages yet.'),
@@ -29,7 +31,7 @@ $messengerStrings = [
     </div>
 
     <div class="flex-1 min-h-0 flex">
-        <div class="w-2/5 border-r border-gray-200 dark:border-slate-700 overflow-y-auto">
+        <div class="w-1/3 border-r border-gray-200 dark:border-slate-700 overflow-y-auto">
             <template x-if="users.length === 0">
                 <p class="p-4 text-sm text-gray-500" x-text="strings.noUsers"></p>
             </template>
@@ -43,13 +45,13 @@ $messengerStrings = [
                     </div>
                     <div class="flex items-center mt-1">
                         <span class="w-2 h-2 rounded-full mr-1" :class="user.online ? 'bg-green-500' : 'bg-gray-400'"></span>
-                        <span class="text-xs text-gray-500" x-text="user.online ? strings.online : strings.offline"></span>
+                        <span class="text-xs text-gray-500" x-text="user.online ? strings.online : (strings.lastSeen + ' ' + (user.last_seen || strings.never))"></span>
                     </div>
                 </button>
             </template>
         </div>
 
-        <div class="w-3/5 flex flex-col min-h-0">
+        <div class="w-2/3 flex flex-col min-h-0">
             <template x-if="!selected">
                 <div class="flex-1 flex items-center justify-center p-4 text-center text-sm text-gray-500" x-text="strings.selectUser"></div>
             </template>
@@ -76,10 +78,10 @@ $messengerStrings = [
                         </template>
                     </div>
 
-                    <form class="p-3 border-t border-gray-200 dark:border-slate-700 flex space-x-2" @submit.prevent="send()">
+                    <form class="p-3 border-t border-gray-200 dark:border-slate-700 flex items-center space-x-2 shrink-0" @submit.prevent="send()">
                         <input type="text" x-model="text" :placeholder="strings.typeMessage"
-                               class="flex-1 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white">
-                        <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700" x-text="strings.send"></button>
+                               class="flex-1 min-w-0 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-600 dark:text-white">
+                        <button type="submit" class="shrink-0 whitespace-nowrap bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700" x-text="strings.send"></button>
                     </form>
                 </div>
             </template>

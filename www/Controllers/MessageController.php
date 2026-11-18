@@ -38,6 +38,7 @@ class MessageController
                 'name' => $row['name'],
                 'role' => ucwords(str_replace('_', ' ', $row['role'])),
                 'online' => !empty($row['last_seen']) && strtotime($row['last_seen']) >= $cutoff,
+                'last_seen' => !empty($row['last_seen']) ? display_time($row['last_seen']) : null,
                 'unread' => (int)$row['unread'],
             ];
         }
