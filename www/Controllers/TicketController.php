@@ -586,7 +586,7 @@ class TicketController
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        Database::execute("UPDATE tickets SET archived_at = NOW() WHERE id = ?", [$id]);
+        Database::execute("UPDATE tickets SET archived_at = NOW(), status = 'closed' WHERE id = ?", [$id]);
         log_activity('ticket.archived', "Ticket #{$id} archived");
         flash('success', 'Ticket archived successfully.');
         redirect('/tickets');

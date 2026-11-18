@@ -575,7 +575,7 @@ class PropertyController
             Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$t['tenant_id']]);
         }
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
-        Database::execute("UPDATE tickets SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
+        Database::execute("UPDATE tickets SET archived_at = NOW(), status = 'closed' WHERE property_id = ? AND archived_at IS NULL", [$id]);
         Database::execute(
             "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NULL",
             [$id]
