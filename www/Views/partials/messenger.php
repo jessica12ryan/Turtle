@@ -16,8 +16,8 @@ $messengerStrings = [
 ?>
 <input type="hidden" id="messenger-csrf" value="<?= csrf_token() ?>">
 
-<div x-data="messenger(<?= json_encode($messengerStrings, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)"
-     x-init="init()"
+<div id="messenger-panel"
+     x-data='messenger(<?= json_encode($messengerStrings, JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'
      x-cloak
      class="fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-white shadow-2xl border-l border-gray-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col"
      :class="open ? '' : 'hidden'">
@@ -122,13 +122,25 @@ function messenger(strings) {
         unread: 0,
         lastUnread: 0,
         init() {
+            // Resolve the Alpine reactive proxy at call time: init() receives
+            // the raw data object, whose mutations are not rendered.
+            const proxy = () => Alpine.$data(document.getElementById('messenger-panel'));
             window.addEventListener('messenger:toggle', () => {
-                this.open = !this.open;
-                if (this.open) this.loadUsers();
+                const data = proxy();
+                if (!data) return;
+                data.open = !data.open;
+                if (data.open) data.loadUsers();
             });
-            this.loadUsers();
-            this.poll();
-            this.timer = setInterval(() => this.poll(), 5000);
+            setTimeout(() => {
+                const data = proxy();
+                if (!data) return;
+                data.loadUsers();
+                data.poll();
+                this.timer = setInterval(() => {
+                    const current = proxy();
+                    if (current) current.poll();
+                }, 5000);
+            }, 0);
         },
         badge(id, count) {
             const el = document.getElementById(id);

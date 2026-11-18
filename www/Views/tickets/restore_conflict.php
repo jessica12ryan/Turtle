@@ -16,7 +16,7 @@ $resolverConfig = [
 
     <form method="POST"
           action="/tickets/<?= $ticket['id'] ?>/restore-resolve"
-          x-data="ticketRestoreResolver(<?= json_encode($resolverConfig, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)">
+          x-data='ticketRestoreResolver(<?= json_encode($resolverConfig, JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <?php if ($conflicts['property_missing']): ?>
