@@ -6,6 +6,8 @@
     'Conflicts Detected' => 'Conflicts Detected',
     'This staff member has properties and/or tickets assigned to them. You must resolve these before archiving.' => 'This staff member has properties and/or tickets assigned to them. You must resolve these before archiving.',
     'Properties' => 'Properties',
+    '%d property has no tenants.' => '%d property has no tenants.',
+    '%d properties have no tenants.' => '%d properties have no tenants.',
     'Tickets' => 'Tickets',
     'Assign all properties to' => 'Assign all properties to',
     'Assign all tickets to' => 'Assign all tickets to',

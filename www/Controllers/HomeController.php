@@ -169,7 +169,12 @@ class HomeController
             } else {
                 $noTenantProps = Database::fetch("SELECT COUNT(*) as cnt FROM properties p WHERE p.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)");
                 if ($noTenantProps && $noTenantProps['cnt'] > 0) {
-                    $alerts['warning'][] = ['msg' => $noTenantProps['cnt'] . ' propert' . ($noTenantProps['cnt'] > 1 ? 'ies have' : 'y has') . ' no tenants. Add tenants to enable lease uploads.', 'link' => '/tenants/create'];
+                    $count = (int)$noTenantProps['cnt'];
+                    $key = $count > 1 ? '%d properties have no tenants.' : '%d property has no tenants.';
+                    $alerts['warning'][] = [
+                        'msg' => sprintf(__($key), $count),
+                        'link' => '/tenants/create',
+                    ];
                 }
             }
 

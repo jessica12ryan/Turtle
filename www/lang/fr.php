@@ -8,6 +8,8 @@ return [
     '500' => '500',
     'Access Denied' => 'Accès Refusé',
     'Account' => 'Compte',
+    '%d property has no tenants.' => '%d propriété n\'a pas de locataire.',
+    '%d properties have no tenants.' => '%d propriétés n\'ont pas de locataire.',
     'Actions' => 'Actions',
     'Active' => 'Actif',
     'Add Comment' => 'Ajouter un commentaire',
