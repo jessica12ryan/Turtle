@@ -12,6 +12,8 @@ class MessageController
         header('Content-Type: application/json');
         $me = Auth::instance()->id();
         $cutoff = time() - 60;
+        $senderRole = Auth::instance()->user()['role'] ?? '';
+        $tenantFilter = $senderRole === 'tenant' ? " AND u.role != 'tenant'" : '';
 
         try {
             $rows = Database::fetchAll(
@@ -20,7 +22,7 @@ class MessageController
                          WHERE m.sender_id = u.id AND m.recipient_id = ? AND m.read_at IS NULL) AS unread
                  FROM users u
                  LEFT JOIN user_presence p ON p.user_id = u.id
-                 WHERE u.archived_at IS NULL AND u.id != ?
+                 WHERE u.archived_at IS NULL AND u.id != ?{$tenantFilter}
                  ORDER BY (p.last_seen >= DATE_SUB(NOW(), INTERVAL 60 SECOND)) DESC, u.name",
                 [$me, $me]
             );
@@ -55,10 +57,16 @@ class MessageController
             return;
         }
 
-        $recipient = Database::fetch("SELECT id, name FROM users WHERE id = ? AND archived_at IS NULL", [$other]);
+        $recipient = Database::fetch("SELECT id, name, role FROM users WHERE id = ? AND archived_at IS NULL", [$other]);
         if (!$recipient) {
             http_response_code(404);
             echo json_encode(['error' => 'User not found.']);
+            return;
+        }
+
+        if ((Auth::instance()->user()['role'] ?? '') === 'tenant' && $recipient['role'] === 'tenant') {
+            http_response_code(403);
+            echo json_encode(['error' => 'Tenants cannot message other tenants.']);
             return;
         }
 
@@ -137,10 +145,17 @@ class MessageController
             return;
         }
 
-        $recipient = Database::fetch("SELECT id, name FROM users WHERE id = ? AND archived_at IS NULL", [$recipientId]);
+        $recipient = Database::fetch("SELECT id, name, role FROM users WHERE id = ? AND archived_at IS NULL", [$recipientId]);
         if (!$recipient) {
             http_response_code(404);
             echo json_encode(['error' => 'User not found.']);
+            return;
+        }
+
+        $sender = Auth::instance()->user();
+        if ($sender['role'] === 'tenant' && $recipient['role'] === 'tenant') {
+            http_response_code(403);
+            echo json_encode(['error' => 'Tenants cannot message other tenants.']);
             return;
         }
 
@@ -149,7 +164,6 @@ class MessageController
             [$me, $recipientId, $body]
         );
 
-        $sender = Auth::instance()->user();
         $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
         Database::execute(
             "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, 'message', ?, NOW())",
