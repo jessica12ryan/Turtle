@@ -592,16 +592,63 @@ class StaffController
         $target = Database::fetch("SELECT * FROM users WHERE id = ?", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        // Guard: never remove the last active admin.
         if ($target['role'] === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
             if (!$adminCount || $adminCount['cnt'] === 0) {
                 flash('error', 'Cannot permanently delete the only active admin account.');
                 redirect('/staff');
+                return;
             }
         }
 
-        Database::execute("DELETE FROM company_user WHERE user_id = ?", [$id]);
-        Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+        // Historical records need a surviving user to point at.
+        $replacement = Database::fetch(
+            "SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ? ORDER BY id LIMIT 1",
+            [$id]
+        );
+        if (!$replacement) {
+            flash('error', 'Cannot permanently delete this staff member because no active admin is available to retain their records.');
+            redirect('/staff');
+            return;
+        }
+        $replacementId = (int)$replacement['id'];
+
+        try {
+            Database::beginTransaction();
+
+            // Nullable references.
+            Database::execute("UPDATE properties SET property_manager_id = NULL WHERE property_manager_id = ?", [$id]);
+            Database::execute("UPDATE tickets SET assigned_to = NULL WHERE assigned_to = ?", [$id]);
+            Database::execute("UPDATE leases SET tenant_id = NULL WHERE tenant_id = ?", [$id]);
+
+            // Required references are reassigned to a surviving admin.
+            Database::execute("UPDATE properties SET landlord_id = ? WHERE landlord_id = ?", [$replacementId, $id]);
+            Database::execute("UPDATE tickets SET tenant_id = ? WHERE tenant_id = ?", [$replacementId, $id]);
+            Database::execute("UPDATE payments SET recorded_by = ? WHERE recorded_by = ?", [$replacementId, $id]);
+            Database::execute("UPDATE leases SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $id]);
+            Database::execute("UPDATE ticket_comments SET user_id = ? WHERE user_id = ?", [$replacementId, $id]);
+            Database::execute("UPDATE ticket_files SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $id]);
+            Database::execute("UPDATE documents SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $id]);
+            Database::execute("UPDATE resources SET created_by = ? WHERE created_by = ?", [$replacementId, $id]);
+            Database::execute("UPDATE activity_logs SET user_id = ? WHERE user_id = ?", [$replacementId, $id]);
+
+            // Rows that only make sense for the user themselves.
+            Database::execute("DELETE FROM notifications WHERE user_id = ?", [$id]);
+            Database::execute("DELETE FROM sessions WHERE user_id = ?", [$id]);
+            Database::execute("DELETE FROM password_reset_tokens WHERE email = ?", [$target['email']]);
+            Database::execute("DELETE FROM company_user WHERE user_id = ?", [$id]);
+
+            Database::execute("DELETE FROM users WHERE id = ?", [$id]);
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollback();
+            error_log('hardDelete failed: ' . $e->getMessage());
+            flash('error', 'Could not permanently delete this staff member. No changes were made.');
+            redirect('/staff');
+            return;
+        }
+
         log_activity('staff.deleted', "Staff member '{$target['name']}' permanently deleted");
         flash('success', 'Staff member permanently deleted.');
         redirect('/staff');
