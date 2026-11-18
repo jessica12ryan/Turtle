@@ -297,14 +297,16 @@ class LeaseController
         );
         if (!$lease) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
+        $showArchived = !empty($_GET['show_archived']);
+        $archivedClause = $showArchived ? '' : ' AND archived_at IS NULL';
         $documents = Database::fetchAll(
-            "SELECT * FROM documents WHERE documentable_type = 'lease' AND documentable_id = ? AND archived_at IS NULL",
+            "SELECT * FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?{$archivedClause} ORDER BY archived_at IS NULL DESC, created_at DESC",
             [$id]
         );
 
         $view = new View();
         $view->layout('layouts/main', ['title' => $lease['title']]);
-        $view->render('leases/show', compact('lease', 'documents'));
+        $view->render('leases/show', compact('lease', 'documents', 'showArchived'));
     }
 
     public function restore(int $id): void

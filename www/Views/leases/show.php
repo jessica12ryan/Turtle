@@ -38,22 +38,30 @@
     <p class="text-gray-600"><?= h($lease['description'] ?: 'No description.') ?></p>
 </div>
 <div class="bg-white rounded-lg shadow mt-6">
-    <div class="px-6 py-4 border-b">
-        <h2 class="text-lg font-semibold text-gray-800">Documents (<?= count($documents) ?>)</h2>
+    <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-800"><?= __('Documents') ?> (<?= count($documents) ?>)</h2>
+        <?php if (can('leases.restore')): ?>
+            <a href="/leases/<?= $lease['id'] ?>?show_archived=<?= $showArchived ? '0' : '1' ?>" class="text-sm <?= $showArchived ? 'bg-blue-100 text-blue-700' : 'text-gray-500 hover:text-gray-700' ?> px-3 py-1.5 rounded-lg border transition">
+                <?= $showArchived ? __('Showing archived') : __('Show archived') ?>
+            </a>
+        <?php endif; ?>
     </div>
     <div class="p-6">
         <?php if (empty($documents)): ?>
-            <p class="text-gray-500 text-sm">No documents attached.</p>
+            <p class="text-gray-500 text-sm"><?= __('No documents attached.') ?></p>
         <?php else: ?>
             <ul class="divide-y">
                 <?php foreach ($documents as $doc): ?>
                     <li class="py-3 flex justify-between items-center">
                         <div>
-                            <p class="font-medium text-gray-800"><?= h($doc['original_name']) ?></p>
+                            <a href="/documents/<?= $doc['id'] ?>" class="font-medium text-gray-800 hover:underline"><?= h($doc['original_name']) ?></a>
+                            <?php if ($doc['archived_at']): ?>
+                                <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1"><?= __('Archived') ?></span>
+                            <?php endif; ?>
                             <p class="text-sm text-gray-500"><?= round($doc['size'] / 1024) ?> KB</p>
                         </div>
-                        <a href="/documents/<?= $doc['id'] ?>/view" target="_blank" rel="noopener" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 mr-2">View</a>
-                        <a href="/documents/<?= $doc['id'] ?>/download" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Download</a>
+                        <a href="/documents/<?= $doc['id'] ?>/view" target="_blank" rel="noopener" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 mr-2"><?= __('View') ?></a>
+                        <a href="/documents/<?= $doc['id'] ?>/download" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"><?= __('Download') ?></a>
                     </li>
                 <?php endforeach; ?>
             </ul>

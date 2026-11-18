@@ -284,9 +284,12 @@ $router->post('/tickets/{id}/comment', 'TicketController@comment', ['auth', 'per
 $router->get('/tickets/{ticketId}/files/{fileId}/download', 'TicketController@downloadFile', ['auth', 'perm:tickets.download_photos']);
 
 // Documents
+$router->get('/documents/{id}', 'DocumentController@show', ['auth', 'perm:leases.access']);
 $router->get('/documents/{id}/view', 'DocumentController@view', ['auth', 'perm:leases.access']);
 $router->get('/documents/{id}/download', 'DocumentController@download', ['auth', 'perm:documents.download']);
 $router->post('/documents/{id}/delete', 'DocumentController@destroy', ['auth', 'perm:documents.delete']);
+$router->post('/documents/{id}/restore', 'DocumentController@restore', ['auth', 'perm:leases.restore']);
+$router->post('/documents/{id}/hard-delete', 'DocumentController@hardDelete', ['auth', 'perm:documents.delete']);
 
 // Notifications
 $router->get('/notifications', 'NotificationController@index', ['auth']);

@@ -4,12 +4,40 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\View;
 
 class DocumentController
 {
+    public function show(int $id): void
+    {
+        $document = Database::fetch(
+            "SELECT d.*, u.name as uploader_name
+             FROM documents d
+             LEFT JOIN users u ON u.id = d.uploaded_by
+             WHERE d.id = ?",
+            [$id]
+        );
+        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $lease = null;
+        if ($document['documentable_type'] === 'lease') {
+            $lease = Database::fetch(
+                "SELECT l.id, l.title, p.name as property_name
+                 FROM leases l
+                 LEFT JOIN properties p ON p.id = l.property_id
+                 WHERE l.id = ?",
+                [$document['documentable_id']]
+            );
+        }
+
+        $view = new View();
+        $view->layout('layouts/main', ['title' => $document['original_name']]);
+        $view->render('documents/show', compact('document', 'lease'));
+    }
+
     public function view(int $id): void
     {
-        $document = Database::fetch("SELECT * FROM documents WHERE id = ? AND archived_at IS NULL", [$id]);
+        $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
         $filePath = $document['file_path'];
@@ -33,7 +61,7 @@ class DocumentController
 
     public function download(int $id): void
     {
-        $document = Database::fetch("SELECT * FROM documents WHERE id = ? AND archived_at IS NULL", [$id]);
+        $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
         $filePath = $document['file_path'];
@@ -57,26 +85,73 @@ class DocumentController
 
     public function destroy(int $id): void
     {
-        $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
-        if ($document) {
-            $filePath = $document['file_path'];
-            $fullPath = str_starts_with($filePath, '/') ? $filePath : base_path($filePath);
-            $allowedBase = realpath(base_path('storage/uploads'));
-            $realFull = realpath($fullPath);
-            if ($realFull !== false && $allowedBase !== false && str_starts_with($realFull, $allowedBase) && file_exists($realFull)) {
-                unlink($realFull);
-            } elseif (file_exists($fullPath)) {
-                // Fallback: only unlink if path is inside storage/uploads (string check)
-                $normalized = str_replace('\\', '/', $fullPath);
-                if (str_contains($normalized, 'storage/uploads/')) {
-                    @unlink($fullPath);
-                }
-            }
-            Database::execute("UPDATE documents SET archived_at = NOW() WHERE id = ?", [$id]);
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
         }
 
-        log_activity('document.deleted', "Document #{$id} '" . ($document['original_name'] ?? '') . "' deleted");
-        flash('success', 'Document deleted successfully.');
-        redirectBack();
+        $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
+        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $this->deleteDocumentFile($document);
+        Database::execute("UPDATE documents SET archived_at = NOW() WHERE id = ?", [$id]);
+
+        log_activity('document.deleted', "Document #{$id} '" . $document['original_name'] . "' archived");
+        flash('success', 'Document archived successfully.');
+        redirect('/documents/' . $id);
+    }
+
+    public function restore(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
+
+        $document = Database::fetch("SELECT id FROM documents WHERE id = ?", [$id]);
+        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        Database::execute("UPDATE documents SET archived_at = NULL WHERE id = ?", [$id]);
+
+        log_activity('document.restored', "Document #{$id} restored");
+        flash('success', 'Document restored successfully.');
+        redirect('/documents/' . $id);
+    }
+
+    public function hardDelete(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
+
+        $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
+        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        $this->deleteDocumentFile($document);
+        Database::execute("DELETE FROM documents WHERE id = ?", [$id]);
+
+        log_activity('document.deleted', "Document #{$id} '" . $document['original_name'] . "' permanently deleted");
+        flash('success', 'Document permanently deleted.');
+        redirect('/leases');
+    }
+
+    private function deleteDocumentFile(array $document): void
+    {
+        $filePath = $document['file_path'];
+        $fullPath = str_starts_with($filePath, '/') ? $filePath : base_path($filePath);
+        $allowedBase = realpath(base_path('storage/uploads'));
+        $realFull = realpath($fullPath);
+        if ($realFull !== false && $allowedBase !== false && str_starts_with($realFull, $allowedBase) && file_exists($realFull)) {
+            unlink($realFull);
+        } elseif (file_exists($fullPath)) {
+            $normalized = str_replace('\\', '/', $fullPath);
+            if (str_contains($normalized, 'storage/uploads/')) {
+                @unlink($fullPath);
+            }
+        }
     }
 }
