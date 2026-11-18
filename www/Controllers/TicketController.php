@@ -241,7 +241,7 @@ class TicketController
         $assignee = null;
         if ($assignedTo !== null) {
             $assignee = Database::fetch(
-                "SELECT name, email, role, secondary_roles FROM users WHERE id = ? AND archived_at IS NULL",
+                "SELECT id, name, email, role, secondary_roles FROM users WHERE id = ? AND archived_at IS NULL",
                 [$assignedTo]
             );
             if (!$assignee) {
