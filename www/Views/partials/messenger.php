@@ -131,7 +131,7 @@ function messenger(strings) {
                 const data = proxy();
                 if (!data) return;
                 data.open = !data.open;
-                if (data.open) data.loadUsers();
+                if (data.open) data.poll(true);
             });
             setTimeout(() => {
                 const data = proxy();
@@ -150,7 +150,7 @@ function messenger(strings) {
             el.textContent = count > 99 ? '99+' : String(count);
             el.style.display = count > 0 ? (id === 'message-badge' ? 'flex' : 'flex') : 'none';
         },
-        async poll() {
+        async poll(forceThread = false) {
             try {
                 const res = await fetch(url('/messages/unread'), { credentials: 'same-origin' });
                 if (!res.ok) return;
@@ -161,6 +161,9 @@ function messenger(strings) {
                 if (this.unread > this.lastUnread && this.lastUnread !== 0) playSound();
                 this.lastUnread = this.unread;
                 await this.loadUsers();
+                if (this.open && this.selected && (forceThread || this.unread > 0)) {
+                    await this.refreshThread();
+                }
             } catch (e) {}
         },
         async loadUsers() {
@@ -174,22 +177,29 @@ function messenger(strings) {
                 }
             } catch (e) {}
         },
-        async selectUser(user) {
-            this.selected = user;
-            this.messages = [];
+        async refreshThread() {
+            if (!this.selected) return;
             try {
                 const body = new URLSearchParams();
-                body.append('user_id', user.id);
+                body.append('user_id', this.selected.id);
                 const res = await fetch(url('/messages/thread') + '?' + body.toString(), { credentials: 'same-origin' });
                 if (!res.ok) throw new Error('failed');
                 const data = await res.json();
+                const grew = (data.messages || []).length > this.messages.length;
                 this.messages = data.messages || [];
-                user.unread = 0;
-                await this.poll();
-                this.$nextTick(() => { if (this.$refs.thread) this.$refs.thread.scrollTop = this.$refs.thread.scrollHeight; });
+                this.selected.unread = 0;
+                if (grew) {
+                    this.$nextTick(() => { if (this.$refs.thread) this.$refs.thread.scrollTop = this.$refs.thread.scrollHeight; });
+                }
             } catch (e) {
                 alert(this.strings.loadFailed);
             }
+        },
+        async selectUser(user) {
+            this.selected = user;
+            this.messages = [];
+            await this.refreshThread();
+            await this.poll();
         },
         async send() {
             const body = this.text.trim();

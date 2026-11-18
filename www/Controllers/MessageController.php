@@ -164,6 +164,7 @@ class MessageController
             "INSERT INTO messages (sender_id, recipient_id, body, created_at) VALUES (?, ?, ?, NOW())",
             [$me, $recipientId, $body]
         );
+        $saved = Database::fetch("SELECT created_at FROM messages WHERE id = ?", [$id]);
 
         $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
         Database::execute(
@@ -178,7 +179,7 @@ class MessageController
                 'mine' => true,
                 'sender_name' => $sender['name'],
                 'body' => $body,
-                'time' => display_time(date('Y-m-d H:i:s')),
+                'time' => display_time($saved['created_at'] ?? date('Y-m-d H:i:s')),
             ],
         ]);
     }
