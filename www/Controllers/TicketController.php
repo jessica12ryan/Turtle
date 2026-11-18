@@ -215,7 +215,27 @@ class TicketController
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-        $assignedTo = $_POST['assigned_to'] ?? null;
+        // The "Unassigned" option posts an empty string; an INT column rejects that
+        // under strict SQL mode (PDOException -> HTTP 500), so normalise to NULL.
+        $assignedTo = trim((string)($_POST['assigned_to'] ?? ''));
+        if ($assignedTo === '') {
+            $assignedTo = null;
+        } elseif (ctype_digit($assignedTo)) {
+            $assignedTo = (int)$assignedTo;
+            $valid = Database::fetch(
+                "SELECT id FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('admin','landlord','property_manager','maintenance')",
+                [$assignedTo]
+            );
+            if (!$valid) {
+                flash('error', 'Selected user cannot be assigned to tickets.');
+                redirect('/tickets/' . $id);
+                return;
+            }
+        } else {
+            flash('error', 'Invalid assignee.');
+            redirect('/tickets/' . $id);
+            return;
+        }
 
         Database::execute(
             "UPDATE tickets SET assigned_to = ?, status = 'in_progress', updated_at = NOW() WHERE id = ?",
@@ -223,7 +243,7 @@ class TicketController
         );
 
         $user = Auth::instance()->user();
-        if ($assignedTo) {
+        if ($assignedTo !== null) {
             $assignee = Database::fetch("SELECT name, email FROM users WHERE id = ?", [$assignedTo]);
             $assigneeName = $assignee ? $assignee['name'] : 'Unknown';
             $commentBody = $user['name'] . ' assigned ticket to ' . $assigneeName;
