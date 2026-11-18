@@ -554,6 +554,11 @@ function can(string $permission): bool
     return false;
 }
 
+function ticket_assignment_comment_body(string $actorName, ?string $assigneeName): string
+{
+    return $actorName . ' assigned ticket to ' . ($assigneeName ?? 'Unassigned');
+}
+
 function effective_roles(array $user): array
 {
     $roles = [];

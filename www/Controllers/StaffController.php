@@ -460,16 +460,18 @@ class StaffController
 
         // Managers that conflicts may be reassigned to (must match the form's list)
         $availableManagers = Database::fetchAll(
-            "SELECT id, role, secondary_roles FROM users
+            "SELECT id, name, role, secondary_roles FROM users
              WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', REPLACE(COALESCE(secondary_roles, ''), ' ', '')))
              AND archived_at IS NULL AND id != ?",
             [$id]
         );
         $validManagerIds = [];
         $managersById = [];
+        $managerNames = [];
         foreach ($availableManagers as $manager) {
             $validManagerIds[] = (string)$manager['id'];
             $managersById[(int)$manager['id']] = $manager;
+            $managerNames[(string)$manager['id']] = $manager['name'];
         }
 
         $managerCompanyMap = [];
@@ -531,6 +533,8 @@ class StaffController
             }
         }
 
+        $actor = Auth::instance()->user();
+
         try {
             Database::beginTransaction();
 
@@ -544,10 +548,23 @@ class StaffController
             foreach ($tickets as $ticket) {
                 $value = (string)$ticketAssignments[(string)$ticket['id']];
                 $assigneeId = $value === 'unassign' ? null : (int)$value;
-                Database::execute(
+                $changed = Database::execute(
                     "UPDATE tickets SET assigned_to = ?, updated_at = NOW() WHERE id = ? AND assigned_to = ?",
                     [$assigneeId, (int)$ticket['id'], $id]
                 );
+                if ($changed > 0) {
+                    $assigneeName = $assigneeId === null
+                        ? null
+                        : ($managerNames[(string)$assigneeId] ?? 'Unknown');
+                    Database::insert(
+                        "INSERT INTO ticket_comments (ticket_id, user_id, body, is_system, created_at) VALUES (?, ?, ?, 1, NOW())",
+                        [
+                            (int)$ticket['id'],
+                            $actor['id'],
+                            ticket_assignment_comment_body($actor['name'], $assigneeName),
+                        ]
+                    );
+                }
             }
 
             Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);

@@ -270,7 +270,7 @@ class TicketController
 
         $user = Auth::instance()->user();
         if ($assignee) {
-            $commentBody = $user['name'] . ' assigned ticket to ' . $assignee['name'];
+            $commentBody = ticket_assignment_comment_body($user['name'], $assignee['name']);
             Mailer::sendTemplate(
                 $assignee['email'],
                 'Ticket Assigned: ' . $ticket['subject'],
@@ -280,7 +280,7 @@ class TicketController
                 'View Ticket'
             );
         } else {
-            $commentBody = $user['name'] . ' unassigned the ticket';
+            $commentBody = ticket_assignment_comment_body($user['name'], null);
         }
 
         Database::insert(
