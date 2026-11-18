@@ -389,17 +389,15 @@ class StaffController
         );
 
         // Managers that conflicts may be reassigned to (must match the form's list)
-        $managerNames = [];
-        foreach (Database::fetchAll(
-            "SELECT id, name FROM users
-             WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
-             AND archived_at IS NULL AND id != ?",
-            [$id]
-        ) as $m) {
-            $managerNames[(string)$m['id']] = $m['name'];
-        }
-        $validManagerIds = array_keys($managerNames);
-        $actor = Auth::instance()->user();
+        $validManagerIds = array_map(
+            fn($m) => (string)$m['id'],
+            Database::fetchAll(
+                "SELECT id FROM users
+                 WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
+                 AND archived_at IS NULL AND id != ?",
+                [$id]
+            )
+        );
 
         $propertyAssignments = is_array($_POST['property_assignments'] ?? null) ? $_POST['property_assignments'] : [];
         $ticketAssignments = is_array($_POST['ticket_assignments'] ?? null) ? $_POST['ticket_assignments'] : [];
@@ -437,18 +435,10 @@ class StaffController
             foreach ($tickets as $ticket) {
                 $value = (string)$ticketAssignments[(string)$ticket['id']];
                 $assigneeId = $value === 'unassign' ? null : (int)$value;
-                $changed = Database::execute(
+                Database::execute(
                     "UPDATE tickets SET assigned_to = ?, updated_at = NOW() WHERE id = ? AND assigned_to = ?",
                     [$assigneeId, (int)$ticket['id'], $id]
                 );
-                if ($changed > 0) {
-                    // Same system comment TicketController::assign() writes
-                    $assigneeName = $assigneeId === null ? 'Unassigned' : $managerNames[(string)$assigneeId];
-                    Database::insert(
-                        "INSERT INTO ticket_comments (ticket_id, user_id, body, is_system, created_at) VALUES (?, ?, ?, 1, NOW())",
-                        [(int)$ticket['id'], $actor['id'], $actor['name'] . ' assigned ticket to ' . $assigneeName]
-                    );
-                }
             }
 
             Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
