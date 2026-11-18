@@ -33,7 +33,7 @@ Both support **ingress** (embedded in HA UI) and **direct access** via port.
 - **Properties** — manage details, photos, heating type, security deposits, listing status
 - **Tenants** — main/secondary tenants, lease dates, scheduled move-out, auto-archive
 - **Leases & Documents** — upload with auto-titling, document types, email with attachments
-- **Maintenance Tickets** — create, assign, comment, status tracking, file attachments
+- **Maintenance Tickets** — create, assign, comment, status tracking, file attachments, archive/restore with conflict resolution
 - **Rent Dashboard** — per-property payment tracking, status badges (paid/partial/unpaid)
 - **Tenancy Applications** — public submission form, review workflow, convert to tenant
 - **AI Assistant** — natural-language queries about properties, tenants, tickets

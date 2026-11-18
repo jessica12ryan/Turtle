@@ -33,7 +33,7 @@ Les deux prennent en charge l'**ingress** (intégré dans l'interface HA) et l'*
 - **Propriétés** — gérer les détails, photos, type de chauffage, dépôts de garantie, statut d'affichage
 - **Locataires** — locataires principal/secondaire, dates de bail, départ planifié, archivage automatique
 - **Baux et documents** — téléversement avec auto-titrage, types de documents, courriel avec pièces jointes
-- **Tickets de maintenance** — créer, assigner, commenter, suivi des statuts, pièces jointes
+- **Tickets de maintenance** — créer, assigner, commenter, suivi des statuts, pièces jointes, archivage/restauration avec résolution des conflits
 - **Tableau de bord des loyers** — suivi des paiements par propriété, indicateurs de statut (payé/partiel/impayé)
 - **Demandes de location** — formulaire de soumission public, flux de révision, conversion en locataire
 - **Assistant IA** — requêtes en langage naturel sur les propriétés, locataires, tickets

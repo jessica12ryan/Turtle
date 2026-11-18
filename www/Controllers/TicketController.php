@@ -20,7 +20,7 @@ class TicketController
         $query = "SELECT t.*, p.name as property_name, u.name as tenant_name, a.name as assignee_name,
                          t.archived_at
                   FROM tickets t 
-                  JOIN properties p ON p.id = t.property_id 
+                  LEFT JOIN properties p ON p.id = t.property_id 
                   JOIN users u ON u.id = t.tenant_id 
                   LEFT JOIN users a ON a.id = t.assigned_to 
                   WHERE 1=1{$archivedClause}";
@@ -184,30 +184,7 @@ class TicketController
 
         $staffUsers = [];
         if (can('tickets.assign')) {
-            $staffUsers = Database::fetchAll(
-                "SELECT u.* FROM users u 
-                 WHERE u.archived_at IS NULL 
-                   AND u.role IN ('admin','landlord','property_manager','maintenance')
-                 ORDER BY u.name"
-            );
-
-            // Only offer staff members who can actually access this property.
-            $staffIds = array_column($staffUsers, 'id');
-            $companyMap = [];
-            if (!empty($staffIds)) {
-                $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
-                $companyRows = Database::fetchAll(
-                    "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
-                    $staffIds
-                );
-                foreach ($companyRows as $row) {
-                    $companyMap[(int)$row['user_id']][] = (int)$row['company_id'];
-                }
-            }
-            $staffUsers = array_values(array_filter(
-                $staffUsers,
-                fn($u) => user_can_access_property($u, $ticket, $companyMap[(int)$u['id']] ?? [])
-            ));
+            $staffUsers = $this->assignableStaffForProperty($ticket);
         }
 
         $files = Database::fetchAll(
@@ -255,7 +232,7 @@ class TicketController
                 [$ticket['property_id']]
             );
             if (!$property || !user_can_access_property($assignee, $property)) {
-                flash('error', 'Selected assignee does not have access to this property.');
+                flash('error', __('Selected assignee does not have access to this property.'));
                 redirectBack();
                 return;
             }
@@ -300,10 +277,128 @@ class TicketController
             redirectBack();
             return;
         }
-        Database::execute("UPDATE tickets SET archived_at = NULL WHERE id = ?", [$id]);
-        log_activity('ticket.restored', "Ticket #{$id} restored");
-        flash('success', 'Ticket restored successfully.');
-        redirect('/tickets');
+
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NOT NULL", [$id]);
+        if (!$ticket) {
+            flash('error', __('Ticket not found or already restored.'));
+            redirect('/tickets?show_archived=1');
+            return;
+        }
+
+        $conflicts = $this->restoreConflicts($ticket);
+        if ($conflicts['property_missing'] || $conflicts['assignee_invalid']) {
+            redirect('/tickets/' . $id . '/restore-conflict');
+            return;
+        }
+
+        $this->performRestore($id, (int)$ticket['property_id'], null, null);
+    }
+
+    public function restoreConflict(int $id): void
+    {
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NOT NULL", [$id]);
+        if (!$ticket) {
+            flash('error', __('Ticket not found or already restored.'));
+            redirect('/tickets?show_archived=1');
+            return;
+        }
+
+        $conflicts = $this->restoreConflicts($ticket);
+        if (!$conflicts['property_missing'] && !$conflicts['assignee_invalid']) {
+            redirect('/tickets?show_archived=1');
+            return;
+        }
+
+        $properties = $this->restoreProperties();
+        $managersByProperty = [];
+        foreach ($properties as $property) {
+            $managersByProperty[(string)$property['id']] = array_map(
+                fn($u) => (string)$u['id'],
+                $this->assignableStaffForProperty($property)
+            );
+        }
+
+        $currentProperty = $conflicts['property_missing']
+            ? null
+            : Database::fetch(
+                "SELECT id, name, company_id, property_manager_id FROM properties WHERE id = ?",
+                [$ticket['property_id']]
+            );
+        $initialManagers = $currentProperty ? $this->assignableStaffForProperty($currentProperty) : [];
+
+        $managerNames = [];
+        foreach (Database::fetchAll("SELECT id, name, email FROM users WHERE archived_at IS NULL", []) as $user) {
+            $managerNames[(string)$user['id']] = $user['name'] . ' (' . $user['email'] . ')';
+        }
+
+        $view = new View();
+        $view->layout('layouts/main', ['title' => __('Restore Ticket')]);
+        $view->render('tickets/restore_conflict', compact(
+            'ticket',
+            'conflicts',
+            'properties',
+            'managersByProperty',
+            'initialManagers',
+            'managerNames'
+        ));
+    }
+
+    public function restoreResolve(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
+
+        $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NOT NULL", [$id]);
+        if (!$ticket) {
+            flash('error', __('Ticket not found or already restored.'));
+            redirect('/tickets?show_archived=1');
+            return;
+        }
+
+        $conflicts = $this->restoreConflicts($ticket);
+        $errorRedirect = '/tickets/' . $id . '/restore-conflict';
+        $propertyId = (int)$ticket['property_id'];
+
+        if ($conflicts['property_missing']) {
+            $candidate = (string)($_POST['property_id'] ?? '');
+            $allowed = array_map(fn($p) => (string)$p['id'], $this->restoreProperties());
+            if ($candidate === '' || !in_array($candidate, $allowed, true)) {
+                flash('error', __('Selected property is invalid.'));
+                redirect($errorRedirect);
+                return;
+            }
+            $propertyId = (int)$candidate;
+        }
+
+        $assignmentChanged = $conflicts['assignee_invalid'];
+        $assigneeId = $conflicts['assignee_invalid'] ? null : (!empty($ticket['assigned_to']) ? (int)$ticket['assigned_to'] : null);
+        $assigneeName = $conflicts['assignee_invalid'] ? null : ($conflicts['assignee_name'] ?? null);
+        if ($conflicts['assignee_invalid']) {
+            $value = (string)($_POST['assigned_to'] ?? '');
+            if ($value === '' || $value === 'unassign') {
+                $assigneeId = null;
+                $assigneeName = null;
+            } else {
+                $property = Database::fetch(
+                    "SELECT id, name, company_id, property_manager_id FROM properties WHERE id = ? AND archived_at IS NULL",
+                    [$propertyId]
+                );
+                $allowed = array_map(fn($u) => (string)$u['id'], $this->assignableStaffForProperty($property));
+                if (!ctype_digit($value) || !in_array($value, $allowed, true)) {
+                    flash('error', __('Selected assignee does not have access to this property.'));
+                    redirect($errorRedirect);
+                    return;
+                }
+                $assigneeId = (int)$value;
+                $row = Database::fetch("SELECT name FROM users WHERE id = ?", [$assigneeId]);
+                $assigneeName = $row['name'] ?? 'Unknown';
+            }
+        }
+
+        $this->performRestore($id, $propertyId, $assigneeId, $assigneeName, $assignmentChanged);
     }
 
     public function status(int $id): void
@@ -513,5 +608,103 @@ class TicketController
         log_activity('ticket.deleted', "Ticket #{$ticket['subject']} permanently deleted");
         flash('success', 'Ticket permanently deleted.');
         redirect('/tickets');
+    }
+
+    private function assignableStaffForProperty(array $property): array
+    {
+        $staffUsers = Database::fetchAll(
+            "SELECT u.* FROM users u 
+             WHERE u.archived_at IS NULL 
+               AND u.role IN ('admin','landlord','property_manager','maintenance')
+             ORDER BY u.name"
+        );
+
+        $staffIds = array_column($staffUsers, 'id');
+        $companyMap = [];
+        if (!empty($staffIds)) {
+            $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
+            $companyRows = Database::fetchAll(
+                "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
+                $staffIds
+            );
+            foreach ($companyRows as $row) {
+                $companyMap[(int)$row['user_id']][] = (int)$row['company_id'];
+            }
+        }
+
+        return array_values(array_filter(
+            $staffUsers,
+            fn($u) => user_can_access_property($u, $property, $companyMap[(int)$u['id']] ?? [])
+        ));
+    }
+
+    private function restoreProperties(): array
+    {
+        $actor = Auth::instance()->user();
+        $properties = Database::fetchAll(
+            "SELECT id, name, company_id, property_manager_id FROM properties WHERE archived_at IS NULL ORDER BY name"
+        );
+
+        return array_values(array_filter(
+            $properties,
+            fn($p) => user_can_access_property($actor, $p)
+        ));
+    }
+
+    private function restoreConflicts(array $ticket): array
+    {
+        $property = Database::fetch(
+            "SELECT id, name, company_id, property_manager_id FROM properties WHERE id = ? AND archived_at IS NULL",
+            [$ticket['property_id']]
+        );
+
+        $assignee = null;
+        if (!empty($ticket['assigned_to'])) {
+            $assignee = Database::fetch(
+                "SELECT id, name FROM users WHERE id = ? AND archived_at IS NULL",
+                [$ticket['assigned_to']]
+            );
+        }
+
+        return [
+            'property_missing' => $property === null,
+            'assignee_invalid' => !empty($ticket['assigned_to']) && $assignee === null,
+            'assignee_name' => $assignee['name'] ?? null,
+        ];
+    }
+
+    private function performRestore(
+        int $id,
+        int $propertyId,
+        ?int $assigneeId,
+        ?string $assigneeName,
+        bool $assignmentChanged = false
+    ): void {
+        $actor = Auth::instance()->user();
+
+        try {
+            Database::beginTransaction();
+            Database::execute(
+                "UPDATE tickets SET property_id = ?, assigned_to = ?, archived_at = NULL, updated_at = NOW() WHERE id = ?",
+                [$propertyId, $assigneeId, $id]
+            );
+            if ($assignmentChanged) {
+                Database::insert(
+                    "INSERT INTO ticket_comments (ticket_id, user_id, body, is_system, created_at) VALUES (?, ?, ?, 1, NOW())",
+                    [$id, $actor['id'], ticket_assignment_comment_body($actor['name'], $assigneeName)]
+                );
+            }
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollback();
+            error_log('ticket restore failed: ' . $e->getMessage());
+            flash('error', __('Could not restore this ticket. No changes were made.'));
+            redirect('/tickets?show_archived=1');
+            return;
+        }
+
+        log_activity('ticket.restored', "Ticket #{$id} restored");
+        flash('success', __('Ticket restored successfully.'));
+        redirect('/tickets/' . $id);
     }
 }
