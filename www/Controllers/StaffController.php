@@ -389,6 +389,33 @@ class StaffController
                 }
             }
 
+            // Managers who can access every conflicting property, and every
+            // conflicting ticket's property. These are the valid choices for
+            // the "assign all" dropdowns.
+            $allManagerIds = array_map(fn($m) => (string)$m['id'], $availableManagers);
+            $commonPropertyManagers = $allManagerIds;
+            foreach ($properties as $prop) {
+                $property = [
+                    'company_id' => $prop['company_id'],
+                    'property_manager_id' => $prop['property_manager_id'],
+                ];
+                $allowed = [];
+                foreach ($availableManagers as $manager) {
+                    if (user_can_access_property(
+                        $manager,
+                        $property,
+                        $managerCompanyMap[(int)$manager['id']] ?? []
+                    )) {
+                        $allowed[] = (string)$manager['id'];
+                    }
+                }
+                $commonPropertyManagers = array_values(array_intersect($commonPropertyManagers, $allowed));
+            }
+            $commonTicketManagers = $allManagerIds;
+            foreach ($ticketAccess as $allowed) {
+                $commonTicketManagers = array_values(array_intersect($commonTicketManagers, $allowed));
+            }
+
             $view = new View();
             $view->layout('layouts/main', ['title' => __('Archive Staff Member')]);
             $view->render('staff/archive_conflict', compact(
@@ -398,7 +425,9 @@ class StaffController
                 'availableManagers',
                 'ticketAccess',
                 'ticketProperty',
-                'propertyTickets'
+                'propertyTickets',
+                'commonPropertyManagers',
+                'commonTicketManagers'
             ));
             return;
         }

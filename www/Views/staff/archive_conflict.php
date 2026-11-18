@@ -46,7 +46,8 @@ $resolverConfig = [
                 <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('Assign all properties to') ?></label>
                 <select @change="assignAllProperties($event.target.value); $event.target.value = ''" class="w-full md:w-1/3 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     <option value=""><?= __('— Select Property Manager —') ?></option>
-                    <?php foreach ($availableManagers as $mgr): ?>
+                    <?php foreach (($commonPropertyManagers ?? []) as $mgrId): ?>
+                        <?php $mgr = $managersById[(int)$mgrId] ?? null; if (!$mgr) continue; ?>
                         <option value="<?= $mgr['id'] ?>"><?= h($mgr['name']) ?> (<?= h($mgr['email']) ?>)</option>
                     <?php endforeach; ?>
                 </select>
@@ -82,10 +83,11 @@ $resolverConfig = [
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('Assign all tickets to') ?></label>
-                <select @change="assignAllTickets($event.target.value); $event.target.value = ''" class="w-full md:w-1/3 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <select x-ref="bulkTickets" @change="assignAllTickets($event.target.value); $event.target.value = ''" class="w-full md:w-1/3 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     <option value=""><?= __('— Select Property Manager —') ?></option>
                     <option value="unassign"><?= __('Unassign (leave unassigned)') ?></option>
-                    <?php foreach ($availableManagers as $mgr): ?>
+                    <?php foreach (($commonTicketManagers ?? []) as $mgrId): ?>
+                        <?php $mgr = $managersById[(int)$mgrId] ?? null; if (!$mgr) continue; ?>
                         <option value="<?= $mgr['id'] ?>"><?= h($mgr['name']) ?> (<?= h($mgr['email']) ?>)</option>
                     <?php endforeach; ?>
                 </select>
@@ -153,12 +155,18 @@ function archiveConflictResolver(config) {
             if (selected) allowed.add(String(selected));
             return allowed;
         },
-        refreshTicketOptions(ticketId) {
-            const select = document.querySelector(`select[name="ticket_assignments[${ticketId}]"]`);
-            if (!select) return;
-            const allowed = this.allowedManagerIdsFor(ticketId);
-            let current = String(this.ticketValues[ticketId] || '');
-
+        get allTicketManagers() {
+            const ticketIds = Object.keys(this.ticketProperty);
+            let common = null;
+            for (const ticketId of ticketIds) {
+                const allowed = this.allowedManagerIdsFor(ticketId);
+                common = common === null ? allowed : new Set([...common].filter(id => allowed.has(id)));
+            }
+            return common === null
+                ? this.managers
+                : this.managers.filter(m => common.has(String(m.id)));
+        },
+        renderManagerOptions(select, allowed, current) {
             select.innerHTML = '';
             const placeholder = document.createElement('option');
             placeholder.value = '';
@@ -179,16 +187,30 @@ function archiveConflictResolver(config) {
             }
 
             if (current !== '' && current !== 'unassign' && !allowed.has(current)) {
-                this.ticketValues[ticketId] = '';
                 current = '';
             }
             select.value = current;
+            return current;
+        },
+        refreshTicketOptions(ticketId) {
+            const select = document.querySelector(`select[name="ticket_assignments[${ticketId}]"]`);
+            if (!select) return;
+            const allowed = this.allowedManagerIdsFor(ticketId);
+            const current = String(this.ticketValues[ticketId] || '');
+            this.ticketValues[ticketId] = this.renderManagerOptions(select, allowed, current);
+        },
+        refreshBulkTicketOptions() {
+            const select = this.$refs.bulkTickets;
+            if (!select) return;
+            const allowed = new Set(this.allTicketManagers.map(m => String(m.id)));
+            this.renderManagerOptions(select, allowed, '');
         },
         onPropertyChange(propertyId, event) {
             this.propertyValues[propertyId] = event.target.value;
             for (const ticketId of (this.propertyTickets[propertyId] || [])) {
                 this.refreshTicketOptions(ticketId);
             }
+            this.refreshBulkTicketOptions();
         },
         assignAllProperties(value) {
             if (!value) return;
