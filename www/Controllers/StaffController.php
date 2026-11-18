@@ -392,18 +392,17 @@ class StaffController
             }
 
             // Every available manager is a property manager, whether that is
-            // their primary role or a secondary role. They are therefore valid
-            // choices for both "assign all" dropdowns.
+            // their primary role or a secondary role, so all are valid for the
+            // "assign all properties" dropdown.
             $allManagerIds = array_map(fn($m) => (string)$m['id'], $availableManagers);
-            $managersByProperty = [];
-            foreach ($properties as $prop) {
-                $managersByProperty[(string)$prop['id']] = $allManagerIds;
-            }
-            foreach ($tickets as $ticket) {
-                $managersByProperty[(string)$ticket['property_id']] = $allManagerIds;
-            }
             $commonPropertyManagers = $allManagerIds;
+
+            // For tickets, only offer managers who can access every conflicting
+            // ticket's property (access already accounts for secondary roles).
             $commonTicketManagers = $allManagerIds;
+            foreach ($ticketAccess as $allowed) {
+                $commonTicketManagers = array_values(array_intersect($commonTicketManagers, $allowed));
+            }
 
             $view = new View();
             $view->layout('layouts/main', ['title' => __('Archive Staff Member')]);
@@ -415,7 +414,6 @@ class StaffController
                 'ticketAccess',
                 'ticketProperty',
                 'propertyTickets',
-                'managersByProperty',
                 'commonPropertyManagers',
                 'commonTicketManagers'
             ));
