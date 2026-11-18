@@ -255,6 +255,7 @@ return [
     'Optional: Tickets can be left unassigned.' => 'Opcional: Los tickets pueden dejarse sin asignar.',
     'WARNING: This will archive this staff member and is not reversible. They will no longer be able to log in.' => 'ADVERTENCIA: Esto archivará a este miembro del personal y no se puede deshacer. Ya no podrá iniciar sesión.',
     'Each property must be assigned to a property manager.' => 'Cada propiedad debe ser asignada a un administrador de propiedad.',
+    'Each ticket must be assigned or explicitly unassigned.' => 'Cada ticket debe ser asignado o explícitamente desasignado.',
     'Select Property' => 'Seleccionar Propiedad',
     'Select Province' => 'Seleccionar Provincia',
     'Select State' => 'Seleccionar Estado',

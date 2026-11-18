@@ -82,7 +82,7 @@
                             <option value="<?= $mgr['id'] ?>"><?= h($mgr['name']) ?> (<?= h($mgr['email']) ?>)</option>
                         <?php endforeach; ?>
                     </select>
-                    <p class="text-xs text-gray-500 mt-1"><?= __('Optional: Tickets can be left unassigned.') ?></p>
+                    <p class="text-xs text-gray-500 mt-1"><?= __('Each ticket must be assigned or explicitly unassigned.') ?></p>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -112,9 +112,14 @@ function archiveConflictResolver() {
             this.checkValidation();
         },
         get canSubmit() {
-            // Properties are required, tickets are optional
+            // Properties are required - must select a manager
             const propertySelects = document.querySelectorAll('select[name^="property_assignments"]');
             for (const select of propertySelects) {
+                if (!select.value) return false;
+            }
+            // Tickets are required - must select a manager or explicitly unassign
+            const ticketSelects = document.querySelectorAll('select[name^="ticket_assignments"]');
+            for (const select of ticketSelects) {
                 if (!select.value) return false;
             }
             return true;
@@ -130,11 +135,7 @@ function archiveConflictResolver() {
         assignAllTickets(value) {
             const selects = document.querySelectorAll('select[name^="ticket_assignments"]');
             selects.forEach(select => {
-                if (value === 'unassign') {
-                    select.value = '';
-                } else {
-                    select.value = value;
-                }
+                select.value = value;
             });
             this.checkValidation();
         },

@@ -15,6 +15,7 @@
     'Optional: Tickets can be left unassigned.' => 'Optional: Tickets can be left unassigned.',
     'WARNING: This will archive this staff member and is not reversible. They will no longer be able to log in.' => 'WARNING: This will archive this staff member and is not reversible. They will no longer be able to log in.',
     'Each property must be assigned to a property manager.' => 'Each property must be assigned to a property manager.',
+    'Each ticket must be assigned or explicitly unassigned.' => 'Each ticket must be assigned or explicitly unassigned.',
     'Use default language' => 'Use default language',
     'Last updated' => 'Last updated',
     'Secondary Roles' => 'Secondary Roles',
