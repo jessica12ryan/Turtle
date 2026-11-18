@@ -389,31 +389,43 @@ class StaffController
                 }
             }
 
-            // Managers who can access every conflicting property, and every
-            // conflicting ticket's property. These are the valid choices for
-            // the "assign all" dropdowns.
+            // For the "assign all" dropdowns, a manager "exists in" a property
+            // when they belong to the property's company (company_user).
             $allManagerIds = array_map(fn($m) => (string)$m['id'], $availableManagers);
-            $commonPropertyManagers = $allManagerIds;
+            $companyManagersByProperty = [];
             foreach ($properties as $prop) {
-                $property = [
-                    'company_id' => $prop['company_id'],
-                    'property_manager_id' => $prop['property_manager_id'],
-                ];
                 $allowed = [];
                 foreach ($availableManagers as $manager) {
-                    if (user_can_access_property(
-                        $manager,
-                        $property,
-                        $managerCompanyMap[(int)$manager['id']] ?? []
-                    )) {
+                    if (in_array((int)$prop['company_id'], $managerCompanyMap[(int)$manager['id']] ?? [], true)) {
                         $allowed[] = (string)$manager['id'];
                     }
                 }
-                $commonPropertyManagers = array_values(array_intersect($commonPropertyManagers, $allowed));
+                $companyManagersByProperty[(string)$prop['id']] = $allowed;
+            }
+            foreach ($tickets as $ticket) {
+                $allowed = [];
+                foreach ($availableManagers as $manager) {
+                    if (in_array((int)$ticket['company_id'], $managerCompanyMap[(int)$manager['id']] ?? [], true)) {
+                        $allowed[] = (string)$manager['id'];
+                    }
+                }
+                $companyManagersByProperty[(string)$ticket['property_id']] = $allowed;
+            }
+
+            // Managers common to every conflicting property / ticket property.
+            $commonPropertyManagers = $allManagerIds;
+            foreach ($properties as $prop) {
+                $commonPropertyManagers = array_values(array_intersect(
+                    $commonPropertyManagers,
+                    $companyManagersByProperty[(string)$prop['id']]
+                ));
             }
             $commonTicketManagers = $allManagerIds;
-            foreach ($ticketAccess as $allowed) {
-                $commonTicketManagers = array_values(array_intersect($commonTicketManagers, $allowed));
+            foreach ($tickets as $ticket) {
+                $commonTicketManagers = array_values(array_intersect(
+                    $commonTicketManagers,
+                    $companyManagersByProperty[(string)$ticket['property_id']]
+                ));
             }
 
             $view = new View();
@@ -426,6 +438,7 @@ class StaffController
                 'ticketAccess',
                 'ticketProperty',
                 'propertyTickets',
+                'companyManagersByProperty',
                 'commonPropertyManagers',
                 'commonTicketManagers'
             ));

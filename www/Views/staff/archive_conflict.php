@@ -14,6 +14,7 @@ $resolverConfig = [
     'propertyTickets' => $propertyTickets ?? [],
     'ticketProperty' => $ticketProperty ?? [],
     'ticketAccess' => $ticketAccess ?? [],
+    'companyManagersByProperty' => $companyManagersByProperty ?? [],
 ];
 ?>
 <div class="flex justify-between items-center mb-6">
@@ -142,6 +143,7 @@ function archiveConflictResolver(config) {
         propertyTickets: config.propertyTickets,
         ticketProperty: config.ticketProperty,
         ticketAccess: config.ticketAccess,
+        companyManagersByProperty: config.companyManagersByProperty,
         // Reactive: re-evaluates whenever any x-model value above changes
         get canSubmit() {
             if (!this.hasManagers) return false;
@@ -155,11 +157,18 @@ function archiveConflictResolver(config) {
             if (selected) allowed.add(String(selected));
             return allowed;
         },
+        companyManagerIdsFor(ticketId) {
+            const propertyId = this.ticketProperty[ticketId];
+            const allowed = new Set(this.companyManagersByProperty[propertyId] || []);
+            const selected = this.propertyValues[propertyId];
+            if (selected) allowed.add(String(selected));
+            return allowed;
+        },
         get allTicketManagers() {
             const ticketIds = Object.keys(this.ticketProperty);
             let common = null;
             for (const ticketId of ticketIds) {
-                const allowed = this.allowedManagerIdsFor(ticketId);
+                const allowed = this.companyManagerIdsFor(ticketId);
                 common = common === null ? allowed : new Set([...common].filter(id => allowed.has(id)));
             }
             return common === null
