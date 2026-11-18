@@ -336,7 +336,7 @@ class StaffController
                     p.company_id, p.property_manager_id
              FROM tickets t
              JOIN properties p ON p.id = t.property_id
-             WHERE t.assigned_to = ? AND t.archived_at IS NULL",
+             WHERE t.assigned_to = ? AND t.archived_at IS NULL AND t.status != 'closed'",
             [$id]
         );
 
@@ -454,7 +454,7 @@ class StaffController
             "SELECT t.id, p.id as property_id, p.company_id, p.property_manager_id
              FROM tickets t
              JOIN properties p ON p.id = t.property_id
-             WHERE t.assigned_to = ? AND t.archived_at IS NULL",
+             WHERE t.assigned_to = ? AND t.archived_at IS NULL AND t.status != 'closed'",
             [$id]
         );
 
