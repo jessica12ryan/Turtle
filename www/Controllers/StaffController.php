@@ -323,8 +323,106 @@ class StaffController
             }
         }
 
+        // Check for conflicts: properties and tickets assigned to this staff member
+        $properties = Database::fetchAll(
+            "SELECT p.id, p.name FROM properties p WHERE p.property_manager_id = ? AND p.archived_at IS NULL",
+            [$id]
+        );
+        $tickets = Database::fetchAll(
+            "SELECT t.id, t.subject, p.name as property_name FROM tickets t
+             JOIN properties p ON p.id = t.property_id
+             WHERE t.assigned_to = ? AND t.archived_at IS NULL",
+            [$id]
+        );
+
+        // If there are conflicts, show the conflict resolution modal
+        if (!empty($properties) || !empty($tickets)) {
+            $availableManagers = Database::fetchAll(
+                "SELECT id, name, email FROM users
+                 WHERE (role = 'property_manager' OR FIND_IN_SET('property_manager', COALESCE(secondary_roles, '')))
+                 AND archived_at IS NULL AND id != ?
+                 ORDER BY name",
+                [$id]
+            );
+
+            $view = new View();
+            $view->layout('layouts/main', ['title' => __('Archive Staff Member')]);
+            $view->render('staff/archive_conflict', compact('target', 'properties', 'tickets', 'availableManagers'));
+            return;
+        }
+
+        // No conflicts, proceed with archiving
         Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
         log_activity('staff.archived', "Staff member #{$id} archived");
+        flash('success', 'Staff member archived successfully.');
+        redirect('/staff');
+    }
+
+    public function archiveWithResolution(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
+        $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+
+        if ($target['role'] === 'admin') {
+            $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
+            if (!$adminCount || $adminCount['cnt'] === 0) {
+                flash('error', 'Cannot archive the only active admin account.');
+                redirect('/staff/' . $id);
+            }
+        }
+
+        // Fetch current conflicts to validate against
+        $properties = Database::fetchAll(
+            "SELECT p.id FROM properties p WHERE p.property_manager_id = ? AND p.archived_at IS NULL",
+            [$id]
+        );
+        $tickets = Database::fetchAll(
+            "SELECT t.id FROM tickets t
+             JOIN properties p ON p.id = t.property_id
+             WHERE t.assigned_to = ? AND t.archived_at IS NULL",
+            [$id]
+        );
+
+        // Validate property assignments (required)
+        $propertyAssignments = $_POST['property_assignments'] ?? [];
+        foreach ($properties as $prop) {
+            $propId = (string)$prop['id'];
+            if (!isset($propertyAssignments[$propId]) || empty($propertyAssignments[$propId])) {
+                flash('error', __('Each property must be assigned to a property manager.'));
+                redirect('/staff/' . $id . '/delete');
+                return;
+            }
+        }
+
+        // Process property reassignments
+        foreach ($propertyAssignments as $propertyId => $newManagerId) {
+            if (!empty($newManagerId)) {
+                Database::execute(
+                    "UPDATE properties SET property_manager_id = ?, updated_at = NOW() WHERE id = ?",
+                    [(int)$newManagerId, (int)$propertyId]
+                );
+            }
+        }
+
+        // Process ticket reassignments
+        $ticketAssignments = $_POST['ticket_assignments'] ?? [];
+        foreach ($ticketAssignments as $ticketId => $newAssigneeId) {
+            // Empty string means unassign
+            $assigneeId = $newAssigneeId !== '' ? (int)$newAssigneeId : null;
+            Database::execute(
+                "UPDATE tickets SET assigned_to = ?, updated_at = NOW() WHERE id = ?",
+                [$assigneeId, (int)$ticketId]
+            );
+        }
+
+        // Archive the staff member
+        Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
+        log_activity('staff.archived', "Staff member #{$id} archived with conflict resolution");
         flash('success', 'Staff member archived successfully.');
         redirect('/staff');
     }

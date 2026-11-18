@@ -218,6 +218,7 @@ $router->get('/staff/{id}', 'StaffController@show', ['auth', 'perm:staff.access'
 $router->get('/staff/{id}/edit', 'StaffController@edit', ['auth', 'perm:staff.edit']);
 $router->post('/staff/{id}/update', 'StaffController@update', ['auth', 'perm:staff.edit']);
 $router->post('/staff/{id}/delete', 'StaffController@destroy', ['auth', 'perm:staff.archive']);
+$router->post('/staff/{id}/archive-resolve', 'StaffController@archiveWithResolution', ['auth', 'perm:staff.archive']);
 $router->post('/staff/{id}/restore', 'StaffController@restore', ['auth', 'perm:staff.restore']);
 $router->post('/staff/{id}/hard-delete', 'StaffController@hardDelete', ['auth', 'perm:staff.delete']);
 
