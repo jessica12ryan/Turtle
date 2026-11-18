@@ -108,8 +108,13 @@
 function archiveConflictResolver() {
     return {
         init() {
-            // Check initial validation
-            this.checkValidation();
+            // Listen for changes on all assignment selects to trigger re-validation
+            document.querySelectorAll('select[name^="property_assignments"], select[name^="ticket_assignments"]').forEach(select => {
+                select.addEventListener('change', () => {
+                    // Force Alpine to re-evaluate the component
+                    this.$forceUpdate();
+                });
+            });
         },
         get canSubmit() {
             // Properties are required - must select a manager
@@ -129,19 +134,17 @@ function archiveConflictResolver() {
             const selects = document.querySelectorAll('select[name^="property_assignments"]');
             selects.forEach(select => {
                 select.value = value;
+                // Trigger change event so validation runs
+                select.dispatchEvent(new Event('change'));
             });
-            this.checkValidation();
         },
         assignAllTickets(value) {
             const selects = document.querySelectorAll('select[name^="ticket_assignments"]');
             selects.forEach(select => {
                 select.value = value;
+                // Trigger change event so validation runs
+                select.dispatchEvent(new Event('change'));
             });
-            this.checkValidation();
-        },
-        checkValidation() {
-            // Trigger re-render for button state
-            this.$nextTick(() => {});
         }
     };
 }
