@@ -732,6 +732,60 @@ function defaultNotifications(): array
     ];
 }
 
+function notificationEventLabels(): array
+{
+    return [
+        'ticket_assigned' => __('Ticket Assigned'),
+        'ticket_status_updated' => __('Ticket Status Updated'),
+        'document_uploaded' => __('Document Uploaded'),
+        'staff_welcome' => __('Staff Welcome'),
+        'tenant_welcome' => __('Tenant Welcome'),
+        'password_reset' => __('Password Reset'),
+        'onboarding' => __('Onboarding'),
+    ];
+}
+
+function inappNotificationMode(): string
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'inapp_notification_mode'");
+        return $row['value'] ?? 'default';
+    } catch (\Throwable $e) {
+        return 'default';
+    }
+}
+
+function shouldNotifyInApp(string $event, string $role): bool
+{
+    try {
+        if (inappNotificationMode() === 'custom') {
+            $row = \App\Core\Database::fetch(
+                "SELECT 1 FROM inapp_notification_events WHERE event = ? AND role = ?",
+                [$event, $role]
+            );
+            return $row !== null;
+        }
+    } catch (\Throwable $e) {
+        // Fall back to defaults if the table is not available yet.
+    }
+    return in_array($role, defaultNotifications()[$event] ?? [], true);
+}
+
+function notifyInApp(int $userId, string $event, string $data, ?string $type = null): void
+{
+    try {
+        $user = \App\Core\Database::fetch("SELECT role FROM users WHERE id = ? AND archived_at IS NULL", [$userId]);
+        if (!$user || !shouldNotifyInApp($event, $user['role'])) return;
+
+        \App\Core\Database::execute(
+            "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, ?, ?, NOW())",
+            [$userId, $type ?? $event, $data]
+        );
+    } catch (\Throwable $e) {
+        error_log('In-app notification failed: ' . $e->getMessage());
+    }
+}
+
 function site_url(): string
 {
     try {

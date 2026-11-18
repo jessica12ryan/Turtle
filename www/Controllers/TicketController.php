@@ -256,6 +256,7 @@ class TicketController
                 \site_url() . '/tickets/' . $id,
                 'View Ticket'
             );
+            notifyInApp((int)$assignedTo, 'ticket_assigned', 'A ticket has been assigned to you: ' . $ticket['subject']);
         } else {
             $commentBody = ticket_assignment_comment_body($user['name'], null);
         }
@@ -435,6 +436,8 @@ class TicketController
                 \site_url() . '/tickets/' . $id,
                 'View Ticket'
             );
+            notifyInApp((int)$ticket['tenant_id'], 'ticket_status_updated',
+                'Ticket status updated: ' . $ticket['subject'] . ' — ' . ucfirst(str_replace('_', ' ', $_POST['status'])));
         }
 
         log_activity('ticket.status_updated', "Ticket #{$id} status updated");

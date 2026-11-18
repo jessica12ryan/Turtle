@@ -255,6 +255,7 @@ class TenantController
                 $loginUrl,
                 'Log In'
             );
+            notifyInApp((int)$tenantId, 'tenant_welcome', 'Your Turtle tenant account has been created.');
         }
 
         log_activity('tenant.created', "Tenant '{$_POST['name']}' added");

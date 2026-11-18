@@ -41,7 +41,7 @@ Both support **ingress** (embedded in HA UI) and **direct access** via port.
 - **Resources** — shared links page, general and staff-only categories
 - **Backup & Restore** — full system backup (`.turtle` format) via admin settings
 - **Messaging** — side overlay with online users, direct messages, unread badges, sound alerts, rate limiting, and admin chat history in Settings
-- **Email** — lightweight SMTP client, notification preferences per role
+- **Email** — lightweight SMTP client, email and in-app notification preferences per role
 - **Role-Based Access** — Admin, Landlord, Property Manager, Maintenance, Tenant
 
 ## Permissions

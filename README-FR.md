@@ -41,7 +41,7 @@ Les deux prennent en charge l'**ingress** (intégré dans l'interface HA) et l'*
 - **Ressources** — page de liens partagés, catégories générales et réservées au personnel
 - **Sauvegarde et restauration** — sauvegarde complète du système (format `.turtle`) via les paramètres admin
 - **Messagerie** — panneau latéral avec utilisateurs en ligne, messages directs, badges de non-lus, alertes sonores, limitation de débit et historique admin dans les paramètres
-- **Courriel** — client SMTP léger, préférences de notification par rôle
+- **Courriel** — client SMTP léger, préférences de notification par courriel et dans l’application selon le rôle
 - **Contrôle d'accès** — Administrateur, Propriétaire, Gestionnaire immobilier, Maintenance, Locataire
 
 ## Autorisations

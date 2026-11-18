@@ -141,6 +141,7 @@ class StaffController
                 $loginUrl,
                 'Log In'
             );
+            notifyInApp((int)$userId, 'staff_welcome', 'Your Turtle staff account has been created.');
         }
 
         log_activity('staff.created', "Staff member '{$_POST['name']}' added ({$_POST['role']})");

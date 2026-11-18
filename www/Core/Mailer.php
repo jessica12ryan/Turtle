@@ -54,33 +54,6 @@ class Mailer
         return $_ENV[$envKey] ?? $default;
     }
 
-    private static function notifyUser(string $to, string $subject, string $htmlBody): void
-    {
-        try {
-            $user = Database::fetch(
-                "SELECT id FROM users WHERE email = ? AND archived_at IS NULL LIMIT 1",
-                [$to]
-            );
-            if (!$user) return;
-
-            $text = str_replace(["\r\n", "\r"], "\n", $htmlBody);
-            $text = preg_replace('/<br\s*\/?>/i', "\n", $text);
-            $text = preg_replace('/<\/(p|div|h[1-6]|li|tr)>/i', "\n", $text);
-            $text = strip_tags($text);
-            $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
-            $text = preg_replace('/[ \t]+/', ' ', $text);
-            $text = preg_replace('/\n{3,}/', "\n\n", $text);
-            $text = trim($text);
-
-            Database::execute(
-                "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, 'email', ?, NOW())",
-                [(int)$user['id'], "Subject: {$subject}\n\n{$text}"]
-            );
-        } catch (\Throwable $e) {
-            error_log('Mailer: failed to create email notification: ' . $e->getMessage());
-        }
-    }
-
     public static function send(string $to, string $subject, string $body): bool
     {
         $host = self::getConfig('mail_host', 'mailpit');
@@ -183,7 +156,6 @@ class Mailer
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 
-        self::notifyUser($to, $subject, $body);
         return true;
     }
 
@@ -356,7 +328,6 @@ class Mailer
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 
-        self::notifyUser($to, $subject, $htmlBody);
         return true;
     }
 }

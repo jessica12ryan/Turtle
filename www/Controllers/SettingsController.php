@@ -91,6 +91,29 @@ class SettingsController
             $data['notifDefaults'] = defaultNotifications();
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'notification_mode'");
             $data['notificationMode'] = $row['value'] ?? 'default';
+
+            try {
+                Database::fetchAll("SELECT 1 FROM inapp_notification_events LIMIT 1");
+            } catch (\Throwable $e) {
+                try {
+                    \App\Core\Database::instance()->getConnection()->exec("CREATE TABLE IF NOT EXISTS inapp_notification_events (
+                        event VARCHAR(100) NOT NULL,
+                        role VARCHAR(50) NOT NULL,
+                        PRIMARY KEY (event, role)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                } catch (\Throwable $e2) {
+                    error_log('Failed to create inapp_notification_events table: ' . $e2->getMessage());
+                }
+            }
+            $rows = Database::fetchAll("SELECT event, role FROM inapp_notification_events ORDER BY event, role", []);
+            $data['inappOverrides'] = [];
+            foreach ($rows as $row) {
+                $data['inappOverrides'][$row['event']][] = $row['role'];
+            }
+            $data['inappRoles'] = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            $data['inappDefaults'] = defaultNotifications();
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'inapp_notification_mode'");
+            $data['inappMode'] = $row['value'] ?? 'default';
         } elseif ($tab === 'logging') {
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'log_level'");
             $data['logLevel'] = $row['value'] ?? 'debug';
@@ -644,6 +667,44 @@ class SettingsController
 
         log_activity('settings.notifications_saved', 'Notification settings saved');
         flash('success', 'Notification settings saved successfully.');
+        redirect('/settings?tab=notifications');
+    }
+
+    public function saveInAppNotifications(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', 'Invalid security token.');
+            redirect('/settings?tab=notifications');
+            return;
+        }
+
+        $mode = $_POST['inapp_mode'] ?? 'default';
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('inapp_notification_mode', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [$mode, $mode]
+        );
+
+        if ($mode === 'custom') {
+            $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            Database::execute("DELETE FROM inapp_notification_events WHERE 1=1", []);
+            if (isset($_POST['inapp_events'])) {
+                foreach ($_POST['inapp_events'] as $event => $grantedRoles) {
+                    foreach ($grantedRoles as $role) {
+                        if (in_array($role, $roles, true)) {
+                            Database::execute(
+                                "INSERT IGNORE INTO inapp_notification_events (event, role) VALUES (?, ?)",
+                                [$event, $role]
+                            );
+                        }
+                    }
+                }
+            }
+        } else {
+            Database::execute("DELETE FROM inapp_notification_events WHERE 1=1", []);
+        }
+
+        log_activity('settings.inapp_notifications_saved', 'In-app notification settings saved');
+        flash('success', 'In-app notification settings saved successfully.');
         redirect('/settings?tab=notifications');
     }
 

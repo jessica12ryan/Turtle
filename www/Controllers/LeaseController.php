@@ -269,6 +269,8 @@ class LeaseController
                         '',
                         $emailAttachments
                     );
+                    notifyInApp((int)$_POST['tenant_id'], 'document_uploaded',
+                        'New document uploaded: ' . $_POST['title']);
                 }
             }
 

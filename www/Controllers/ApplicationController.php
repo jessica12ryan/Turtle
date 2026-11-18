@@ -462,6 +462,7 @@ class ApplicationController
                         $loginUrl,
                         'Log In'
                     );
+                    notifyInApp((int)$secTenantId, 'tenant_welcome', 'Your Turtle tenant account has been created.');
                 }
             }
 
@@ -482,6 +483,7 @@ class ApplicationController
                     $loginUrl,
                     'Log In'
                 );
+                notifyInApp((int)$tenantId, 'tenant_welcome', 'Your Turtle tenant account has been created.');
             }
 
             log_activity('tenant.created', "Tenant '{$_POST['name']}' added from application #{$id}");

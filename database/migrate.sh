@@ -44,6 +44,8 @@ run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('telemetry_ena
 run_sql "CREATE TABLE IF NOT EXISTS resources (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NOT NULL, url VARCHAR(500) NOT NULL, description TEXT, type VARCHAR(20) NOT NULL DEFAULT 'general', created_by INT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (created_by) REFERENCES users(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "ALTER TABLE resources ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'general' AFTER description;"
 run_sql "CREATE TABLE IF NOT EXISTS notification_events (event VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL, PRIMARY KEY (event, role)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+run_sql "CREATE TABLE IF NOT EXISTS inapp_notification_events (event VARCHAR(100) NOT NULL, role VARCHAR(50) NOT NULL, PRIMARY KEY (event, role)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('inapp_notification_mode', 'default');"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('notification_mode', 'default');"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('site_url', '');"
 run_sql "CREATE TABLE IF NOT EXISTS role_permissions (role VARCHAR(50) NOT NULL, permission VARCHAR(100) NOT NULL, PRIMARY KEY (role, permission)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"

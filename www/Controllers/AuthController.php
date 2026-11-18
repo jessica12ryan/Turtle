@@ -105,6 +105,7 @@ class AuthController
                 $resetUrl,
                 'Reset Password'
             );
+            notifyInApp((int)$user['id'], 'password_reset', 'A password reset link has been sent to your email.');
         }
 
         flash('success', 'If that email exists, a reset link has been sent.');
@@ -216,6 +217,7 @@ class AuthController
             $loginUrl,
             'Log In'
         );
+        notifyInApp((int)$user['id'], 'onboarding', 'Your Turtle account is ready. Please log in to complete onboarding.');
 
         log_activity('auth.welcome_sent', "Welcome email sent to '{$_POST['email']}'");
         flash('success', 'Welcome email sent! Please check your inbox for your temporary password.');
