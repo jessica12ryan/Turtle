@@ -20,6 +20,8 @@
     'View' => 'View',
     'Download' => 'Download',
     'Document Details' => 'Document Details',
+    'Archive' => 'Archive',
+    'Archive this lease?' => 'Archive this lease?',
     'File Name' => 'File Name',
     'Size' => 'Size',
     'Uploaded' => 'Uploaded',

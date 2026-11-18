@@ -238,6 +238,7 @@ return [
     'Could not permanently delete this property. No changes were made.' => 'No se pudo eliminar permanentemente esta propiedad. No se realizaron cambios.',
     'Property permanently deleted.' => 'Propiedad eliminada permanentemente.',
     'Document Details' => 'Detalles del documento',
+    'Archive this lease?' => '¿Archivar este contrato?',
     'File Name' => 'Nombre del archivo',
     'Size' => 'Tamaño',
     'Uploaded' => 'Subido',

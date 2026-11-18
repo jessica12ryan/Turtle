@@ -1,6 +1,11 @@
 <div class="flex justify-between items-center mb-6">
     <div>
-        <h1 class="text-2xl font-bold text-gray-800"><?= h($lease['title']) ?></h1>
+        <h1 class="text-2xl font-bold text-gray-800">
+            <?= h($lease['title']) ?>
+            <?php if ($lease['archived_at']): ?>
+                <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1 align-middle"><?= __('Archived') ?></span>
+            <?php endif; ?>
+        </h1>
         <p class="text-gray-500"><?= h($lease['property_name']) ?> — Uploaded by <?= h($lease['uploader_name']) ?> on <?= display_time($lease['created_at'], 'M j, Y') ?></p>
         <?php if (!empty($lease['document_type'])): ?>
             <?php
@@ -19,10 +24,17 @@
     </div>
     <div class="flex space-x-3">
         <a href="/properties/<?= $lease['property_id'] ?>" data-tooltip="<?= __('View this item') ?>" class="text-blue-600 hover:underline text-sm">View Property</a>
-        <?php if (can('leases.archive')): ?>
-            <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('Archive this lease?')">
+        <?php if ($lease['archived_at']): ?>
+            <?php if (can('leases.restore')): ?>
+                <form method="POST" action="/leases/<?= $lease['id'] ?>/restore" class="inline">
+                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                    <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="text-green-600 hover:underline text-sm"><?= __('Restore') ?></button>
+                </form>
+            <?php endif; ?>
+        <?php elseif (can('leases.archive')): ?>
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Archive this lease?') ?>')">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="text-orange-600 hover:underline text-sm">Archive</button>
+                <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
             </form>
         <?php endif; ?>
         <?php if (can('leases.delete')): ?>

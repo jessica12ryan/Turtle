@@ -43,7 +43,7 @@
                         <td class="px-6 py-4">
                             <a href="/leases/<?= $lease['id'] ?>" class="text-blue-600 hover:underline font-medium"><?= h($lease['title']) ?></a>
                             <?php if ($lease['archived_at']): ?>
-                                <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1">Archived</span>
+                                <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1"><?= __('Archived') ?></span>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= $docTypeLabels[$lease['document_type']] ?? h($lease['document_type']) ?></td>

@@ -292,7 +292,7 @@ class LeaseController
              FROM leases l 
              JOIN properties p ON p.id = l.property_id 
              JOIN users u ON u.id = l.uploaded_by 
-             WHERE l.id = ? AND l.archived_at IS NULL",
+             WHERE l.id = ?",
             [$id]
         );
         if (!$lease) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
