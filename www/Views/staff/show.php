@@ -1,17 +1,31 @@
 <div class="flex justify-between items-center mb-6">
     <div>
-        <h1 class="text-2xl font-bold text-gray-800"><?= h($staff['name']) ?></h1>
+        <h1 class="text-2xl font-bold text-gray-800">
+            <?= h($staff['name']) ?>
+            <?php if ($staff['archived_at']): ?>
+                <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1 align-middle"><?= __('Archived') ?></span>
+            <?php endif; ?>
+        </h1>
         <p class="text-gray-500"><?= h($staff['email']) ?></p>
     </div>
     <div class="flex space-x-3">
-        <?php if (can('staff.edit')): ?>
-            <a href="/staff/<?= $staff['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
-        <?php endif; ?>
-        <?php if (can('staff.archive')): ?>
-            <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Archive this staff member? They will no longer be able to log in.') ?>')">
-                <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
-            </form>
+        <?php if ($staff['archived_at']): ?>
+            <?php if (can('staff.restore')): ?>
+                <form method="POST" action="/staff/<?= $staff['id'] ?>/restore" class="inline">
+                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                    <button type="submit" data-tooltip="<?= __('Restore this item') ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"><?= __('Restore') ?></button>
+                </form>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if (can('staff.edit')): ?>
+                <a href="/staff/<?= $staff['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
+            <?php endif; ?>
+            <?php if (can('staff.archive')): ?>
+                <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Archive this staff member? They will no longer be able to log in.') ?>')">
+                    <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                    <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
+                </form>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </div>

@@ -151,7 +151,7 @@ class StaffController
     public function show(int $id): void
     {
         $staff = Database::fetch(
-            "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('admin','landlord','property_manager','maintenance')",
+            "SELECT u.* FROM users u WHERE u.id = ? AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
