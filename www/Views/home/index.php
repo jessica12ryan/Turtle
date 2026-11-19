@@ -11,9 +11,9 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-red-800 dark:text-red-200"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['links'])): ?>
-                            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                            <div class="mt-1 space-y-1">
                                 <?php foreach ($a['links'] as $link): ?>
-                                    <a href="<?= h($link['href']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= h($link['label']) ?>"><?= h($link['label']) ?></a>
+                                    <a href="<?= h($link['href']) ?>" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= h($link['label']) ?>"><?= h($link['label']) ?> →</a>
                                 <?php endforeach; ?>
                             </div>
                         <?php elseif (isset($a['link'])): ?>
@@ -33,9 +33,9 @@
                     <div class="flex-1">
                         <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200"><?= h($a['msg']) ?></p>
                         <?php if (isset($a['links'])): ?>
-                            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                            <div class="mt-1 space-y-1">
                                 <?php foreach ($a['links'] as $link): ?>
-                                    <a href="<?= h($link['href']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= h($link['label']) ?>"><?= h($link['label']) ?></a>
+                                    <a href="<?= h($link['href']) ?>" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= h($link['label']) ?>"><?= h($link['label']) ?> →</a>
                                 <?php endforeach; ?>
                             </div>
                         <?php elseif (isset($a['link'])): ?>
