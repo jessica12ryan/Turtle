@@ -721,7 +721,7 @@ function site_logo(): string
 
 function defaultNotifications(): array
 {
-    return [
+    $defaults = [
         'ticket_assigned' => ['landlord', 'property_manager', 'maintenance'],
         'ticket_status_updated' => ['tenant'],
         'document_uploaded' => ['tenant'],
@@ -730,6 +730,20 @@ function defaultNotifications(): array
         'password_reset' => ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'],
         'onboarding' => ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'],
     ];
+
+    // Admin defaults mirror the Landlord defaults for every event.
+    foreach ($defaults as $event => $roles) {
+        $landlord = in_array('landlord', $roles, true);
+        $defaults[$event] = array_values(array_filter(
+            $roles,
+            fn($role) => $role !== 'admin' || $landlord
+        ));
+        if ($landlord && !in_array('admin', $defaults[$event], true)) {
+            $defaults[$event][] = 'admin';
+        }
+    }
+
+    return $defaults;
 }
 
 function messaging_enabled(): bool
@@ -767,9 +781,6 @@ function inappNotificationMode(): string
 
 function shouldNotifyInApp(string $event, string $role): bool
 {
-    // Admins are always kept in the loop for in-app notifications.
-    if ($role === 'admin') return true;
-
     try {
         if (inappNotificationMode() === 'custom') {
             $row = \App\Core\Database::fetch(

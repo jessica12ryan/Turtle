@@ -1,7 +1,7 @@
 <?php
 $hideNotifCell = function (string $event, string $role): bool {
     return ($event === 'staff_welcome' && $role === 'tenant')
-        || ($event === 'tenant_welcome' && in_array($role, ['landlord', 'property_manager', 'maintenance'], true));
+        || ($event === 'tenant_welcome' && in_array($role, ['admin', 'landlord', 'property_manager', 'maintenance'], true));
 };
 ?>
 <div class="bg-white rounded-lg shadow p-6">
@@ -81,7 +81,6 @@ $hideNotifCell = function (string $event, string $role): bool {
 <div class="bg-white rounded-lg shadow p-6 mt-6">
     <h2 class="text-lg font-semibold mb-4"><?= __('In-App Notifications') ?></h2>
     <p class="text-sm text-gray-600 mb-6"><?= __('Choose who receives in-app notifications for each event. Defaults match email notifications.') ?></p>
-    <p class="text-xs text-gray-500 mb-4"><?= __('Admins always receive in-app notifications.') ?></p>
 
     <form method="POST" action="/settings/inapp-notifications">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">

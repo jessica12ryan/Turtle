@@ -87,7 +87,7 @@ class SettingsController
             foreach ($rows as $row) {
                 $data['notifOverrides'][$row['event']][] = $row['role'];
             }
-            $data['notifRoles'] = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            $data['notifRoles'] = ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'];
             $data['notifDefaults'] = defaultNotifications();
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'notification_mode'");
             $data['notificationMode'] = $row['value'] ?? 'default';
@@ -110,7 +110,7 @@ class SettingsController
             foreach ($rows as $row) {
                 $data['inappOverrides'][$row['event']][] = $row['role'];
             }
-            $data['inappRoles'] = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            $data['inappRoles'] = ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'];
             $data['inappDefaults'] = defaultNotifications();
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'inapp_notification_mode'");
             $data['inappMode'] = $row['value'] ?? 'default';
@@ -685,7 +685,7 @@ class SettingsController
 
         if ($mode === 'custom') {
             if (isset($_POST['events'])) {
-                $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+                $roles = ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'];
                 Database::execute("DELETE FROM notification_events WHERE 1=1", []);
                 foreach ($_POST['events'] as $event => $grantedRoles) {
                     foreach ($grantedRoles as $role) {
@@ -729,7 +729,7 @@ class SettingsController
         );
 
         if ($mode === 'custom') {
-            $roles = ['landlord', 'property_manager', 'maintenance', 'tenant'];
+            $roles = ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'];
             Database::execute("DELETE FROM inapp_notification_events WHERE 1=1", []);
             if (isset($_POST['inapp_events'])) {
                 foreach ($_POST['inapp_events'] as $event => $grantedRoles) {
