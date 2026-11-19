@@ -176,6 +176,7 @@ $themePref = $themeUser['theme'] ?? 'system';
 <?php if (messaging_enabled()): ?>
 <?php require base_path('www/Views/partials/messenger.php'); ?>
 <?php endif; ?>
+<?php require base_path('www/Views/partials/notifications_panel.php'); ?>
 <script>
 (function(){
     var ttp = document.getElementById('tooltip-el');

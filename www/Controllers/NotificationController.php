@@ -8,6 +8,50 @@ use App\Core\View;
 
 class NotificationController
 {
+    private function isXhr(): bool
+    {
+        return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+    }
+
+    public function list(): void
+    {
+        header('Content-Type: application/json');
+        $showRead = !empty($_GET['show_read']);
+        $readClause = $showRead ? '' : ' AND read_at IS NULL';
+        $rows = Database::fetchAll(
+            "SELECT * FROM notifications
+             WHERE user_id = ? AND (type IS NULL OR type != 'message'){$readClause}
+             ORDER BY created_at DESC
+             LIMIT 100",
+            [Auth::instance()->id()]
+        );
+
+        $labels = notificationEventLabels();
+        $notifications = [];
+        foreach ($rows as $row) {
+            $notifications[] = [
+                'id' => (int)$row['id'],
+                'label' => $labels[$row['type']] ?? ($row['type'] === 'email' ? __('Email') : $row['type']),
+                'data' => $row['data'],
+                'time' => display_time($row['created_at']),
+                'read' => !empty($row['read_at']),
+            ];
+        }
+
+        echo json_encode($notifications);
+    }
+
+    public function unread(): void
+    {
+        header('Content-Type: application/json');
+        $count = Database::fetch(
+            "SELECT COUNT(*) as count FROM notifications
+             WHERE user_id = ? AND read_at IS NULL AND (type IS NULL OR type != 'message')",
+            [Auth::instance()->id()]
+        )['count'] ?? 0;
+        echo json_encode(['count' => (int)$count]);
+    }
+
     public function index(): void
     {
         $showArchived = !empty($_GET['show_archived']);
@@ -35,6 +79,11 @@ class NotificationController
             "UPDATE notifications SET read_at = NOW() WHERE id = ? AND user_id = ?",
             [$id, Auth::instance()->id()]
         );
+        if ($this->isXhr()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            return;
+        }
         redirectBack();
     }
 
@@ -50,6 +99,11 @@ class NotificationController
             [Auth::instance()->id()]
         );
         log_activity('notifications.read_all', 'All notifications marked as read');
+        if ($this->isXhr()) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            return;
+        }
         flash('success', 'All notifications marked as read.');
         redirect('/notifications');
     }

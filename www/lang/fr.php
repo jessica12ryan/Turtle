@@ -730,6 +730,7 @@ return [
     'Main navigation' => 'Navigation principale',
     'Open navigation' => 'Ouvrir la navigation',
     'View notifications' => 'Voir les notifications',
+    'View all notifications' => 'Voir toutes les notifications',
     'Show or hide read notifications' => 'Afficher ou masquer les notifications lues',
     'Showing read' => 'Affichage des lues',
     'Show read' => 'Afficher les lues',

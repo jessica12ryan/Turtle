@@ -131,7 +131,7 @@ function messenger(strings) {
         lastActivity: Date.now(),
         lastHeartbeat: 0,
         panelWidth: (() => {
-            const saved = parseInt(localStorage.getItem('turtle.messengerWidth'), 10);
+            const saved = parseInt(localStorage.getItem('turtle.panelWidth') || localStorage.getItem('turtle.messengerWidth'), 10);
             return isNaN(saved) ? 384 : saved;
         })(),
         get panelStyle() {
@@ -149,7 +149,7 @@ function messenger(strings) {
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup', onUp);
-                localStorage.setItem('turtle.messengerWidth', String(this.panelWidth));
+                localStorage.setItem('turtle.panelWidth', String(this.panelWidth));
             };
             document.addEventListener('mousemove', onMove);
             document.addEventListener('mouseup', onUp);
@@ -162,7 +162,17 @@ function messenger(strings) {
                 const data = proxy();
                 if (!data) return;
                 data.open = !data.open;
-                if (data.open) data.poll(true);
+                if (data.open) {
+                    const notifications = document.getElementById('notifications-panel');
+                    if (notifications && Alpine.$data(notifications)) {
+                        Alpine.$data(notifications).open = false;
+                    }
+                    data.poll(true);
+                }
+            });
+            window.addEventListener('notifications:toggle', () => {
+                const data = proxy();
+                if (data) data.open = false;
             });
             setTimeout(() => {
                 const data = proxy();

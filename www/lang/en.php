@@ -376,6 +376,7 @@
     'Main navigation' => 'Main navigation',
     'Open navigation' => 'Open navigation',
     'View notifications' => 'View notifications',
+    'View all notifications' => 'View all notifications',
     'Show or hide read notifications' => 'Show or hide read notifications',
     'Showing read' => 'Showing read',
     'Show read' => 'Show read',

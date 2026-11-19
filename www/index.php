@@ -315,6 +315,8 @@ $router->post('/messages/send', 'MessageController@send', ['auth']);
 $router->post('/messages/heartbeat', 'MessageController@heartbeat', ['auth']);
 
 // Notifications
+$router->get('/notifications/unread', 'NotificationController@unread', ['auth']);
+$router->get('/notifications/list', 'NotificationController@list', ['auth']);
 $router->get('/notifications', 'NotificationController@index', ['auth']);
 $router->post('/notifications/read-all', 'NotificationController@readAll', ['auth']);
 $router->post('/notifications/{id}/read', 'NotificationController@read', ['auth']);
