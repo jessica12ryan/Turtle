@@ -28,6 +28,16 @@ $themePref = $themeUser['theme'] ?? 'system';
             }
         })();
     </script>
+    <script>
+        // Restore the sidebar state before first paint so it doesn't flash open.
+        (function() {
+            try {
+                if (localStorage.getItem('turtle.sidebarCollapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { darkMode: 'class' }
@@ -114,6 +124,18 @@ $themePref = $themeUser['theme'] ?? 'system';
         .dark input[type="checkbox"] { accent-color: #60a5fa; }
         input[type="checkbox"] { accent-color: #2563eb; }
 
+        /* Sidebar layout. The collapsed class is applied before first paint so the
+           sidebar renders at its persisted width instead of flashing open. */
+        @media (min-width: 768px) {
+            #sidebar { width: 16rem; }
+            html.sidebar-collapsed #sidebar { width: 4rem; }
+            #page-content { padding-left: 16rem; }
+            html.sidebar-collapsed #page-content { padding-left: 4rem; }
+            html.sidebar-collapsed .nav-label { display: none; }
+            html.sidebar-collapsed #sidebar .sidebar-logo { display: none; }
+            html.sidebar-collapsed #sidebar .sidebar-header { justify-content: center; }
+        }
+
         /* Tooltip system */
         [data-tooltip] { position: relative; }
         #tooltip-el {
@@ -145,10 +167,10 @@ $themePref = $themeUser['theme'] ?? 'system';
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen"
-      x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('turtle.sidebarCollapsed') === '1' }"
-      x-init="$watch('sidebarCollapsed', value => localStorage.setItem('turtle.sidebarCollapsed', value ? '1' : '0'))">
+      x-data="{ sidebarOpen: false, sidebarCollapsed: document.documentElement.classList.contains('sidebar-collapsed') }"
+      x-init="$watch('sidebarCollapsed', value => { document.documentElement.classList.toggle('sidebar-collapsed', value); try { localStorage.setItem('turtle.sidebarCollapsed', value ? '1' : '0'); } catch (e) {} })">
     <?php require base_path('www/Views/partials/sidebar.php'); ?>
-    <div class="min-h-screen transition-all duration-200" :class="sidebarCollapsed ? 'md:pl-16' : 'md:pl-64'">
+    <div id="page-content" class="min-h-screen transition-all duration-200">
     <?php require base_path('www/Views/partials/nav.php'); ?>
     <main class="max-w-7xl mx-auto px-4 py-8">
         <?php if ($msg = flash('error')): ?>

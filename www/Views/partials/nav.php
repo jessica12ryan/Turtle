@@ -10,7 +10,8 @@ $isDefaultLogo = $logoUrl === '/assets/logo.svg';
             <div class="flex items-center space-x-3">
                 <button type="button" @click="sidebarOpen = true"
                         class="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
-                        aria-label="<?= __('Open navigation') ?>" data-tooltip="<?= __('Open navigation') ?>">
+                        aria-label="<?= __('Open navigation') ?>" aria-controls="sidebar" :aria-expanded="sidebarOpen"
+                        data-tooltip="<?= __('Open navigation') ?>">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
                 <a href="/home" data-tooltip="<?= __('Home') ?>">
