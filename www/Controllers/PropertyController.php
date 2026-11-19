@@ -366,10 +366,14 @@ class PropertyController
             return ['dir' => $dir, 'prefix' => 'storage/uploads/property_photos'];
         }
         if (!is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-            @chmod($dir, 0755);
-            $escaped = escapeshellarg($dir);
-            exec("chmod -R 755 {$escaped} 2>/dev/null; chown -R www-data:www-data {$escaped} 2>/dev/null");
+            @mkdir($dir, 0775, true);
+        }
+        // Ownership is managed by the deployment (www-data on Debian, apache
+        // on Alpine); the application must not shell out to platform-specific
+        // chown/chmod commands. Loosen permissions only if the inherited mode
+        // prevents the web server from writing.
+        if (is_dir($dir) && !is_writable($dir)) {
+            @chmod($dir, 0775);
         }
         if (is_dir($dir) && is_writable($dir)) {
             return ['dir' => $dir, 'prefix' => 'storage/uploads/property_photos'];

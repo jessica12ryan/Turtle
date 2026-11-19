@@ -192,20 +192,10 @@ function flash(string $key, ?string $value = null): ?string
  */
 function auth_rate_limit(string $key, int $max, int $windowSeconds): bool
 {
-    static $tableReady = false;
+    // The table is created by database/schema.sql and database/migrate.sh.
+    // Creating it here required elevated DB privileges at request time and
+    // failed silently on restricted installations.
     try {
-        if (!$tableReady) {
-            \App\Core\Database::instance()->getConnection()->exec(
-                "CREATE TABLE IF NOT EXISTS auth_rate_limits (
-                    cache_key VARCHAR(191) PRIMARY KEY,
-                    attempts INT NOT NULL DEFAULT 0,
-                    window_start INT NOT NULL,
-                    last_at DATETIME NOT NULL,
-                    INDEX idx_window (window_start)
-                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-            );
-            $tableReady = true;
-        }
         $now = time();
         $row = \App\Core\Database::fetch(
             "SELECT attempts, window_start FROM auth_rate_limits WHERE cache_key = ?",
@@ -229,8 +219,10 @@ function auth_rate_limit(string $key, int $max, int $windowSeconds): bool
         }
         return true;
     } catch (\Throwable $e) {
-        // Database failures are handled by the login flow itself; do not
-        // introduce a new failure mode here.
+        // Throttling is best-effort: a database failure is already surfaced by
+        // the login flow. Log it so a missing table or insufficient privileges
+        // does not silently disable rate limiting.
+        \App\Core\Logger::error('auth_rate_limit unavailable: ' . $e->getMessage());
         return true;
     }
 }

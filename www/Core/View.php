@@ -16,7 +16,12 @@ class View
 
     public function render(string $view, array $data = []): void
     {
-        extract($data, EXTR_SKIP);
+        // Copy and unset the parameter before extracting: EXTR_SKIP would
+        // otherwise refuse to create a view variable called "data", because
+        // the parameter of that name already exists in this scope.
+        $__viewData = $data;
+        unset($data);
+        extract($__viewData, EXTR_SKIP);
 
         ob_start();
         require base_path("www/Views/{$view}.php");
@@ -25,7 +30,9 @@ class View
         if ($this->layout) {
             $data = $this->layoutData;
             $data['content'] = $this->content;
-            extract($data, EXTR_SKIP);
+            $__layoutData = $data;
+            unset($data);
+            extract($__layoutData, EXTR_SKIP);
             require base_path("www/Views/{$this->layout}.php");
         } else {
             echo $this->content;
@@ -34,7 +41,9 @@ class View
 
     public static function renderPartial(string $view, array $data = []): void
     {
-        extract($data, EXTR_SKIP);
+        $__viewData = $data;
+        unset($data);
+        extract($__viewData, EXTR_SKIP);
         require base_path("www/Views/{$view}.php");
     }
 }

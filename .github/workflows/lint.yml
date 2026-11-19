@@ -1,0 +1,35 @@
+name: Lint and smoke tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: none
+
+      - name: PHP syntax
+        run: find www tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Shell syntax
+        run: |
+          bash -n database/migrate.sh
+          bash -n docker/php/start.sh
+          bash -n turtle-ha/rootfs/usr/bin/turtle-run.sh
+          bash -n turtle-ha-dev/rootfs/usr/bin/turtle-run.sh
+
+      - name: View renderer smoke test
+        run: php tests/view_test.php

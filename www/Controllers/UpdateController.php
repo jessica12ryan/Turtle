@@ -21,9 +21,8 @@ class UpdateController
     {
         header('Content-Type: application/json');
 
-        // CSRF optional for check (admin-only, but don't block if token missing - updater JS may be cached)
         $csrf = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if ($csrf !== '' && !verify_csrf($csrf)) {
+        if (!verify_csrf($csrf)) {
             http_response_code(400);
             echo json_encode(['error' => 'Invalid security token.']);
             return;
