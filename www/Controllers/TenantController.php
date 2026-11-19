@@ -87,13 +87,12 @@ class TenantController
         $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
         $orderBy = $showArchived ? 'ORDER BY u.archived_at IS NULL ASC, u.name' : 'ORDER BY u.name';
 
-        // The active main tenant on the same property is the primary for
-        // secondary tenants (matching the lookup used on the detail pages).
+        // The main tenant on the same property stays the primary for secondary
+        // tenants even after they move out; prefer an active main if there is one.
         $primaryTenantSelect = "(SELECT u2.name FROM property_tenant pt2
                  JOIN users u2 ON u2.id = pt2.tenant_id
                  WHERE pt2.property_id = p.id AND pt2.is_main_tenant = 1
-                   AND pt2.moved_out_at IS NULL
-                 ORDER BY pt2.id LIMIT 1) AS primary_tenant_name";
+                 ORDER BY (pt2.moved_out_at IS NULL) DESC, pt2.id ASC LIMIT 1) AS primary_tenant_name";
 
         if ($user['role'] === 'admin') {
             $tenants = Database::fetchAll(
@@ -170,7 +169,8 @@ class TenantController
                 "SELECT u.name, pt.lease_start, pt.lease_end, pt.move_out_date
                  FROM property_tenant pt 
                  JOIN users u ON u.id = pt.tenant_id 
-                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL 
+                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1
+                 ORDER BY (pt.moved_out_at IS NULL) DESC, pt.id ASC
                  LIMIT 1",
                 [$p['id']]
             );
@@ -315,7 +315,8 @@ class TenantController
             $mainTenant = Database::fetch(
                 "SELECT pt.lease_start, pt.lease_end, pt.move_out_date
                  FROM property_tenant pt
-                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL
+                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1
+                 ORDER BY (pt.moved_out_at IS NULL) DESC, pt.id ASC
                  LIMIT 1",
                 [$tenant['property_id']]
             );
@@ -375,7 +376,8 @@ class TenantController
             $mainTenant = Database::fetch(
                 "SELECT pt.lease_start, pt.lease_end, pt.move_out_date
                  FROM property_tenant pt
-                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL
+                 WHERE pt.property_id = ? AND pt.is_main_tenant = 1
+                 ORDER BY (pt.moved_out_at IS NULL) DESC, pt.id ASC
                  LIMIT 1",
                 [$tenant['property_id']]
             );
