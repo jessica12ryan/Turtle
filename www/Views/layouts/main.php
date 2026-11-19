@@ -172,11 +172,12 @@ $themePref = $themeUser['theme'] ?? 'system';
       x-data="{
           sidebarOpen: false,
           sidebarCollapsed: document.documentElement.classList.contains('sidebar-collapsed'),
-          navigate() {
-              this.sidebarOpen = false;
+          onPageClick(event) {
+              if (event.target instanceof Element && event.target.closest('.sidebar-toggle')) return;
               if (window.matchMedia('(min-width: 768px)').matches) this.sidebarCollapsed = true;
           }
       }"
+      @click="onPageClick($event)"
       x-init="$watch('sidebarCollapsed', value => { document.documentElement.classList.toggle('sidebar-collapsed', value); try { localStorage.setItem('turtle.sidebarCollapsed', value ? '1' : '0'); } catch (e) {} })">
     <?php require base_path('www/Views/partials/sidebar.php'); ?>
     <div id="page-content" class="min-h-screen transition-all duration-200">

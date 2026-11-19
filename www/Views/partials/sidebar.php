@@ -20,11 +20,11 @@ function navActive(string $prefix, string $currentUri): string
 <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex flex-col bg-white border-r border-gray-200 shadow-sm transition-all duration-200 dark:bg-slate-900 dark:border-slate-700 transform -translate-x-full md:translate-x-0"
        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
     <div class="flex items-center justify-between h-16 px-3 border-b border-gray-200 dark:border-slate-700 sidebar-header">
-        <a href="/home" class="flex items-center space-x-2 min-w-0 sidebar-logo" data-tooltip="<?= __('Home') ?>" @click="navigate()">
+        <a href="/home" class="flex items-center space-x-2 min-w-0 sidebar-logo" data-tooltip="<?= __('Home') ?>" @click="sidebarOpen = false">
             <img src="<?= h($logoUrl) ?>" alt="<?= h(site_name()) ?>" class="h-8 flex-shrink-0<?= $isDefaultLogo ? ' logo-default' : '' ?>">
         </a>
         <button type="button" @click="sidebarCollapsed = !sidebarCollapsed"
-                class="hidden md:flex p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
+                class="sidebar-toggle hidden md:flex p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"
                 aria-label="<?= __('Collapse sidebar') ?>"
                 data-tooltip="<?= __('Collapse sidebar') ?>"
                 :aria-label="sidebarCollapsed ? '<?= __('Expand sidebar') ?>' : '<?= __('Collapse sidebar') ?>'"
@@ -76,7 +76,7 @@ function navActive(string $prefix, string $currentUri): string
             <a href="<?= $href ?>"
                data-tooltip="<?= h($label) ?>"
                aria-label="<?= h($label) ?>"
-               @click="navigate()"
+               @click="sidebarOpen = false"
                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition <?= navActive($href, $currentUri) ?>">
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $icon ?>"/></svg>
                 <span class="truncate nav-label"><?= h($label) ?></span>
@@ -88,7 +88,7 @@ function navActive(string $prefix, string $currentUri): string
 
     <div class="px-2 py-3 border-t border-gray-200 dark:border-slate-700">
         <?php $avatarUrl = avatar_url($user); ?>
-        <a href="/profile" data-tooltip="<?= __('Profile') ?>" aria-label="<?= __('Profile') ?>" @click="navigate()"
+        <a href="/profile" data-tooltip="<?= __('Profile') ?>" aria-label="<?= __('Profile') ?>" @click="sidebarOpen = false"
            class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800">
             <?php if ($avatarUrl): ?>
                 <img src="<?= h($avatarUrl) ?>" alt="<?= h($user['name']) ?>" class="w-6 h-6 rounded-full object-cover border border-gray-200 flex-shrink-0">
