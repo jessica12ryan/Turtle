@@ -282,7 +282,13 @@ class UpdateController
         $pid = (int)($pidOutput[0] ?? 0);
         file_put_contents($logFile . '.pid', (string)$pid);
 
-        log_activity('update.applied', "Update started on {$branch} branch (PID: {$pid})");
+        $latestRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
+        $targetVersion = trim($latestRow['value'] ?? '');
+        if ($targetVersion === '') {
+            $targetVersion = 'unknown';
+        }
+
+        log_activity('update.applied', "Update started on {$branch} branch to {$targetVersion} (PID: {$pid})");
 
         echo json_encode([
             'update_id' => $updateId,
