@@ -156,6 +156,7 @@ class Mailer
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 
+        \log_activity('notifications.email_sent', "Email sent to {$to} — {$subject}");
         return true;
     }
 
@@ -328,6 +329,7 @@ class Mailer
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 
+        \log_activity('notifications.email_sent', "Email sent to {$to} — {$subject}");
         return true;
     }
 }

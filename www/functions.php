@@ -831,6 +831,7 @@ function notifyInApp(int $userId, string $event, string $data, ?string $type = n
             "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, ?, ?, NOW())",
             [$userId, $type ?? $event, $data]
         );
+        log_activity('notifications.sent', "In-app notification '{$event}' sent to user #{$userId}");
     } catch (\Throwable $e) {
         error_log('In-app notification failed: ' . $e->getMessage());
     }

@@ -221,6 +221,7 @@ class MessageController
                 "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, 'message', ?, NOW())",
                 [$recipientId, $sender['name'] . ': ' . $snippet]
             );
+            log_activity('notifications.sent', "Message notification sent to user #{$recipientId}");
         }
 
         echo json_encode([
