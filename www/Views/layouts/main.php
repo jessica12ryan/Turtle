@@ -173,8 +173,19 @@ $themePref = $themeUser['theme'] ?? 'system';
           sidebarOpen: false,
           sidebarCollapsed: document.documentElement.classList.contains('sidebar-collapsed'),
           onPageClick(event) {
-              if (event.target instanceof Element && event.target.closest('.sidebar-toggle')) return;
-              if (window.matchMedia('(min-width: 768px)').matches) this.sidebarCollapsed = true;
+              const target = event.target instanceof Element ? event.target : null;
+              if (!window.matchMedia('(min-width: 768px)').matches) return;
+
+              if (!(target && target.closest('.sidebar-toggle'))) this.sidebarCollapsed = true;
+              // Toggle buttons open the panels via their own event handlers.
+              if (target && target.closest('.panel-toggle')) return;
+
+              ['messenger-panel', 'notifications-panel'].forEach(id => {
+                  const panel = document.getElementById(id);
+                  if (!panel || (target && panel.contains(target))) return;
+                  const data = Alpine.$data(panel);
+                  if (data) data.open = false;
+              });
           }
       }"
       @click="onPageClick($event)"
