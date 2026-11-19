@@ -199,7 +199,7 @@ class MessageController
 
         // Online recipients are notified by the messenger overlay (badge + sound).
         // Only offline recipients get a persisted notification record.
-        if (!$this->isOnline($recipientId)) {
+        if (!$this->isOnline($recipientId) && shouldNotifyInApp('new_message', $recipient['role'])) {
             $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
             Database::execute(
                 "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, 'message', ?, NOW())",

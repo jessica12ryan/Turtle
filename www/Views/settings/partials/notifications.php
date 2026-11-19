@@ -27,6 +27,9 @@ $hideNotifCell = function (string $event, string $role): bool {
         <?php
         $notifLabels = [
             'ticket_assigned' => 'Ticket Assigned',
+            'ticket_created' => 'Ticket Created',
+            'ticket_comment' => 'Ticket Comment',
+            'new_message' => 'New Message',
             'ticket_status_updated' => 'Ticket Status Updated',
             'document_uploaded' => 'Document Uploaded',
             'staff_welcome' => 'Staff Welcome Email',

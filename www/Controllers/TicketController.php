@@ -138,6 +138,8 @@ class TicketController
 
         $this->uploadTicketFiles($ticketId, null);
 
+        notifyInAppRoles('ticket_created', 'New ticket: ' . $_POST['subject'], (int)Auth::instance()->id());
+
         log_activity('ticket.created', "Ticket '{$_POST['subject']}' created");
         flash('success', 'Ticket created successfully.');
         redirect('/tickets/' . $ticketId);
@@ -487,6 +489,8 @@ class TicketController
         );
 
         $this->uploadTicketFiles((int)$id, $commentId);
+
+        notifyInAppRoles('ticket_comment', 'New comment on ticket: ' . $ticket['subject'], (int)Auth::instance()->id());
 
         log_activity('ticket.comment_added', "Comment added to ticket #{$id}");
         flash('success', 'Comment added successfully.');

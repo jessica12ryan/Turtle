@@ -723,6 +723,9 @@ function defaultNotifications(): array
 {
     $defaults = [
         'ticket_assigned' => ['landlord', 'property_manager', 'maintenance'],
+        'ticket_created' => ['landlord', 'property_manager', 'maintenance'],
+        'ticket_comment' => ['landlord', 'property_manager', 'maintenance', 'tenant'],
+        'new_message' => ['landlord', 'property_manager', 'maintenance', 'tenant'],
         'ticket_status_updated' => ['tenant'],
         'document_uploaded' => ['tenant'],
         'staff_welcome' => ['admin', 'landlord', 'property_manager', 'maintenance'],
@@ -760,6 +763,9 @@ function notificationEventLabels(): array
 {
     return [
         'ticket_assigned' => __('Ticket Assigned'),
+        'ticket_created' => __('Ticket Created'),
+        'ticket_comment' => __('Ticket Comment'),
+        'new_message' => __('New Message'),
         'ticket_status_updated' => __('Ticket Status Updated'),
         'document_uploaded' => __('Document Uploaded'),
         'staff_welcome' => __('Staff Welcome'),
@@ -807,6 +813,19 @@ function notifyInApp(int $userId, string $event, string $data, ?string $type = n
         );
     } catch (\Throwable $e) {
         error_log('In-app notification failed: ' . $e->getMessage());
+    }
+}
+
+function notifyInAppRoles(string $event, string $data, ?int $excludeUserId = null): void
+{
+    try {
+        $users = \App\Core\Database::fetchAll("SELECT id FROM users WHERE archived_at IS NULL", []);
+        foreach ($users as $user) {
+            if ($excludeUserId !== null && (int)$user['id'] === $excludeUserId) continue;
+            notifyInApp((int)$user['id'], $event, $data);
+        }
+    } catch (\Throwable $e) {
+        error_log('In-app role notification failed: ' . $e->getMessage());
     }
 }
 
