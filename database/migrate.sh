@@ -2,16 +2,92 @@
 # Database migrations — safe to run from updates (no root needed)
 set -e
 
-MYSQL_CMD="mysql -h mysql -u turtle -pturtle turtle --skip-ssl"
-MYSQL_ROOT="mysql -h mysql -u root -proot turtle --skip-ssl"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "${SCRIPT_DIR}")"
+ENV_FILE="${REPO_DIR}/.env"
+SCHEMA_FILE="${SCRIPT_DIR}/schema.sql"
+
+# Read DB settings from the environment, falling back to the app's .env so a
+# custom DB password does not silently skip every migration. Hardcoded
+# credentials used to make this script a no-op outside the default Docker setup.
+if [ -f "$ENV_FILE" ]; then
+    for key in DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DB_SOCKET DB_ROOT_PASSWORD MYSQL_ROOT_PASSWORD; do
+        value=$(grep -E "^${key}=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2-)
+        value=$(printf '%s' "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'\$//")
+        if [ -n "$value" ]; then
+            export "${key}=${value}"
+        fi
+    done
+fi
+
+DB_HOST="${DB_HOST:-mysql}"
+DB_PORT="${DB_PORT:-3306}"
+DB_DATABASE="${DB_DATABASE:-turtle}"
+DB_USERNAME="${DB_USERNAME:-turtle}"
+DB_PASSWORD="${DB_PASSWORD:-turtle}"
+
+if [ -n "${DB_SOCKET:-}" ]; then
+    MYSQL_BASE="mysql --socket=${DB_SOCKET} --skip-ssl"
+else
+    MYSQL_BASE="mysql -h ${DB_HOST} -P ${DB_PORT} --skip-ssl"
+fi
+
+if [ -n "$DB_PASSWORD" ]; then
+    MYSQL_CMD="${MYSQL_BASE} -u ${DB_USERNAME} -p${DB_PASSWORD} ${DB_DATABASE}"
+else
+    MYSQL_CMD="${MYSQL_BASE} -u ${DB_USERNAME} ${DB_DATABASE}"
+fi
+
+# An explicitly empty DB_ROOT_PASSWORD means "root has no password" (the HA
+# add-on). Otherwise fall back to the Docker Compose root password.
+if [ "${DB_ROOT_PASSWORD+x}" = x ]; then
+    ROOT_PASSWORD="$DB_ROOT_PASSWORD"
+else
+    ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-root}"
+fi
+if [ -n "$ROOT_PASSWORD" ]; then
+    MYSQL_ROOT="${MYSQL_BASE} -u root -p${ROOT_PASSWORD} ${DB_DATABASE}"
+else
+    MYSQL_ROOT="${MYSQL_BASE} -u root ${DB_DATABASE}"
+fi
+
+MIGRATION_FAILURES=0
 
 run_sql() {
-    $MYSQL_CMD -e "$1" 2>/dev/null || $MYSQL_ROOT -e "$1" 2>/dev/null || true
+    local output rootOutput combined
+    if output=$($MYSQL_CMD -e "$1" 2>&1); then
+        return 0
+    fi
+    if rootOutput=$($MYSQL_ROOT -e "$1" 2>&1); then
+        return 0
+    fi
+    combined="${output} ${rootOutput}"
+
+    # Most incremental statements are intentionally re-run on every boot.
+    # MySQL reports "already applied" as an error; those are not failures.
+    if printf '%s' "$combined" | grep -Eqi \
+        'duplicate column name|duplicate key name|duplicate foreign key|already exists|check that column/key exists|can.t drop|duplicate entry'; then
+        return 0
+    fi
+
+    echo "Migration failed: $1" >&2
+    printf '%s\n' "$combined" >&2
+    MIGRATION_FAILURES=$((MIGRATION_FAILURES + 1))
+    return 0
 }
 
 # Run full schema (idempotent)
-if [ -f database/schema.sql ]; then
-    $MYSQL_CMD < database/schema.sql 2>/dev/null || $MYSQL_ROOT < database/schema.sql 2>/dev/null || true
+if [ -f "$SCHEMA_FILE" ]; then
+    if ! schemaOut=$($MYSQL_CMD < "$SCHEMA_FILE" 2>&1); then
+        if ! schemaRootOut=$($MYSQL_ROOT < "$SCHEMA_FILE" 2>&1); then
+            schemaCombined="${schemaOut} ${schemaRootOut}"
+            if ! printf '%s' "$schemaCombined" | grep -Eqi 'already exists|duplicate column name|duplicate key|duplicate foreign key'; then
+                echo "Failed to load database/schema.sql" >&2
+                printf '%s\n' "$schemaCombined" >&2
+                MIGRATION_FAILURES=$((MIGRATION_FAILURES + 1))
+            fi
+        fi
+    fi
 fi
 
 # Incremental migrations
@@ -71,7 +147,7 @@ run_sql "CREATE TABLE IF NOT EXISTS tenant_applications (id INT AUTO_INCREMENT P
 run_sql "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL AFTER notes;"
 run_sql "CREATE TABLE IF NOT EXISTS auth_rate_limits (cache_key VARCHAR(191) PRIMARY KEY, attempts INT NOT NULL DEFAULT 0, window_start INT NOT NULL, last_at DATETIME NOT NULL, INDEX idx_window (window_start)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 # Only re-seed permissions if not in custom mode (preserves user customizations on updates)
-PERM_MODE=$($MYSQL_CMD -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || echo "")
+PERM_MODE=$($MYSQL_CMD -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || $MYSQL_ROOT -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || echo "")
 if [ "$PERM_MODE" != "custom" ]; then
 run_sql "DELETE FROM role_permissions WHERE 1=1;"
     run_sql "INSERT INTO role_permissions (role, permission) VALUES
@@ -85,5 +161,10 @@ fi
 run_sql "INSERT IGNORE INTO company_user (company_id, user_id) SELECT c.id, u.id FROM users u CROSS JOIN companies c WHERE u.role IN ('property_manager','maintenance') AND NOT EXISTS (SELECT 1 FROM company_user cu WHERE cu.user_id = u.id);"
 
 # Update version
-APP_VER=$( (git -c safe.directory=. -C . describe --tags 2>/dev/null || git -c safe.directory=. -C . log --oneline -1 --format=%h 2>/dev/null || echo "0.0.0") | sed 's/^v//' )
+APP_VER=$( (git -c safe.directory="$REPO_DIR" -C "$REPO_DIR" describe --tags 2>/dev/null || git -c safe.directory="$REPO_DIR" -C "$REPO_DIR" log --oneline -1 --format=%h 2>/dev/null || echo "0.0.0") | sed 's/^v//' )
 run_sql "INSERT INTO settings (\`key\`, \`value\`) VALUES ('app_version', '${APP_VER}') ON DUPLICATE KEY UPDATE \`value\` = '${APP_VER}';"
+
+if [ "$MIGRATION_FAILURES" -gt 0 ]; then
+    echo "${MIGRATION_FAILURES} migration statement(s) failed — check the database configuration and logs." >&2
+    exit 1
+fi

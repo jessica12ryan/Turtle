@@ -223,17 +223,16 @@ else
 fi
 
 # ── Run migrations ────────────────────────────────────────────────────────────
-# migrate.sh hardcodes /var/www/html and -h mysql, so we patch it on the fly
+# migrate.sh reads DB_* from the environment/.env (including DB_SOCKET), so no
+# command rewriting is needed. MariaDB's root account here has no password.
 bashio::log.info "Running incremental migrations..."
 PATCHED_MIGRATE=$(mktemp)
 sed \
     -e 's|cd /var/www/html|cd '"${TURTLE_DIR}"'|g' \
-    -e 's|mysql -h mysql -u turtle -pturtle turtle|mysql --socket=/tmp/mysql.sock -u turtle -p'"${DB_PASSWORD}"' turtle|g' \
-    -e 's|mysql -h mysql -u root -proot turtle|mysql --socket=/tmp/mysql.sock -u root turtle|g' \
     "${TURTLE_DIR}/database/migrate.sh" > "${PATCHED_MIGRATE}"
 chmod +x "${PATCHED_MIGRATE}"
 # Guarded: a migration failure must not kill the boot (set -e) — warn and continue.
-bash "${PATCHED_MIGRATE}" || bashio::log.warning "Migrations exited non-zero — continuing boot; check add-on log."
+DB_ROOT_PASSWORD="" bash "${PATCHED_MIGRATE}" || bashio::log.warning "Migrations exited non-zero — continuing boot; check add-on log."
 rm -f "${PATCHED_MIGRATE}"
 
 # ── Sync mail settings to database ────────────────────────────────────────────

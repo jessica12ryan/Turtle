@@ -3,9 +3,29 @@ set -e
 
 cd /var/www/html
 
+# Use the same DB settings as the application/migrations (custom passwords must
+# work for the readiness check too). Only DB_* keys are read from .env.
+if [ -f .env ]; then
+    for key in DB_HOST DB_PORT DB_DATABASE DB_USERNAME DB_PASSWORD DB_SOCKET; do
+        value=$(grep -E "^${key}=" .env 2>/dev/null | head -1 | cut -d= -f2-)
+        value=$(printf '%s' "$value" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'\$//")
+        if [ -n "$value" ]; then
+            export "${key}=${value}"
+        fi
+    done
+fi
+
 # Wait for MySQL
 echo ">>> Waiting for MySQL..."
-until php -r "new PDO('mysql:host=mysql;port=3306;dbname=turtle', 'turtle', 'turtle');" 2>/dev/null; do
+until DB_HOST="${DB_HOST:-mysql}" DB_PORT="${DB_PORT:-3306}" \
+      DB_DATABASE="${DB_DATABASE:-turtle}" DB_USERNAME="${DB_USERNAME:-turtle}" \
+      DB_PASSWORD="${DB_PASSWORD:-turtle}" DB_SOCKET="${DB_SOCKET:-}" php -r '
+    $socket = (string) getenv("DB_SOCKET");
+    $dsn = $socket !== ""
+        ? "mysql:unix_socket={$socket};dbname=" . getenv("DB_DATABASE")
+        : "mysql:host=" . getenv("DB_HOST") . ";port=" . getenv("DB_PORT") . ";dbname=" . getenv("DB_DATABASE");
+    new PDO($dsn, getenv("DB_USERNAME"), getenv("DB_PASSWORD"));
+' 2>/dev/null; do
     sleep 1
 done
 

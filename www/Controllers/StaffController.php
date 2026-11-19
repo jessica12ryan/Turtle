@@ -176,13 +176,27 @@ class StaffController
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
         Access::require(Access::canManageUser($staff));
 
-        $assignedTickets = Database::fetchAll(
-            "SELECT t.*, p.name as property_name FROM tickets t
+        // A staff profile may only show tickets on properties the viewer can
+        // access — otherwise a cross-company manager's assignments leak here.
+        $viewer = Auth::instance()->user();
+        $candidates = Database::fetchAll(
+            "SELECT t.*, p.name as property_name, p.company_id, p.property_manager_id
+             FROM tickets t
              JOIN properties p ON p.id = t.property_id
              WHERE t.assigned_to = ? AND t.archived_at IS NULL
-             ORDER BY t.created_at DESC LIMIT 10",
+             ORDER BY t.created_at DESC LIMIT 100",
             [$id]
         );
+        $assignedTickets = [];
+        foreach ($candidates as $ticket) {
+            if (!Access::property((int)$ticket['property_id'], $viewer)) {
+                continue;
+            }
+            $assignedTickets[] = $ticket;
+            if (count($assignedTickets) >= 10) {
+                break;
+            }
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => $staff['name']]);

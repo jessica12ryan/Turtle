@@ -402,11 +402,24 @@ class PropertyController
             return;
         }
 
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        // Trust the file on disk, not the client-reported size.
+        $actualSize = @filesize($_FILES['photo']['tmp_name']);
+        if ($actualSize === false || $actualSize > 5 * 1024 * 1024) {
+            http_response_code(413);
+            echo json_encode(['error' => 'Photo must be smaller than 5 MB.']);
+            return;
+        }
+
+        $extByMime = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+        ];
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $type = finfo_file($finfo, $_FILES['photo']['tmp_name']);
         finfo_close($finfo);
-        if (!in_array($type, $allowedTypes)) {
+        if (!isset($extByMime[$type])) {
             http_response_code(400);
             echo json_encode(['error' => 'Only JPG, PNG, GIF, and WebP images are allowed.']);
             return;
@@ -419,8 +432,9 @@ class PropertyController
             return;
         }
 
-        $ext = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-        $storedName = uniqid() . '.' . $ext;
+        // Extension comes from the detected MIME type, never from the client's
+        // filename (a polyglot named "photo.php" must not be stored as PHP).
+        $storedName = uniqid() . '.' . $extByMime[$type];
         $destPath = $loc['dir'] . '/' . $storedName;
 
         if (!move_uploaded_file($_FILES['photo']['tmp_name'], $destPath)) {

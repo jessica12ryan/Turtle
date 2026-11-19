@@ -849,18 +849,26 @@ class ApplicationController
 
     private function moveUploadedFile(array $file, string $uploadDir): ?string
     {
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
-        if (!in_array($ext, $allowed)) {
+        $actualSize = @filesize($file['tmp_name']);
+        if (($file['size'] ?? 0) > 5 * 1024 * 1024
+            || $actualSize === false || $actualSize > 5 * 1024 * 1024) {
+            flash('error', __('Each photo must be smaller than 5 MB.'));
             return null;
         }
+
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
-        $allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-        if (!in_array($mime, $allowedMime)) { return null; }
+        $extByMime = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+            'application/pdf' => 'pdf',
+        ];
+        if (!isset($extByMime[$mime])) { return null; }
 
-        $filename = uniqid('app_photo_') . '.' . $ext;
+        $filename = uniqid('app_photo_') . '.' . $extByMime[$mime];
         $destPath = $uploadDir . '/' . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {

@@ -573,6 +573,12 @@ class TicketController
 
             if ($name === '' || $tmpName === '') continue;
 
+            $actualSize = @filesize($tmpName);
+            if ($size > 10 * 1024 * 1024 || $actualSize === false || $actualSize > 10 * 1024 * 1024) {
+                flash('error', __('Each attachment must be smaller than 10 MB.'));
+                continue;
+            }
+
             $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt'];
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if (!in_array($ext, $allowedExts)) { continue; }
