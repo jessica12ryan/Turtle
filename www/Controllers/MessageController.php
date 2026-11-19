@@ -23,7 +23,7 @@ class MessageController
 
         try {
             $rows = Database::fetchAll(
-                "SELECT u.id, u.name, u.role, p.last_seen,
+                "SELECT u.id, u.name, u.role, u.avatar_path, p.last_seen,
                         (SELECT COUNT(*) FROM messages m
                          WHERE m.sender_id = u.id AND m.recipient_id = ? AND m.read_at IS NULL) AS unread
                  FROM users u
@@ -43,6 +43,8 @@ class MessageController
                 'id' => (int)$row['id'],
                 'name' => $row['name'],
                 'role' => ucwords(str_replace('_', ' ', $row['role'])),
+                'avatar_url' => avatar_url(['id' => $row['id'], 'avatar_path' => $row['avatar_path']]),
+                'initials' => initials_for($row['name']),
                 'online' => !empty($row['last_seen']) && strtotime($row['last_seen']) >= $cutoff,
                 'last_seen' => !empty($row['last_seen']) ? display_time($row['last_seen']) : null,
                 'unread' => (int)$row['unread'],

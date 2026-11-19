@@ -33,7 +33,12 @@ $isDefaultLogo = $logoUrl === '/assets/logo.svg';
                 </button>
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white" data-tooltip="<?= __('Open user menu') ?>">
-                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <?php $avatarUrl = avatar_url($user); ?>
+                        <?php if ($avatarUrl): ?>
+                            <img src="<?= h($avatarUrl) ?>" alt="<?= h($user['name']) ?>" class="w-8 h-8 rounded-full object-cover border border-gray-200">
+                        <?php else: ?>
+                            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium"><?= h(initials_for($user['name'])) ?></div>
+                        <?php endif; ?>
                         <span class="hidden lg:block text-sm"><?= h($user['name']) ?></span>
                     </button>
                     <div x-show="open" x-cloak x-transition @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50 dark:bg-slate-900 dark:border-slate-700">

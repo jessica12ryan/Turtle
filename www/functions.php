@@ -749,6 +749,22 @@ function defaultNotifications(): array
     return $defaults;
 }
 
+function avatar_url(?array $user): ?string
+{
+    if (!$user || empty($user['avatar_path'])) return null;
+    return '/users/' . (int)($user['id'] ?? 0) . '/avatar';
+}
+
+function initials_for(string $name): string
+{
+    $parts = preg_split('/\s+/', trim($name)) ?: [];
+    $initials = '';
+    foreach (array_slice($parts, 0, 2) as $part) {
+        $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+    }
+    return $initials !== '' ? $initials : '?';
+}
+
 if (!defined('PRESENCE_TIMEOUT_SECONDS')) {
     define('PRESENCE_TIMEOUT_SECONDS', 300);
 }

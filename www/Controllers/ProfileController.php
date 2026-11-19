@@ -40,8 +40,19 @@ class ProfileController
         $theme = $_POST['theme'] ?? 'system';
         $language = $_POST['language'] ?: null;
 
-        $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, theme = ?, updated_at = NOW()";
-        $params = [$_POST['name'], $timezone, $language, $theme];
+        $userId = (int)Auth::instance()->id();
+        $current = Database::fetch("SELECT avatar_path FROM users WHERE id = ?", [$userId]);
+        $avatarPath = $current['avatar_path'] ?? null;
+
+        $avatarError = $this->handleAvatar($userId, $avatarPath);
+        if ($avatarError !== null) {
+            flash('error', $avatarError);
+            redirect('/profile');
+            return;
+        }
+
+        $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, theme = ?, avatar_path = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone, $language, $theme, $avatarPath];
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";
@@ -62,5 +73,81 @@ class ProfileController
         log_activity('profile.updated', 'Profile updated');
         flash('success', 'Profile updated successfully.');
         redirect('/profile');
+    }
+
+    private function handleAvatar(int $userId, ?string &$avatarPath): ?string
+    {
+        if (!empty($_POST['remove_avatar'])) {
+            $this->deleteAvatarFile($avatarPath);
+            $avatarPath = null;
+            return null;
+        }
+
+        $file = $_FILES['avatar'] ?? null;
+        if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) return null;
+        if ($file['error'] !== UPLOAD_ERR_OK) return __('Unable to upload profile picture.');
+        if ($file['size'] > 2 * 1024 * 1024) return __('Profile picture must be smaller than 2 MB.');
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file['tmp_name']);
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/webp' => 'webp',
+        ];
+        if (!isset($allowed[$mime])) return __('Only JPG, PNG, GIF, and WebP images are allowed.');
+
+        $dir = base_path('storage/uploads/avatars/' . $userId);
+        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return __('Unable to upload profile picture.');
+        }
+
+        $filename = 'avatar_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+        $destination = $dir . '/' . $filename;
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            return __('Unable to upload profile picture.');
+        }
+
+        $this->deleteAvatarFile($avatarPath);
+        $avatarPath = 'storage/uploads/avatars/' . $userId . '/' . $filename;
+        return null;
+    }
+
+    private function deleteAvatarFile(?string $path): void
+    {
+        if (!$path) return;
+        $full = base_path($path);
+        $real = realpath($full);
+        $base = realpath(base_path('storage/uploads/avatars'));
+        if ($real !== false && $base !== false && str_starts_with($real, $base) && file_exists($real)) {
+            @unlink($real);
+        }
+    }
+
+    public function avatar(int $id): void
+    {
+        $user = Database::fetch("SELECT avatar_path FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
+        if (!$user || empty($user['avatar_path'])) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+
+        $full = base_path($user['avatar_path']);
+        $real = realpath($full);
+        $base = realpath(base_path('storage/uploads/avatars'));
+        if ($real === false || $base === false || !str_starts_with($real, $base) || !file_exists($real)) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        header('Content-Type: ' . ($finfo->file($real) ?: 'application/octet-stream'));
+        header('Content-Length: ' . filesize($real));
+        header('Cache-Control: public, max-age=86400');
+        readfile($real);
+        exit;
     }
 }

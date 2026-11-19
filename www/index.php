@@ -344,6 +344,7 @@ $router->get('/applications/{id}/photo/{key}', 'ApplicationController@servePhoto
 
 // Profile
 $router->get('/profile', 'ProfileController@edit', ['auth']);
+$router->get('/users/{id}/avatar', 'ProfileController@avatar', ['auth']);
 $router->post('/profile', 'ProfileController@update', ['auth']);
 
 // Settings (admin only)

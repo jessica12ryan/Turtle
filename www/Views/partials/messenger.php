@@ -43,13 +43,23 @@ $messengerStrings = [
                 <button type="button" @click="selectUser(user)"
                         class="w-full text-left px-3 py-3 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800"
                         :class="selected && selected.id === user.id ? 'bg-blue-50 dark:bg-slate-800' : ''">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-800 dark:text-white break-words leading-tight min-w-0" x-text="user.name" :title="user.name"></span>
-                        <span x-show="user.unread > 0" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5" x-text="user.unread"></span>
-                    </div>
-                    <div class="flex items-center mt-1">
-                        <span class="w-2 h-2 rounded-full mr-1" :class="user.online ? 'bg-green-500' : 'bg-gray-400'"></span>
-                        <span class="text-xs text-gray-500" x-text="user.online ? strings.online : (strings.lastSeen + ' ' + (user.last_seen || strings.never))"></span>
+                    <div class="flex items-center space-x-2">
+                        <template x-if="user.avatar_url">
+                            <img :src="(window.baseUrl || '') + user.avatar_url" :alt="user.name" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                        </template>
+                        <template x-if="!user.avatar_url">
+                            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-medium flex-shrink-0" x-text="user.initials"></div>
+                        </template>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-800 dark:text-white break-words leading-tight min-w-0" x-text="user.name" :title="user.name"></span>
+                                <span x-show="user.unread > 0" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5" x-text="user.unread"></span>
+                            </div>
+                            <div class="flex items-center mt-1">
+                                <span class="w-2 h-2 rounded-full mr-1" :class="user.online ? 'bg-green-500' : 'bg-gray-400'"></span>
+                                <span class="text-xs text-gray-500" x-text="user.online ? strings.online : (strings.lastSeen + ' ' + (user.last_seen || strings.never))"></span>
+                            </div>
+                        </div>
                     </div>
                 </button>
             </template>
@@ -63,6 +73,12 @@ $messengerStrings = [
             <template x-if="selected">
                 <div class="flex-1 min-h-0 flex flex-col">
                     <div class="px-3 py-2 border-b border-gray-200 dark:border-slate-700 flex items-center space-x-2">
+                        <template x-if="selected.avatar_url">
+                            <img :src="(window.baseUrl || '') + selected.avatar_url" :alt="selected.name" class="w-7 h-7 rounded-full object-cover flex-shrink-0">
+                        </template>
+                        <template x-if="!selected.avatar_url">
+                            <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-medium flex-shrink-0" x-text="selected.initials"></div>
+                        </template>
                         <span class="w-2 h-2 rounded-full" :class="selected.online ? 'bg-green-500' : 'bg-gray-400'"></span>
                         <span class="text-sm font-medium text-gray-800 dark:text-white break-words min-w-0" x-text="selected.name" :title="selected.name"></span>
                     </div>

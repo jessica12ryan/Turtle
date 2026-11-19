@@ -1,7 +1,28 @@
 <h1 class="text-2xl font-bold text-gray-800 mb-6"><?= __('Profile') ?></h1>
 <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
-    <form method="POST" action="/profile">
+    <form method="POST" action="/profile" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2"><?= __('Profile Picture') ?></label>
+            <div class="flex items-center space-x-4">
+                <?php $avatarUrl = avatar_url($user); ?>
+                <?php if ($avatarUrl): ?>
+                    <img src="<?= h($avatarUrl) ?>" alt="<?= h($user['name']) ?>" class="w-16 h-16 rounded-full object-cover border border-gray-200">
+                <?php else: ?>
+                    <div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-medium"><?= h(initials_for($user['name'])) ?></div>
+                <?php endif; ?>
+                <div class="flex-1">
+                    <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" class="block text-sm text-gray-600">
+                    <p class="text-xs text-gray-500 mt-1"><?= __('JPG, PNG, GIF, or WebP. Maximum 2 MB.') ?></p>
+                    <?php if ($avatarUrl): ?>
+                        <label class="flex items-center mt-2 text-sm text-gray-700">
+                            <input type="checkbox" name="remove_avatar" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="ml-2"><?= __('Remove profile picture') ?></span>
+                        </label>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Name') ?> <span class="text-red-500">*</span></label>
             <input type="text" name="name" value="<?= h($user['name']) ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
