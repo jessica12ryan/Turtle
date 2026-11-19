@@ -13,7 +13,7 @@
                 <?php endif; ?>
                 <div class="flex-1">
                     <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" class="block text-sm text-gray-600">
-                    <p class="text-xs text-gray-500 mt-1"><?= __('JPG, PNG, GIF, or WebP. Maximum 2 MB.') ?></p>
+                    <p class="text-xs text-gray-500 mt-1"><?= __('JPG, PNG, GIF, or WebP. Maximum 5 MB.') ?></p>
                     <?php if ($avatarUrl): ?>
                         <label class="flex items-center mt-2 text-sm text-gray-700">
                             <input type="checkbox" name="remove_avatar" value="1" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">

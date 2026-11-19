@@ -16,7 +16,7 @@ $panelStrings = [
 <div id="notifications-panel"
      x-data='notificationsPanel(<?= json_encode($panelStrings, JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'
      x-cloak
-     class="fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-white shadow-2xl border-l border-gray-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col"
+     class="fixed inset-y-0 right-0 z-50 w-full sm:w-[26rem] bg-white shadow-2xl border-l border-gray-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col"
      :class="open ? '' : 'hidden'"
      :style="panelStyle">
     <div class="hidden sm:block absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-blue-500"
@@ -74,7 +74,8 @@ function notificationsPanel(strings) {
         notifications: [],
         panelWidth: (() => {
             const saved = parseInt(localStorage.getItem('turtle.panelWidth') || localStorage.getItem('turtle.messengerWidth'), 10);
-            return isNaN(saved) ? 384 : saved;
+            if (isNaN(saved) || saved === 384) return 416;
+            return saved;
         })(),
         get panelStyle() {
             if (window.innerWidth < 640) return '';

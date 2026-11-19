@@ -107,7 +107,7 @@ class ProfileController
         $file = $_FILES['avatar'] ?? null;
         if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) return null;
         if ($file['error'] !== UPLOAD_ERR_OK) return __('Unable to upload profile picture.');
-        if ($file['size'] > 2 * 1024 * 1024) return __('Profile picture must be smaller than 2 MB.');
+        if ($file['size'] > 5 * 1024 * 1024) return __('Profile picture must be smaller than 5 MB.');
 
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
