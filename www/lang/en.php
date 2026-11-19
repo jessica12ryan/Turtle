@@ -44,6 +44,7 @@
     'No messages yet.' => 'No messages yet.',
     'Type a message...' => 'Type a message...',
     'Close' => 'Close',
+    'Resize panel' => 'Resize panel',
     'Unable to send message.' => 'Unable to send message.',
     'Unable to load messages.' => 'Unable to load messages.',
     'You' => 'You',

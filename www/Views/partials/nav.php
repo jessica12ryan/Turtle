@@ -13,10 +13,9 @@ $isDefaultLogo = $logoUrl === '/assets/logo.svg';
                         aria-label="<?= __('Open navigation') ?>" data-tooltip="<?= __('Open navigation') ?>">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                 </button>
-                <a href="/home" class="md:hidden" data-tooltip="<?= __('Home') ?>">
+                <a href="/home" data-tooltip="<?= __('Home') ?>">
                     <img src="<?= h($logoUrl) ?>" alt="<?= h(site_name()) ?>" class="h-8<?= $isDefaultLogo ? ' logo-default' : '' ?>">
                 </a>
-                <span class="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-200"><?= h(site_name()) ?></span>
             </div>
 
             <div class="flex items-center space-x-2">

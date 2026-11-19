@@ -259,6 +259,7 @@ return [
     'No messages yet.' => 'Aún no hay mensajes.',
     'Type a message...' => 'Escriba un mensaje...',
     'Close' => 'Cerrar',
+    'Resize panel' => 'Redimensionar panel',
     'Unable to send message.' => 'No se pudo enviar el mensaje.',
     'Unable to load messages.' => 'No se pudieron cargar los mensajes.',
     'You' => 'Usted',

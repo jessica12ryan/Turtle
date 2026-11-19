@@ -22,7 +22,6 @@ function navActive(string $prefix, string $currentUri): string
     <div class="flex items-center justify-between h-16 px-3 border-b border-gray-200 dark:border-slate-700">
         <a href="/home" class="flex items-center space-x-2 min-w-0" data-tooltip="<?= __('Home') ?>">
             <img src="<?= h($logoUrl) ?>" alt="<?= h(site_name()) ?>" class="h-8 flex-shrink-0<?= $isDefaultLogo ? ' logo-default' : '' ?>">
-            <span class="font-semibold text-gray-800 truncate dark:text-white" :class="sidebarCollapsed ? 'md:hidden' : ''"><?= h(site_name()) ?></span>
         </a>
         <button type="button" @click="sidebarCollapsed = !sidebarCollapsed"
                 class="hidden md:flex p-1.5 rounded-md text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800"

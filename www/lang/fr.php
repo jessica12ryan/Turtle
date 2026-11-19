@@ -259,6 +259,7 @@ return [
     'No messages yet.' => 'Aucun message pour l’instant.',
     'Type a message...' => 'Saisissez un message...',
     'Close' => 'Fermer',
+    'Resize panel' => 'Redimensionner le panneau',
     'Unable to send message.' => 'Impossible d’envoyer le message.',
     'Unable to load messages.' => 'Impossible de charger les messages.',
     'You' => 'Vous',

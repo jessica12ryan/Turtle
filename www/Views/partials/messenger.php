@@ -14,6 +14,7 @@ $messengerStrings = [
     'sendFailed' => __('Unable to send message.'),
     'loadFailed' => __('Unable to load messages.'),
     'you' => __('You'),
+    'resize' => __('Resize panel'),
 ];
 ?>
 <input type="hidden" id="messenger-csrf" value="<?= csrf_token() ?>">
@@ -22,7 +23,10 @@ $messengerStrings = [
      x-data='messenger(<?= json_encode($messengerStrings, JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'
      x-cloak
      class="fixed inset-y-0 right-0 z-50 w-full sm:w-96 bg-white shadow-2xl border-l border-gray-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col"
-     :class="open ? '' : 'hidden'">
+     :class="open ? '' : 'hidden'"
+     :style="panelStyle">
+    <div class="hidden sm:block absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-blue-500"
+         @mousedown="startResize($event)" :title="strings.resize"></div>
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-white" x-text="strings.messages"></h2>
         <button type="button" @click="open = false" class="text-gray-500 hover:text-gray-800 dark:hover:text-white" :aria-label="strings.close">
@@ -40,7 +44,7 @@ $messengerStrings = [
                         class="w-full text-left px-3 py-3 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800"
                         :class="selected && selected.id === user.id ? 'bg-blue-50 dark:bg-slate-800' : ''">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-800 dark:text-white truncate" x-text="user.name"></span>
+                        <span class="text-sm font-medium text-gray-800 dark:text-white break-words leading-tight min-w-0" x-text="user.name" :title="user.name"></span>
                         <span x-show="user.unread > 0" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5" x-text="user.unread"></span>
                     </div>
                     <div class="flex items-center mt-1">
@@ -60,7 +64,7 @@ $messengerStrings = [
                 <div class="flex-1 min-h-0 flex flex-col">
                     <div class="px-3 py-2 border-b border-gray-200 dark:border-slate-700 flex items-center space-x-2">
                         <span class="w-2 h-2 rounded-full" :class="selected.online ? 'bg-green-500' : 'bg-gray-400'"></span>
-                        <span class="text-sm font-medium text-gray-800 dark:text-white" x-text="selected.name"></span>
+                        <span class="text-sm font-medium text-gray-800 dark:text-white break-words min-w-0" x-text="selected.name" :title="selected.name"></span>
                     </div>
 
                     <div class="flex-1 min-h-0 overflow-y-auto p-3 space-y-2" x-ref="thread">
@@ -123,6 +127,30 @@ function messenger(strings) {
         text: '',
         unread: 0,
         lastUnread: 0,
+        panelWidth: (() => {
+            const saved = parseInt(localStorage.getItem('turtle.messengerWidth'), 10);
+            return isNaN(saved) ? 384 : saved;
+        })(),
+        get panelStyle() {
+            if (window.innerWidth < 640) return '';
+            return 'width: ' + this.panelWidth + 'px';
+        },
+        startResize(event) {
+            event.preventDefault();
+            const startX = event.clientX;
+            const startWidth = this.panelWidth;
+            const onMove = (moveEvent) => {
+                const next = startWidth + (startX - moveEvent.clientX);
+                this.panelWidth = Math.max(320, Math.min(window.innerWidth * 0.8, Math.round(next)));
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                localStorage.setItem('turtle.messengerWidth', String(this.panelWidth));
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        },
         init() {
             // Resolve the Alpine reactive proxy at call time: init() receives
             // the raw data object, whose mutations are not rendered.
