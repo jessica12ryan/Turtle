@@ -10,14 +10,18 @@ class NotificationController
 {
     public function index(): void
     {
+        $showArchived = !empty($_GET['show_archived']);
+        $readClause = $showArchived ? '' : ' AND read_at IS NULL';
         $notifications = Database::fetchAll(
-            "SELECT * FROM notifications WHERE user_id = ? AND (type IS NULL OR type != 'message') ORDER BY created_at DESC",
+            "SELECT * FROM notifications
+             WHERE user_id = ? AND (type IS NULL OR type != 'message'){$readClause}
+             ORDER BY created_at DESC",
             [Auth::instance()->id()]
         );
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Notifications']);
-        $view->render('notifications/index', compact('notifications'));
+        $view->render('notifications/index', compact('notifications', 'showArchived'));
     }
 
     public function read(int $id): void

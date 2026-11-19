@@ -767,6 +767,9 @@ function inappNotificationMode(): string
 
 function shouldNotifyInApp(string $event, string $role): bool
 {
+    // Admins are always kept in the loop for in-app notifications.
+    if ($role === 'admin') return true;
+
     try {
         if (inappNotificationMode() === 'custom') {
             $row = \App\Core\Database::fetch(
