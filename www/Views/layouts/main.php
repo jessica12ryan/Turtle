@@ -127,9 +127,9 @@ $themePref = $themeUser['theme'] ?? 'system';
         /* Sidebar layout. The collapsed class is applied before first paint so the
            sidebar renders at its persisted width instead of flashing open. */
         @media (min-width: 768px) {
-            #sidebar { width: 16rem; }
+            #sidebar { width: 14rem; }
             html.sidebar-collapsed #sidebar { width: 4rem; }
-            #page-content { padding-left: 16rem; }
+            #page-content { padding-left: 14rem; }
             html.sidebar-collapsed #page-content { padding-left: 4rem; }
             html.sidebar-collapsed .nav-label { display: none; }
             html.sidebar-collapsed #sidebar .sidebar-logo { display: none; }
@@ -169,7 +169,14 @@ $themePref = $themeUser['theme'] ?? 'system';
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen"
-      x-data="{ sidebarOpen: false, sidebarCollapsed: document.documentElement.classList.contains('sidebar-collapsed') }"
+      x-data="{
+          sidebarOpen: false,
+          sidebarCollapsed: document.documentElement.classList.contains('sidebar-collapsed'),
+          navigate() {
+              this.sidebarOpen = false;
+              if (window.matchMedia('(min-width: 768px)').matches) this.sidebarCollapsed = true;
+          }
+      }"
       x-init="$watch('sidebarCollapsed', value => { document.documentElement.classList.toggle('sidebar-collapsed', value); try { localStorage.setItem('turtle.sidebarCollapsed', value ? '1' : '0'); } catch (e) {} })">
     <?php require base_path('www/Views/partials/sidebar.php'); ?>
     <div id="page-content" class="min-h-screen transition-all duration-200">
