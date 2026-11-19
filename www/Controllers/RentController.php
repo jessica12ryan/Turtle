@@ -183,7 +183,7 @@ class RentController
         );
 
         log_activity('payment.created', "Payment of \${$_POST['amount']} recorded for property #{$propertyId}");
-        flash('success', 'Payment recorded successfully.');
+        flash('success', __('Payment recorded successfully.'));
         redirect('/properties/' . $propertyId . '/rent');
     }
 
@@ -216,7 +216,7 @@ class RentController
         );
 
         log_activity('payment.updated', "Payment #{$paymentId} updated");
-        flash('success', 'Payment updated successfully.');
+        flash('success', __('Payment updated successfully.'));
         redirect('/properties/' . $payment['property_id'] . '/rent');
     }
 
@@ -233,7 +233,7 @@ class RentController
 
         Database::execute("UPDATE payments SET archived_at = NOW() WHERE id = ?", [$paymentId]);
         log_activity('payment.archived', "Payment #{$paymentId} archived");
-        flash('success', 'Payment archived successfully.');
+        flash('success', __('Payment archived successfully.'));
         redirect('/properties/' . $payment['property_id'] . '/rent');
     }
 
@@ -250,7 +250,7 @@ class RentController
 
         Database::execute("UPDATE payments SET archived_at = NULL WHERE id = ?", [$paymentId]);
         log_activity('payment.restored', "Payment #{$paymentId} restored");
-        flash('success', 'Payment restored successfully.');
+        flash('success', __('Payment restored successfully.'));
         redirect('/properties/' . $payment['property_id'] . '/rent');
     }
 
@@ -267,7 +267,7 @@ class RentController
 
         Database::execute("DELETE FROM payments WHERE id = ?", [$paymentId]);
         log_activity('payment.deleted', "Payment #{$paymentId} permanently deleted");
-        flash('success', 'Payment permanently deleted.');
+        flash('success', __('Payment permanently deleted.'));
         redirect('/properties/' . $payment['property_id'] . '/rent');
     }
 }

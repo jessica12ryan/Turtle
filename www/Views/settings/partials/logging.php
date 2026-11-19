@@ -19,6 +19,20 @@
                 <p class="text-xs text-gray-500 mt-1"><?= __('Determines the minimum severity level to log. Errors are always recorded.') ?></p>
             </div>
 
+            <div class="mb-4">
+                <label for="activity_log_retention_days" class="block text-sm font-medium text-gray-700 mb-2"><?= __('Activity log retention') ?></label>
+                <select id="activity_log_retention_days" name="activity_log_retention_days" class="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                    <?php $retention = (string)($logRetentionDays ?? '365'); ?>
+                    <option value="30" <?= $retention === '30' ? 'selected' : '' ?>><?= __('30 days') ?></option>
+                    <option value="90" <?= $retention === '90' ? 'selected' : '' ?>><?= __('90 days') ?></option>
+                    <option value="180" <?= $retention === '180' ? 'selected' : '' ?>><?= __('180 days') ?></option>
+                    <option value="365" <?= $retention === '365' ? 'selected' : '' ?>><?= __('1 year') ?></option>
+                    <option value="730" <?= $retention === '730' ? 'selected' : '' ?>><?= __('2 years') ?></option>
+                    <option value="0" <?= $retention === '0' ? 'selected' : '' ?>><?= __('Keep forever') ?></option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1"><?= __('Activity log entries older than this are deleted automatically. These entries can contain user names, email addresses and IP addresses. Server logs are managed by your hosting environment.') ?></p>
+            </div>
+
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Save') ?></button>
         </form>
     </div>

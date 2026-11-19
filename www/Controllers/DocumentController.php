@@ -103,7 +103,7 @@ class DocumentController
         Database::execute("UPDATE documents SET archived_at = NOW() WHERE id = ?", [$id]);
 
         log_activity('document.deleted', "Document #{$id} '" . $document['original_name'] . "' archived");
-        flash('success', 'Document archived successfully.');
+        flash('success', __('Document archived successfully.'));
         redirect('/documents/' . $id);
     }
 
@@ -122,7 +122,7 @@ class DocumentController
         Database::execute("UPDATE documents SET archived_at = NULL WHERE id = ?", [$id]);
 
         log_activity('document.restored', "Document #{$id} restored");
-        flash('success', 'Document restored successfully.');
+        flash('success', __('Document restored successfully.'));
         redirect('/documents/' . $id);
     }
 
@@ -142,7 +142,7 @@ class DocumentController
         Database::execute("DELETE FROM documents WHERE id = ?", [$id]);
 
         log_activity('document.deleted', "Document #{$id} '" . $document['original_name'] . "' permanently deleted");
-        flash('success', 'Document permanently deleted.');
+        flash('success', __('Document permanently deleted.'));
         redirect('/leases');
     }
 

@@ -279,7 +279,7 @@ class LeaseController
 
             Database::commit();
             log_activity('lease.created', "Document #{$leaseId} uploaded for property #{$_POST['property_id']}");
-            flash('success', 'Document uploaded successfully.');
+            flash('success', __('Document uploaded successfully.'));
             redirect('/leases/' . $leaseId);
         } catch (\Throwable $e) {
             Database::rollback();
@@ -325,7 +325,7 @@ class LeaseController
         Access::require(Access::lease($id));
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
         log_activity('lease.restored', "Document #{$id} restored");
-        flash('success', 'Document restored successfully.');
+        flash('success', __('Document restored successfully.'));
         redirect('/leases');
     }
 
@@ -339,7 +339,7 @@ class LeaseController
         Access::require(Access::lease($id));
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
         log_activity('lease.archived', "Document #{$id} archived");
-        flash('success', 'Document archived successfully.');
+        flash('success', __('Document archived successfully.'));
         redirect('/leases');
     }
 
@@ -365,7 +365,7 @@ class LeaseController
         Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$id]);
         Database::execute("DELETE FROM leases WHERE id = ?", [$id]);
         log_activity('lease.deleted', "Document #{$id} permanently deleted");
-        flash('success', 'Document permanently deleted.');
+        flash('success', __('Document permanently deleted.'));
         redirect('/leases');
     }
 }

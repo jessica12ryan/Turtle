@@ -18,7 +18,7 @@ class OAuthController
         $clientId = Mailer::getConfig('mail_oauth_client_id');
         $clientSecret = Mailer::getConfig('mail_oauth_client_secret');
         if ($clientId === '' || $clientSecret === '') {
-            flash('error', 'Save the Google Client ID and Client Secret before connecting.');
+            flash('error', __('Save the Google Client ID and Client Secret before connecting.'));
             redirect('/settings?tab=general');
         }
 
@@ -29,7 +29,7 @@ class OAuthController
         // The shared redirect() helper deliberately blocks absolute external
         // URLs; whitelist only Google's authorization endpoint here.
         if (!str_starts_with($authUrl, 'https://accounts.google.com/o/oauth2/v2/auth?')) {
-            flash('error', 'Could not build a valid Google authorization URL.');
+            flash('error', __('Could not build a valid Google authorization URL.'));
             redirect('/settings?tab=general');
         }
         header('Location: ' . $authUrl);
@@ -48,20 +48,20 @@ class OAuthController
 
         if ($expected === '' || $state === '' || !hash_equals($expected, $state)) {
             Logger::warning('Google OAuth callback rejected: invalid state.');
-            flash('error', 'Invalid OAuth state. Please try connecting again.');
+            flash('error', __('Invalid OAuth state. Please try connecting again.'));
             redirect('/settings?tab=general');
         }
 
         if (!empty($_GET['error'])) {
             $reason = strip_tags((string)$_GET['error']);
             Logger::error('Google OAuth callback returned an error: ' . $reason);
-            flash('error', 'Google could not complete the connection: ' . $reason);
+            flash('error', __('Google could not complete the connection: :reason', [':reason' => $reason]));
             redirect('/settings?tab=general');
         }
 
         $code = (string)($_GET['code'] ?? '');
         if ($code === '') {
-            flash('error', 'Google did not return an authorization code.');
+            flash('error', __('Google did not return an authorization code.'));
             redirect('/settings?tab=general');
         }
 
@@ -73,20 +73,20 @@ class OAuthController
 
         if (empty($tokens['refresh_token'])) {
             // Google only issues a refresh token when offline access is granted.
-            flash('error', 'Google did not return a refresh token. Confirm the OAuth client is configured correctly and try again.');
+            flash('error', __('Google did not return a refresh token. Confirm the OAuth client is configured correctly and try again.'));
             redirect('/settings?tab=general');
         }
 
         GoogleOAuth::saveTokens($tokens);
-        log_activity('settings.mail_oauth_connected', 'Gmail OAuth2 connected');
-        flash('success', 'Gmail OAuth2 connected successfully.');
+        log_activity('settings.mail_oauth_connected', __('Gmail OAuth2 connected'));
+        flash('success', __('Gmail OAuth2 connected successfully.'));
         redirect('/settings?tab=general');
     }
 
     public function googleDisconnect(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=general');
         }
 
@@ -107,8 +107,8 @@ class OAuthController
             }
         }
 
-        log_activity('settings.mail_oauth_disconnected', 'Gmail OAuth2 disconnected');
-        flash('success', 'Gmail OAuth2 disconnected.');
+        log_activity('settings.mail_oauth_disconnected', __('Gmail OAuth2 disconnected'));
+        flash('success', __('Gmail OAuth2 disconnected.'));
         redirect('/settings?tab=general');
     }
 }

@@ -123,6 +123,8 @@ class SettingsController
         } elseif ($tab === 'logging') {
             $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'log_level'");
             $data['logLevel'] = $row['value'] ?? 'debug';
+            $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'activity_log_retention_days'");
+            $data['logRetentionDays'] = $row['value'] ?? '365';
 
             // Activity logs from DB with pagination and filters
             $conditions = [];
@@ -271,7 +273,7 @@ class SettingsController
     public function saveGeneral(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=general');
         }
 
@@ -327,7 +329,7 @@ class SettingsController
             $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
             finfo_close($finfo);
             if (!in_array($type, $allowed, true)) {
-                flash('error', 'Logo must be PNG, JPEG, or GIF (SVG blocked for XSS).');
+                flash('error', __('Logo must be PNG, JPEG, or GIF (SVG blocked for XSS).'));
                 redirect('/settings?tab=general');
             }
 
@@ -347,7 +349,7 @@ class SettingsController
                     ['assets/uploads/logo/' . $filename, 'assets/uploads/logo/' . $filename]
                 );
             } else {
-                flash('error', 'Failed to upload logo. Check directory permissions.');
+                flash('error', __('Failed to upload logo. Check directory permissions.'));
                 redirect('/settings?tab=general');
             }
         }
@@ -376,15 +378,15 @@ class SettingsController
             );
         }
 
-        log_activity('settings.general_saved', 'General settings saved');
-        flash('success', 'General settings saved successfully.');
+        log_activity('settings.general_saved', __('General settings saved'));
+        flash('success', __('General settings saved successfully.'));
         redirect('/settings?tab=general');
     }
 
     public function saveMail(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=general');
         }
 
@@ -451,15 +453,15 @@ class SettingsController
             }
         }
 
-        log_activity('settings.mail_saved', 'Mail settings saved');
-        flash('success', 'Mail settings saved successfully.');
+        log_activity('settings.mail_saved', __('Mail settings saved'));
+        flash('success', __('Mail settings saved successfully.'));
         redirect('/settings?tab=general');
     }
 
     public function reset(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings');
         }
 
@@ -559,8 +561,8 @@ class SettingsController
             Database::execute("DELETE FROM resources WHERE 1=1", []);
         }
 
-        log_activity('settings.data_reset', 'Data reset completed');
-        flash('success', 'Reset completed successfully.');
+        log_activity('settings.data_reset', __('Data reset completed'));
+        flash('success', __('Reset completed successfully.'));
         redirect('/settings');
     }
 
@@ -623,7 +625,7 @@ class SettingsController
     public function saveTelemetry(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=updates');
         }
 
@@ -635,7 +637,7 @@ class SettingsController
             flash('success', $enabled ? 'Anonymous system stats sharing enabled.' : 'Anonymous system stats sharing disabled. No further stats will be sent.');
         } catch (\Throwable $e) {
             \App\Core\Logger::error('saveTelemetry failed: ' . $e->getMessage());
-            flash('error', 'Could not save telemetry preference.');
+            flash('error', __('Could not save telemetry preference.'));
         }
         redirect('/settings?tab=updates');
     }
@@ -643,7 +645,7 @@ class SettingsController
     public function savePermissions(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=permissions');
         }
 
@@ -678,15 +680,15 @@ class SettingsController
             Database::execute("DELETE FROM role_permissions WHERE 1=1", []);
         }
 
-        log_activity('settings.permissions_saved', 'Permissions saved');
-        flash('success', 'Permissions saved successfully.');
+        log_activity('settings.permissions_saved', __('Permissions saved'));
+        flash('success', __('Permissions saved successfully.'));
         redirect('/settings?tab=permissions');
     }
 
     public function saveNotifications(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=notifications');
         }
 
@@ -722,15 +724,15 @@ class SettingsController
             Database::execute("DELETE FROM notification_events WHERE 1=1", []);
         }
 
-        log_activity('settings.notifications_saved', 'Notification settings saved');
-        flash('success', 'Notification settings saved successfully.');
+        log_activity('settings.notifications_saved', __('Notification settings saved'));
+        flash('success', __('Notification settings saved successfully.'));
         redirect('/settings?tab=notifications');
     }
 
     public function saveInAppNotifications(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=notifications');
             return;
         }
@@ -760,15 +762,15 @@ class SettingsController
             Database::execute("DELETE FROM inapp_notification_events WHERE 1=1", []);
         }
 
-        log_activity('settings.inapp_notifications_saved', 'In-app notification settings saved');
-        flash('success', 'In-app notification settings saved successfully.');
+        log_activity('settings.inapp_notifications_saved', __('In-app notification settings saved'));
+        flash('success', __('In-app notification settings saved successfully.'));
         redirect('/settings?tab=notifications');
     }
 
     public function saveMessenger(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=messenger');
             return;
         }
@@ -780,15 +782,15 @@ class SettingsController
             [$enabled, $enabled]
         );
 
-        log_activity('settings.messenger_saved', 'Messenger settings saved');
-        flash('success', 'Messenger settings saved successfully.');
+        log_activity('settings.messenger_saved', __('Messenger settings saved'));
+        flash('success', __('Messenger settings saved successfully.'));
         redirect('/settings?tab=messenger');
     }
 
     public function saveLogging(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings?tab=logging');
         }
 
@@ -802,8 +804,17 @@ class SettingsController
             [$level, $level]
         );
 
-        log_activity('settings.logging_saved', "Log level changed to {$level}");
-        flash('success', 'Logging settings saved successfully.');
+        $retention = (int)($_POST['activity_log_retention_days'] ?? 365);
+        if (!in_array($retention, [0, 30, 90, 180, 365, 730], true)) {
+            $retention = 365;
+        }
+        Database::execute(
+            "INSERT INTO settings (`key`, `value`) VALUES ('activity_log_retention_days', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+            [(string)$retention, (string)$retention]
+        );
+
+        log_activity('settings.logging_saved', "Log level changed to {$level}; retention {$retention} days");
+        flash('success', __('Logging settings saved successfully.'));
         redirect('/settings?tab=logging');
     }
 
@@ -865,12 +876,12 @@ class SettingsController
                 break;
 
             default:
-                flash('error', 'Unknown log type.');
+                flash('error', __('Unknown log type.'));
                 redirect('/settings?tab=logging');
         }
 
         if (empty($content)) {
-            flash('error', 'No log content found.');
+            flash('error', __('No log content found.'));
             redirect('/settings?tab=logging');
         }
 
@@ -886,7 +897,7 @@ class SettingsController
             set_time_limit(0);
 
             if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-                flash('error', 'Invalid security token.');
+                flash('error', __('Invalid security token.'));
                 redirect('/settings');
             }
 
@@ -930,7 +941,7 @@ class SettingsController
             $tmpDir = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8));
             if (!mkdir($tmpDir, 0755, true) && !is_dir($tmpDir)) {
                 \App\Core\Logger::error('exportBackup: Failed to create temp dir');
-                flash('error', 'Failed to create temporary directory.');
+                flash('error', __('Failed to create temporary directory.'));
                 redirect('/settings?tab=backup');
             }
 
@@ -971,7 +982,7 @@ class SettingsController
             // Check ZipArchive availability
             if (!class_exists('\ZipArchive')) {
                 self::_rrmdir($tmpDir);
-                flash('error', 'ZipArchive PHP extension is required for backup.');
+                flash('error', __('ZipArchive PHP extension is required for backup.'));
                 redirect('/settings?tab=backup');
             }
 
@@ -980,7 +991,7 @@ class SettingsController
             $zip = new \ZipArchive();
             if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
                 self::_rrmdir($tmpDir);
-                flash('error', 'Failed to create backup archive.');
+                flash('error', __('Failed to create backup archive.'));
                 redirect('/settings?tab=backup');
             }
 
@@ -1001,7 +1012,7 @@ class SettingsController
             $fileSize = filesize($zipFile);
             if ($fileSize === false) {
                 self::_rrmdir($tmpDir);
-                flash('error', 'Failed to read backup archive.');
+                flash('error', __('Failed to read backup archive.'));
                 redirect('/settings?tab=backup');
             }
 
@@ -1017,13 +1028,13 @@ class SettingsController
             unlink($zipFile);
             self::_rrmdir($tmpDir);
 
-            log_activity('settings.backup_created', 'Full backup downloaded');
+            log_activity('settings.backup_created', __('Full backup downloaded'));
             exit;
         } catch (\Throwable $e) {
             \App\Core\Logger::error('exportBackup failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             if (isset($tmpDir) && is_dir($tmpDir)) self::_rrmdir($tmpDir);
             if (isset($zipFile) && file_exists($zipFile)) unlink($zipFile);
-            flash('error', 'Backup failed. Please check the error logs for details.');
+            flash('error', __('Backup failed. Please check the error logs for details.'));
             redirect('/settings?tab=backup');
         }
     }
@@ -1033,19 +1044,19 @@ class SettingsController
         set_time_limit(0);
 
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/settings');
         }
 
         // Validate upload
         if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
-            flash('error', 'No backup file uploaded or upload failed.');
+            flash('error', __('No backup file uploaded or upload failed.'));
             redirect('/settings?tab=backup');
         }
 
         $ext = pathinfo($_FILES['backup_file']['name'], PATHINFO_EXTENSION);
         if ($ext !== 'turtle') {
-            flash('error', 'Invalid file format. Please upload a .turtle backup file.');
+            flash('error', __('Invalid file format. Please upload a .turtle backup file.'));
             redirect('/settings?tab=backup');
         }
 
@@ -1057,7 +1068,7 @@ class SettingsController
         $zip = new \ZipArchive();
         if ($zip->open($zipPath) !== true) {
             self::_rrmdir($tmpDir);
-            flash('error', 'Failed to open backup file. It may be corrupted.');
+            flash('error', __('Failed to open backup file. It may be corrupted.'));
             redirect('/settings?tab=backup');
         }
 
@@ -1070,7 +1081,7 @@ class SettingsController
             if ($normalized === '' || $normalized[0] === '/' || $normalized[0] === '\\') {
                 $zip->close();
                 self::_rrmdir($tmpDir);
-                flash('error', 'Invalid backup file: absolute path entry detected.');
+                flash('error', __('Invalid backup file: absolute path entry detected.'));
                 redirect('/settings?tab=backup');
             }
             // Normalize separators and check for .. segments
@@ -1079,7 +1090,7 @@ class SettingsController
                 if ($part === '..') {
                     $zip->close();
                     self::_rrmdir($tmpDir);
-                    flash('error', 'Invalid backup file: path traversal entry detected.');
+                    flash('error', __('Invalid backup file: path traversal entry detected.'));
                     redirect('/settings?tab=backup');
                 }
             }
@@ -1090,7 +1101,7 @@ class SettingsController
             if (!str_starts_with($canonicalTarget, $canonicalTmp)) {
                 $zip->close();
                 self::_rrmdir($tmpDir);
-                flash('error', 'Invalid backup file: contains entries outside extraction directory.');
+                flash('error', __('Invalid backup file: contains entries outside extraction directory.'));
                 redirect('/settings?tab=backup');
             }
         }
@@ -1102,7 +1113,7 @@ class SettingsController
         $sqlFile = "{$tmpDir}/database.sql";
         if (!file_exists($sqlFile)) {
             self::_rrmdir($tmpDir);
-            flash('error', 'Invalid backup file: database.sql not found.');
+            flash('error', __('Invalid backup file: database.sql not found.'));
             redirect('/settings?tab=backup');
         }
 
@@ -1130,7 +1141,7 @@ class SettingsController
             $db->exec("SET FOREIGN_KEY_CHECKS = 1");
         } catch (\Throwable $e) {
             self::_rrmdir($tmpDir);
-            flash('error', 'Database restore failed. Please check the error logs for details.');
+            flash('error', __('Database restore failed. Please check the error logs for details.'));
             redirect('/settings?tab=backup');
         }
 
@@ -1176,7 +1187,7 @@ class SettingsController
         log_activity('settings.restore_completed', 'Full backup restored from ' . $_FILES['backup_file']['name']);
 
         // Log the user out and redirect to login — everything changed
-        flash('success', 'Backup restored successfully. Please log in with your restored admin account.');
+        flash('success', __('Backup restored successfully. Please log in with your restored admin account.'));
         $auth = \App\Core\Auth::instance();
         if ($auth->check()) {
             $auth->logout();

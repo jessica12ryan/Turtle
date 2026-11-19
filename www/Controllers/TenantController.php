@@ -211,13 +211,13 @@ class TenantController
     public function store(): void
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
-            flash('error', 'Invalid form token. Please try again.');
+            flash('error', __('Invalid form token. Please try again.'));
             redirect('/tenants/create');
         }
 
         $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
         if ($archived) {
-            flash('error', 'Email exists in archived tenant.');
+            flash('error', __('Email exists in archived tenant.'));
             $_SESSION['_old'] = $_POST;
             redirect('/tenants/create');
         }
@@ -259,7 +259,7 @@ class TenantController
         Access::require(Access::property((int)$_POST['property_id']));
 
         if ($existingMain && !empty($_POST['is_main_tenant'])) {
-            flash('error', 'Main tenant already exists for ' . h($existingMain['property_name']) . '. Uncheck "Main tenant" or choose a different property.');
+            flash('error', __('Main tenant already exists for :property. Uncheck "Main tenant" or choose a different property.', [':property' => h($existingMain['property_name'])]));
             $_SESSION['_old'] = $_POST;
             redirect('/tenants/create');
         }
@@ -304,7 +304,7 @@ class TenantController
         } catch (\Throwable $e) {
             Database::rollback();
             \App\Core\Logger::error('Tenant creation failed: ' . $e->getMessage());
-            flash('error', 'Could not create tenant. Please try again.');
+            flash('error', __('Could not create tenant. Please try again.'));
             redirect('/tenants/create');
         }
 
@@ -322,7 +322,7 @@ class TenantController
         }
 
         log_activity('tenant.created', "Tenant '{$_POST['name']}' added");
-        flash('success', 'Tenant added successfully.');
+        flash('success', __('Tenant added successfully.'));
         redirect('/tenants');
     }
 
@@ -432,7 +432,7 @@ class TenantController
     public function update(int $id): void
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
-            flash('error', 'Invalid form token. Please try again.');
+            flash('error', __('Invalid form token. Please try again.'));
             redirect('/tenants/' . $id . '/edit');
         }
 
@@ -510,7 +510,7 @@ class TenantController
         }
 
         log_activity('tenant.updated', "Tenant '{$_POST['name']}' updated");
-        flash('success', 'Tenant updated successfully.');
+        flash('success', __('Tenant updated successfully.'));
         redirect('/tenants/' . $id);
     }
 
@@ -588,10 +588,10 @@ class TenantController
 
         log_activity('tenant.restored', "Tenant #{$id} restored");
         $message = $restored > 0
-            ? 'Tenant restored successfully.'
-            : 'No current tenancy could be restored for this tenant.';
+            ? __('Tenant restored successfully.')
+            : __('No current tenancy could be restored for this tenant.');
         if ($skipped > 0) {
-            $message .= ' Some historical tenancies were left archived because they predate batch tracking or the tenant is assigned elsewhere.';
+            $message .= ' ' . __('Some historical tenancies were left archived because they predate batch tracking or the tenant is assigned elsewhere.');
         }
         flash($restored > 0 ? 'success' : 'error', $message);
         redirect('/tenants');
@@ -640,7 +640,7 @@ class TenantController
         }
 
         log_activity('tenant.archived', "Tenant #{$id} archived");
-        flash('success', 'Tenant archived successfully.');
+        flash('success', __('Tenant archived successfully.'));
         redirect('/tenants');
     }
 
@@ -648,7 +648,7 @@ class TenantController
     {
         try {
             if (!verify_csrf($_POST['_csrf'] ?? '')) {
-                flash('error', 'Invalid form token. Please try again.');
+                flash('error', __('Invalid form token. Please try again.'));
                 redirect('/tenants');
             }
 
@@ -665,7 +665,7 @@ class TenantController
                 [$id]
             );
             if (!$replacement) {
-                flash('error', 'Cannot permanently delete this tenant because no active admin is available to retain their records.');
+                flash('error', __('Cannot permanently delete this tenant because no active admin is available to retain their records.'));
                 redirect('/tenants');
                 return;
             }
@@ -712,12 +712,12 @@ class TenantController
             Database::commit();
 
             log_activity('tenant.deleted', "Tenant '{$target['name']}' permanently deleted");
-            flash('success', 'Tenant permanently deleted.');
+            flash('success', __('Tenant permanently deleted.'));
             redirect('/tenants');
         } catch (\Throwable $e) {
             Database::rollback();
             \App\Core\Logger::error('Tenant deletion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-            flash('error', 'Failed to delete tenant. Please try again.');
+            flash('error', __('Failed to delete tenant. Please try again.'));
             redirect('/tenants');
         }
     }

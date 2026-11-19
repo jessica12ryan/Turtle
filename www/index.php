@@ -192,6 +192,23 @@ try {
                     }
                 }
             }
+
+            // Activity-log retention. These rows can contain names, email
+            // addresses and IP addresses, so the admin-configurable window is
+            // enforced here on the same hourly schedule.
+            try {
+                $retentionRow = \App\Core\Database::fetch(
+                    "SELECT `value` FROM settings WHERE `key` = 'activity_log_retention_days'"
+                );
+                $retentionDays = (int)($retentionRow['value'] ?? 365);
+                if ($retentionDays > 0) {
+                    \App\Core\Database::execute(
+                        "DELETE FROM activity_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL {$retentionDays} DAY)"
+                    );
+                }
+            } catch (\Throwable $e) {
+                \App\Core\Logger::error('Activity log retention cleanup failed: ' . $e->getMessage());
+            }
         }
     }
 } catch (\Throwable $e) {

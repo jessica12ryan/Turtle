@@ -17,15 +17,16 @@ function log_activity(string $action, string $description = ''): void
     }
 }
 
-function __(string $text): string
+function __(string $text, array $replace = []): string
 {
-    static $translations = null;
-    if ($translations === null) {
-        $lang = current_language();
+    static $translations = [];
+    $lang = current_language();
+    if (!isset($translations[$lang])) {
         $path = base_path("www/lang/{$lang}.php");
-        $translations = file_exists($path) ? require $path : [];
+        $translations[$lang] = file_exists($path) ? require $path : [];
     }
-    return $translations[$text] ?? $text;
+    $translated = $translations[$lang][$text] ?? $text;
+    return $replace ? strtr($translated, $replace) : $translated;
 }
 
 function getCachedSetting(string $key, int $ttl = 300): ?string

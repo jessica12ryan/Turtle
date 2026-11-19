@@ -102,7 +102,7 @@ class StaffController
         $archived = Database::fetch("SELECT id, role FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
         if ($archived) {
             $roleLabel = $archived['role'] === 'tenant' ? 'tenant' : 'staff member';
-            flash('error', 'Email exists in archived ' . $roleLabel . '.');
+            flash('error', __('Email exists in archived :type.', [':type' => $roleLabel]));
             $_SESSION['_old'] = $_POST;
             redirect('/staff/create');
         }
@@ -163,7 +163,7 @@ class StaffController
         }
 
         log_activity('staff.created', "Staff member '{$_POST['name']}' added ({$_POST['role']})");
-        flash('success', 'Staff member added successfully.');
+        flash('success', __('Staff member added successfully.'));
         redirect('/staff');
     }
 
@@ -259,7 +259,7 @@ class StaffController
         $editingSelf = $id === Auth::instance()->id();
         $canChangeOwnRoles = $editingSelf && in_array($staff['role'], ['admin', 'landlord']);
         if ($editingSelf && !$canChangeOwnRoles && !empty($_POST['secondary_roles'])) {
-            flash('error', 'You cannot change your own roles.');
+            flash('error', __('You cannot change your own roles.'));
             redirect('/staff/' . $id . '/edit');
         }
 
@@ -318,7 +318,7 @@ class StaffController
         }
 
         log_activity('staff.updated', "Staff member '{$_POST['name']}' updated");
-        flash('success', 'Staff updated successfully.');
+        flash('success', __('Staff updated successfully.'));
         redirect('/staff/' . $id);
     }
 
@@ -346,7 +346,7 @@ class StaffController
 
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
         log_activity('staff.restored', "Staff member #{$id} restored");
-        flash('success', 'Staff member restored successfully.');
+        flash('success', __('Staff member restored successfully.'));
         redirect('/staff');
     }
 
@@ -364,7 +364,7 @@ class StaffController
         if ($target['role'] === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
             if (!$adminCount || $adminCount['cnt'] === 0) {
-                flash('error', 'Cannot archive the only active admin account.');
+                flash('error', __('Cannot archive the only active admin account.'));
                 redirect('/staff/' . $id);
             }
         }
@@ -467,7 +467,7 @@ class StaffController
         // No conflicts, proceed with archiving
         Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$id]);
         log_activity('staff.archived', "Staff member #{$id} archived");
-        flash('success', 'Staff member archived successfully.');
+        flash('success', __('Staff member archived successfully.'));
         redirect('/staff');
     }
 
@@ -485,7 +485,7 @@ class StaffController
         if ($target['role'] === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
             if (!$adminCount || $adminCount['cnt'] === 0) {
-                flash('error', 'Cannot archive the only active admin account.');
+                flash('error', __('Cannot archive the only active admin account.'));
                 redirect('/staff/' . $id);
             }
         }
@@ -572,7 +572,7 @@ class StaffController
             // grants that manager access to its tickets.
             $isPendingManager = ($pendingByProperty[(int)$ticket['property_id']] ?? 0) === $assigneeId;
             if (!$hasAccess && !$isPendingManager) {
-                flash('error', 'Each ticket must be assigned to a property manager with access to its property.');
+                flash('error', __('Each ticket must be assigned to a property manager with access to its property.'));
                 redirect($errorRedirect);
                 return;
             }
@@ -623,7 +623,7 @@ class StaffController
         }
 
         log_activity('staff.archived', "Staff member #{$id} archived with conflict resolution");
-        flash('success', 'Staff member archived successfully.');
+        flash('success', __('Staff member archived successfully.'));
         redirect('/staff');
     }
 
@@ -642,7 +642,7 @@ class StaffController
         if ($target['role'] === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
             if (!$adminCount || $adminCount['cnt'] === 0) {
-                flash('error', 'Cannot permanently delete the only active admin account.');
+                flash('error', __('Cannot permanently delete the only active admin account.'));
                 redirect('/staff');
                 return;
             }
@@ -654,7 +654,7 @@ class StaffController
             [$id]
         );
         if (!$replacement) {
-            flash('error', 'Cannot permanently delete this staff member because no active admin is available to retain their records.');
+            flash('error', __('Cannot permanently delete this staff member because no active admin is available to retain their records.'));
             redirect('/staff');
             return;
         }
@@ -690,13 +690,13 @@ class StaffController
         } catch (\Throwable $e) {
             Database::rollback();
             \App\Core\Logger::error('hardDelete failed: ' . $e->getMessage());
-            flash('error', 'Could not permanently delete this staff member. No changes were made.');
+            flash('error', __('Could not permanently delete this staff member. No changes were made.'));
             redirect('/staff');
             return;
         }
 
         log_activity('staff.deleted', "Staff member '{$target['name']}' permanently deleted");
-        flash('success', 'Staff member permanently deleted.');
+        flash('success', __('Staff member permanently deleted.'));
         redirect('/staff');
     }
 }

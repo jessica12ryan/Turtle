@@ -81,7 +81,7 @@ class ResourceController
     {
         $this->ensureTableExists();
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
-            flash('error', 'Invalid security token.');
+            flash('error', __('Invalid security token.'));
             redirect('/resources/create');
         }
 
@@ -102,14 +102,14 @@ class ResourceController
         }
 
         if (strlen($url) > 500) {
-            flash('error', 'URL must not exceed 500 characters.');
+            flash('error', __('URL must not exceed 500 characters.'));
             $_SESSION['_old'] = $_POST;
             redirect('/resources/create');
         }
 
         $userId = Auth::instance()->id();
         if (!$userId) {
-            flash('error', 'Your session has expired. Please log in again.');
+            flash('error', __('Your session has expired. Please log in again.'));
             redirect('/login');
         }
 
@@ -132,7 +132,7 @@ class ResourceController
         }
 
         log_activity('resource.created', "Resource '{$_POST['title']}' added");
-        flash('success', 'Resource added successfully.');
+        flash('success', __('Resource added successfully.'));
         redirect('/resources');
     }
 
@@ -175,7 +175,7 @@ class ResourceController
         }
 
         if (strlen($url) > 500) {
-            flash('error', 'URL must not exceed 500 characters.');
+            flash('error', __('URL must not exceed 500 characters.'));
             $_SESSION['_old'] = $_POST;
             redirect('/resources/' . $id . '/edit');
         }
@@ -189,13 +189,13 @@ class ResourceController
             );
         } catch (\Throwable $e) {
             \App\Core\Logger::error('ResourceController@update failed: ' . $e->getMessage());
-            flash('error', 'Failed to update resource: ' . $e->getMessage());
+            flash('error', __('Failed to update resource: :details', [':details' => $e->getMessage()]));
             $_SESSION['_old'] = $_POST;
             redirect('/resources/' . $id . '/edit');
         }
 
         log_activity('resource.updated', "Resource '{$_POST['title']}' updated");
-        flash('success', 'Resource updated successfully.');
+        flash('success', __('Resource updated successfully.'));
         redirect('/resources');
     }
 
@@ -212,7 +212,7 @@ class ResourceController
 
         log_activity('resource.deleted', "Resource '" . ($link['title'] ?? '') . "' deleted");
         Database::execute("DELETE FROM resources WHERE id = ?", [$id]);
-        flash('success', 'Resource deleted successfully.');
+        flash('success', __('Resource deleted successfully.'));
         redirect('/resources');
     }
 }

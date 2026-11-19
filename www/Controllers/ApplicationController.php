@@ -47,7 +47,7 @@ class ApplicationController
             $this->ensureTable();
 
             if (!verify_csrf($_POST['_csrf'] ?? '')) {
-                flash('error', 'Invalid form token. Please try again.');
+                flash('error', __('Invalid form token. Please try again.'));
                 redirect('/applications/create');
             }
 
@@ -70,7 +70,7 @@ class ApplicationController
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json === false) {
                 \App\Core\Logger::error('Application submission failed: json_encode error: ' . (json_last_error_msg()));
-            flash('error', 'Submission failed: ' . json_last_error_msg());
+            flash('error', __('Submission failed: :details', [':details' => json_last_error_msg()]));
                 redirect('/applications/create');
                 return;
             }
@@ -85,7 +85,7 @@ class ApplicationController
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
             \App\Core\Logger::error('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            flash('error', 'Submission failed. Please try again.');
+            flash('error', __('Submission failed. Please try again.'));
             redirect('/applications/create');
         }
     }
@@ -214,7 +214,7 @@ class ApplicationController
         );
 
         log_activity('application.notes_updated', "Notes updated for application #{$id}");
-        flash('success', 'Notes saved.');
+        flash('success', __('Notes saved.'));
         redirect('/applications/' . $id);
     }
 
@@ -231,7 +231,7 @@ class ApplicationController
         $allowed = ['new', 'in_progress', 'accepted', 'rejected'];
         $status = $_POST['status'] ?? '';
         if (!in_array($status, $allowed)) {
-            flash('error', 'Invalid status.');
+            flash('error', __('Invalid status.'));
             redirect('/applications/' . $id);
         }
 
@@ -245,7 +245,7 @@ class ApplicationController
         );
 
         log_activity('application.status_updated', "Application #{$id} status changed to {$status}");
-        flash('success', 'Status updated.');
+        flash('success', __('Status updated.'));
         redirect('/applications/' . $id);
     }
 
@@ -308,7 +308,7 @@ class ApplicationController
             $this->ensureTable();
 
             if (!verify_csrf($_POST['_csrf'] ?? '')) {
-                flash('error', 'Invalid form token. Please try again.');
+                flash('error', __('Invalid form token. Please try again.'));
                 redirect('/applications/' . $id . '/convert');
             }
 
@@ -332,7 +332,7 @@ class ApplicationController
 
             $archived = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NOT NULL", [$_POST['email']]);
             if ($archived) {
-                flash('error', 'Email exists in archived tenant.');
+                flash('error', __('Email exists in archived tenant.'));
                 $_SESSION['_old'] = $_POST;
                 $_SESSION['_old_app_id'] = $id;
                 Database::rollback();
@@ -500,12 +500,12 @@ class ApplicationController
             log_activity('tenant.created', "Tenant '{$_POST['name']}' added from application #{$id}");
             log_activity('application.status_updated', "Application #{$id} accepted and converted to tenant");
 
-            flash('success', 'Application accepted and tenant created successfully.');
+            flash('success', __('Application accepted and tenant created successfully.'));
             redirect('/tenants');
         } catch (\Throwable $e) {
             Database::rollback();
             \App\Core\Logger::error('Application conversion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
-            flash('error', 'Failed to create tenant: ' . $e->getMessage());
+            flash('error', __('Failed to create tenant: :details', [':details' => $e->getMessage()]));
             $_SESSION['_old'] = $_POST;
             $_SESSION['_old_app_id'] = $id;
             redirect('/applications/' . $id . '/convert');
@@ -528,7 +528,7 @@ class ApplicationController
         );
 
         log_activity('application.archived', "Application #{$id} archived");
-        flash('success', 'Application archived.');
+        flash('success', __('Application archived.'));
         redirect('/applications');
     }
 
@@ -548,7 +548,7 @@ class ApplicationController
         );
 
         log_activity('application.restored', "Application #{$id} restored");
-        flash('success', 'Application restored.');
+        flash('success', __('Application restored.'));
         redirect('/applications?show_archived=1');
     }
 
@@ -568,7 +568,7 @@ class ApplicationController
         );
 
         log_activity('application.deleted', "Application #{$id} permanently deleted");
-        flash('success', 'Application permanently deleted.');
+        flash('success', __('Application permanently deleted.'));
         redirect('/applications');
     }
 
@@ -809,8 +809,8 @@ class ApplicationController
             [$notes, $notes]
         );
 
-        log_activity('settings.applications_updated', 'Application settings updated');
-        flash('success', 'Application settings saved.');
+        log_activity('settings.applications_updated', __('Application settings updated'));
+        flash('success', __('Application settings saved.'));
         redirect('/settings?tab=applications');
     }
 

@@ -160,7 +160,7 @@ class PropertyController
         );
 
         log_activity('property.created', "Property '{$_POST['name']}' created");
-        flash('success', 'Property created successfully.');
+        flash('success', __('Property created successfully.'));
         redirect('/properties/' . $propertyId);
     }
 
@@ -310,7 +310,7 @@ class PropertyController
         );
 
         log_activity('property.updated', "Property '{$_POST['name']}' updated");
-        flash('success', 'Property updated successfully.');
+        flash('success', __('Property updated successfully.'));
         redirect('/properties/' . $id);
     }
 
@@ -323,7 +323,7 @@ class PropertyController
         }
         $property = Database::fetch("SELECT id, name, listed FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) {
-            flash('error', 'Property not found.');
+            flash('error', __('Property not found.'));
             redirect('/properties');
             return;
         }
@@ -469,7 +469,7 @@ class PropertyController
         $this->ensurePhotosTable();
         Database::execute("UPDATE property_photos SET is_main = 0 WHERE property_id = ?", [$id]);
         Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
-        flash('success', 'Main photo updated.');
+        flash('success', __('Main photo updated.'));
         redirect('/properties/' . $id . '/edit');
     }
 
@@ -498,7 +498,7 @@ class PropertyController
             }
             Database::execute("DELETE FROM property_photos WHERE id = ?", [$photoId]);
         }
-        flash('success', 'Photo deleted.');
+        flash('success', __('Photo deleted.'));
         redirect('/properties/' . $id . '/edit');
     }
 
@@ -576,7 +576,7 @@ class PropertyController
             // itself is re-activated.
             Database::execute("UPDATE properties SET archived_at = NULL WHERE id = ?", [$id]);
             log_activity('property.restored', "Property '{$property['name']}' restored (legacy archive)");
-            flash('success', 'Property restored. Related records from this legacy archive were left unchanged.');
+            flash('success', __('Property restored. Related records from this legacy archive were left unchanged.'));
             redirect('/properties');
         }
 
@@ -630,9 +630,9 @@ class PropertyController
         );
 
         log_activity('property.restored', "Property '{$property['name']}' restored");
-        $message = 'Property restored successfully. Related tenants, leases, and tickets have also been restored.';
+        $message = __('Property restored successfully. Related tenants, leases, and tickets have also been restored.');
         if ($skipped > 0) {
-            $message .= ' Some historical tenancies were left archived because those tenants are assigned elsewhere.';
+            $message .= ' ' . __('Some historical tenancies were left archived because those tenants are assigned elsewhere.');
         }
         flash('success', $message);
         redirect('/properties');
@@ -682,7 +682,7 @@ class PropertyController
         );
 
         log_activity('property.archived', "Property '{$property['name']}' archived");
-        flash('success', 'Property archived successfully. Related tenants, leases, and tickets have also been archived.');
+        flash('success', __('Property archived successfully. Related tenants, leases, and tickets have also been archived.'));
         redirect('/properties');
     }
 

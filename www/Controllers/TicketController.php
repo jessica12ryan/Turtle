@@ -143,7 +143,7 @@ class TicketController
         notifyInAppRoles('ticket_created', 'New ticket: ' . $_POST['subject'], (int)Auth::instance()->id());
 
         log_activity('ticket.created', "Ticket '{$_POST['subject']}' created");
-        flash('success', 'Ticket created successfully.');
+        flash('success', __('Ticket created successfully.'));
         redirect('/tickets/' . $ticketId);
     }
 
@@ -228,7 +228,7 @@ class TicketController
                 [$assignedTo]
             );
             if (!$assignee) {
-                flash('error', 'Selected assignee is invalid.');
+                flash('error', __('Selected assignee is invalid.'));
                 redirectBack();
                 return;
             }
@@ -273,7 +273,7 @@ class TicketController
         );
 
         log_activity('ticket.assigned', "Ticket #{$id} assigned");
-        flash('success', 'Ticket assigned successfully.');
+        flash('success', __('Ticket assigned successfully.'));
         redirect('/tickets/' . $id);
     }
 
@@ -451,7 +451,7 @@ class TicketController
         }
 
         log_activity('ticket.status_updated', "Ticket #{$id} status updated");
-        flash('success', 'Ticket status updated.');
+        flash('success', __('Ticket status updated.'));
         redirect('/tickets/' . $id);
     }
 
@@ -486,7 +486,7 @@ class TicketController
 
         $validator = new Validator();
         if (!$validator->validate($_POST, ['body' => 'required'])) {
-            flash('error', 'Comment cannot be empty.');
+            flash('error', __('Comment cannot be empty.'));
             redirect('/tickets/' . $id);
         }
 
@@ -502,7 +502,7 @@ class TicketController
         notifyInAppRoles('ticket_comment', 'New comment on ticket: ' . $ticket['subject'], (int)Auth::instance()->id());
 
         log_activity('ticket.comment_added', "Comment added to ticket #{$id}");
-        flash('success', 'Comment added successfully.');
+        flash('success', __('Comment added successfully.'));
         redirect('/tickets/' . $id);
     }
 
@@ -612,7 +612,7 @@ class TicketController
 
         Database::execute("UPDATE tickets SET archived_at = NOW(), status = 'closed' WHERE id = ?", [$id]);
         log_activity('ticket.archived', "Ticket #{$id} archived");
-        flash('success', 'Ticket archived successfully.');
+        flash('success', __('Ticket archived successfully.'));
         redirect('/tickets');
     }
 
@@ -631,7 +631,7 @@ class TicketController
         Database::execute("DELETE FROM ticket_comments WHERE ticket_id = ?", [$id]);
         Database::execute("DELETE FROM tickets WHERE id = ?", [$id]);
         log_activity('ticket.deleted', "Ticket #{$ticket['subject']} permanently deleted");
-        flash('success', 'Ticket permanently deleted.');
+        flash('success', __('Ticket permanently deleted.'));
         redirect('/tickets');
     }
 

@@ -21,7 +21,7 @@ class AuthController
     {
         try {
             if (!verify_csrf($_POST['_csrf'] ?? '')) {
-                flash('error', 'Invalid form token.');
+                flash('error', __('Invalid form token.'));
                 redirect('/login');
             }
 
@@ -39,13 +39,13 @@ class AuthController
             $rateKey = 'login:' . $clientIp . ':' . strtolower(trim($_POST['email']));
             if (!auth_rate_limit('login:ip:' . $clientIp, 30, 300)
                 || !auth_rate_limit($rateKey, 8, 300)) {
-                flash('error', 'Too many login attempts. Please wait a few minutes.');
+                flash('error', __('Too many login attempts. Please wait a few minutes.'));
                 redirect('/login');
             }
 
             $auth = Auth::instance();
             if (!$auth->login($_POST['email'], $_POST['password'])) {
-                flash('error', 'Invalid email or password.');
+                flash('error', __('Invalid email or password.'));
                 redirect('/login');
             }
 
@@ -99,7 +99,7 @@ class AuthController
         }
 
         if (!auth_rate_limit('password_reset_request:' . ($_SERVER['REMOTE_ADDR'] ?? ''), 5, 900)) {
-            flash('error', 'Too many reset requests. Please wait a few minutes.');
+            flash('error', __('Too many reset requests. Please wait a few minutes.'));
             redirect('/login');
         }
 
@@ -128,7 +128,7 @@ class AuthController
             notifyInApp((int)$user['id'], 'password_reset', 'A password reset link has been sent to your email.');
         }
 
-        flash('success', 'If that email exists, a reset link has been sent.');
+        flash('success', __('If that email exists, a reset link has been sent.'));
         redirect('/login');
     }
 
@@ -140,7 +140,7 @@ class AuthController
         );
 
         if (!$record) {
-            flash('error', 'Invalid or expired reset link.');
+            flash('error', __('Invalid or expired reset link.'));
             redirect('/login');
         }
 
@@ -167,7 +167,7 @@ class AuthController
         }
 
         if (!auth_rate_limit('password_reset_use:' . ($_SERVER['REMOTE_ADDR'] ?? ''), 10, 900)) {
-            flash('error', 'Too many attempts. Please wait a few minutes.');
+            flash('error', __('Too many attempts. Please wait a few minutes.'));
             redirect('/login');
         }
 
@@ -177,7 +177,7 @@ class AuthController
         );
 
         if (!$record) {
-            flash('error', 'Invalid or expired reset link.');
+            flash('error', __('Invalid or expired reset link.'));
             redirect('/login');
         }
 
@@ -188,7 +188,7 @@ class AuthController
         Database::execute("DELETE FROM password_reset_tokens WHERE email = ?", [$_POST['email']]);
 
         log_activity('auth.password_reset', "Password reset for '{$_POST['email']}'");
-        flash('success', 'Password reset successfully. Please log in.');
+        flash('success', __('Password reset successfully. Please log in.'));
         redirect('/login');
     }
 
@@ -221,7 +221,7 @@ class AuthController
             // Do not disclose whether an account exists or has already been
             // onboarded. Only a matching, not-yet-onboarded tenant triggers an
             // email with a fresh temporary password.
-            flash('success', 'If an invitation is pending, a welcome email has been sent.');
+            flash('success', __('If an invitation is pending, a welcome email has been sent.'));
             redirect('/login');
         }
 
@@ -243,7 +243,7 @@ class AuthController
         notifyInApp((int)$user['id'], 'onboarding', 'Your Turtle account is ready. Please log in to complete onboarding.');
 
         log_activity('auth.welcome_sent', "Welcome email sent to '{$_POST['email']}'");
-        flash('success', 'Welcome email sent! Please check your inbox for your temporary password.');
+        flash('success', __('Welcome email sent! Please check your inbox for your temporary password.'));
         redirect('/login');
     }
 
@@ -275,7 +275,7 @@ class AuthController
         );
 
         log_activity('auth.password_changed', "Password changed for user #" . Auth::instance()->id());
-        flash('success', 'Password changed successfully.');
+        flash('success', __('Password changed successfully.'));
         redirect('/home');
     }
 }

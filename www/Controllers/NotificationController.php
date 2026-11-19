@@ -98,13 +98,13 @@ class NotificationController
             "UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL",
             [Auth::instance()->id()]
         );
-        log_activity('notifications.read_all', 'All notifications marked as read');
+        log_activity('notifications.read_all', __('All notifications marked as read'));
         if ($this->isXhr()) {
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
             return;
         }
-        flash('success', 'All notifications marked as read.');
+        flash('success', __('All notifications marked as read.'));
         redirect('/notifications');
     }
 }
