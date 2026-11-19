@@ -25,10 +25,18 @@ class Auth
     {
         if (!$this->check()) return null;
 
-        return Database::fetch(
-            "SELECT id, name, email, phone, role, secondary_roles, avatar_path, theme, language, timezone, must_change_password, archived_at FROM users WHERE id = ? AND archived_at IS NULL",
-            [$_SESSION['user_id']]
-        );
+        try {
+            return Database::fetch(
+                "SELECT id, name, email, phone, role, secondary_roles, avatar_path, theme, language, timezone, must_change_password, archived_at FROM users WHERE id = ? AND archived_at IS NULL",
+                [$_SESSION['user_id']]
+            );
+        } catch (\Throwable $e) {
+            // Older installs may not have run the avatar_path migration yet.
+            return Database::fetch(
+                "SELECT id, name, email, phone, role, secondary_roles, theme, language, timezone, must_change_password, archived_at FROM users WHERE id = ? AND archived_at IS NULL",
+                [$_SESSION['user_id']]
+            );
+        }
     }
 
     public function id(): ?int

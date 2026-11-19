@@ -33,8 +33,21 @@ class MessageController
                 [$me, $me]
             );
         } catch (\Throwable $e) {
-            echo json_encode([]);
-            return;
+            try {
+                $rows = Database::fetchAll(
+                    "SELECT u.id, u.name, u.role, p.last_seen,
+                            (SELECT COUNT(*) FROM messages m
+                             WHERE m.sender_id = u.id AND m.recipient_id = ? AND m.read_at IS NULL) AS unread
+                     FROM users u
+                     LEFT JOIN user_presence p ON p.user_id = u.id
+                     WHERE u.archived_at IS NULL AND u.id != ?{$tenantFilter}
+                     ORDER BY (p.last_seen >= DATE_SUB(NOW(), INTERVAL {$presenceSeconds} SECOND)) DESC, u.name",
+                    [$me, $me]
+                );
+            } catch (\Throwable $e2) {
+                echo json_encode([]);
+                return;
+            }
         }
 
         $users = [];
@@ -43,7 +56,7 @@ class MessageController
                 'id' => (int)$row['id'],
                 'name' => $row['name'],
                 'role' => ucwords(str_replace('_', ' ', $row['role'])),
-                'avatar_url' => avatar_url(['id' => $row['id'], 'avatar_path' => $row['avatar_path']]),
+                'avatar_url' => avatar_url(['id' => $row['id'], 'avatar_path' => $row['avatar_path'] ?? null]),
                 'initials' => initials_for($row['name']),
                 'online' => !empty($row['last_seen']) && strtotime($row['last_seen']) >= $cutoff,
                 'last_seen' => !empty($row['last_seen']) ? display_time($row['last_seen']) : null,

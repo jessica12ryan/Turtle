@@ -41,18 +41,26 @@ class ProfileController
         $language = $_POST['language'] ?: null;
 
         $userId = (int)Auth::instance()->id();
-        $current = Database::fetch("SELECT avatar_path FROM users WHERE id = ?", [$userId]);
-        $avatarPath = $current['avatar_path'] ?? null;
+        $hasAvatarColumn = $this->avatarColumnExists();
+        $avatarPath = null;
 
-        $avatarError = $this->handleAvatar($userId, $avatarPath);
-        if ($avatarError !== null) {
-            flash('error', $avatarError);
-            redirect('/profile');
-            return;
+        if ($hasAvatarColumn) {
+            $current = Database::fetch("SELECT avatar_path FROM users WHERE id = ?", [$userId]);
+            $avatarPath = $current['avatar_path'] ?? null;
+            $avatarError = $this->handleAvatar($userId, $avatarPath);
+            if ($avatarError !== null) {
+                flash('error', $avatarError);
+                redirect('/profile');
+                return;
+            }
         }
 
-        $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, theme = ?, avatar_path = ?, updated_at = NOW()";
-        $params = [$_POST['name'], $timezone, $language, $theme, $avatarPath];
+        $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, theme = ?, updated_at = NOW()";
+        $params = [$_POST['name'], $timezone, $language, $theme];
+        if ($hasAvatarColumn) {
+            $sql = "UPDATE users SET name = ?, timezone = ?, language = ?, theme = ?, avatar_path = ?, updated_at = NOW()";
+            $params[] = $avatarPath;
+        }
 
         if (!empty($_POST['password'])) {
             $sql .= ", password = ?";
@@ -73,6 +81,19 @@ class ProfileController
         log_activity('profile.updated', 'Profile updated');
         flash('success', 'Profile updated successfully.');
         redirect('/profile');
+    }
+
+    private function avatarColumnExists(): bool
+    {
+        static $exists = null;
+        if ($exists !== null) return $exists;
+        try {
+            Database::fetch("SELECT avatar_path FROM users LIMIT 1", []);
+            $exists = true;
+        } catch (\Throwable $e) {
+            $exists = false;
+        }
+        return $exists;
     }
 
     private function handleAvatar(int $userId, ?string &$avatarPath): ?string
@@ -127,6 +148,11 @@ class ProfileController
 
     public function avatar(int $id): void
     {
+        if (!$this->avatarColumnExists()) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         $user = Database::fetch("SELECT avatar_path FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$user || empty($user['avatar_path'])) {
             http_response_code(404);
