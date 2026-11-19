@@ -73,8 +73,15 @@ class SetupController
                 $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
                 finfo_close($finfo);
                 if (in_array($type, $allowed)) {
-                    $ext = pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION);
-                    $filename = 'logo.' . $ext;
+                    // Never trust the client-supplied extension: this file is
+                    // written inside the web root and a polyglot uploaded as
+                    // "logo.php" would be executed by Apache.
+                    $extByMime = [
+                        'image/png' => 'png',
+                        'image/jpeg' => 'jpg',
+                        'image/gif' => 'gif',
+                    ];
+                    $filename = 'logo.' . ($extByMime[$type] ?? 'png');
                     $uploadDir = base_path('www/assets/uploads/logo/');
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0755, true);
@@ -207,6 +214,18 @@ class SetupController
 
     public function restore(): void
     {
+        // This endpoint exists for restoring a backup on a fresh install,
+        // where there is no account to log in with yet. Once an admin exists it
+        // must be disabled entirely: the restore drops every table, executes
+        // SQL from the archive and replaces .env. Admins use Settings restore
+        // instead, which never touches .env.
+        $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
+        if ($admin) {
+            http_response_code(403);
+            require base_path('www/Views/errors/403.php');
+            return;
+        }
+
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirect('/setup');

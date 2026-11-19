@@ -108,15 +108,29 @@ function old(string $key, string $default = ''): string
     return h($default);
 }
 
+/**
+ * Sanitized reverse-proxy path prefix.
+ *
+ * These headers are client-controlled whenever the app is reachable directly,
+ * so they must not be reflected into URLs or HTML verbatim.
+ */
+function ingress_prefix(): string
+{
+    static $prefix = null;
+    if ($prefix === null) {
+        $raw = $_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '';
+        $raw = is_string($raw) ? trim($raw) : '';
+        $prefix = ($raw !== ''
+            && preg_match('#^/[A-Za-z0-9._~/-]{1,254}$#', $raw)
+            && !str_contains($raw, '..')
+            && !str_contains($raw, '//')) ? rtrim($raw, '/') : '';
+    }
+    return $prefix;
+}
+
 function base_url(): string
 {
-    static $basePath = null;
-    if ($basePath === null) {
-        $basePath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] 
-            ?? $_SERVER['HTTP_X_INGRESS_PATH'] 
-            ?? '';
-    }
-    return $basePath;
+    return ingress_prefix();
 }
 
 function redirect(string $url): void
@@ -169,6 +183,63 @@ function flash(string $key, ?string $value = null): ?string
     $message = $_SESSION['_flash'][$key] ?? null;
     unset($_SESSION['_flash'][$key]);
     return $message;
+}
+
+/**
+ * Simple fixed-window throttle for authentication endpoints.
+ * Returns false when the caller has exceeded the limit.
+ */
+function auth_rate_limit(string $key, int $max, int $windowSeconds): bool
+{
+    static $tableReady = false;
+    try {
+        if (!$tableReady) {
+            \App\Core\Database::instance()->getConnection()->exec(
+                "CREATE TABLE IF NOT EXISTS auth_rate_limits (
+                    cache_key VARCHAR(191) PRIMARY KEY,
+                    attempts INT NOT NULL DEFAULT 0,
+                    window_start INT NOT NULL,
+                    last_at DATETIME NOT NULL,
+                    INDEX idx_window (window_start)
+                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $tableReady = true;
+        }
+        $now = time();
+        $row = \App\Core\Database::fetch(
+            "SELECT attempts, window_start FROM auth_rate_limits WHERE cache_key = ?",
+            [$key]
+        );
+        if ($row && (int)$row['window_start'] > $now - $windowSeconds) {
+            if ((int)$row['attempts'] >= $max) {
+                return false;
+            }
+            \App\Core\Database::execute(
+                "UPDATE auth_rate_limits SET attempts = attempts + 1, last_at = NOW() WHERE cache_key = ?",
+                [$key]
+            );
+        } else {
+            \App\Core\Database::execute(
+                "INSERT INTO auth_rate_limits (cache_key, attempts, window_start, last_at)
+                 VALUES (?, 1, ?, NOW())
+                 ON DUPLICATE KEY UPDATE attempts = 1, window_start = VALUES(window_start), last_at = NOW()",
+                [$key, $now]
+            );
+        }
+        return true;
+    } catch (\Throwable $e) {
+        // Database failures are handled by the login flow itself; do not
+        // introduce a new failure mode here.
+        return true;
+    }
+}
+
+function auth_rate_limit_clear(string $key): void
+{
+    try {
+        \App\Core\Database::execute("DELETE FROM auth_rate_limits WHERE cache_key = ?", [$key]);
+    } catch (\Throwable $e) {
+    }
 }
 
 function csrf_token(): string

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -130,6 +131,7 @@ class TicketController
             $_SESSION['_old'] = $_POST;
             redirect('/tickets/create');
         }
+        Access::require(Access::property((int)$_POST['property_id']));
 
         $ticketId = Database::insert(
             "INSERT INTO tickets (property_id, tenant_id, subject, description, category, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'open', ?, NOW(), NOW())",
@@ -158,6 +160,7 @@ class TicketController
             [$id]
         );
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($id));
 
         $user = Auth::instance()->user();
         if ($user['role'] === 'tenant') {
@@ -212,6 +215,7 @@ class TicketController
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($id));
 
         // The "Unassigned" option submits an empty string; normalize it to NULL.
         $assignedTo = $_POST['assigned_to'] ?? null;
@@ -287,6 +291,7 @@ class TicketController
             redirect('/tickets?show_archived=1');
             return;
         }
+        Access::require(Access::ticket($id));
 
         $conflicts = $this->restoreConflicts($ticket);
         if ($conflicts['property_missing'] || $conflicts['assignee_invalid']) {
@@ -305,6 +310,7 @@ class TicketController
             redirect('/tickets?show_archived=1');
             return;
         }
+        Access::require(Access::ticket($id));
 
         $conflicts = $this->restoreConflicts($ticket);
         if (!$conflicts['property_missing'] && !$conflicts['assignee_invalid']) {
@@ -360,6 +366,7 @@ class TicketController
             redirect('/tickets?show_archived=1');
             return;
         }
+        Access::require(Access::ticket($id));
 
         $conflicts = $this->restoreConflicts($ticket);
         $errorRedirect = '/tickets/' . $id . '/restore-conflict';
@@ -413,6 +420,7 @@ class TicketController
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($id));
 
         $oldStatus = str_replace('_', ' ', $ticket['status']);
         $newStatus = str_replace('_', ' ', $_POST['status']);
@@ -456,6 +464,7 @@ class TicketController
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($id));
 
         $user = Auth::instance()->user();
         if ($user['role'] === 'tenant') {
@@ -504,6 +513,7 @@ class TicketController
 
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$ticketId]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($ticketId));
 
         // IDOR check: verify user has access to this ticket
         if ($user['role'] === 'tenant') {
@@ -592,6 +602,7 @@ class TicketController
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($id));
 
         Database::execute("UPDATE tickets SET archived_at = NOW(), status = 'closed' WHERE id = ?", [$id]);
         log_activity('ticket.archived', "Ticket #{$id} archived");
@@ -608,6 +619,7 @@ class TicketController
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$id]);
         if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::ticket($id));
 
         Database::execute("DELETE FROM ticket_files WHERE ticket_id = ?", [$id]);
         Database::execute("DELETE FROM ticket_comments WHERE ticket_id = ?", [$id]);

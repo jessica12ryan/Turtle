@@ -1134,12 +1134,10 @@ class SettingsController
             redirect('/settings?tab=backup');
         }
 
-        // Restore .env if included in backup (exact system replication)
-        $envBak = "{$tmpDir}/.env";
-        $envDest = base_path('.env');
-        if (file_exists($envBak) && is_writable(dirname($envDest))) {
-            copy($envBak, $envDest);
-        }
+        // Never overwrite .env from an uploaded archive. Exported backups do
+        // not contain it, so its presence means the archive was crafted; a
+        // replacement could point the app at an attacker-controlled database
+        // or mail server. The current .env is intentionally left untouched.
 
         // Restore uploaded files recursively
         $uploadMappings = [

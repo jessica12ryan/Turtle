@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -18,6 +19,7 @@ class DocumentController
             [$id]
         );
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::document($id));
 
         $lease = null;
         if ($document['documentable_type'] === 'lease') {
@@ -39,6 +41,7 @@ class DocumentController
     {
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::document($id));
 
         $filePath = $document['file_path'];
         if (str_starts_with($filePath, '/')) {
@@ -63,6 +66,7 @@ class DocumentController
     {
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::document($id));
 
         $filePath = $document['file_path'];
         if (str_starts_with($filePath, '/')) {
@@ -93,6 +97,7 @@ class DocumentController
 
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::document($id));
 
         $this->deleteDocumentFile($document);
         Database::execute("UPDATE documents SET archived_at = NOW() WHERE id = ?", [$id]);
@@ -112,6 +117,7 @@ class DocumentController
 
         $document = Database::fetch("SELECT id FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::document($id));
 
         Database::execute("UPDATE documents SET archived_at = NULL WHERE id = ?", [$id]);
 
@@ -130,6 +136,7 @@ class DocumentController
 
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
         if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::document($id));
 
         $this->deleteDocumentFile($document);
         Database::execute("DELETE FROM documents WHERE id = ?", [$id]);

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -234,47 +235,60 @@ class TenantController
             redirect('/tenants/create');
         }
 
+        // A valid permission is not enough: the property must be one this user
+        // actually manages. This also avoids creating an orphan tenant account
+        // when a main tenant is requested on an already-occupied property.
+        Access::require(Access::property((int)$_POST['property_id']));
+
+        if ($existingMain && !empty($_POST['is_main_tenant'])) {
+            flash('error', 'Main tenant already exists for ' . h($existingMain['property_name']) . '. Uncheck "Main tenant" or choose a different property.');
+            $_SESSION['_old'] = $_POST;
+            redirect('/tenants/create');
+        }
+
         $phone = $_POST['phone'];
 
         $password = bin2hex(random_bytes(6));
         $timezone = $_POST['timezone'] ?: null;
         $language = $_POST['language'] ?: null;
 
-        $tenantId = Database::insert(
-            "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
-            [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
-        );
+        try {
+            Database::beginTransaction();
+            $tenantId = Database::insert(
+                "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
+                [$_POST['name'], $_POST['email'], $phone, password_hash($password, PASSWORD_DEFAULT), $timezone, $language]
+            );
 
-        if ($existingMain && !empty($_POST['is_main_tenant'])) {
-            Database::execute("DELETE FROM users WHERE id = ?", [$tenantId]);
-            flash('error', 'Main tenant already exists for ' . h($existingMain['property_name']) . '. Uncheck "Main tenant" or choose a different property.');
-            $_SESSION['_old'] = $_POST;
+            $isMain = !$existingMain ? 1 : 0;
+
+            // Secondary tenants do not store their own dates — always fetched from main tenant
+            if ($isMain) {
+                $leaseStart = $_POST['lease_start'] ?? null;
+                $leaseEnd = $_POST['lease_end'] ?: null;
+                $moveOutDate = $_POST['move_out_date'] ?: null;
+                $leaseType = $_POST['lease_type'] ?: null;
+                $emergencyName = $_POST['emergency_contact_name'] ?: null;
+                $emergencyPhone = $_POST['emergency_contact_phone'] ?: null;
+            } else {
+                $leaseStart = null;
+                $leaseEnd = null;
+                $moveOutDate = null;
+                $leaseType = null;
+                $emergencyName = null;
+                $emergencyPhone = null;
+            }
+
+            Database::insert(
+                "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, emergency_contact_name, emergency_contact_phone, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate, $leaseType, $emergencyName, $emergencyPhone]
+            );
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollback();
+            \App\Core\Logger::error('Tenant creation failed: ' . $e->getMessage());
+            flash('error', 'Could not create tenant. Please try again.');
             redirect('/tenants/create');
         }
-
-        $isMain = !$existingMain ? 1 : 0;
-
-        // Secondary tenants do not store their own dates — always fetched from main tenant
-        if ($isMain) {
-            $leaseStart = $_POST['lease_start'] ?? null;
-            $leaseEnd = $_POST['lease_end'] ?: null;
-            $moveOutDate = $_POST['move_out_date'] ?: null;
-            $leaseType = $_POST['lease_type'] ?: null;
-            $emergencyName = $_POST['emergency_contact_name'] ?: null;
-            $emergencyPhone = $_POST['emergency_contact_phone'] ?: null;
-        } else {
-            $leaseStart = null;
-            $leaseEnd = null;
-            $moveOutDate = null;
-            $leaseType = null;
-            $emergencyName = null;
-            $emergencyPhone = null;
-        }
-
-        Database::insert(
-            "INSERT INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, emergency_contact_name, emergency_contact_phone, created_at, updated_at) VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$_POST['property_id'], $tenantId, $isMain, $leaseStart, $leaseEnd, $moveOutDate, $leaseType, $emergencyName, $emergencyPhone]
-        );
 
         if (!empty($_POST['send_welcome_email'])) {
             $loginUrl = \site_url() . '/login';
@@ -307,6 +321,7 @@ class TenantController
             [$id]
         );
         if (!$tenant) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::tenant($id));
 
         $tickets = Database::fetchAll(
             "SELECT t.*, p.name as property_name FROM tickets t 
@@ -338,6 +353,7 @@ class TenantController
     {
         $tenant = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
         if (!$tenant) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::tenant($id));
 
         $pt = $this->getPropertyTenant($id);
 
@@ -401,6 +417,8 @@ class TenantController
             flash('error', 'Invalid form token. Please try again.');
             redirect('/tenants/' . $id . '/edit');
         }
+
+        Access::require(Access::tenant($id));
 
         $currentUser = Auth::instance()->user();
         $canEditEmail = in_array($currentUser['role'] ?? '', ['admin', 'landlord']);
@@ -485,6 +503,8 @@ class TenantController
             redirectBack();
             return;
         }
+        Access::require(Access::tenant($id));
+
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
         $pt = Database::fetch(
             "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NOT NULL",
@@ -516,6 +536,8 @@ class TenantController
             redirectBack();
             return;
         }
+        Access::require(Access::tenant($id));
+
         $pt = Database::fetch(
             "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
             [$id]
@@ -561,6 +583,7 @@ class TenantController
 
             $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
             if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+            Access::require(Access::tenant($id));
 
             // Several tables reference users(id) without ON DELETE CASCADE
             // (activity_logs, documents, leases.uploaded_by, notifications,

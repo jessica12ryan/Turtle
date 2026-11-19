@@ -37,7 +37,7 @@ loadEnvFile(__DIR__ . '/../.env');
 \App\Core\Logger::apply();
 
 // HA ingress support: prepend ingress path to all absolute URLs in output
-$ingressPath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '';
+$ingressPath = ingress_prefix();
 if ($ingressPath !== '') {
     ob_start(function ($buffer) use ($ingressPath) {
         // href/action/src/srcset

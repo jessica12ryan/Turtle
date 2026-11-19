@@ -35,11 +35,21 @@ class AuthController
                 redirect('/login');
             }
 
+            $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+            $rateKey = 'login:' . $clientIp . ':' . strtolower(trim($_POST['email']));
+            if (!auth_rate_limit('login:ip:' . $clientIp, 30, 300)
+                || !auth_rate_limit($rateKey, 8, 300)) {
+                flash('error', 'Too many login attempts. Please wait a few minutes.');
+                redirect('/login');
+            }
+
             $auth = Auth::instance();
             if (!$auth->login($_POST['email'], $_POST['password'])) {
                 flash('error', 'Invalid email or password.');
                 redirect('/login');
             }
+
+            auth_rate_limit_clear($rateKey);
 
             if ($auth->mustChangePassword()) {
                 redirect('/password/change');
@@ -55,6 +65,11 @@ class AuthController
 
     public function logout(): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect('/home');
+            return;
+        }
         $user = Auth::instance()->user();
         if ($user) {
             log_activity('auth.logout', "User '{$user['email']}' logged out");
@@ -83,6 +98,11 @@ class AuthController
             redirect('/forgot-password');
         }
 
+        if (!auth_rate_limit('password_reset_request:' . ($_SERVER['REMOTE_ADDR'] ?? ''), 5, 900)) {
+            flash('error', 'Too many reset requests. Please wait a few minutes.');
+            redirect('/login');
+        }
+
         $user = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NULL", [$_POST['email']]);
 
         if ($user) {
@@ -93,7 +113,7 @@ class AuthController
             );
             Database::execute(
                 "INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, NOW())",
-                [$_POST['email'], $token]
+                [$_POST['email'], hash('sha256', $token)]
             );
 
             $resetUrl = \site_url() . '/reset-password/' . $token;
@@ -116,7 +136,7 @@ class AuthController
     {
         $record = Database::fetch(
             "SELECT email, created_at FROM password_reset_tokens WHERE token = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
-            [$token]
+            [hash('sha256', $token)]
         );
 
         if (!$record) {
@@ -146,9 +166,14 @@ class AuthController
             redirect('/reset-password/' . $_POST['token']);
         }
 
+        if (!auth_rate_limit('password_reset_use:' . ($_SERVER['REMOTE_ADDR'] ?? ''), 10, 900)) {
+            flash('error', 'Too many attempts. Please wait a few minutes.');
+            redirect('/login');
+        }
+
         $record = Database::fetch(
             "SELECT email FROM password_reset_tokens WHERE token = ? AND email = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)",
-            [$_POST['token'], $_POST['email']]
+            [hash('sha256', $_POST['token']), $_POST['email']]
         );
 
         if (!$record) {
@@ -192,14 +217,12 @@ class AuthController
             [$_POST['email']]
         );
 
-        if (!$user) {
-            flash('error', 'No tenant account found with that email.');
-            redirect('/onboarding');
-        }
-
-        if (!$user['must_change_password']) {
-            flash('error', 'This account has already been onboarded. Please use the Forgot Password link if you need to reset your password.');
-            redirect('/onboarding');
+        if (!$user || !$user['must_change_password']) {
+            // Do not disclose whether an account exists or has already been
+            // onboarded. Only a matching, not-yet-onboarded tenant triggers an
+            // email with a fresh temporary password.
+            flash('success', 'If an invitation is pending, a welcome email has been sent.');
+            redirect('/login');
         }
 
         $password = bin2hex(random_bytes(6));

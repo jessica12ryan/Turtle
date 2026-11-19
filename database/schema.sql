@@ -184,6 +184,14 @@ CREATE TABLE IF NOT EXISTS documents (
     INDEX idx_documentable (documentable_type, documentable_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS auth_rate_limits (
+    cache_key VARCHAR(191) PRIMARY KEY,
+    attempts INT NOT NULL DEFAULT 0,
+    window_start INT NOT NULL,
+    last_at DATETIME NOT NULL,
+    INDEX idx_window (window_start)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     email VARCHAR(255) NOT NULL,
     token VARCHAR(255) NOT NULL,

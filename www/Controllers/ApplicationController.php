@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -185,6 +186,7 @@ class ApplicationController
             require base_path('www/Views/errors/404.php');
             return;
         }
+        Access::require(Access::application($id));
 
         $data = json_decode($application['data'], true);
 
@@ -204,6 +206,7 @@ class ApplicationController
             return;
         }
         $this->ensureTable();
+        Access::require(Access::application($id));
 
         Database::execute(
             "UPDATE tenant_applications SET notes = ?, updated_at = NOW() WHERE id = ?",
@@ -223,6 +226,7 @@ class ApplicationController
             return;
         }
         $this->ensureTable();
+        Access::require(Access::application($id));
 
         $allowed = ['new', 'in_progress', 'accepted', 'rejected'];
         $status = $_POST['status'] ?? '';
@@ -262,6 +266,7 @@ class ApplicationController
             [$id]
         );
         if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::application($id));
 
         $data = json_decode($application['data'], true);
 
@@ -309,6 +314,7 @@ class ApplicationController
 
             $application = Database::fetch("SELECT * FROM tenant_applications WHERE id = ?", [$id]);
             if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+            Access::require(Access::application($id));
 
             $appData = json_decode($application['data'], true);
             $mainApplicant = $appData['primary_applicant'] ?? [];
@@ -349,6 +355,7 @@ class ApplicationController
                 Database::rollback();
                 redirect('/applications/' . $id . '/convert');
             }
+            Access::require(Access::property((int)$_POST['property_id']));
 
             $tenantId = Database::insert(
                 "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",
@@ -441,9 +448,13 @@ class ApplicationController
                         [$secName, $secEmail, $secPhone, password_hash($secPassword, PASSWORD_DEFAULT)]
                     );
                 } else {
+                    // users.email is UNIQUE NOT NULL — a literal empty string
+                    // would make a second email-less co-tenant fail the whole
+                    // conversion transaction.
+                    $placeholderEmail = 'tenant-' . bin2hex(random_bytes(8)) . '@noemail.local';
                     $secTenantId = Database::insert(
-                        "INSERT INTO users (name, email, phone, password, role, theme, must_change_password, created_at, updated_at) VALUES (?, '', ?, ?, 'tenant', 'system', 0, NOW(), NOW())",
-                        [$secName, $secPhone, password_hash(bin2hex(random_bytes(6)), PASSWORD_DEFAULT)]
+                        "INSERT INTO users (name, email, phone, password, role, theme, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', 0, NOW(), NOW())",
+                        [$secName, $placeholderEmail, $secPhone, password_hash(bin2hex(random_bytes(6)), PASSWORD_DEFAULT)]
                     );
                 }
 
@@ -509,6 +520,7 @@ class ApplicationController
             return;
         }
         $this->ensureTable();
+        Access::require(Access::application($id));
 
         Database::execute(
             "UPDATE tenant_applications SET archived_at = NOW(), updated_at = NOW() WHERE id = ?",
@@ -528,6 +540,7 @@ class ApplicationController
             return;
         }
         $this->ensureTable();
+        Access::require(Access::application($id));
 
         Database::execute(
             "UPDATE tenant_applications SET archived_at = NULL, updated_at = NOW() WHERE id = ?",
@@ -547,6 +560,7 @@ class ApplicationController
             return;
         }
         $this->ensureTable();
+        Access::require(Access::application($id));
 
         Database::execute(
             "DELETE FROM tenant_applications WHERE id = ?",
@@ -858,6 +872,7 @@ class ApplicationController
 
     public function servePhoto(int $id, string $key): void
     {
+        Access::require(Access::application($id));
         try {
             $this->ensureTable();
             $application = Database::fetch(

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -37,12 +38,29 @@ class StaffController
         $showArchived = !empty($_GET['show_archived']);
         $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
 
-        $staff = Database::fetchAll(
-            "SELECT u.* FROM users u
+        $viewer = Auth::instance()->user();
+        $visibleIds = [];
+        foreach (Database::fetchAll(
+            "SELECT u.id, u.role FROM users u
              WHERE 1=1{$archivedClause}
-             AND u.role IN ('admin','landlord','property_manager','maintenance')
-             ORDER BY u.archived_at IS NULL DESC, u.name"
-        );
+             AND u.role IN ('admin','landlord','property_manager','maintenance')",
+            []
+        ) as $candidate) {
+            if (Access::canManageUser($candidate, $viewer)) {
+                $visibleIds[] = (int)$candidate['id'];
+            }
+        }
+
+        $staff = [];
+        if ($visibleIds) {
+            $placeholders = implode(',', array_fill(0, count($visibleIds), '?'));
+            $staff = Database::fetchAll(
+                "SELECT u.* FROM users u
+                 WHERE u.id IN ({$placeholders})
+                 ORDER BY u.archived_at IS NULL DESC, u.name",
+                $visibleIds
+            );
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Staff']);
@@ -156,6 +174,7 @@ class StaffController
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($staff));
 
         $assignedTickets = Database::fetchAll(
             "SELECT t.*, p.name as property_name FROM tickets t
@@ -179,6 +198,7 @@ class StaffController
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($staff));
 
         $editingSelf = $id === Auth::instance()->id();
         $canChangeOwnRoles = $editingSelf && in_array($staff['role'], ['admin', 'landlord']);
@@ -219,6 +239,7 @@ class StaffController
             [$id]
         );
         if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($staff));
 
         // Prevent self role changes for property_manager and maintenance
         $editingSelf = $id === Auth::instance()->id();
@@ -302,6 +323,13 @@ class StaffController
             redirectBack();
             return;
         }
+        $target = Database::fetch(
+            "SELECT * FROM users WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')",
+            [$id]
+        );
+        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($target));
+
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
         log_activity('staff.restored', "Staff member #{$id} restored");
         flash('success', 'Staff member restored successfully.');
@@ -317,6 +345,7 @@ class StaffController
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($target));
 
         if ($target['role'] === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
@@ -437,6 +466,7 @@ class StaffController
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($target));
 
         if ($target['role'] === 'admin') {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ?", [$id]);
@@ -592,6 +622,7 @@ class StaffController
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ?", [$id]);
         if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::canManageUser($target));
 
         // Guard: never remove the last active admin.
         if ($target['role'] === 'admin') {

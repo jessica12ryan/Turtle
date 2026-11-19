@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -93,6 +94,7 @@ class RentController
             [$propertyId]
         );
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::property($propertyId));
 
         $tenants = Database::fetchAll(
             "SELECT u.*, pt.id as property_tenant_id, pt.is_main_tenant, pt.assigned_at
@@ -137,6 +139,7 @@ class RentController
             redirectBack();
             return;
         }
+        Access::require(Access::property($propertyId));
         // Auto-detect main tenant for this property
         $mainTenant = Database::fetch(
             "SELECT pt.id FROM property_tenant pt
@@ -193,6 +196,7 @@ class RentController
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::payment($paymentId));
 
         $validator = new Validator();
         if (!$validator->validate($_POST, [
@@ -225,6 +229,7 @@ class RentController
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::payment($paymentId));
 
         Database::execute("UPDATE payments SET archived_at = NOW() WHERE id = ?", [$paymentId]);
         log_activity('payment.archived', "Payment #{$paymentId} archived");
@@ -241,6 +246,7 @@ class RentController
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::payment($paymentId));
 
         Database::execute("UPDATE payments SET archived_at = NULL WHERE id = ?", [$paymentId]);
         log_activity('payment.restored', "Payment #{$paymentId} restored");
@@ -257,6 +263,7 @@ class RentController
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
         if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::payment($paymentId));
 
         Database::execute("DELETE FROM payments WHERE id = ?", [$paymentId]);
         log_activity('payment.deleted', "Payment #{$paymentId} permanently deleted");

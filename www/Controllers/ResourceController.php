@@ -149,6 +149,11 @@ class ResourceController
 
     public function update(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
         $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
         if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
@@ -196,6 +201,11 @@ class ResourceController
 
     public function destroy(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+            return;
+        }
         $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
         if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -170,6 +171,7 @@ class PropertyController
             [$id]
         );
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::property($id));
 
         try {
             $tenants = Database::fetchAll(
@@ -248,6 +250,7 @@ class PropertyController
     {
         $property = Database::fetch("SELECT * FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::property($id));
 
         $landlords = Database::fetchAll(
             "SELECT id, name, email FROM users WHERE (role = 'landlord' OR FIND_IN_SET('landlord', REPLACE(COALESCE(secondary_roles, ''), ' ', ''))) AND archived_at IS NULL ORDER BY name"
@@ -274,6 +277,8 @@ class PropertyController
             redirectBack();
             return;
         }
+        Access::require(Access::property($id));
+
         $validator = new Validator();
         if (!$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
@@ -322,6 +327,7 @@ class PropertyController
             redirect('/properties');
             return;
         }
+        Access::require(Access::property($id));
 
         $newListed = $property['listed'] ? 0 : 1;
         Database::execute("UPDATE properties SET listed = ?, updated_at = NOW() WHERE id = ?", [$newListed, $id]);
@@ -373,6 +379,12 @@ class PropertyController
 
     public function uploadPhoto(int $id): void
     {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Invalid form token.']);
+            return;
+        }
         $this->ensurePhotosTable();
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) {
@@ -380,6 +392,7 @@ class PropertyController
             echo json_encode(['error' => 'Property not found.']);
             return;
         }
+        Access::require(Access::property($id));
 
         header('Content-Type: application/json');
 
@@ -438,6 +451,7 @@ class PropertyController
             redirectBack();
             return;
         }
+        Access::require(Access::property($id));
         $this->ensurePhotosTable();
         Database::execute("UPDATE property_photos SET is_main = 0 WHERE property_id = ?", [$id]);
         Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
@@ -452,6 +466,7 @@ class PropertyController
             redirectBack();
             return;
         }
+        Access::require(Access::property($id));
         $this->ensurePhotosTable();
         $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
         if ($photo) {
@@ -475,6 +490,7 @@ class PropertyController
 
     public function servePhoto(int $id, int $photoId): void
     {
+        Access::require(Access::property($id) && Access::photo($photoId));
         $this->ensurePhotosTable();
         $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
         if (!$photo) {
@@ -502,6 +518,7 @@ class PropertyController
 
     public function downloadPhoto(int $id, int $photoId): void
     {
+        Access::require(Access::property($id) && Access::photo($photoId));
         $this->ensurePhotosTable();
         $photo = Database::fetch("SELECT * FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
         if (!$photo) {
@@ -536,6 +553,7 @@ class PropertyController
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::property($id));
 
         Database::execute("UPDATE properties SET archived_at = NULL WHERE id = ?", [$id]);
 
@@ -566,6 +584,7 @@ class PropertyController
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::property($id));
 
         Database::execute("UPDATE properties SET archived_at = NOW() WHERE id = ?", [$id]);
 
@@ -596,6 +615,7 @@ class PropertyController
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::property($id));
 
         try {
             Database::beginTransaction();

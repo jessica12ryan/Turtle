@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -187,6 +188,7 @@ class LeaseController
             $_SESSION['_old'] = $_POST;
             redirect('/leases/create');
         }
+        Access::require(Access::property((int)$_POST['property_id']));
 
         Database::beginTransaction();
 
@@ -299,6 +301,7 @@ class LeaseController
             [$id]
         );
         if (!$lease) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        Access::require(Access::lease($id));
 
         $showArchived = !empty($_GET['show_archived']);
         $archivedClause = $showArchived ? '' : ' AND archived_at IS NULL';
@@ -319,6 +322,7 @@ class LeaseController
             redirectBack();
             return;
         }
+        Access::require(Access::lease($id));
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
         log_activity('lease.restored', "Document #{$id} restored");
         flash('success', 'Document restored successfully.');
@@ -332,6 +336,7 @@ class LeaseController
             redirectBack();
             return;
         }
+        Access::require(Access::lease($id));
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
         log_activity('lease.archived', "Document #{$id} archived");
         flash('success', 'Document archived successfully.');
@@ -345,6 +350,7 @@ class LeaseController
             redirectBack();
             return;
         }
+        Access::require(Access::lease($id));
         $documents = Database::fetchAll(
             "SELECT file_path FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?",
             [$id]

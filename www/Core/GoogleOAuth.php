@@ -20,7 +20,7 @@ class GoogleOAuth
         // Home Assistant ingress proxies the add-on under a generated prefix
         // and reports it via X-Forwarded-Prefix. Google must redirect to that
         // public URL so the browser reaches the app again.
-        $prefix = (string)($_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '');
+        $prefix = \ingress_prefix();
         if ($prefix !== '') {
             $forwardedProto = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
             $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')

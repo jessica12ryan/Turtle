@@ -154,6 +154,11 @@ class MessageController
     public function send(): void
     {
         header('Content-Type: application/json');
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Invalid form token.']);
+            return;
+        }
         if (!messaging_enabled()) {
             http_response_code(403);
             echo json_encode(['error' => 'Messaging is disabled.']);
@@ -239,6 +244,11 @@ class MessageController
     public function heartbeat(): void
     {
         header('Content-Type: application/json');
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Invalid form token.']);
+            return;
+        }
         if (!messaging_enabled()) {
             http_response_code(403);
             echo json_encode(['error' => 'Messaging is disabled.']);
