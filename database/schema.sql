@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS tenant_applications (
 -- activity logs
 CREATE TABLE IF NOT EXISTS activity_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT NULL DEFAULT NULL,
     user_name VARCHAR(255) NOT NULL,
     action VARCHAR(100) NOT NULL,
     description TEXT,

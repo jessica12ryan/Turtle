@@ -15,6 +15,8 @@ if [ -f database/schema.sql ]; then
 fi
 
 # Incremental migrations
+# Allow activity log rows with no authenticated user (e.g. public-form emails/notifications)
+run_sql "SET @fk_name = (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'activity_logs' AND COLUMN_NAME = 'user_id' AND REFERENCED_TABLE_NAME IS NOT NULL LIMIT 1); SET @drop_fk = IF(@fk_name IS NULL, 'SELECT 1', CONCAT('ALTER TABLE activity_logs DROP FOREIGN KEY \`', @fk_name, '\`')); PREPARE stmt FROM @drop_fk; EXECUTE stmt; DEALLOCATE PREPARE stmt; ALTER TABLE activity_logs MODIFY COLUMN user_id INT NULL DEFAULT NULL; ALTER TABLE activity_logs ADD CONSTRAINT fk_activity_logs_user FOREIGN KEY (user_id) REFERENCES users(id);"
 run_sql "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';"
 run_sql "ALTER TABLE users ADD COLUMN phone VARCHAR(20) DEFAULT '' AFTER email;"
 run_sql "ALTER TABLE properties ADD COLUMN landlord_id INT NOT NULL DEFAULT 1 AFTER id;"

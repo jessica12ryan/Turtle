@@ -128,7 +128,9 @@ class SettingsController
             }
 
             $userId = $_GET['user_id'] ?? '';
-            if ($userId !== '' && $userId !== 'all') {
+            if ($userId === 'system') {
+                $conditions[] = 'user_id IS NULL';
+            } elseif ($userId !== '' && $userId !== 'all') {
                 $conditions[] = 'user_id = ?';
                 $params[] = (int)$userId;
             }
@@ -810,7 +812,9 @@ class SettingsController
                 }
 
                 $userId = $_GET['user_id'] ?? '';
-                if ($userId !== '' && $userId !== 'all') {
+                if ($userId === 'system') {
+                    $conditions[] = 'user_id IS NULL';
+                } elseif ($userId !== '' && $userId !== 'all') {
                     $conditions[] = 'user_id = ?';
                     $params[] = (int)$userId;
                 }

@@ -49,7 +49,9 @@
                     <label class="block text-xs text-gray-500 mb-1"><?= __('User') ?></label>
                     <select name="user_id" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
                         <option value="all"><?= __('All users') ?></option>
+                        <option value="system" <?= ($_GET['user_id'] ?? '') === 'system' ? 'selected' : '' ?>><?= __('System') ?></option>
                         <?php foreach ($activityUsers as $u): ?>
+                            <?php if ($u['user_id'] === null) continue; ?>
                             <option value="<?= (int)$u['user_id'] ?>" <?= ($_GET['user_id'] ?? '') === (string)$u['user_id'] ? 'selected' : '' ?>><?= h($u['user_name']) ?></option>
                         <?php endforeach; ?>
                     </select>
