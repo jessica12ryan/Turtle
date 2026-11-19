@@ -9,6 +9,8 @@ services:
     volumes:
       - .:/var/www/html
       - turtle-storage:/var/www/html/storage/uploads
+      # Read-only so Settings -> Logging can show MySQL's error log.
+      - mysql-data:/var/lib/mysql:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -18,6 +20,9 @@ services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
+    # Keep the error log in the data volume (also mounted read-only into the
+    # app) instead of only streaming it to container stdout.
+    command: --log-error=/var/lib/mysql/mysql-error.log
     ports:
       - "127.0.0.1:3306:3306"
     environment:

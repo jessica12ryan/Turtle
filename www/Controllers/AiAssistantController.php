@@ -64,7 +64,7 @@ class AiAssistantController
 
             echo json_encode(['response' => $response]);
         } catch (\Throwable $e) {
-            error_log('AI Assistant error: ' . $e->getMessage());
+            \App\Core\Logger::error('AI Assistant error: ' . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => $e->getMessage()]);
         }

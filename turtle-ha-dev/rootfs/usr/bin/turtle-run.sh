@@ -12,6 +12,11 @@ MAIL_PORT=$(bashio::config 'mail_port')
 MAIL_USER=$(bashio::config 'mail_username')
 MAIL_PASS=$(bashio::config 'mail_password')
 MAIL_FROM=$(bashio::config 'mail_from_address')
+MAIL_AUTH_MODE=$(bashio::config 'mail_auth_mode')
+MAIL_OAUTH_CLIENT_ID=$(bashio::config 'mail_oauth_client_id')
+MAIL_OAUTH_CLIENT_SECRET=$(bashio::config 'mail_oauth_client_secret')
+MAIL_OAUTH_REFRESH_TOKEN=$(bashio::config 'mail_oauth_refresh_token')
+MAIL_OAUTH_EMAIL=$(bashio::config 'mail_oauth_email')
 MAILPIT_PORT=$(bashio::config 'mailpit_port')
 MAILPIT_UI_PORT=$(bashio::config 'mailpit_ui_port')
 
@@ -44,7 +49,8 @@ if ! mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; then
         --pid-file=/tmp/mysqld.pid \
         --user=mysql \
         --bind-address=127.0.0.1 \
-        --port=3306 &
+        --port=3306 \
+        --log-error="${DATA_DIR}/mysql/mariadb-error.log" &
 
     bashio::log.info "Waiting for MariaDB..."
     until mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; do
@@ -53,6 +59,9 @@ if ! mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; then
 else
     bashio::log.info "MariaDB already running, skipping start."
 fi
+# MariaDB creates this as uid mysql (mode 640); make it readable by the web
+# server so the Settings -> Logging page can show the error log.
+chmod 644 "${DATA_DIR}/mysql/mariadb-error.log" 2>/dev/null || true
 
 # Create DB + user if missing (socket + TCP user for PHP compatibility)
 mysql --socket=/tmp/mysql.sock <<SQL
@@ -182,6 +191,11 @@ MAIL_USERNAME=${MAIL_USER}
 MAIL_PASSWORD=${MAIL_PASS}
 MAIL_FROM_ADDRESS=${MAIL_FROM}
 MAIL_FROM_NAME=Turtle
+MAIL_AUTH_MODE=${MAIL_AUTH_MODE}
+MAIL_OAUTH_CLIENT_ID=${MAIL_OAUTH_CLIENT_ID}
+MAIL_OAUTH_CLIENT_SECRET=${MAIL_OAUTH_CLIENT_SECRET}
+MAIL_OAUTH_REFRESH_TOKEN=${MAIL_OAUTH_REFRESH_TOKEN}
+MAIL_OAUTH_EMAIL=${MAIL_OAUTH_EMAIL}
 ENV
 
 # Export env vars for Apache/PHP and ensure .env is readable by apache user
@@ -246,6 +260,27 @@ INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_username', '${MAIL_USER}
 INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_password', '${MAIL_PASS}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PASS}';
 INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_from_address', '${MAIL_FROM}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_FROM}';
 SQL
+
+# OAuth credentials are optional: only sync values explicitly set in the
+# add-on options, so a connection configured in the UI survives restarts.
+OAUTH_SYNC=""
+for oauth_pair in \
+    "mail_auth_mode|${MAIL_AUTH_MODE}" \
+    "mail_oauth_client_id|${MAIL_OAUTH_CLIENT_ID}" \
+    "mail_oauth_client_secret|${MAIL_OAUTH_CLIENT_SECRET}" \
+    "mail_oauth_refresh_token|${MAIL_OAUTH_REFRESH_TOKEN}" \
+    "mail_oauth_email|${MAIL_OAUTH_EMAIL}"; do
+    oauth_key=${oauth_pair%%|*}
+    oauth_value=${oauth_pair#*|}
+    [ -z "$oauth_value" ] && continue
+    oauth_value=$(printf '%s' "$oauth_value" | sed "s/'/''/g")
+    OAUTH_SYNC="${OAUTH_SYNC}INSERT INTO settings (\`key\`, \`value\`) VALUES ('${oauth_key}', '${oauth_value}') ON DUPLICATE KEY UPDATE \`value\` = '${oauth_value}';
+"
+done
+if [ -n "$OAUTH_SYNC" ]; then
+    printf '%s\n' "$OAUTH_SYNC" | mysql --socket=/tmp/mysql.sock -u root turtle \
+        || bashio::log.warning "OAuth mail settings sync failed — continuing boot."
+fi
 
 # ── Permissions ───────────────────────────────────────────────────────────────
 chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"

@@ -606,7 +606,7 @@ class PropertyController
             Database::commit();
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('property hardDelete failed: ' . $e->getMessage());
+            \App\Core\Logger::error('property hardDelete failed: ' . $e->getMessage());
             flash('error', __('Could not permanently delete this property. No changes were made.'));
             redirect('/properties?show_archived=1');
             return;

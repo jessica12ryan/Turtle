@@ -49,7 +49,7 @@ class UpdateController
         try {
             \App\Core\Telemetry::maybeSend();
         } catch (\Throwable $e) {
-            error_log('Telemetry hook (update check) failed: ' . $e->getMessage());
+            \App\Core\Logger::error('Telemetry hook (update check) failed: ' . $e->getMessage());
         }
 
         if (isset($result['latest_version'])) {
@@ -81,7 +81,7 @@ class UpdateController
         }
 
         if ($response === false || $response === null) {
-            error_log('checkStableChannel: GitHub API unreachable for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
+            \App\Core\Logger::error('checkStableChannel: GitHub API unreachable for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
             return ['error' => 'Could not reach GitHub API. Check container DNS (try docker exec turtle-app-1 getent hosts api.github.com).'];
         }
 
@@ -133,7 +133,7 @@ class UpdateController
 
         if ($fetchExitCode !== 0) {
             $output = implode("\n", $fetchOutput);
-            error_log("checkDevChannel: git fetch failed (exit {$fetchExitCode}): {$output}");
+            \App\Core\Logger::error("checkDevChannel: git fetch failed (exit {$fetchExitCode}): {$output}");
             // Fall back to GitHub API
             return $this->checkDevViaApi($currentVersion);
         }
@@ -142,7 +142,7 @@ class UpdateController
 
         if ($countExitCode !== 0) {
             $countOut = implode("\n", $countOutput);
-            error_log("checkDevChannel: git rev-list failed (exit {$countExitCode}): {$countOut}");
+            \App\Core\Logger::error("checkDevChannel: git rev-list failed (exit {$countExitCode}): {$countOut}");
             return $this->checkDevViaApi($currentVersion);
         }
 
@@ -193,13 +193,13 @@ class UpdateController
         }
 
         if ($response === false || $response === null) {
-            error_log('checkDevViaApi: GitHub API unreachable after git fetch failed for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
+            \App\Core\Logger::error('checkDevViaApi: GitHub API unreachable after git fetch failed for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
             return ['error' => 'Cannot reach GitHub. Check container network access (docker exec turtle-app-1 getent hosts api.github.com).', 'latest_version' => $currentVersion, 'update_available' => false];
         }
 
         $data = json_decode($response, true);
         if (!$data || !isset($data['sha'])) {
-            error_log('checkDevViaApi: invalid GitHub API response');
+            \App\Core\Logger::error('checkDevViaApi: invalid GitHub API response');
             return ['error' => 'Invalid response from GitHub API.', 'latest_version' => $currentVersion, 'update_available' => false];
         }
 
@@ -274,7 +274,7 @@ class UpdateController
         try {
             \App\Core\Telemetry::flagPostUpdatePing();
         } catch (\Throwable $e) {
-            error_log('Telemetry flag (pre-update) failed: ' . $e->getMessage());
+            \App\Core\Logger::error('Telemetry flag (pre-update) failed: ' . $e->getMessage());
         }
 
         exec("nohup {$escapedScript} > {$escapedLogFile} 2>&1 & echo $!", $pidOutput);
@@ -368,7 +368,7 @@ class UpdateController
                 try {
                     \App\Core\Telemetry::maybeSend(true);
                 } catch (\Throwable $e) {
-                    error_log('Telemetry hook (post-update) failed: ' . $e->getMessage());
+                    \App\Core\Logger::error('Telemetry hook (post-update) failed: ' . $e->getMessage());
                 }
             }
 
@@ -427,7 +427,7 @@ class UpdateController
             $release = json_decode($response, true);
             return isset($release['tag_name']) ? ltrim($release['tag_name'], 'v') : null;
         } catch (\Throwable $e) {
-            error_log('Update check failed: ' . $e->getMessage());
+            \App\Core\Logger::error('Update check failed: ' . $e->getMessage());
             return null;
         }
     }

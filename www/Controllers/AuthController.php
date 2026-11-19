@@ -48,7 +48,7 @@ class AuthController
             log_activity('auth.login', "User '{$_POST['email']}' logged in");
             redirect('/home');
         } catch (\Throwable $e) {
-            error_log('AuthController::loginPost: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            \App\Core\Logger::error('AuthController::loginPost: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             throw $e;
         }
     }

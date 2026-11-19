@@ -572,7 +572,7 @@ class StaffController
             Database::commit();
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('archiveWithResolution failed: ' . $e->getMessage());
+            \App\Core\Logger::error('archiveWithResolution failed: ' . $e->getMessage());
             flash('error', __('Could not archive this staff member. No changes were made.'));
             redirect('/staff/' . $id);
             return;
@@ -644,7 +644,7 @@ class StaffController
             Database::commit();
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('hardDelete failed: ' . $e->getMessage());
+            \App\Core\Logger::error('hardDelete failed: ' . $e->getMessage());
             flash('error', 'Could not permanently delete this staff member. No changes were made.');
             redirect('/staff');
             return;

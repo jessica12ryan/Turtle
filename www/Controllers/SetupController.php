@@ -59,7 +59,7 @@ class SetupController
                 redirect('/setup');
             }
         } catch (\Throwable $e) {
-            error_log('SetupController::store (validation): ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            \App\Core\Logger::error('SetupController::store (validation): ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             throw $e;
         }
 
@@ -106,7 +106,7 @@ class SetupController
                             try {
                                 $pdo->exec($stmt);
                             } catch (\Throwable $e) {
-                                error_log('Seed data exec failed: ' . $e->getMessage());
+                                \App\Core\Logger::error('Seed data exec failed: ' . $e->getMessage());
                             }
                         }
                     }
@@ -200,7 +200,7 @@ class SetupController
             Auth::instance()->login($_POST['email'], $_POST['password']);
             redirect('/home');
         } catch (\Throwable $e) {
-            error_log('SetupController::store (execution): ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            \App\Core\Logger::error('SetupController::store (execution): ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             throw $e; // Let the global handler render the 500 page
         }
     }
@@ -274,14 +274,14 @@ class SetupController
                     try {
                         $pdo->exec($stmt);
                     } catch (\Throwable $e) {
-                        error_log('Restore SQL exec failed: ' . $e->getMessage());
+                        \App\Core\Logger::error('Restore SQL exec failed: ' . $e->getMessage());
                     }
                 }
             }
         } catch (\Throwable $e) {
             $zip->close();
             unlink($destPath);
-            error_log('Setup restore error: ' . $e->getMessage());
+            \App\Core\Logger::error('Setup restore error: ' . $e->getMessage());
             flash('error', __('Database restore failed.') . ' ' . $e->getMessage());
             redirect('/setup');
         }

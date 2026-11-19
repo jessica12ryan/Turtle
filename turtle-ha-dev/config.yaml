@@ -26,6 +26,11 @@ options:
   mail_username: ""
   mail_password: ""
   mail_from_address: "noreply@turtle.local"
+  mail_auth_mode: ""
+  mail_oauth_client_id: ""
+  mail_oauth_client_secret: ""
+  mail_oauth_refresh_token: ""
+  mail_oauth_email: ""
   mailpit_port: 1025
   mailpit_ui_port: 8025
 schema:
@@ -36,6 +41,11 @@ schema:
   mail_username: str?
   mail_password: str?
   mail_from_address: str
+  mail_auth_mode: str?
+  mail_oauth_client_id: str?
+  mail_oauth_client_secret: str?
+  mail_oauth_refresh_token: str?
+  mail_oauth_email: str?
   mailpit_port: int
   mailpit_ui_port: int?
 apparmor: true

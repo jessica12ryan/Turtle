@@ -68,7 +68,7 @@ class ApplicationController
 
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json === false) {
-                error_log('Application submission failed: json_encode error: ' . (json_last_error_msg()));
+                \App\Core\Logger::error('Application submission failed: json_encode error: ' . (json_last_error_msg()));
             flash('error', 'Submission failed: ' . json_last_error_msg());
                 redirect('/applications/create');
                 return;
@@ -83,7 +83,7 @@ class ApplicationController
             flash('success', __('Your application has been submitted successfully. We will be in touch.'));
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
-            error_log('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            \App\Core\Logger::error('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             flash('error', 'Submission failed. Please try again.');
             redirect('/applications/create');
         }
@@ -132,7 +132,7 @@ class ApplicationController
                 $params
             );
         } catch (\Throwable $e) {
-            error_log('ApplicationController@index: ' . $e->getMessage());
+            \App\Core\Logger::error('ApplicationController@index: ' . $e->getMessage());
             $applications = [];
         }
 
@@ -174,7 +174,7 @@ class ApplicationController
                 $params
             );
         } catch (\Throwable $e) {
-            error_log('ApplicationController@show: ' . $e->getMessage());
+            \App\Core\Logger::error('ApplicationController@show: ' . $e->getMessage());
             http_response_code(500);
             require base_path('www/Views/errors/500.php');
             return;
@@ -493,7 +493,7 @@ class ApplicationController
             redirect('/tenants');
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('Application conversion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
+            \App\Core\Logger::error('Application conversion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
             flash('error', 'Failed to create tenant: ' . $e->getMessage());
             $_SESSION['_old'] = $_POST;
             $_SESSION['_old_app_id'] = $id;
@@ -734,11 +734,11 @@ class ApplicationController
                     $created = true;
                     break;
                 } catch (\Throwable $e2) {
-                    error_log('ensureTable attempt failed: ' . $e2->getMessage());
+                    \App\Core\Logger::error('ensureTable attempt failed: ' . $e2->getMessage());
                 }
             }
             if (!$created) {
-                error_log('ensureTable: all CREATE TABLE attempts failed');
+                \App\Core\Logger::error('ensureTable: all CREATE TABLE attempts failed');
                 return;
             }
         }

@@ -131,7 +131,15 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="mb-4">
+            <label for="mail_auth_mode" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Authentication Method') ?></label>
+            <select id="mail_auth_mode" name="mail_auth_mode" onchange="toggleMailAuth()" class="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                <option value="password" <?= ($mail['mail_auth_mode'] ?? 'password') === 'password' ? 'selected' : '' ?>><?= __('Password') ?></option>
+                <option value="oauth2" <?= ($mail['mail_auth_mode'] ?? '') === 'oauth2' ? 'selected' : '' ?>><?= __('OAuth2 (Google)') ?></option>
+            </select>
+        </div>
+
+        <div id="mail-password-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Username') ?></label>
                 <input type="text" name="mail_username" value="<?= h($mail['mail_username'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
@@ -139,6 +147,39 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('SMTP Password') ?></label>
                 <input type="password" name="mail_password" value="<?= h($mail['mail_password'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+            </div>
+        </div>
+
+        <div id="mail-oauth-fields" class="mb-4">
+            <p class="text-xs text-gray-500 mb-3"><?= __('Create a Google Cloud OAuth client with the Gmail API scope, then add the redirect URI below to it.') ?></p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Google Client ID') ?></label>
+                    <input type="text" name="mail_oauth_client_id" value="<?= h($mail['mail_oauth_client_id'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Google Client Secret') ?></label>
+                    <input type="password" name="mail_oauth_client_secret" value="<?= h($mail['mail_oauth_client_secret'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Gmail Address') ?></label>
+                    <input type="email" name="mail_oauth_email" value="<?= h($mail['mail_oauth_email'] ?? '') ?>" placeholder="you@gmail.com" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Refresh Token (optional)') ?></label>
+                    <input type="password" name="mail_oauth_refresh_token" value="<?= h($mail['mail_oauth_refresh_token'] ?? '') ?>" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                    <p class="text-xs text-gray-400 mt-1"><?= __('Paste a token generated outside Turtle instead of using the Connect button.') ?></p>
+                </div>
+            </div>
+            <div class="mt-3 p-3 bg-gray-50 rounded-lg">
+                <p class="text-xs font-medium text-gray-500 mb-1"><?= __('Redirect URI') ?></p>
+                <code class="text-xs text-gray-700 break-all"><?= h($mailOauthRedirectUri) ?></code>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mt-3">
+                <a href="/oauth/google/connect" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 font-medium text-sm"><?= __('Connect with Google') ?></a>
+                <?php if ($mailOauthConnected): ?>
+                    <span class="text-sm text-green-700 font-medium"><?= __('Gmail OAuth2 is connected.') ?></span>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -159,9 +200,23 @@
         </div>
         <div id="mail-test-result" class="mt-3 hidden"></div>
     </form>
+
+    <?php if ($mailOauthConnected): ?>
+        <form method="POST" action="/oauth/google/disconnect" class="mt-4 border-t pt-4">
+            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+            <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium text-sm"><?= __('Disconnect Google') ?></button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <script>
+function toggleMailAuth() {
+    var mode = document.getElementById('mail_auth_mode').value;
+    document.getElementById('mail-password-fields').classList.toggle('hidden', mode !== 'password');
+    document.getElementById('mail-oauth-fields').classList.toggle('hidden', mode !== 'oauth2');
+}
+toggleMailAuth();
+
 function testMail() {
     const btn = event.target;
     const result = document.getElementById('mail-test-result');

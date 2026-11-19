@@ -1,12 +1,16 @@
 <?php
 
+// Safe defaults until the configured log level is loaded below.
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 
-// Global error/exception handler to log everything
+require_once __DIR__ . '/autoload.php';
+require_once __DIR__ . '/functions.php';
+
+// Global error/exception handlers honour the configured level.
 set_exception_handler(function (\Throwable $e) {
-    error_log('FATAL: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+    \App\Core\Logger::error('FATAL: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
     http_response_code(500);
     if (file_exists(__DIR__ . '/Views/errors/500.php')) {
         require __DIR__ . '/Views/errors/500.php';
@@ -16,14 +20,21 @@ set_exception_handler(function (\Throwable $e) {
     exit;
 });
 set_error_handler(function ($severity, $message, $file, $line) {
-    error_log("PHP Error [{$severity}]: {$message} in {$file}:{$line}");
-    return false;
+    // error_reporting() reflects both the configured level and @ suppression.
+    if ((error_reporting() & $severity) === 0) {
+        return true;
+    }
+    \App\Core\Logger::log(
+        \App\Core\Logger::levelForPhpSeverity($severity),
+        "PHP Error [{$severity}]: {$message} in {$file}:{$line}"
+    );
+    return true; // Handled here so PHP does not log the same error twice.
 });
 
-require_once __DIR__ . '/autoload.php';
-require_once __DIR__ . '/functions.php';
-
 loadEnvFile(__DIR__ . '/../.env');
+
+// Apply Settings -> Logging before handling any requests.
+\App\Core\Logger::apply();
 
 // HA ingress support: prepend ingress path to all absolute URLs in output
 $ingressPath = $_SERVER['HTTP_X_FORWARDED_PREFIX'] ?? $_SERVER['HTTP_X_INGRESS_PATH'] ?? '';
@@ -163,7 +174,7 @@ try {
         }
     }
 } catch (\Throwable $e) {
-    error_log('Scheduled move-out check failed: ' . $e->getMessage());
+    \App\Core\Logger::error('Scheduled move-out check failed: ' . $e->getMessage());
 }
 
 // Boot check: redirect to setup if no admin or landlord user exists
@@ -187,7 +198,7 @@ if (!$needsSetup) {
     try {
         \App\Core\Telemetry::maybeSend();
     } catch (\Throwable $e) {
-        error_log('Telemetry hook failed: ' . $e->getMessage());
+        \App\Core\Logger::error('Telemetry hook failed: ' . $e->getMessage());
     }
 }
 
@@ -353,6 +364,11 @@ $router->post('/settings/reset', 'SettingsController@reset', ['auth', 'role:admi
 $router->post('/settings/general', 'SettingsController@saveGeneral', ['auth', 'role:admin']);
 $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:admin']);
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
+
+// Gmail OAuth2 (XOAUTH2) for SMTP
+$router->get('/oauth/google/connect', 'OAuthController@googleConnect', ['auth', 'role:admin']);
+$router->get('/oauth/google/callback', 'OAuthController@googleCallback', ['auth', 'role:admin']);
+$router->post('/oauth/google/disconnect', 'OAuthController@googleDisconnect', ['auth', 'role:admin']);
 $router->post('/settings/update-channel', 'SettingsController@setUpdateChannel', ['auth', 'role:admin']);
 $router->post('/settings/telemetry', 'SettingsController@saveTelemetry', ['auth', 'role:admin']);
 $router->post('/settings/permissions', 'SettingsController@savePermissions', ['auth', 'role:admin']);
@@ -381,7 +397,7 @@ try {
     $uri = $_SERVER['REQUEST_URI'];
     $router->dispatch($method, $uri);
 } catch (\Throwable $e) {
-    error_log('Route dispatch failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+    \App\Core\Logger::error('Route dispatch failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
     http_response_code(500);
     require base_path('www/Views/errors/500.php');
 }

@@ -280,7 +280,7 @@ class LeaseController
             redirect('/leases/' . $leaseId);
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('Document upload failed: ' . $e->getMessage());
+            \App\Core\Logger::error('Document upload failed: ' . $e->getMessage());
             $_SESSION['_errors'] = ['documents' => [$e->getMessage()]];
             $_SESSION['_old'] = $_POST;
             redirect('/leases/create');

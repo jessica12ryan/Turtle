@@ -112,7 +112,7 @@ class Telemetry
                     "INSERT INTO settings (`key`, `value`) VALUES ('telemetry_install_id', ?) ON DUPLICATE KEY UPDATE `value` = ?",
                     [$uuid, $uuid]
                 );
-                error_log('Telemetry install_id regenerated (previous value had invalid format).');
+                \App\Core\Logger::error('Telemetry install_id regenerated (previous value had invalid format).');
             } else {
                 // First-run path: keep first-writer on concurrent boots.
                 Database::execute(
@@ -606,11 +606,11 @@ class Telemetry
 
             // Log at most a one-liner; never include key, install_id, or payload
             if (is_array($result)) {
-                error_log('Telemetry capture failed: HTTP ' . ($result['http_code'] ?? '?'));
+                \App\Core\Logger::error('Telemetry capture failed: HTTP ' . ($result['http_code'] ?? '?'));
             }
             return false;
         } catch (\Throwable $e) {
-            error_log('Telemetry maybeSend failed: ' . $e->getMessage());
+            \App\Core\Logger::error('Telemetry maybeSend failed: ' . $e->getMessage());
             return false;
         }
     }

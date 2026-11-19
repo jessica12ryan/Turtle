@@ -704,7 +704,7 @@ class TicketController
             Database::commit();
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('ticket restore failed: ' . $e->getMessage());
+            \App\Core\Logger::error('ticket restore failed: ' . $e->getMessage());
             flash('error', __('Could not restore this ticket. No changes were made.'));
             redirect('/tickets?show_archived=1');
             return;

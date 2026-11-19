@@ -31,20 +31,20 @@ class ResourceController
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             } catch (\Throwable $e2) {
                 $this->tableCreateError = $e2->getMessage();
-                error_log('ResourceController ensureTableExists failed: ' . $e2->getMessage());
+                \App\Core\Logger::error('ResourceController ensureTableExists failed: ' . $e2->getMessage());
                 return;
             }
 
             try {
                 $pdo->exec("ALTER TABLE resources ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT 'general' AFTER description");
             } catch (\Throwable $e3) {
-                error_log('ResourceController ensureTableExists type column: ' . $e3->getMessage());
+                \App\Core\Logger::error('ResourceController ensureTableExists type column: ' . $e3->getMessage());
             }
 
             try {
                 $pdo->exec("ALTER TABLE resources ADD CONSTRAINT fk_resources_created_by FOREIGN KEY (created_by) REFERENCES users(id)");
             } catch (\Throwable $e4) {
-                error_log('ResourceController ensureTableExists FK failed: ' . $e4->getMessage());
+                \App\Core\Logger::error('ResourceController ensureTableExists FK failed: ' . $e4->getMessage());
             }
         }
     }
@@ -56,7 +56,7 @@ class ResourceController
             $generalLinks = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by WHERE r.type = 'general' ORDER BY r.title");
             $staffLinks = Database::fetchAll("SELECT r.*, u.name as created_by_name FROM resources r JOIN users u ON u.id = r.created_by WHERE r.type = 'staff' ORDER BY r.title");
         } catch (\Throwable $e) {
-            error_log('ResourceController@index query failed: ' . $e->getMessage());
+            \App\Core\Logger::error('ResourceController@index query failed: ' . $e->getMessage());
             $generalLinks = [];
             $staffLinks = [];
         }
@@ -121,7 +121,7 @@ class ResourceController
                 [$_POST['title'], $url, $_POST['description'] ?? '', $type, $userId]
             );
         } catch (\Throwable $e) {
-            error_log('ResourceController@store insert failed: ' . $e->getMessage());
+            \App\Core\Logger::error('ResourceController@store insert failed: ' . $e->getMessage());
             $msg = 'Failed to add resource: ' . $e->getMessage();
             if ($this->tableCreateError) {
                 $msg .= ' | Table creation error: ' . $this->tableCreateError;
@@ -183,7 +183,7 @@ class ResourceController
                 [$_POST['title'], $url, $_POST['description'] ?? '', $type, $id]
             );
         } catch (\Throwable $e) {
-            error_log('ResourceController@update failed: ' . $e->getMessage());
+            \App\Core\Logger::error('ResourceController@update failed: ' . $e->getMessage());
             flash('error', 'Failed to update resource: ' . $e->getMessage());
             $_SESSION['_old'] = $_POST;
             redirect('/resources/' . $id . '/edit');

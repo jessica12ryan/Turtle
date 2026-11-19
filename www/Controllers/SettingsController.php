@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Database;
+use App\Core\LogReader;
 use App\Core\View;
 
 class SettingsController
@@ -18,7 +19,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'timezone', 'ntp_server', 'site_name', 'site_url', 'logo_path', 'default_country', 'default_language', 'openai_api_key'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_auth_mode', 'mail_oauth_client_id', 'mail_oauth_client_secret', 'mail_oauth_refresh_token', 'mail_oauth_email', 'timezone', 'ntp_server', 'site_name', 'site_url', 'logo_path', 'default_country', 'default_language', 'openai_api_key'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -34,6 +35,11 @@ class SettingsController
             $data['timezones'] = \DateTimeZone::listIdentifiers();
             $data['selectedTz'] = $tz;
             $data['siteName'] = $data['mail']['site_name'] ?: 'Turtle';
+            if (($data['mail']['mail_auth_mode'] ?? '') === '' && !empty($data['mail']['mail_oauth_refresh_token'])) {
+                $data['mail']['mail_auth_mode'] = 'oauth2';
+            }
+            $data['mailOauthRedirectUri'] = \App\Core\GoogleOAuth::redirectUri();
+            $data['mailOauthConnected'] = ($data['mail']['mail_oauth_refresh_token'] ?? '') !== '';
 
             $tzByCountry = [];
             foreach (['CA', 'US'] as $c) {
@@ -79,7 +85,7 @@ class SettingsController
                         PRIMARY KEY (event, role)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
                 } catch (\Throwable $e2) {
-                    error_log('Failed to create notification_events table: ' . $e2->getMessage());
+                    \App\Core\Logger::error('Failed to create notification_events table: ' . $e2->getMessage());
                 }
             }
             $rows = Database::fetchAll("SELECT event, role FROM notification_events ORDER BY event, role", []);
@@ -102,7 +108,7 @@ class SettingsController
                         PRIMARY KEY (event, role)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
                 } catch (\Throwable $e2) {
-                    error_log('Failed to create inapp_notification_events table: ' . $e2->getMessage());
+                    \App\Core\Logger::error('Failed to create inapp_notification_events table: ' . $e2->getMessage());
                 }
             }
             $rows = Database::fetchAll("SELECT event, role FROM inapp_notification_events ORDER BY event, role", []);
@@ -173,54 +179,21 @@ class SettingsController
                 "SELECT DISTINCT action FROM activity_logs ORDER BY action"
             );
 
-            // PHP error log
-            $phpLogPath = ini_get('error_log') ?: '';
-            if ($phpLogPath === '' || !file_exists($phpLogPath)) {
-                // HA add-on: PHP errors go to Apache stderr → /data/logs/apache_error.log
-                $haApacheError = '/data/logs/apache_error.log';
-                if (file_exists($haApacheError)) {
-                    $phpLogPath = $haApacheError;
-                }
-            }
-            if ($phpLogPath === '' || !file_exists($phpLogPath)) {
-                $phpLogPath = '/var/log/php_errors.log';
-            }
-            $data['phpLog'] = [];
-            if (file_exists($phpLogPath) && is_readable($phpLogPath)) {
-                $lines = file($phpLogPath);
-                $data['phpLog'] = array_slice($lines, -100);
-            }
-            $data['phpLogPath'] = $phpLogPath;
+            // PHP, Apache and MySQL/MariaDB logs. Discovery is centralised in
+            // LogReader so the page and the download endpoints see the same files.
+            $phpCandidates = LogReader::phpCandidates();
+            $phpEntries = LogReader::read($phpCandidates);
+            $data['phpLog'] = $phpEntries[0]['lines'] ?? [];
+            $data['phpLogPath'] = LogReader::primaryPath($phpCandidates);
 
-            // Apache logs
-            $apachePaths = [
-                '/var/log/apache2/access.log',
-                '/var/log/apache2/error.log',
-                '/var/log/httpd/access_log',
-                '/var/log/httpd/error_log',
-                '/data/logs/apache_error.log',
-                '/data/logs/apache_access.log',
-            ];
             $data['apacheLogs'] = [];
-            foreach ($apachePaths as $ap) {
-                if (file_exists($ap) && is_readable($ap)) {
-                    $lines = file($ap);
-                    $data['apacheLogs'][basename($ap)] = array_slice($lines, -100);
-                }
+            foreach (LogReader::read(LogReader::apacheCandidates()) as $entry) {
+                $data['apacheLogs'][$entry['name']] = $entry['lines'];
             }
 
-            // MySQL logs
-            $mysqlLogPaths = [
-                '/var/log/mysql/error.log',
-                '/var/log/mysql/mysql.log',
-                '/var/log/mariadb/mariadb.log',
-            ];
             $data['mysqlLogs'] = [];
-            foreach ($mysqlLogPaths as $mp) {
-                if (file_exists($mp) && is_readable($mp)) {
-                    $lines = file($mp);
-                    $data['mysqlLogs'][basename($mp)] = array_slice($lines, -100);
-                }
+            foreach (LogReader::read(LogReader::mysqlCandidates()) as $entry) {
+                $data['mysqlLogs'][$entry['name']] = $entry['lines'];
             }
         }
 
@@ -422,6 +395,11 @@ class SettingsController
             'mail_password' => 'max:255',
             'mail_from_address' => 'required|max:255',
             'mail_from_name' => 'required|max:255',
+            'mail_auth_mode' => 'in:password,oauth2',
+            'mail_oauth_client_id' => 'max:255',
+            'mail_oauth_client_secret' => 'max:255',
+            'mail_oauth_refresh_token' => 'max:2048',
+            'mail_oauth_email' => 'max:255',
         ];
 
         $validator = new \App\Core\Validator();
@@ -431,13 +409,46 @@ class SettingsController
             redirect('/settings?tab=general');
         }
 
-        $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+        $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_auth_mode', 'mail_oauth_client_id', 'mail_oauth_email'];
         foreach ($keys as $key) {
             $value = $_POST[$key] ?? '';
             Database::execute(
                 "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
                 [$key, $value, $value]
             );
+        }
+
+        // Never blank out stored OAuth secrets when the form is saved without
+        // retyping them — only overwrite when a new value was actually entered.
+        $newRefreshToken = trim((string)($_POST['mail_oauth_refresh_token'] ?? ''));
+        foreach (['mail_oauth_client_secret', 'mail_oauth_refresh_token'] as $key) {
+            $value = trim((string)($_POST[$key] ?? ''));
+            if ($value === '') {
+                continue;
+            }
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$key, $value, $value]
+            );
+        }
+
+        if (($_POST['mail_auth_mode'] ?? '') === 'oauth2'
+            && trim((string)($_POST['mail_oauth_email'] ?? '')) === ''
+            && !empty(trim((string)($_POST['mail_username'] ?? '')))) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('mail_oauth_email', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$_POST['mail_username'], $_POST['mail_username']]
+            );
+        }
+
+        if ($newRefreshToken !== '') {
+            // A new refresh token makes any cached access token stale.
+            foreach (['mail_oauth_access_token', 'mail_oauth_expires_at'] as $key) {
+                Database::execute(
+                    "INSERT INTO settings (`key`, `value`) VALUES (?, '') ON DUPLICATE KEY UPDATE `value` = ''",
+                    [$key]
+                );
+            }
         }
 
         log_activity('settings.mail_saved', 'Mail settings saved');
@@ -623,7 +634,7 @@ class SettingsController
             log_activity('settings.telemetry_saved', 'Telemetry ' . ($enabled ? 'enabled' : 'disabled'));
             flash('success', $enabled ? 'Anonymous system stats sharing enabled.' : 'Anonymous system stats sharing disabled. No further stats will be sent.');
         } catch (\Throwable $e) {
-            error_log('saveTelemetry failed: ' . $e->getMessage());
+            \App\Core\Logger::error('saveTelemetry failed: ' . $e->getMessage());
             flash('error', 'Could not save telemetry preference.');
         }
         redirect('/settings?tab=updates');
@@ -839,52 +850,17 @@ class SettingsController
                 break;
 
             case 'php':
-                $logPath = ini_get('error_log') ?: '';
-                if ($logPath === '' || !file_exists($logPath)) {
-                    $haApacheError = '/data/logs/apache_error.log';
-                    if (file_exists($haApacheError)) {
-                        $logPath = $haApacheError;
-                    }
-                }
-                if ($logPath === '' || !file_exists($logPath)) {
-                    $logPath = '/var/log/php_errors.log';
-                }
-                if (file_exists($logPath) && is_readable($logPath)) {
-                    $content = file_get_contents($logPath);
-                }
+                $content = LogReader::contents(LogReader::phpCandidates());
                 $filename = 'php-error.log';
                 break;
 
             case 'apache':
-                $paths = [
-                    '/var/log/apache2/access.log',
-                    '/var/log/apache2/error.log',
-                    '/var/log/httpd/access_log',
-                    '/var/log/httpd/error_log',
-                    '/data/logs/apache_error.log',
-                    '/data/logs/apache_access.log',
-                ];
-                foreach ($paths as $p) {
-                    if (file_exists($p) && is_readable($p)) {
-                        $content .= "=== $p ===\n\n";
-                        $content .= file_get_contents($p) . "\n\n";
-                    }
-                }
+                $content = LogReader::contents(LogReader::apacheCandidates());
                 $filename = 'apache-logs.txt';
                 break;
 
             case 'mysql':
-                $paths = [
-                    '/var/log/mysql/error.log',
-                    '/var/log/mysql/mysql.log',
-                    '/var/log/mariadb/mariadb.log',
-                ];
-                foreach ($paths as $p) {
-                    if (file_exists($p) && is_readable($p)) {
-                        $content .= "=== $p ===\n\n";
-                        $content .= file_get_contents($p) . "\n\n";
-                    }
-                }
+                $content = LogReader::contents(LogReader::mysqlCandidates());
                 $filename = 'mysql-logs.txt';
                 break;
 
@@ -953,7 +929,7 @@ class SettingsController
             // Create temp dir
             $tmpDir = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8));
             if (!mkdir($tmpDir, 0755, true) && !is_dir($tmpDir)) {
-                error_log('exportBackup: Failed to create temp dir');
+                \App\Core\Logger::error('exportBackup: Failed to create temp dir');
                 flash('error', 'Failed to create temporary directory.');
                 redirect('/settings?tab=backup');
             }
@@ -1044,7 +1020,7 @@ class SettingsController
             log_activity('settings.backup_created', 'Full backup downloaded');
             exit;
         } catch (\Throwable $e) {
-            error_log('exportBackup failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            \App\Core\Logger::error('exportBackup failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             if (isset($tmpDir) && is_dir($tmpDir)) self::_rrmdir($tmpDir);
             if (isset($zipFile) && file_exists($zipFile)) unlink($zipFile);
             flash('error', 'Backup failed. Please check the error logs for details.');

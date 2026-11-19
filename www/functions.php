@@ -13,7 +13,7 @@ function log_activity(string $action, string $description = ''): void
             [$userId, $userName, $action, $description, $_SERVER['REMOTE_ADDR'] ?? '']
         );
     } catch (\Throwable $e) {
-        error_log('Failed to log activity: ' . $e->getMessage());
+        \App\Core\Logger::error('Failed to log activity: ' . $e->getMessage());
     }
 }
 
@@ -236,7 +236,7 @@ function httpGet(string $url, int $timeout = 5): ?string
             return $body;
         }
         if ($body === false || $httpCode < 200 || $httpCode >= 400) {
-            error_log("httpGet failed for {$url}: HTTP {$httpCode} " . ($curlError ?: ''));
+            \App\Core\Logger::error("httpGet failed for {$url}: HTTP {$httpCode} " . ($curlError ?: ''));
         }
         return null;
     }
@@ -836,7 +836,7 @@ function notifyInApp(int $userId, string $event, string $data, ?string $type = n
         );
         log_activity('notifications.sent', "In-app notification '{$event}' sent to user #{$userId}");
     } catch (\Throwable $e) {
-        error_log('In-app notification failed: ' . $e->getMessage());
+        \App\Core\Logger::error('In-app notification failed: ' . $e->getMessage());
     }
 }
 
@@ -849,7 +849,7 @@ function notifyInAppRoles(string $event, string $data, ?int $excludeUserId = nul
             notifyInApp((int)$user['id'], $event, $data);
         }
     } catch (\Throwable $e) {
-        error_log('In-app role notification failed: ' . $e->getMessage());
+        \App\Core\Logger::error('In-app role notification failed: ' . $e->getMessage());
     }
 }
 

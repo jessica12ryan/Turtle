@@ -563,7 +563,7 @@ class TenantController
             redirect('/tenants');
         } catch (\Throwable $e) {
             Database::rollback();
-            error_log('Tenant deletion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            \App\Core\Logger::error('Tenant deletion failed: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             flash('error', 'Failed to delete tenant. Please try again.');
             redirect('/tenants');
         }

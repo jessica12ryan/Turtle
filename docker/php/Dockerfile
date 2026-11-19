@@ -33,6 +33,15 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
     && sed -ri -e 's!AllowOverride None!AllowOverride All!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
+# The php:apache image symlinks its logs to /dev/stdout and /dev/stderr, so
+# Settings -> Logging can never read them. Point the vhost at real files in the
+# bind-mounted repo instead (done after the rewrites above so this path stays
+# intact). stdout still receives other Apache output.
+RUN sed -ri \
+        -e 's!^([[:space:]]*)ErrorLog[[:space:]].*!\1ErrorLog /var/www/html/storage/logs/apache_error.log!' \
+        -e 's!^([[:space:]]*)CustomLog[[:space:]].*!\1CustomLog /var/www/html/storage/logs/apache_access.log combined!' \
+        /etc/apache2/sites-available/*.conf
+
 COPY start.sh /usr/local/bin/turtle-start.sh
 RUN chmod +x /usr/local/bin/turtle-start.sh
 

@@ -16,7 +16,7 @@
                     <option value="warning" <?= ($logLevel ?? '') === 'warning' ? 'selected' : '' ?>><?= __('Warning') ?></option>
                     <option value="error" <?= ($logLevel ?? '') === 'error' ? 'selected' : '' ?>><?= __('Error') ?></option>
                 </select>
-                <p class="text-xs text-gray-500 mt-1"><?= __('Determines the minimum severity level to log.') ?></p>
+                <p class="text-xs text-gray-500 mt-1"><?= __('Determines the minimum severity level to log. Errors are always recorded.') ?></p>
             </div>
 
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Save') ?></button>
@@ -170,7 +170,7 @@
         </div>
 
         <?php if (empty($apacheLogs)): ?>
-            <p class="text-sm text-gray-500"><?= __('No Apache logs found. In Docker, Apache logs are typically streamed to stdout/stderr.') ?></p>
+            <p class="text-sm text-gray-500"><?= __('No Apache logs found. Logs are read from storage/logs/ and the system log directories.') ?></p>
         <?php else: ?>
             <?php foreach ($apacheLogs as $name => $lines): ?>
                 <div class="mb-4">
@@ -192,7 +192,7 @@
         </div>
 
         <?php if (empty($mysqlLogs)): ?>
-            <p class="text-sm text-gray-500"><?= __('No MySQL log files found. MySQL logs may need to be enabled in the MySQL configuration.') ?></p>
+            <p class="text-sm text-gray-500"><?= __('No MySQL log files found. Check the MySQL/MariaDB error log configuration.') ?></p>
         <?php else: ?>
             <?php foreach ($mysqlLogs as $name => $lines): ?>
                 <div class="mb-4">

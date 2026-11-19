@@ -65,6 +65,15 @@ Configured via **Settings → General** (SMTP) and **Settings → Notifications*
 - **HA add-on**: Mailpit bundled in-container, configurable port
 - **Custom SMTP**: Set in Settings UI or `.env` file
 
+### Gmail OAuth2 (XOAUTH2)
+
+1. In Google Cloud Console, create an **OAuth client ID** (Web application) with the Gmail API scope `https://mail.google.com/`.
+2. Copy the exact **Redirect URI** shown in **Settings → General → Email (SMTP)** into the client's *Authorized redirect URIs*.
+3. Save the Client ID and Client Secret in Turtle, choose **OAuth2 (Google)** as the authentication method, and click **Connect with Google**.
+4. Set the SMTP host to `smtp.gmail.com`, port `587` (STARTTLS) or `465` (implicit TLS), and leave the password blank.
+
+Alternatively, paste a refresh token generated outside Turtle into the **Refresh Token** field. Tokens are stored in the settings table, so they persist in Docker and the HA add-on. The add-on also accepts `mail_auth_mode`, `mail_oauth_client_id`, `mail_oauth_client_secret`, `mail_oauth_refresh_token` and `mail_oauth_email` options.
+
 ## Localization
 
 - Languages: English, French, Spanish — configurable in Settings or per-user
