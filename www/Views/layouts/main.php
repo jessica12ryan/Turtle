@@ -144,7 +144,11 @@ $themePref = $themeUser['theme'] ?? 'system';
         .dark #tooltip-el.tooltip-bottom .tooltip-arrow { border-bottom-color: #e2e8f0; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen"
+      x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('turtle.sidebarCollapsed') === '1' }"
+      x-init="$watch('sidebarCollapsed', value => localStorage.setItem('turtle.sidebarCollapsed', value ? '1' : '0'))">
+    <?php require base_path('www/Views/partials/sidebar.php'); ?>
+    <div class="min-h-screen transition-all duration-200" :class="sidebarCollapsed ? 'md:pl-16' : 'md:pl-64'">
     <?php require base_path('www/Views/partials/nav.php'); ?>
     <main class="max-w-7xl mx-auto px-4 py-8">
         <?php if ($msg = flash('error')): ?>
@@ -167,6 +171,7 @@ $themePref = $themeUser['theme'] ?? 'system';
         <?php endif; ?>
         <?= $content ?>
     </main>
+    </div>
 <div id="tooltip-el" role="tooltip"><span class="tooltip-arrow"></span><span id="tooltip-text"></span></div>
 <?php if (messaging_enabled()): ?>
 <?php require base_path('www/Views/partials/messenger.php'); ?>
