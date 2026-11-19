@@ -75,6 +75,7 @@ return [
     'Connect with Google' => 'Conectar con Google',
     'Gmail OAuth2 is connected.' => 'Gmail OAuth2 está conectado.',
     'Disconnect Google' => 'Desconectar Google',
+    'No linked property' => 'Sin propiedad asociada',
     'Connection error:' => 'Error de conexión:',
     'Country' => 'País',
     'Create Administrator Account' => 'Crear Cuenta de Administrador',

@@ -70,16 +70,16 @@ class TenantController
         $user = Auth::instance()->user();
         $showArchived = !empty($_GET['show_archived']);
         $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
-        $orderBy = $showArchived ? 'ORDER BY u.archived_at IS NULL DESC, u.name' : 'ORDER BY u.name';
+        $orderBy = $showArchived ? 'ORDER BY u.archived_at IS NULL ASC, u.name' : 'ORDER BY u.name';
 
         if ($user['role'] === 'admin') {
             $tenants = Database::fetchAll(
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
                  p.name as property_name, p.id as property_id 
                  FROM users u 
-                 JOIN property_tenant pt ON pt.tenant_id = u.id 
-                 JOIN properties p ON p.id = pt.property_id 
-                 WHERE 1=1{$archivedClause}
+                 LEFT JOIN property_tenant pt ON pt.tenant_id = u.id 
+                 LEFT JOIN properties p ON p.id = pt.property_id 
+                 WHERE u.role = 'tenant'{$archivedClause}
                  {$orderBy}"
             );
         } else {
@@ -96,9 +96,9 @@ class TenantController
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
                  p.name as property_name, p.id as property_id 
                  FROM users u 
-                 JOIN property_tenant pt ON pt.tenant_id = u.id 
-                 JOIN properties p ON p.id = pt.property_id 
-                 WHERE p.company_id IN ({$companyIdList}){$archivedClause}{$pmClause}
+                 LEFT JOIN property_tenant pt ON pt.tenant_id = u.id 
+                 LEFT JOIN properties p ON p.id = pt.property_id 
+                 WHERE u.role = 'tenant' AND p.company_id IN ({$companyIdList}){$archivedClause}{$pmClause}
                  {$orderBy}",
                 $params
             );

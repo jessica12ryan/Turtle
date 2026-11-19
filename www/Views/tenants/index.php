@@ -38,7 +38,13 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($tenant['email']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($tenant['phone'] ?? '') ?></td>
-                        <td class="px-6 py-4 text-sm text-gray-600"><a href="/properties/<?= $tenant['property_id'] ?>" class="text-blue-600 hover:underline"><?= h($tenant['property_name']) ?></a></td>
+                        <td class="px-6 py-4 text-sm text-gray-600">
+                            <?php if ($tenant['property_id']): ?>
+                                <a href="/properties/<?= (int)$tenant['property_id'] ?>" class="text-blue-600 hover:underline"><?= h($tenant['property_name']) ?></a>
+                            <?php else: ?>
+                                <span class="text-gray-400 italic"><?= __('No linked property') ?></span>
+                            <?php endif; ?>
+                        </td>
                         <td class="px-6 py-4">
                             <?php if ($tenant['moved_out_at']): ?>
                                 <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded"><?= __('Moved Out') ?></span>
