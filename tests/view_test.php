@@ -1,14 +1,9 @@
 <?php
+
 // Minimal smoke test for the view renderer. Run with: php tests/view_test.php
 
 require_once __DIR__ . '/../www/autoload.php';
-
-if (!function_exists('base_path')) {
-    function base_path(string $path = ''): string
-    {
-        return dirname(__DIR__) . '/' . ltrim($path, '/');
-    }
-}
+require_once __DIR__ . '/bootstrap.php';
 
 $view = new \App\Core\View();
 ob_start();

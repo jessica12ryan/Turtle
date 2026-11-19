@@ -127,10 +127,10 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
             'property_manager_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
@@ -140,7 +140,8 @@ class PropertyController
             'province' => 'required|max:255',
             'postal_code' => 'required|max:20',
             'country' => 'required|max:2',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/properties/create');
@@ -170,7 +171,11 @@ class PropertyController
             "SELECT p.*, l.name as landlord_name, pm.name as property_manager_name FROM properties p JOIN users l ON l.id = p.landlord_id LEFT JOIN users pm ON pm.id = p.property_manager_id WHERE p.id = ?",
             [$id]
         );
-        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$property) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::property($id));
 
         try {
@@ -249,7 +254,11 @@ class PropertyController
     public function edit(int $id): void
     {
         $property = Database::fetch("SELECT * FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$property) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::property($id));
 
         $landlords = Database::fetchAll(
@@ -275,12 +284,12 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::property($id));
 
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'landlord_id' => 'required|exists:users,id',
             'property_manager_id' => 'required|exists:users,id',
             'name' => 'required|max:255',
@@ -290,7 +299,8 @@ class PropertyController
             'province' => 'required|max:255',
             'postal_code' => 'required|max:20',
             'country' => 'required|max:2',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/properties/' . $id . '/edit');
@@ -319,13 +329,11 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $property = Database::fetch("SELECT id, name, listed FROM properties WHERE id = ? AND archived_at IS NULL", [$id]);
         if (!$property) {
             flash('error', __('Property not found.'));
             redirect('/properties');
-            return;
         }
         Access::require(Access::property($id));
 
@@ -467,7 +475,6 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::property($id));
         $this->ensurePhotosTable();
@@ -482,7 +489,6 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::property($id));
         $this->ensurePhotosTable();
@@ -567,10 +573,13 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $property = Database::fetch("SELECT id, name, archived_batch FROM properties WHERE id = ?", [$id]);
-        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$property) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::property($id));
 
         $batch = $property['archived_batch'] ?? null;
@@ -647,10 +656,13 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
-        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$property) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::property($id));
 
         // Tag every row touched by this archive so a later restore can undo
@@ -695,10 +707,13 @@ class PropertyController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
-        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$property) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::property($id));
 
         try {
@@ -714,7 +729,6 @@ class PropertyController
             \App\Core\Logger::error('property hardDelete failed: ' . $e->getMessage());
             flash('error', __('Could not permanently delete this property. No changes were made.'));
             redirect('/properties?show_archived=1');
-            return;
         }
 
         log_activity('property.deleted', "Property '{$property['name']}' permanently deleted");

@@ -345,35 +345,34 @@ class Telemetry
         // band across entities is sent, so no exact number for any entity
         // (or which entity drove the band) ever leaves the box.
         $scaleBucket = '';
-        try {
-            $bands = [];
-            foreach ([
-                "SELECT COUNT(*) AS cnt FROM users WHERE archived_at IS NULL",
-                "SELECT COUNT(*) AS cnt FROM properties WHERE archived_at IS NULL",
-                "SELECT COUNT(*) AS cnt FROM property_tenant pt JOIN users u ON u.id = pt.tenant_id WHERE pt.moved_out_at IS NULL AND u.archived_at IS NULL",
-                "SELECT COUNT(*) AS cnt FROM tickets WHERE archived_at IS NULL",
-            ] as $q) {
-                try {
-                    $row = Database::fetch($q);
-                    if ($row !== null) {
-                        $bands[] = self::countBand(max(0, (int) (self::firstCell($row) ?? 0)));
-                    }
-                } catch (\Throwable $e) {
+        $bands = [];
+        foreach (
+            [
+            "SELECT COUNT(*) AS cnt FROM users WHERE archived_at IS NULL",
+            "SELECT COUNT(*) AS cnt FROM properties WHERE archived_at IS NULL",
+            "SELECT COUNT(*) AS cnt FROM property_tenant pt JOIN users u ON u.id = pt.tenant_id WHERE pt.moved_out_at IS NULL AND u.archived_at IS NULL",
+            "SELECT COUNT(*) AS cnt FROM tickets WHERE archived_at IS NULL",
+            ] as $q
+        ) {
+            try {
+                $row = Database::fetch($q);
+                if ($row !== null) {
+                    $bands[] = self::countBand(max(0, (int) (self::firstCell($row) ?? 0)));
                 }
+            } catch (\Throwable $e) {
             }
-            $rank = ['0' => 1, '1-5' => 2, '6-20' => 3, '21-100' => 4, '100+' => 5];
-            $best = 0;
-            $bestBand = '';
-            foreach ($bands as $b) {
-                $r = $rank[$b] ?? 0;
-                if ($r > $best) {
-                    $best = $r;
-                    $bestBand = $b;
-                }
-            }
-            $scaleBucket = $bestBand;
-        } catch (\Throwable $e) {
         }
+        $rank = ['0' => 1, '1-5' => 2, '6-20' => 3, '21-100' => 4, '100+' => 5];
+        $best = 0;
+        $bestBand = '';
+        foreach ($bands as $b) {
+            $r = $rank[$b] ?? 0;
+            if ($r > $best) {
+                $best = $r;
+                $bestBand = $b;
+            }
+        }
+        $scaleBucket = $bestBand;
 
         // Single stable identity for this payload: event distinct_id and
         // $set_once must agree, and one DB hit beats two on first run.
@@ -598,7 +597,7 @@ class Telemetry
                 : null;
 
             // PostHog /capture/ returns 200 with {"status":1} on success
-            if (is_array($result) && ($result['http_code'] ?? 0) >= 200 && ($result['http_code'] ?? 0) < 300) {
+            if (is_array($result) && $result['http_code'] >= 200 && $result['http_code'] < 300) {
                 self::clearPendingPostUpdatePing();
                 self::markSent();
                 return true;

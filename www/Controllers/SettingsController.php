@@ -228,7 +228,9 @@ class SettingsController
                 $key = $low . '-' . $high;
                 if ($needle !== '') {
                     $haystack = mb_strtolower($row['sender_name'] . ' ' . $row['recipient_name'] . ' ' . $row['body']);
-                    if (strpos($haystack, $needle) === false) continue;
+                    if (strpos($haystack, $needle) === false) {
+                        continue;
+                    }
                 }
                 $matchedRows[] = $row;
                 if (!isset($conversations[$key])) {
@@ -335,7 +337,7 @@ class SettingsController
 
             // Derive extension from verified mime, not original filename
             $extMap = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/gif' => 'gif'];
-            $ext = $extMap[$type] ?? 'png';
+            $ext = $extMap[$type];
             $filename = 'logo.' . $ext;
             $uploadDir = base_path('www/assets/uploads/logo/');
             if (!is_dir($uploadDir)) {
@@ -434,9 +436,11 @@ class SettingsController
             );
         }
 
-        if (($_POST['mail_auth_mode'] ?? '') === 'oauth2'
+        if (
+            ($_POST['mail_auth_mode'] ?? '') === 'oauth2'
             && trim((string)($_POST['mail_oauth_email'] ?? '')) === ''
-            && !empty(trim((string)($_POST['mail_username'] ?? '')))) {
+            && !empty(trim((string)($_POST['mail_username'] ?? '')))
+        ) {
             Database::execute(
                 "INSERT INTO settings (`key`, `value`) VALUES ('mail_oauth_email', ?) ON DUPLICATE KEY UPDATE `value` = ?",
                 [$_POST['mail_username'], $_POST['mail_username']]
@@ -517,7 +521,9 @@ class SettingsController
                 foreach ($docs as $doc) {
                     $path = $doc['file_path'];
                     $fullPath = str_starts_with($path, '/') ? $path : base_path($path);
-                    if (file_exists($fullPath)) unlink($fullPath);
+                    if (file_exists($fullPath)) {
+                        unlink($fullPath);
+                    }
                 }
                 Database::execute("DELETE FROM documents WHERE documentable_type = 'lease' AND documentable_id = ?", [$lease['id']]);
             }
@@ -734,7 +740,6 @@ class SettingsController
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
             flash('error', __('Invalid security token.'));
             redirect('/settings?tab=notifications');
-            return;
         }
 
         $mode = $_POST['inapp_mode'] ?? 'default';
@@ -772,7 +777,6 @@ class SettingsController
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
             flash('error', __('Invalid security token.'));
             redirect('/settings?tab=messenger');
-            return;
         }
 
         $enabled = !empty($_POST['messaging_enabled']) ? '1' : '0';
@@ -919,7 +923,9 @@ class SettingsController
                 $sql .= "{$createSql};\n\n";
 
                 $rows = $db->query("SELECT * FROM `{$table}`")->fetchAll(\PDO::FETCH_ASSOC);
-                if (empty($rows)) continue;
+                if (empty($rows)) {
+                    continue;
+                }
 
                 $columns = array_keys($rows[0]);
                 $colList = '`' . implode('`,`', $columns) . '`';
@@ -965,7 +971,9 @@ class SettingsController
 
             foreach ($uploadDirs as $srcRel => $destRel) {
                 $src = base_path($srcRel);
-                if (!is_dir($src)) continue;
+                if (!is_dir($src)) {
+                    continue;
+                }
                 $iterator = new \RecursiveIteratorIterator(
                     new \RecursiveDirectoryIterator($src, \RecursiveDirectoryIterator::SKIP_DOTS),
                     \RecursiveIteratorIterator::LEAVES_ONLY
@@ -974,14 +982,16 @@ class SettingsController
                     $relativePath = substr($file->getPathname(), strlen($src) + 1);
                     $destPath = "{$tmpDir}/{$destRel}/{$relativePath}";
                     $destDir = dirname($destPath);
-                    if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+                    if (!is_dir($destDir)) {
+                        mkdir($destDir, 0755, true);
+                    }
                     copy($file->getPathname(), $destPath);
                 }
             }
 
             // Check ZipArchive availability
             if (!class_exists('\ZipArchive')) {
-                self::_rrmdir($tmpDir);
+                self::rrmdir($tmpDir);
                 flash('error', __('ZipArchive PHP extension is required for backup.'));
                 redirect('/settings?tab=backup');
             }
@@ -990,7 +1000,7 @@ class SettingsController
             $zipFile = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8)) . '.zip';
             $zip = new \ZipArchive();
             if ($zip->open($zipFile, \ZipArchive::CREATE) !== true) {
-                self::_rrmdir($tmpDir);
+                self::rrmdir($tmpDir);
                 flash('error', __('Failed to create backup archive.'));
                 redirect('/settings?tab=backup');
             }
@@ -1011,7 +1021,7 @@ class SettingsController
             $date = date('ymd');
             $fileSize = filesize($zipFile);
             if ($fileSize === false) {
-                self::_rrmdir($tmpDir);
+                self::rrmdir($tmpDir);
                 flash('error', __('Failed to read backup archive.'));
                 redirect('/settings?tab=backup');
             }
@@ -1026,14 +1036,18 @@ class SettingsController
             readfile($zipFile);
 
             unlink($zipFile);
-            self::_rrmdir($tmpDir);
+            self::rrmdir($tmpDir);
 
             log_activity('settings.backup_created', __('Full backup downloaded'));
             exit;
         } catch (\Throwable $e) {
             \App\Core\Logger::error('exportBackup failed: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
-            if (isset($tmpDir) && is_dir($tmpDir)) self::_rrmdir($tmpDir);
-            if (isset($zipFile) && file_exists($zipFile)) unlink($zipFile);
+            if (isset($tmpDir) && is_dir($tmpDir)) {
+                self::rrmdir($tmpDir);
+            }
+            if (isset($zipFile) && file_exists($zipFile)) {
+                unlink($zipFile);
+            }
             flash('error', __('Backup failed. Please check the error logs for details.'));
             redirect('/settings?tab=backup');
         }
@@ -1067,7 +1081,7 @@ class SettingsController
         $zipPath = $_FILES['backup_file']['tmp_name'];
         $zip = new \ZipArchive();
         if ($zip->open($zipPath) !== true) {
-            self::_rrmdir($tmpDir);
+            self::rrmdir($tmpDir);
             flash('error', __('Failed to open backup file. It may be corrupted.'));
             redirect('/settings?tab=backup');
         }
@@ -1075,12 +1089,14 @@ class SettingsController
         // ZIP slip prevention: validate normalized paths before extraction
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entry = $zip->getNameIndex($i);
-            if ($entry === false) continue;
+            if ($entry === false) {
+                continue;
+            }
             // Reject absolute paths, leading slashes, and .. traversal
             $normalized = trim($entry);
             if ($normalized === '' || $normalized[0] === '/' || $normalized[0] === '\\') {
                 $zip->close();
-                self::_rrmdir($tmpDir);
+                self::rrmdir($tmpDir);
                 flash('error', __('Invalid backup file: absolute path entry detected.'));
                 redirect('/settings?tab=backup');
             }
@@ -1089,7 +1105,7 @@ class SettingsController
             foreach ($parts as $part) {
                 if ($part === '..') {
                     $zip->close();
-                    self::_rrmdir($tmpDir);
+                    self::rrmdir($tmpDir);
                     flash('error', __('Invalid backup file: path traversal entry detected.'));
                     redirect('/settings?tab=backup');
                 }
@@ -1100,7 +1116,7 @@ class SettingsController
             $canonicalTarget = $canonicalTmp . $normalized;
             if (!str_starts_with($canonicalTarget, $canonicalTmp)) {
                 $zip->close();
-                self::_rrmdir($tmpDir);
+                self::rrmdir($tmpDir);
                 flash('error', __('Invalid backup file: contains entries outside extraction directory.'));
                 redirect('/settings?tab=backup');
             }
@@ -1112,7 +1128,7 @@ class SettingsController
         // Check for database.sql
         $sqlFile = "{$tmpDir}/database.sql";
         if (!file_exists($sqlFile)) {
-            self::_rrmdir($tmpDir);
+            self::rrmdir($tmpDir);
             flash('error', __('Invalid backup file: database.sql not found.'));
             redirect('/settings?tab=backup');
         }
@@ -1134,13 +1150,15 @@ class SettingsController
             $statements = explode(";\n", $sql);
             foreach ($statements as $stmt) {
                 $stmt = trim($stmt);
-                if ($stmt === '' || str_starts_with($stmt, '--') || str_starts_with($stmt, '#')) continue;
+                if ($stmt === '' || str_starts_with($stmt, '--') || str_starts_with($stmt, '#')) {
+                    continue;
+                }
                 $db->exec($stmt);
             }
 
             $db->exec("SET FOREIGN_KEY_CHECKS = 1");
         } catch (\Throwable $e) {
-            self::_rrmdir($tmpDir);
+            self::rrmdir($tmpDir);
             flash('error', __('Database restore failed. Please check the error logs for details.'));
             redirect('/settings?tab=backup');
         }
@@ -1161,7 +1179,9 @@ class SettingsController
 
         foreach ($uploadMappings as $srcRel => $destRel) {
             $srcDir = "{$tmpDir}/{$srcRel}";
-            if (!is_dir($srcDir)) continue;
+            if (!is_dir($srcDir)) {
+                continue;
+            }
 
             $destBase = base_path($destRel);
             if (!is_dir($destBase)) {
@@ -1176,13 +1196,15 @@ class SettingsController
                 $relativePath = substr($file->getPathname(), strlen($srcDir) + 1);
                 $target = $destBase . '/' . $relativePath;
                 $targetDir = dirname($target);
-                if (!is_dir($targetDir)) mkdir($targetDir, 0755, true);
+                if (!is_dir($targetDir)) {
+                    mkdir($targetDir, 0755, true);
+                }
                 copy($file->getPathname(), $target);
             }
         }
 
         // Clean up temp directory
-        self::_rrmdir($tmpDir);
+        self::rrmdir($tmpDir);
 
         log_activity('settings.restore_completed', 'Full backup restored from ' . $_FILES['backup_file']['name']);
 
@@ -1195,9 +1217,11 @@ class SettingsController
         redirect('/login');
     }
 
-    private static function _rrmdir(string $dir): void
+    private static function rrmdir(string $dir): void
     {
-        if (!is_dir($dir)) return;
+        if (!is_dir($dir)) {
+            return;
+        }
         $files = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::CHILD_FIRST

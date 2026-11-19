@@ -79,7 +79,7 @@ class UpdateController
             $response = @file_get_contents($url, false, $context);
         }
 
-        if ($response === false || $response === null) {
+        if ($response === false) {
             \App\Core\Logger::error('checkStableChannel: GitHub API unreachable for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
             return ['error' => 'Could not reach GitHub API. Check container DNS (try docker exec turtle-app-1 getent hosts api.github.com).'];
         }
@@ -191,7 +191,7 @@ class UpdateController
             $response = @file_get_contents($url, false, $context);
         }
 
-        if ($response === false || $response === null) {
+        if ($response === false) {
             \App\Core\Logger::error('checkDevViaApi: GitHub API unreachable after git fetch failed for ' . $url . ' - ' . (error_get_last()['message'] ?? 'unknown'));
             return ['error' => 'Cannot reach GitHub. Check container network access (docker exec turtle-app-1 getent hosts api.github.com).', 'latest_version' => $currentVersion, 'update_available' => false];
         }
@@ -404,13 +404,19 @@ class UpdateController
             $git = 'git -c safe.directory=' . $repo . ' -C ' . $repo;
             $branch = trim(shell_exec("{$git} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master');
             exec("{$git} fetch origin 2>&1", $fetchOutput, $fetchExitCode);
-            if ($fetchExitCode !== 0) return null;
+            if ($fetchExitCode !== 0) {
+                return null;
+            }
 
             exec("{$git} rev-list --count HEAD..origin/{$branch} 2>&1", $countOutput, $countExitCode);
-            if ($countExitCode !== 0) return null;
+            if ($countExitCode !== 0) {
+                return null;
+            }
 
             $behindCount = (int)trim($countOutput[0] ?? '0');
-            if ($behindCount <= 0) return null;
+            if ($behindCount <= 0) {
+                return null;
+            }
 
             exec("{$git} rev-parse --short origin/{$branch} 2>&1", $hashOutput);
             return trim($hashOutput[0] ?? '');
@@ -429,7 +435,9 @@ class UpdateController
             ]);
 
             $response = @file_get_contents($url, false, $context);
-            if ($response === false) return null;
+            if ($response === false) {
+                return null;
+            }
 
             $release = json_decode($response, true);
             return isset($release['tag_name']) ? ltrim($release['tag_name'], 'v') : null;

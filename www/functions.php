@@ -109,6 +109,12 @@ function old(string $key, string $default = ''): string
     return h($default);
 }
 
+/** Original (unescaped) form input, for fields that are arrays. */
+function old_raw(string $key, mixed $default = null): mixed
+{
+    return $_SESSION['_old'][$key] ?? $default;
+}
+
 /**
  * Sanitized reverse-proxy path prefix.
  *
@@ -134,7 +140,7 @@ function base_url(): string
     return ingress_prefix();
 }
 
-function redirect(string $url): void
+function redirect(string $url): never
 {
     // Prevent CRLF injection and open-redirect via // or \/
     $url = str_replace(["\r", "\n", "\0"], '', $url);
@@ -250,13 +256,19 @@ function verify_csrf(string $token): bool
 
 function loadEnvFile(string $path): void
 {
-    if (!file_exists($path)) return;
+    if (!file_exists($path)) {
+        return;
+    }
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $trimmed = trim($line);
-        if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
+        if ($trimmed === '' || str_starts_with($trimmed, '#')) {
+            continue;
+        }
         $pos = strpos($line, '=');
-        if ($pos === false) continue;
+        if ($pos === false) {
+            continue;
+        }
         $key = trim(substr($line, 0, $pos));
         $value = trim(substr($line, $pos + 1));
         if (strlen($value) >= 2 && (($value[0] === '"' && $value[-1] === '"') || ($value[0] === "'" && $value[-1] === "'"))) {
@@ -311,7 +323,9 @@ function httpGet(string $url, int $timeout = 5): ?string
             'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
         ]);
         $body = @file_get_contents($url, false, $ctx);
-        if ($body !== false) return $body;
+        if ($body !== false) {
+            return $body;
+        }
     }
 
     return null;
@@ -336,7 +350,9 @@ function httpGetWithHeaders(string $url, int $timeout = 5): ?array
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         curl_close($ch);
-        if ($response === false) return null;
+        if ($response === false) {
+            return null;
+        }
         $headerStr = substr($response, 0, $headerSize);
         $body = substr($response, $headerSize);
         return [
@@ -366,7 +382,9 @@ function parseHttpDateHeader(string $headerStr): ?int
         if (stripos($line, 'Date:') === 0) {
             $dateStr = trim(substr($line, 5));
             $ts = strtotime($dateStr);
-            if ($ts !== false) return $ts;
+            if ($ts !== false) {
+                return $ts;
+            }
         }
     }
     return null;
@@ -443,7 +461,9 @@ function checkNtpTime(): ?array
     $cachedDrift = $lastStatus['value'] ?? '';
 
     if ($lastTs && $cachedDrift !== '' && (strtotime('now') - strtotime($lastTs)) < 3600) {
-        if ($cachedDrift === 'unreachable') return null;
+        if ($cachedDrift === 'unreachable') {
+            return null;
+        }
         return [
             'ntp_time' => 0,
             'system_time' => time(),
@@ -505,7 +525,8 @@ function checkNtpTime(): ?array
         try {
             \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
             \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", ['unreachable', 'unreachable']);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
         return null;
     }
 
@@ -513,7 +534,8 @@ function checkNtpTime(): ?array
     try {
         \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_check', ?) ON DUPLICATE KEY UPDATE `value` = ?", [$now, $now]);
         \App\Core\Database::execute("INSERT INTO settings (`key`, `value`) VALUES ('last_ntp_status', ?) ON DUPLICATE KEY UPDATE `value` = ?", [(string)$drift, (string)$drift]);
-    } catch (\Throwable $e) {}
+    } catch (\Throwable $e) {
+    }
     return [
         'ntp_time' => (int)$ntpTs,
         'system_time' => time(),
@@ -591,7 +613,9 @@ function can(string $permission): bool
     } catch (\Throwable $e) {
         return false;
     }
-    if (!$user) return false;
+    if (!$user) {
+        return false;
+    }
 
     $rolesToCheck = [$user['role']];
     if (!empty($user['secondary_roles'])) {
@@ -600,7 +624,9 @@ function can(string $permission): bool
     }
 
     foreach ($rolesToCheck as $role) {
-        if ($role === 'admin') return true;
+        if ($role === 'admin') {
+            return true;
+        }
 
         if (permissionsMode() === 'custom') {
             try {
@@ -608,8 +634,11 @@ function can(string $permission): bool
                     "SELECT 1 FROM role_permissions WHERE role = ? AND permission = ?",
                     [$role, $permission]
                 );
-                if ($row) return true;
-            } catch (\Throwable $e) {}
+                if ($row) {
+                    return true;
+                }
+            } catch (\Throwable $e) {
+            }
         }
 
         $defaults = defaultPermissions();
@@ -681,13 +710,17 @@ function user_can_access_property(array $user, array $property, ?array $companyI
         $companyIds = user_company_ids((int)($user['id'] ?? 0));
     }
 
-    if (in_array($companyId, $companyIds, true)
-        && (in_array('landlord', $roles, true) || in_array('maintenance', $roles, true))) {
+    if (
+        in_array($companyId, $companyIds, true)
+        && (in_array('landlord', $roles, true) || in_array('maintenance', $roles, true))
+    ) {
         return true;
     }
 
-    if (in_array('property_manager', $roles, true)
-        && (int)($property['property_manager_id'] ?? 0) === (int)($user['id'] ?? 0)) {
+    if (
+        in_array('property_manager', $roles, true)
+        && (int)($property['property_manager_id'] ?? 0) === (int)($user['id'] ?? 0)
+    ) {
         return true;
     }
 
@@ -779,10 +812,12 @@ function site_logo(): string
                 if ($vRow && $vRow['value'] !== '') {
                     $ver = '?v=' . $vRow['value'];
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
             return '/' . ltrim($path, '/') . $ver;
         }
-    } catch (\Throwable $e) {}
+    } catch (\Throwable $e) {
+    }
     return '/assets/logo.svg';
 }
 
@@ -818,7 +853,9 @@ function defaultNotifications(): array
 
 function avatar_url(?array $user): ?string
 {
-    if (!$user || empty($user['avatar_path'])) return null;
+    if (!$user || empty($user['avatar_path'])) {
+        return null;
+    }
     return '/users/' . (int)($user['id'] ?? 0) . '/avatar';
 }
 
@@ -892,7 +929,9 @@ function notifyInApp(int $userId, string $event, string $data, ?string $type = n
 {
     try {
         $user = \App\Core\Database::fetch("SELECT role FROM users WHERE id = ? AND archived_at IS NULL", [$userId]);
-        if (!$user || !shouldNotifyInApp($event, $user['role'])) return;
+        if (!$user || !shouldNotifyInApp($event, $user['role'])) {
+            return;
+        }
 
         \App\Core\Database::execute(
             "INSERT INTO notifications (user_id, type, data, created_at) VALUES (?, ?, ?, NOW())",
@@ -909,7 +948,9 @@ function notifyInAppRoles(string $event, string $data, ?int $excludeUserId = nul
     try {
         $users = \App\Core\Database::fetchAll("SELECT id FROM users WHERE archived_at IS NULL", []);
         foreach ($users as $user) {
-            if ($excludeUserId !== null && (int)$user['id'] === $excludeUserId) continue;
+            if ($excludeUserId !== null && (int)$user['id'] === $excludeUserId) {
+                continue;
+            }
             notifyInApp((int)$user['id'], $event, $data);
         }
     } catch (\Throwable $e) {
@@ -924,14 +965,17 @@ function site_url(): string
         if ($row && $row['value'] !== '') {
             return rtrim($row['value'], '/');
         }
-    } catch (\Throwable $e) {}
+    } catch (\Throwable $e) {
+    }
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 }
 
 function db_timestamp_epoch(?string $datetime): ?int
 {
-    if (!$datetime) return null;
+    if (!$datetime) {
+        return null;
+    }
     try {
         return (new \DateTime($datetime, new \DateTimeZone('UTC')))->getTimestamp();
     } catch (\Throwable $e) {
@@ -941,7 +985,9 @@ function db_timestamp_epoch(?string $datetime): ?int
 
 function display_time(?string $datetime, string $format = 'M j, Y g:i A'): string
 {
-    if (!$datetime) return '';
+    if (!$datetime) {
+        return '';
+    }
     try {
         $dt = new \DateTime($datetime, new \DateTimeZone('UTC'));
         $dt->setTimezone(new \DateTimeZone(date_default_timezone_get()));

@@ -18,7 +18,11 @@ class DocumentController
              WHERE d.id = ?",
             [$id]
         );
-        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$document) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::document($id));
 
         $lease = null;
@@ -40,7 +44,11 @@ class DocumentController
     public function view(int $id): void
     {
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
-        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$document) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::document($id));
 
         $filePath = $document['file_path'];
@@ -65,7 +73,11 @@ class DocumentController
     public function download(int $id): void
     {
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
-        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$document) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::document($id));
 
         $filePath = $document['file_path'];
@@ -92,11 +104,14 @@ class DocumentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
 
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
-        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$document) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::document($id));
 
         $this->deleteDocumentFile($document);
@@ -112,11 +127,14 @@ class DocumentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
 
         $document = Database::fetch("SELECT id FROM documents WHERE id = ?", [$id]);
-        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$document) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::document($id));
 
         Database::execute("UPDATE documents SET archived_at = NULL WHERE id = ?", [$id]);
@@ -131,11 +149,14 @@ class DocumentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
 
         $document = Database::fetch("SELECT * FROM documents WHERE id = ?", [$id]);
-        if (!$document) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$document) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::document($id));
 
         $this->deleteDocumentFile($document);

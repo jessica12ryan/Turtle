@@ -50,7 +50,9 @@ class RentController
         $rentData = [];
         foreach ($properties as $prop) {
             $totalRent = $prop['rent_amount'] ?? 0;
-            if ($totalRent <= 0) continue;
+            if ($totalRent <= 0) {
+                continue;
+            }
 
             $paid = Database::fetch(
                 "SELECT COALESCE(SUM(p.amount), 0) as total
@@ -93,7 +95,11 @@ class RentController
              JOIN users l ON l.id = p.landlord_id WHERE p.id = ?",
             [$propertyId]
         );
-        if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$property) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::property($propertyId));
 
         $tenants = Database::fetchAll(
@@ -137,7 +143,6 @@ class RentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::property($propertyId));
         // Auto-detect main tenant for this property
@@ -154,13 +159,15 @@ class RentController
         }
 
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'amount' => 'required|numeric|min:0.01',
             'payment_date' => 'required|date',
             'payment_method' => 'max:50',
             'reference' => 'max:100',
             'notes' => 'max:5000',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/properties/' . $propertyId . '/rent');
@@ -192,20 +199,25 @@ class RentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
-        if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$payment) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::payment($paymentId));
 
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'amount' => 'required|numeric|min:0.01',
             'payment_date' => 'required|date',
             'payment_method' => 'max:50',
             'reference' => 'max:100',
             'notes' => 'max:5000',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             redirect('/properties/' . $payment['property_id'] . '/rent');
         }
@@ -225,10 +237,13 @@ class RentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
-        if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$payment) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::payment($paymentId));
 
         Database::execute("UPDATE payments SET archived_at = NOW() WHERE id = ?", [$paymentId]);
@@ -242,10 +257,13 @@ class RentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
-        if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$payment) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::payment($paymentId));
 
         Database::execute("UPDATE payments SET archived_at = NULL WHERE id = ?", [$paymentId]);
@@ -259,10 +277,13 @@ class RentController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
-        if (!$payment) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$payment) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::payment($paymentId));
 
         Database::execute("DELETE FROM payments WHERE id = ?", [$paymentId]);

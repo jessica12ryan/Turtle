@@ -22,7 +22,6 @@ class ProfileController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
         $rules = ['name' => 'required|max:255'];
@@ -51,7 +50,6 @@ class ProfileController
             if ($avatarError !== null) {
                 flash('error', $avatarError);
                 redirect('/profile');
-                return;
             }
         }
 
@@ -86,7 +84,9 @@ class ProfileController
     private function avatarColumnExists(): bool
     {
         static $exists = null;
-        if ($exists !== null) return $exists;
+        if ($exists !== null) {
+            return $exists;
+        }
         try {
             Database::fetch("SELECT avatar_path FROM users LIMIT 1", []);
             $exists = true;
@@ -105,9 +105,15 @@ class ProfileController
         }
 
         $file = $_FILES['avatar'] ?? null;
-        if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) return null;
-        if ($file['error'] !== UPLOAD_ERR_OK) return __('Unable to upload profile picture.');
-        if ($file['size'] > 5 * 1024 * 1024) return __('Profile picture must be smaller than 5 MB.');
+        if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return __('Unable to upload profile picture.');
+        }
+        if ($file['size'] > 5 * 1024 * 1024) {
+            return __('Profile picture must be smaller than 5 MB.');
+        }
 
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mime = $finfo->file($file['tmp_name']);
@@ -117,7 +123,9 @@ class ProfileController
             'image/gif' => 'gif',
             'image/webp' => 'webp',
         ];
-        if (!isset($allowed[$mime])) return __('Only JPG, PNG, GIF, and WebP images are allowed.');
+        if (!isset($allowed[$mime])) {
+            return __('Only JPG, PNG, GIF, and WebP images are allowed.');
+        }
 
         $dir = base_path('storage/uploads/avatars/' . $userId);
         if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
@@ -137,7 +145,9 @@ class ProfileController
 
     private function deleteAvatarFile(?string $path): void
     {
-        if (!$path) return;
+        if (!$path) {
+            return;
+        }
         $full = base_path($path);
         $real = realpath($full);
         $base = realpath(base_path('storage/uploads/avatars'));

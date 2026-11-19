@@ -1,0 +1,15 @@
+parameters:
+    level: 5
+    paths:
+        - www/Core
+        - www/Controllers
+        - www/functions.php
+        - www/index.php
+        - www/autoload.php
+        - tests
+    bootstrapFiles:
+        - www/functions.php
+    excludePaths:
+        analyse:
+            - www/Views/*
+            - www/lang/*

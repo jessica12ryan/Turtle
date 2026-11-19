@@ -86,11 +86,13 @@ class ResourceController
         }
 
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'title' => 'required|max:255',
             'url' => 'required',
             'description' => 'max:1000',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/resources/create');
@@ -140,7 +142,11 @@ class ResourceController
     {
         $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
-        if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$link) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Edit Resource']);
@@ -152,18 +158,23 @@ class ResourceController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
-        if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$link) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
 
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'title' => 'required|max:255',
             'url' => 'required',
             'description' => 'max:1000',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/resources/' . $id . '/edit');
@@ -204,11 +215,14 @@ class ResourceController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTableExists();
         $link = Database::fetch("SELECT * FROM resources WHERE id = ?", [$id]);
-        if (!$link) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$link) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
 
         log_activity('resource.deleted', "Resource '" . ($link['title'] ?? '') . "' deleted");
         Database::execute("DELETE FROM resources WHERE id = ?", [$id]);

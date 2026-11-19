@@ -117,16 +117,17 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'property_id' => 'required|exists:properties,id',
             'subject' => 'required|max:255',
             'description' => 'required',
             'category' => 'required',
             'priority' => 'required',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/tickets/create');
@@ -159,7 +160,11 @@ class TicketController
              WHERE t.id = ?",
             [$id]
         );
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($id));
 
         $user = Auth::instance()->user();
@@ -211,10 +216,13 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($id));
 
         // The "Unassigned" option submits an empty string; normalize it to NULL.
@@ -230,7 +238,6 @@ class TicketController
             if (!$assignee) {
                 flash('error', __('Selected assignee is invalid.'));
                 redirectBack();
-                return;
             }
 
             $property = Database::fetch(
@@ -240,7 +247,6 @@ class TicketController
             if (!$property || !user_can_access_property($assignee, $property)) {
                 flash('error', __('Selected assignee does not have access to this property.'));
                 redirectBack();
-                return;
             }
         }
 
@@ -282,21 +288,18 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
 
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NOT NULL", [$id]);
         if (!$ticket) {
             flash('error', __('Ticket not found or already restored.'));
             redirect('/tickets?show_archived=1');
-            return;
         }
         Access::require(Access::ticket($id));
 
         $conflicts = $this->restoreConflicts($ticket);
         if ($conflicts['property_missing'] || $conflicts['assignee_invalid']) {
             redirect('/tickets/' . $id . '/restore-conflict');
-            return;
         }
 
         $this->performRestore($id, (int)$ticket['property_id'], null, null);
@@ -308,14 +311,12 @@ class TicketController
         if (!$ticket) {
             flash('error', __('Ticket not found or already restored.'));
             redirect('/tickets?show_archived=1');
-            return;
         }
         Access::require(Access::ticket($id));
 
         $conflicts = $this->restoreConflicts($ticket);
         if (!$conflicts['property_missing'] && !$conflicts['assignee_invalid']) {
             redirect('/tickets?show_archived=1');
-            return;
         }
 
         $properties = $this->restoreProperties();
@@ -357,14 +358,12 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
 
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NOT NULL", [$id]);
         if (!$ticket) {
             flash('error', __('Ticket not found or already restored.'));
             redirect('/tickets?show_archived=1');
-            return;
         }
         Access::require(Access::ticket($id));
 
@@ -378,7 +377,6 @@ class TicketController
             if ($candidate === '' || !in_array($candidate, $allowed, true)) {
                 flash('error', __('Selected property is invalid.'));
                 redirect($errorRedirect);
-                return;
             }
             $propertyId = (int)$candidate;
         }
@@ -400,7 +398,6 @@ class TicketController
                 if (!ctype_digit($value) || !in_array($value, $allowed, true)) {
                     flash('error', __('Selected assignee does not have access to this property.'));
                     redirect($errorRedirect);
-                    return;
                 }
                 $assigneeId = (int)$value;
                 $row = Database::fetch("SELECT name FROM users WHERE id = ?", [$assigneeId]);
@@ -416,10 +413,13 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($id));
 
         $oldStatus = str_replace('_', ' ', $ticket['status']);
@@ -446,8 +446,11 @@ class TicketController
                 \site_url() . '/tickets/' . $id,
                 'View Ticket'
             );
-            notifyInApp((int)$ticket['tenant_id'], 'ticket_status_updated',
-                'Ticket status updated: ' . $ticket['subject'] . ' — ' . ucfirst(str_replace('_', ' ', $_POST['status'])));
+            notifyInApp(
+                (int)$ticket['tenant_id'],
+                'ticket_status_updated',
+                'Ticket status updated: ' . $ticket['subject'] . ' — ' . ucfirst(str_replace('_', ' ', $_POST['status']))
+            );
         }
 
         log_activity('ticket.status_updated', "Ticket #{$id} status updated");
@@ -460,10 +463,13 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($id));
 
         $user = Auth::instance()->user();
@@ -512,20 +518,32 @@ class TicketController
         $user = $auth->user();
 
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$ticketId]);
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($ticketId));
 
         // IDOR check: verify user has access to this ticket
         if ($user['role'] === 'tenant') {
             if ((int)$ticket['tenant_id'] !== (int)$user['id']) {
-                http_response_code(403); require base_path('www/Views/errors/404.php'); return;
+                http_response_code(403);
+                require base_path('www/Views/errors/404.php');
+                return;
             }
         } elseif (!in_array($user['role'], ['admin', 'landlord', 'property_manager', 'maintenance'])) {
-            http_response_code(403); require base_path('www/Views/errors/404.php'); return;
+            http_response_code(403);
+            require base_path('www/Views/errors/404.php');
+            return;
         }
 
         $file = Database::fetch("SELECT * FROM ticket_files WHERE id = ? AND ticket_id = ?", [$fileId, $ticketId]);
-        if (!$file) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$file) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
 
         $fullPath = base_path($file['file_path']);
         if (!file_exists($fullPath)) {
@@ -554,7 +572,9 @@ class TicketController
                 break;
             }
         }
-        if (!$hasFiles) return;
+        if (!$hasFiles) {
+            return;
+        }
 
         $uploadDir = base_path('storage/uploads/ticket_files/' . $ticketId);
         if (!is_dir($uploadDir)) {
@@ -565,13 +585,17 @@ class TicketController
 
         $userId = Auth::instance()->id();
         foreach ($_FILES['attachments']['error'] as $i => $error) {
-            if ($error !== UPLOAD_ERR_OK) continue;
+            if ($error !== UPLOAD_ERR_OK) {
+                continue;
+            }
 
             $name = $_FILES['attachments']['name'][$i];
             $tmpName = $_FILES['attachments']['tmp_name'][$i];
             $size = $_FILES['attachments']['size'][$i];
 
-            if ($name === '' || $tmpName === '') continue;
+            if ($name === '' || $tmpName === '') {
+                continue;
+            }
 
             $actualSize = @filesize($tmpName);
             if ($size > 10 * 1024 * 1024 || $actualSize === false || $actualSize > 10 * 1024 * 1024) {
@@ -581,14 +605,18 @@ class TicketController
 
             $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt'];
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-            if (!in_array($ext, $allowedExts)) { continue; }
+            if (!in_array($ext, $allowedExts)) {
+                continue;
+            }
             $filename = uniqid() . '.' . $ext;
             $destPath = $uploadDir . '/' . $filename;
 
             $finfo = new \finfo(FILEINFO_MIME_TYPE);
             $detectedType = $finfo->file($tmpName);
             $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'text/plain'];
-            if (!in_array($detectedType, $allowedMimes, true)) { continue; }
+            if (!in_array($detectedType, $allowedMimes, true)) {
+                continue;
+            }
 
             if (move_uploaded_file($tmpName, $destPath)) {
                 Database::insert(
@@ -604,10 +632,13 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($id));
 
         Database::execute("UPDATE tickets SET archived_at = NOW(), status = 'closed' WHERE id = ?", [$id]);
@@ -621,10 +652,13 @@ class TicketController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $ticket = Database::fetch("SELECT * FROM tickets WHERE id = ?", [$id]);
-        if (!$ticket) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$ticket) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::ticket($id));
 
         Database::execute("DELETE FROM ticket_files WHERE ticket_id = ?", [$id]);
@@ -725,7 +759,6 @@ class TicketController
             \App\Core\Logger::error('ticket restore failed: ' . $e->getMessage());
             flash('error', __('Could not restore this ticket. No changes were made.'));
             redirect('/tickets?show_archived=1');
-            return;
         }
 
         log_activity('ticket.restored', "Ticket #{$id} restored");

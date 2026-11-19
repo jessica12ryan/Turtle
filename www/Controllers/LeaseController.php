@@ -174,16 +174,17 @@ class LeaseController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'property_id' => 'required|exists:properties,id',
             'tenant_id' => 'required|exists:users,id',
             'document_type' => 'required|max:50',
             'title' => 'required|max:255',
             'description' => 'max:5000',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/leases/create');
@@ -217,7 +218,9 @@ class LeaseController
                 $allOk = true;
                 $emailAttachments = [];
                 foreach ($_FILES['documents']['name'] as $i => $name) {
-                    if (empty($name)) continue;
+                    if (empty($name)) {
+                        continue;
+                    }
                     if ($_FILES['documents']['error'][$i] !== UPLOAD_ERR_OK) {
                         $allOk = false;
                         break;
@@ -225,14 +228,18 @@ class LeaseController
 
                     $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
                     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                    if (!in_array($ext, $allowedExts)) { continue; }
+                    if (!in_array($ext, $allowedExts)) {
+                        continue;
+                    }
                     $storedName = uniqid() . '.' . $ext;
                     $destPath = $leaseDir . '/' . $storedName;
 
                     $finfo = new \finfo(FILEINFO_MIME_TYPE);
                     $detectedType = $finfo->file($_FILES['documents']['tmp_name'][$i]);
                     $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                    if (!in_array($detectedType, $allowedMimes, true)) { continue; }
+                    if (!in_array($detectedType, $allowedMimes, true)) {
+                        continue;
+                    }
 
                     if (!move_uploaded_file($_FILES['documents']['tmp_name'][$i], $destPath)) {
                         $allOk = false;
@@ -272,8 +279,11 @@ class LeaseController
                         '',
                         $emailAttachments
                     );
-                    notifyInApp((int)$_POST['tenant_id'], 'document_uploaded',
-                        'New document uploaded: ' . $_POST['title']);
+                    notifyInApp(
+                        (int)$_POST['tenant_id'],
+                        'document_uploaded',
+                        'New document uploaded: ' . $_POST['title']
+                    );
                 }
             }
 
@@ -300,7 +310,11 @@ class LeaseController
              WHERE l.id = ?",
             [$id]
         );
-        if (!$lease) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$lease) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::lease($id));
 
         $showArchived = !empty($_GET['show_archived']);
@@ -320,7 +334,6 @@ class LeaseController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::lease($id));
         Database::execute("UPDATE leases SET archived_at = NULL WHERE id = ?", [$id]);
@@ -334,7 +347,6 @@ class LeaseController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::lease($id));
         Database::execute("UPDATE leases SET archived_at = NOW() WHERE id = ?", [$id]);
@@ -348,7 +360,6 @@ class LeaseController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::lease($id));
         $documents = Database::fetchAll(

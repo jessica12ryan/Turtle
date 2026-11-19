@@ -165,12 +165,6 @@ class MessageController
             return;
         }
 
-        if (!verify_csrf($_POST['_csrf'] ?? '')) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid security token.']);
-            return;
-        }
-
         $me = (int)Auth::instance()->id();
         $recipientId = (int)($_POST['recipient_id'] ?? 0);
         $body = trim((string)($_POST['body'] ?? ''));

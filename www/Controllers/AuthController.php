@@ -26,10 +26,12 @@ class AuthController
             }
 
             $validator = new Validator();
-            if (!$validator->validate($_POST, [
+            if (
+                !$validator->validate($_POST, [
                 'email' => 'required|email',
                 'password' => 'required',
-            ])) {
+                ])
+            ) {
                 $_SESSION['_old'] = $_POST;
                 $_SESSION['_errors'] = $validator->errors();
                 redirect('/login');
@@ -37,8 +39,10 @@ class AuthController
 
             $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
             $rateKey = 'login:' . $clientIp . ':' . strtolower(trim($_POST['email']));
-            if (!auth_rate_limit('login:ip:' . $clientIp, 30, 300)
-                || !auth_rate_limit($rateKey, 8, 300)) {
+            if (
+                !auth_rate_limit('login:ip:' . $clientIp, 30, 300)
+                || !auth_rate_limit($rateKey, 8, 300)
+            ) {
                 flash('error', __('Too many login attempts. Please wait a few minutes.'));
                 redirect('/login');
             }
@@ -68,7 +72,6 @@ class AuthController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirect('/home');
-            return;
         }
         $user = Auth::instance()->user();
         if ($user) {
@@ -90,7 +93,6 @@ class AuthController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
         if (!$validator->validate($_POST, ['email' => 'required|email'])) {
@@ -154,14 +156,15 @@ class AuthController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'token' => 'required',
             'email' => 'required|email',
             'password' => 'required|min:8|confirmed',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             redirect('/reset-password/' . $_POST['token']);
         }
@@ -204,7 +207,6 @@ class AuthController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
         if (!$validator->validate($_POST, ['email' => 'required|email'])) {
@@ -259,12 +261,13 @@ class AuthController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'password' => 'required|min:8|confirmed',
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             redirect('/password/change');
         }

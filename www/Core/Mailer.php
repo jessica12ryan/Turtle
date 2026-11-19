@@ -4,21 +4,24 @@ namespace App\Core;
 
 class Mailer
 {
-    private static string $lastResponse = '';
-
     private static function readRawResponse($socket): string
     {
         $response = '';
         $maxLines = 100;
         $lineCount = 0;
         while (true) {
-            if (++$lineCount > $maxLines || feof($socket)) break;
+            if (++$lineCount > $maxLines || feof($socket)) {
+                break;
+            }
             $line = fgets($socket, 512);
-            if ($line === false) break;
+            if ($line === false) {
+                break;
+            }
             $response .= $line;
-            if (isset($line[3]) && $line[3] === ' ') break;
+            if (isset($line[3]) && $line[3] === ' ') {
+                break;
+            }
         }
-        self::$lastResponse = $response;
         return $response;
     }
 
@@ -71,8 +74,8 @@ class Mailer
 
         if ($oauthEnabled) {
             $token = GoogleOAuth::getAccessToken();
-            if ($token === null || $authUser === '') {
-                \App\Core\Logger::error('Mailer: OAuth2 token or Gmail address unavailable. Connect Gmail OAuth2 in Settings first.');
+            if ($token === null) {
+                \App\Core\Logger::error('Mailer: OAuth2 token unavailable. Connect Gmail OAuth2 in Settings first.');
                 return false;
             }
 
@@ -203,9 +206,13 @@ class Mailer
         $response = '';
         while (true) {
             $line = fgets($socket, 512);
-            if ($line === false) break;
+            if ($line === false) {
+                break;
+            }
             $response .= $line;
-            if (isset($line[3]) && $line[3] === ' ') break;
+            if (isset($line[3]) && $line[3] === ' ') {
+                break;
+            }
         }
         $code = substr($response, 0, 3);
         if ($code !== '250') {
@@ -235,7 +242,8 @@ class Mailer
                 $logoUrl = \site_url() . $logo;
                 $logoHtml = '<img src="' . $logoUrl . '" alt="Logo" style="max-height: 50px; width: auto;">';
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         $html = "
         <div style=\"max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden;\">
@@ -274,7 +282,9 @@ class Mailer
                 continue;
             }
             $fileContent = file_get_contents($filePath);
-            if ($fileContent === false) continue;
+            if ($fileContent === false) {
+                continue;
+            }
             $encoded = chunk_split(base64_encode($fileContent));
             $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
             $mimeType = match ($ext) {
@@ -357,9 +367,13 @@ class Mailer
         $response = '';
         while (true) {
             $line = fgets($socket, 512);
-            if ($line === false) break;
+            if ($line === false) {
+                break;
+            }
             $response .= $line;
-            if (isset($line[3]) && $line[3] === ' ') break;
+            if (isset($line[3]) && $line[3] === ' ') {
+                break;
+            }
         }
         $code = substr($response, 0, 3);
         if ($code !== '250') {

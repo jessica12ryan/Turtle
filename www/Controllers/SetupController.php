@@ -49,11 +49,13 @@ class SetupController
             }
 
             $validator = new Validator();
-            if (!$validator->validate($_POST, [
+            if (
+                !$validator->validate($_POST, [
                 'name' => 'required|max:255',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|min:8|confirmed',
-            ])) {
+                ])
+            ) {
                 $_SESSION['_errors'] = $validator->errors();
                 $_SESSION['_old'] = $_POST;
                 redirect('/setup');
@@ -81,7 +83,7 @@ class SetupController
                         'image/jpeg' => 'jpg',
                         'image/gif' => 'gif',
                     ];
-                    $filename = 'logo.' . ($extByMime[$type] ?? 'png');
+                    $filename = 'logo.' . $extByMime[$type];
                     $uploadDir = base_path('www/assets/uploads/logo/');
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0755, true);

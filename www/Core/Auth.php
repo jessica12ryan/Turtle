@@ -6,7 +6,9 @@ class Auth
 {
     private static ?Auth $instance = null;
 
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     public static function instance(): self
     {
@@ -23,7 +25,9 @@ class Auth
 
     public function user(): ?array
     {
-        if (!$this->check()) return null;
+        if (!$this->check()) {
+            return null;
+        }
 
         try {
             return Database::fetch(

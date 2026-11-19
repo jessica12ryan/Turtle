@@ -18,7 +18,9 @@ class StaffController
         $level = self::ROLE_HIERARCHY[$mainRole] ?? 99;
         $valid = [];
         foreach (self::ROLE_HIERARCHY as $role => $lvl) {
-            if ($role === 'tenant') continue;
+            if ($role === 'tenant') {
+                continue;
+            }
             if ($lvl > $level) {
                 $valid[] = $role;
             }
@@ -29,7 +31,9 @@ class StaffController
     private function parseSecondaryRoles(): array
     {
         $roles = $_POST['secondary_roles'] ?? [];
-        if (!is_array($roles)) return [];
+        if (!is_array($roles)) {
+            return [];
+        }
         $allowed = $this->validSecondaryRoles($_POST['role'] ?? '');
         return array_values(array_intersect($roles, $allowed));
     }
@@ -40,12 +44,14 @@ class StaffController
 
         $viewer = Auth::instance()->user();
         $visibleIds = [];
-        foreach (Database::fetchAll(
-            "SELECT u.id, u.role FROM users u
+        foreach (
+            Database::fetchAll(
+                "SELECT u.id, u.role FROM users u
              WHERE 1=1{$archivedClause}
              AND u.role IN ('admin','landlord','property_manager','maintenance')",
-            []
-        ) as $candidate) {
+                []
+            ) as $candidate
+        ) {
             if (Access::canManageUser($candidate, $viewer)) {
                 $visibleIds[] = (int)$candidate['id'];
             }
@@ -78,7 +84,7 @@ class StaffController
         foreach ($roles as $r) {
             $secondaryRoleMap[$r] = $this->validSecondaryRoles($r);
         }
-        $oldSecondary = old('secondary_roles');
+        $oldSecondary = old_raw('secondary_roles');
         $staffSecondaryRoles = is_array($oldSecondary) ? $oldSecondary : (strlen($oldSecondary) ? [$oldSecondary] : []);
 
         $view = new View();
@@ -91,7 +97,6 @@ class StaffController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $allowedRoles = ['property_manager', 'maintenance'];
         if (Auth::instance()->user()['role'] === 'admin') {
@@ -108,11 +113,13 @@ class StaffController
         }
 
         $validator = new Validator();
-        if (!$validator->validate($_POST, [
+        if (
+            !$validator->validate($_POST, [
             'name' => 'required|max:255',
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:' . implode(',', $allowedRoles),
-        ])) {
+            ])
+        ) {
             $_SESSION['_errors'] = $validator->errors();
             $_SESSION['_old'] = $_POST;
             redirect('/staff/create');
@@ -173,7 +180,11 @@ class StaffController
             "SELECT u.* FROM users u WHERE u.id = ? AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
-        if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$staff) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($staff));
 
         // A staff profile may only show tickets on properties the viewer can
@@ -205,13 +216,21 @@ class StaffController
 
     public function edit(int $id): void
     {
-        if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
+        if (!can('staff.edit')) {
+            http_response_code(403);
+            require base_path('www/Views/errors/403.php');
+            return;
+        }
 
         $staff = Database::fetch(
             "SELECT u.* FROM users u WHERE u.id = ? AND u.archived_at IS NULL AND u.role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
-        if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$staff) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($staff));
 
         $editingSelf = $id === Auth::instance()->id();
@@ -244,15 +263,22 @@ class StaffController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
+        }
+        if (!can('staff.edit')) {
+            http_response_code(403);
+            require base_path('www/Views/errors/403.php');
             return;
         }
-        if (!can('staff.edit')) { http_response_code(403); require base_path('www/Views/errors/403.php'); return; }
 
         $staff = Database::fetch(
             "SELECT * FROM users WHERE id = ? AND archived_at IS NULL AND role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
-        if (!$staff) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$staff) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($staff));
 
         // Prevent self role changes for property_manager and maintenance
@@ -325,7 +351,9 @@ class StaffController
     private function parseSecondaryRolesFromUpdate(string $mainRole): array
     {
         $roles = $_POST['secondary_roles'] ?? [];
-        if (!is_array($roles)) return [];
+        if (!is_array($roles)) {
+            return [];
+        }
         $allowed = $this->validSecondaryRoles($mainRole);
         return array_values(array_intersect($roles, $allowed));
     }
@@ -335,13 +363,16 @@ class StaffController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $target = Database::fetch(
             "SELECT * FROM users WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')",
             [$id]
         );
-        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$target) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($target));
 
         Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role IN ('admin','landlord','property_manager','maintenance')", [$id]);
@@ -355,10 +386,13 @@ class StaffController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$target) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($target));
 
         if ($target['role'] === 'admin') {
@@ -425,11 +459,13 @@ class StaffController
                 ];
                 $ticketAccess[$ticketId] = [];
                 foreach ($availableManagers as $manager) {
-                    if (user_can_access_property(
-                        $manager,
-                        $property,
-                        $managerCompanyMap[(int)$manager['id']] ?? []
-                    )) {
+                    if (
+                        user_can_access_property(
+                            $manager,
+                            $property,
+                            $managerCompanyMap[(int)$manager['id']] ?? []
+                        )
+                    ) {
                         $ticketAccess[$ticketId][] = (string)$manager['id'];
                     }
                 }
@@ -476,10 +512,13 @@ class StaffController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ? AND archived_at IS NULL", [$id]);
-        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$target) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($target));
 
         if ($target['role'] === 'admin') {
@@ -523,10 +562,12 @@ class StaffController
         if (!empty($availableManagers)) {
             $managerIds = array_column($availableManagers, 'id');
             $placeholders = implode(',', array_fill(0, count($managerIds), '?'));
-            foreach (Database::fetchAll(
-                "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
-                $managerIds
-            ) as $row) {
+            foreach (
+                Database::fetchAll(
+                    "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
+                    $managerIds
+                ) as $row
+            ) {
                 $managerCompanyMap[(int)$row['user_id']][] = (int)$row['company_id'];
             }
         }
@@ -543,7 +584,6 @@ class StaffController
             if ($value === '' || !in_array($value, $validManagerIds, true)) {
                 flash('error', __('Each property must be assigned to a property manager.'));
                 redirect($errorRedirect);
-                return;
             }
             $pendingByProperty[(int)$prop['id']] = (int)$value;
         }
@@ -555,7 +595,6 @@ class StaffController
             if ($value === '' || !in_array($value, $validManagerIds, true)) {
                 flash('error', __('Each ticket must be assigned or explicitly unassigned.'));
                 redirect($errorRedirect);
-                return;
             }
 
             $assigneeId = (int)$value;
@@ -574,7 +613,6 @@ class StaffController
             if (!$hasAccess && !$isPendingManager) {
                 flash('error', __('Each ticket must be assigned to a property manager with access to its property.'));
                 redirect($errorRedirect);
-                return;
             }
         }
 
@@ -598,9 +636,12 @@ class StaffController
                     [$assigneeId, (int)$ticket['id'], $id]
                 );
                 if ($changed > 0) {
+                    $assigneeKey = $assigneeId === null ? '' : (string)$assigneeId;
                     $assigneeName = $assigneeId === null
                         ? null
-                        : ($managerNames[(string)$assigneeId] ?? 'Unknown');
+                        : (array_key_exists($assigneeKey, $managerNames)
+                            ? $managerNames[$assigneeKey]
+                            : 'Unknown');
                     Database::insert(
                         "INSERT INTO ticket_comments (ticket_id, user_id, body, is_system, created_at) VALUES (?, ?, ?, 1, NOW())",
                         [
@@ -619,7 +660,6 @@ class StaffController
             \App\Core\Logger::error('archiveWithResolution failed: ' . $e->getMessage());
             flash('error', __('Could not archive this staff member. No changes were made.'));
             redirect('/staff/' . $id);
-            return;
         }
 
         log_activity('staff.archived', "Staff member #{$id} archived with conflict resolution");
@@ -632,10 +672,13 @@ class StaffController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $target = Database::fetch("SELECT * FROM users WHERE id = ?", [$id]);
-        if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$target) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::canManageUser($target));
 
         // Guard: never remove the last active admin.
@@ -644,7 +687,6 @@ class StaffController
             if (!$adminCount || $adminCount['cnt'] === 0) {
                 flash('error', __('Cannot permanently delete the only active admin account.'));
                 redirect('/staff');
-                return;
             }
         }
 
@@ -656,7 +698,6 @@ class StaffController
         if (!$replacement) {
             flash('error', __('Cannot permanently delete this staff member because no active admin is available to retain their records.'));
             redirect('/staff');
-            return;
         }
         $replacementId = (int)$replacement['id'];
 
@@ -692,7 +733,6 @@ class StaffController
             \App\Core\Logger::error('hardDelete failed: ' . $e->getMessage());
             flash('error', __('Could not permanently delete this staff member. No changes were made.'));
             redirect('/staff');
-            return;
         }
 
         log_activity('staff.deleted', "Staff member '{$target['name']}' permanently deleted");

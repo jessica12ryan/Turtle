@@ -5,7 +5,6 @@ namespace App\Core;
 class Router
 {
     private array $routes = [];
-    private array $middleware = [];
 
     public function get(string $path, string $handler, array $middleware = []): void
     {
@@ -47,7 +46,9 @@ class Router
         $uri = rtrim($uri, '/') ?: '/';
 
         foreach ($this->routes as $route) {
-            if ($route['method'] !== $method) continue;
+            if ($route['method'] !== $method) {
+                continue;
+            }
 
             if (preg_match($route['pattern'], $uri, $matches)) {
                 $params = array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY);

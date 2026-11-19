@@ -122,7 +122,8 @@ try {
     if ($tzVal) {
         date_default_timezone_set($tzVal);
     }
-} catch (\Throwable $e) {}
+} catch (\Throwable $e) {
+}
 
 // Process scheduled move-outs (limit: once per hour) — atomic via conditional update to prevent double-processing
 try {

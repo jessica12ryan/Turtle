@@ -73,7 +73,6 @@ class NotificationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Database::execute(
             "UPDATE notifications SET read_at = NOW() WHERE id = ? AND user_id = ?",
@@ -92,7 +91,6 @@ class NotificationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Database::execute(
             "UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL",

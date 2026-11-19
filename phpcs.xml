@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<ruleset name="Turtle">
+    <description>Code style for Turtle application code.</description>
+
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="4"/>
+
+    <file>www/Core</file>
+    <file>www/Controllers</file>
+    <file>www/functions.php</file>
+    <file>www/index.php</file>
+    <file>www/autoload.php</file>
+    <file>tests</file>
+
+    <exclude-pattern>*/www/Views/*</exclude-pattern>
+    <exclude-pattern>*/www/lang/*</exclude-pattern>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <rule ref="PSR12">
+        <exclude name="Generic.Files.LineLength.TooLong"/>
+    </rule>
+</ruleset>

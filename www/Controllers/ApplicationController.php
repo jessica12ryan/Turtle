@@ -57,22 +57,19 @@ class ApplicationController
             if (!$propertyId) {
                 flash('error', __('Please select a property.'));
                 redirect('/applications/create');
-                return;
             }
             $listed = Database::fetch("SELECT listed FROM properties WHERE id = ? AND archived_at IS NULL", [$propertyId]);
             if (!$listed || !$listed['listed']) {
                 flash('error', __('Selected property is not available.'));
                 redirect('/applications/create');
-                return;
             }
             $data = $this->buildData();
 
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json === false) {
                 \App\Core\Logger::error('Application submission failed: json_encode error: ' . (json_last_error_msg()));
-            flash('error', __('Submission failed: :details', [':details' => json_last_error_msg()]));
+                flash('error', __('Submission failed: :details', [':details' => json_last_error_msg()]));
                 redirect('/applications/create');
-                return;
             }
 
             $id = Database::insert(
@@ -203,7 +200,6 @@ class ApplicationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTable();
         Access::require(Access::application($id));
@@ -223,7 +219,6 @@ class ApplicationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTable();
         Access::require(Access::application($id));
@@ -265,7 +260,11 @@ class ApplicationController
              WHERE a.id = ?",
             [$id]
         );
-        if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$application) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::application($id));
 
         $data = json_decode($application['data'], true);
@@ -313,7 +312,11 @@ class ApplicationController
             }
 
             $application = Database::fetch("SELECT * FROM tenant_applications WHERE id = ?", [$id]);
-            if (!$application) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+            if (!$application) {
+                http_response_code(404);
+                require base_path('www/Views/errors/404.php');
+                return;
+            }
             Access::require(Access::application($id));
 
             $appData = json_decode($application['data'], true);
@@ -377,7 +380,9 @@ class ApplicationController
 
             // Upload each photo ID as a separate lease document
             $uploadDir = base_path('storage/uploads/leases');
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
 
             $idDocuments = [];
             if (!empty($mainApplicant['photo_id'])) {
@@ -393,7 +398,9 @@ class ApplicationController
 
             foreach ($idDocuments as $item) {
                 $srcFull = base_path($item['path']);
-                if (!file_exists($srcFull)) continue;
+                if (!file_exists($srcFull)) {
+                    continue;
+                }
 
                 $leaseId = Database::insert(
                     "INSERT INTO leases (property_id, tenant_id, title, description, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, 'Converted from application', ?, NOW(), NOW())",
@@ -401,7 +408,9 @@ class ApplicationController
                 );
 
                 $leaseDir = $uploadDir . '/' . $leaseId;
-                if (!is_dir($leaseDir)) mkdir($leaseDir, 0777, true);
+                if (!is_dir($leaseDir)) {
+                    mkdir($leaseDir, 0777, true);
+                }
 
                 $ext = pathinfo($srcFull, PATHINFO_EXTENSION);
                 $storedName = uniqid() . '.' . $ext;
@@ -426,7 +435,9 @@ class ApplicationController
 
             foreach ($secondaryNames as $i => $secName) {
                 $secName = trim($secName);
-                if ($secName === '') continue;
+                if ($secName === '') {
+                    continue;
+                }
 
                 $secEmail = trim($secondaryEmails[$i] ?? '');
                 $secPhone = preg_replace('/[^0-9]/', '', $secondaryPhones[$i] ?? '');
@@ -436,7 +447,9 @@ class ApplicationController
 
                 if ($secEmail !== '') {
                     $existing = Database::fetch("SELECT id FROM users WHERE email = ? AND archived_at IS NULL", [$secEmail]);
-                    if ($existing) continue;
+                    if ($existing) {
+                        continue;
+                    }
                 }
 
                 $secPassword = $secEmail !== '' ? bin2hex(random_bytes(6)) : null;
@@ -517,7 +530,6 @@ class ApplicationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTable();
         Access::require(Access::application($id));
@@ -537,7 +549,6 @@ class ApplicationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTable();
         Access::require(Access::application($id));
@@ -557,7 +568,6 @@ class ApplicationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $this->ensureTable();
         Access::require(Access::application($id));
@@ -633,7 +643,9 @@ class ApplicationController
         $tenants = [];
         $names = $_POST['other_tenant_last_name'] ?? [];
         foreach ($names as $i => $lastName) {
-            if (!is_string($lastName) || trim($lastName) === '') continue;
+            if (!is_string($lastName) || trim($lastName) === '') {
+                continue;
+            }
             $tenants[] = [
                 'last_name' => $lastName,
                 'first_name' => $_POST['other_tenant_first_name'][$i] ?? '',
@@ -683,7 +695,9 @@ class ApplicationController
         $occupants = [];
         $names = $_POST['occupant_last_name'] ?? [];
         foreach ($names as $i => $lastName) {
-            if (!is_string($lastName) || trim($lastName) === '') continue;
+            if (!is_string($lastName) || trim($lastName) === '') {
+                continue;
+            }
             $occupants[] = [
                 'last_name' => $lastName,
                 'first_name' => $_POST['occupant_first_name'][$i] ?? '',
@@ -699,7 +713,9 @@ class ApplicationController
         $refs = [];
         $lastNames = $_POST['reference_last_name'] ?? [];
         foreach ($lastNames as $i => $lastName) {
-            if (!is_string($lastName) || trim($lastName) === '') continue;
+            if (!is_string($lastName) || trim($lastName) === '') {
+                continue;
+            }
             $refs[] = [
                 'last_name' => $lastName,
                 'first_name' => $_POST['reference_first_name'][$i] ?? '',
@@ -776,7 +792,8 @@ class ApplicationController
         foreach (['idx_status (status)', 'idx_created (created_at)'] as $idx) {
             try {
                 Database::query("ALTER TABLE tenant_applications ADD INDEX {$idx}");
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+            }
         }
     }
 
@@ -795,7 +812,6 @@ class ApplicationController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         $enabled = !empty($_POST['applications_enabled']) ? '1' : '0';
         $notes = $_POST['applications_notes'] ?? '';
@@ -850,8 +866,10 @@ class ApplicationController
     private function moveUploadedFile(array $file, string $uploadDir): ?string
     {
         $actualSize = @filesize($file['tmp_name']);
-        if (($file['size'] ?? 0) > 5 * 1024 * 1024
-            || $actualSize === false || $actualSize > 5 * 1024 * 1024) {
+        if (
+            ($file['size'] ?? 0) > 5 * 1024 * 1024
+            || $actualSize === false || $actualSize > 5 * 1024 * 1024
+        ) {
             flash('error', __('Each photo must be smaller than 5 MB.'));
             return null;
         }
@@ -866,7 +884,9 @@ class ApplicationController
             'image/webp' => 'webp',
             'application/pdf' => 'pdf',
         ];
-        if (!isset($extByMime[$mime])) { return null; }
+        if (!isset($extByMime[$mime])) {
+            return null;
+        }
 
         $filename = uniqid('app_photo_') . '.' . $extByMime[$mime];
         $destPath = $uploadDir . '/' . $filename;

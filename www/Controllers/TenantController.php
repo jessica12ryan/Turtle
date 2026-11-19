@@ -15,7 +15,8 @@ class TenantController
     private function getPropertyTenant(int $tenantId): ?array
     {
         return Database::fetch(
-            "SELECT * FROM property_tenant WHERE tenant_id = ?", [$tenantId]
+            "SELECT * FROM property_tenant WHERE tenant_id = ?",
+            [$tenantId]
         );
     }
 
@@ -338,7 +339,11 @@ class TenantController
              WHERE u.id = ? AND u.role = 'tenant'",
             [$id]
         );
-        if (!$tenant) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$tenant) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::tenant($id));
 
         $tickets = Database::fetchAll(
@@ -370,7 +375,11 @@ class TenantController
     public function edit(int $id): void
     {
         $tenant = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
-        if (!$tenant) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+        if (!$tenant) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Access::require(Access::tenant($id));
 
         $pt = $this->getPropertyTenant($id);
@@ -519,7 +528,6 @@ class TenantController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::tenant($id));
 
@@ -602,7 +610,6 @@ class TenantController
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
-            return;
         }
         Access::require(Access::tenant($id));
 
@@ -653,7 +660,11 @@ class TenantController
             }
 
             $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
-            if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
+            if (!$target) {
+                http_response_code(404);
+                require base_path('www/Views/errors/404.php');
+                return;
+            }
             Access::require(Access::tenant($id));
 
             // Several tables reference users(id) without ON DELETE CASCADE
@@ -667,7 +678,6 @@ class TenantController
             if (!$replacement) {
                 flash('error', __('Cannot permanently delete this tenant because no active admin is available to retain their records.'));
                 redirect('/tenants');
-                return;
             }
             $replacementId = (int)$replacement['id'];
 

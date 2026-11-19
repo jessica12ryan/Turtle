@@ -21,8 +21,17 @@ jobs:
           coverage: none
           tools: none
 
+      - name: Install development tools
+        run: composer install --no-interaction --no-progress
+
       - name: PHP syntax
         run: find www tests -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: PHPStan
+        run: composer analyse
+
+      - name: PHP_CodeSniffer
+        run: composer phpcs
 
       - name: Shell syntax
         run: |

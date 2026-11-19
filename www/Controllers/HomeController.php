@@ -100,9 +100,9 @@ class HomeController
 
         $alerts = [];
 
-        // Telemetry opt-in nudge: everyone except tenants (tenant branch returns above).
-        // Link to Settings only for admins — other roles cannot access /settings.
-        if ($role !== 'tenant' && !\App\Core\Telemetry::isEnabled()) {
+        // Telemetry opt-in nudge: the tenant branch returns above, so every
+        // role reaching here is staff. Link to Settings only for admins.
+        if (!\App\Core\Telemetry::isEnabled()) {
             $alerts['critical'][] = [
                 'msg' => 'Sharing telemetry data is turned off. Turn it on to help with development.',
             ] + ($role === 'admin' ? ['link' => '/settings?tab=updates'] : []);
@@ -201,6 +201,7 @@ class HomeController
             }
         }
 
+        $recentTickets = [];
         $stats = [];
         if (in_array($role, ['admin', 'landlord', 'property_manager'])) {
             $isAdmin = $role === 'admin';
@@ -253,12 +254,6 @@ class HomeController
                  WHERE t.property_id IN ({$propertyIdList}) AND t.archived_at IS NULL 
                  ORDER BY t.created_at DESC LIMIT 5"
             );
-        } elseif ($role === 'tenant') {
-            $uid = $auth->id();
-            $stats['properties'] = Database::fetch("SELECT COUNT(*) as cnt FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL", [$uid])['cnt'] ?? 0;
-            $stats['tickets'] = Database::fetch("SELECT COUNT(*) as cnt FROM tickets WHERE tenant_id = ? AND archived_at IS NULL", [$uid])['cnt'] ?? 0;
-            $stats['leases'] = Database::fetch("SELECT COUNT(*) as cnt FROM leases l JOIN property_tenant pt ON pt.property_id = l.property_id WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL", [$uid])['cnt'] ?? 0;
-            $recentTickets = [];
         }
 
         $view = new View();
