@@ -530,11 +530,6 @@ class TenantController
             $target = Database::fetch("SELECT * FROM users WHERE id = ? AND role = 'tenant'", [$id]);
             if (!$target) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
 
-            $pt = Database::fetch(
-                "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
-                [$id]
-            );
-
             // Several tables reference users(id) without ON DELETE CASCADE
             // (activity_logs, documents, leases.uploaded_by, notifications,
             // etc.). A surviving admin must own those records, otherwise the
@@ -583,16 +578,9 @@ class TenantController
                 Database::execute("DELETE FROM users WHERE id = ?", [$userId]);
             };
 
-            if ($pt) {
-                $secondaries = Database::fetchAll(
-                    "SELECT tenant_id FROM property_tenant WHERE property_id = ? AND tenant_id != ?",
-                    [$pt['property_id'], $id]
-                );
-                foreach ($secondaries as $s) {
-                    $deleteUser($s['tenant_id']);
-                }
-            }
-
+            // Only delete the requested tenant. Other tenants assigned to the
+            // same property are separate accounts and must not be removed —
+            // doing so silently deletes archived/co-tenants along with them.
             $deleteUser($id);
 
             Database::commit();
