@@ -87,10 +87,19 @@ class TenantController
         $archivedClause = $showArchived ? '' : ' AND u.archived_at IS NULL';
         $orderBy = $showArchived ? 'ORDER BY u.archived_at IS NULL ASC, u.name' : 'ORDER BY u.name';
 
+        // The active main tenant on the same property is the primary for
+        // secondary tenants (matching the lookup used on the detail pages).
+        $primaryTenantSelect = "(SELECT u2.name FROM property_tenant pt2
+                 JOIN users u2 ON u2.id = pt2.tenant_id
+                 WHERE pt2.property_id = p.id AND pt2.is_main_tenant = 1
+                   AND pt2.moved_out_at IS NULL
+                 ORDER BY pt2.id LIMIT 1) AS primary_tenant_name";
+
         if ($user['role'] === 'admin') {
             $tenants = Database::fetchAll(
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
-                 p.name as property_name, p.id as property_id 
+                 p.name as property_name, p.id as property_id,
+                 {$primaryTenantSelect}
                  FROM users u 
                  LEFT JOIN property_tenant pt ON pt.tenant_id = u.id 
                  LEFT JOIN properties p ON p.id = pt.property_id 
@@ -109,7 +118,8 @@ class TenantController
 
             $tenants = Database::fetchAll(
                 "SELECT u.*, pt.is_main_tenant, pt.moved_out_at, pt.assigned_at,
-                 p.name as property_name, p.id as property_id 
+                 p.name as property_name, p.id as property_id,
+                 {$primaryTenantSelect}
                  FROM users u 
                  LEFT JOIN property_tenant pt ON pt.tenant_id = u.id 
                  LEFT JOIN properties p ON p.id = pt.property_id 

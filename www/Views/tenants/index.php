@@ -35,6 +35,9 @@
                             <?php if ($tenant['archived_at']): ?>
                                 <span class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded ml-1"><?= __('Archived') ?></span>
                             <?php endif; ?>
+                            <?php if (!$tenant['is_main_tenant'] && !empty($tenant['primary_tenant_name'])): ?>
+                                <div class="text-xs text-gray-500 mt-0.5"><?= __('Primary Tenant') ?>: <?= h($tenant['primary_tenant_name']) ?></div>
+                            <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($tenant['email']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600"><?= h($tenant['phone'] ?? '') ?></td>

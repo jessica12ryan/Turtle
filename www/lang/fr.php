@@ -172,6 +172,7 @@ return [
     'Mail Settings' => 'Paramètres de courrier',
     'Main' => 'Principal',
     'Main Tenant' => 'Locataire principal',
+    'Primary Tenant' => 'Locataire principal',
     'Main Tenant:' => 'Locataire principal :',
     'Make this the main tenant' => 'Faire de ce locataire le locataire principal',
     'Manage application updates and version information.' => 'Gérer les mises à jour de l\'application et les informations de version.',

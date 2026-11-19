@@ -172,6 +172,7 @@ return [
     'Mail Settings' => 'Configuración de Correo',
     'Main' => 'Principal',
     'Main Tenant' => 'Inquilino Principal',
+    'Primary Tenant' => 'Inquilino Principal',
     'Main Tenant:' => 'Inquilino Principal:',
     'Make this the main tenant' => 'Hacer este el inquilino principal',
     'Manage application updates and version information.' => 'Gestionar las actualizaciones de la aplicación y la información de la versión.',
