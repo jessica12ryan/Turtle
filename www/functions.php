@@ -749,6 +749,10 @@ function defaultNotifications(): array
     return $defaults;
 }
 
+if (!defined('PRESENCE_TIMEOUT_SECONDS')) {
+    define('PRESENCE_TIMEOUT_SECONDS', 300);
+}
+
 function messaging_enabled(): bool
 {
     try {

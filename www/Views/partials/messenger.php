@@ -97,6 +97,7 @@ $messengerStrings = [
 function messenger(strings) {
     const url = (path) => (window.baseUrl || '') + path;
     const csrf = () => document.getElementById('messenger-csrf').value;
+    const xhrHeaders = () => ({ 'X-Requested-With': 'XMLHttpRequest' });
 
     function playSound() {
         try {
@@ -127,6 +128,8 @@ function messenger(strings) {
         text: '',
         unread: 0,
         lastUnread: 0,
+        lastActivity: Date.now(),
+        lastHeartbeat: 0,
         panelWidth: (() => {
             const saved = parseInt(localStorage.getItem('turtle.messengerWidth'), 10);
             return isNaN(saved) ? 384 : saved;
@@ -166,11 +169,36 @@ function messenger(strings) {
                 if (!data) return;
                 data.loadUsers();
                 data.poll();
+                ['mousemove', 'keydown', 'click'].forEach(function (eventName) {
+                    document.addEventListener(eventName, function () {
+                        const current = proxy();
+                        if (current) current.lastActivity = Date.now();
+                    }, { passive: true });
+                });
                 this.timer = setInterval(() => {
                     const current = proxy();
                     if (current) current.poll();
                 }, 5000);
+                this.heartbeatTimer = setInterval(() => {
+                    const current = proxy();
+                    if (current) current.sendHeartbeat();
+                }, 30000);
             }, 0);
+        },
+        async sendHeartbeat() {
+            if (Date.now() - this.lastActivity > 30000) return;
+            if (Date.now() - this.lastHeartbeat < 30000) return;
+            try {
+                const data = new URLSearchParams();
+                data.append('_csrf', csrf());
+                const res = await fetch(url('/messages/heartbeat'), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: Object.assign(xhrHeaders(), { 'Content-Type': 'application/x-www-form-urlencoded' }),
+                    body: data.toString()
+                });
+                if (res.ok) this.lastHeartbeat = Date.now();
+            } catch (e) {}
         },
         badge(id, count) {
             const el = document.getElementById(id);
@@ -180,7 +208,7 @@ function messenger(strings) {
         },
         async poll(forceThread = false) {
             try {
-                const res = await fetch(url('/messages/unread'), { credentials: 'same-origin' });
+                const res = await fetch(url('/messages/unread'), { credentials: 'same-origin', headers: xhrHeaders() });
                 if (!res.ok) return;
                 const data = await res.json();
                 this.unread = data.messages || 0;
@@ -196,7 +224,7 @@ function messenger(strings) {
         },
         async loadUsers() {
             try {
-                const res = await fetch(url('/messages/users'), { credentials: 'same-origin' });
+                const res = await fetch(url('/messages/users'), { credentials: 'same-origin', headers: xhrHeaders() });
                 if (!res.ok) return;
                 this.users = await res.json();
                 if (this.selected) {
@@ -210,7 +238,7 @@ function messenger(strings) {
             try {
                 const body = new URLSearchParams();
                 body.append('user_id', this.selected.id);
-                const res = await fetch(url('/messages/thread') + '?' + body.toString(), { credentials: 'same-origin' });
+                const res = await fetch(url('/messages/thread') + '?' + body.toString(), { credentials: 'same-origin', headers: xhrHeaders() });
                 if (!res.ok) throw new Error('failed');
                 const data = await res.json();
                 const grew = (data.messages || []).length > this.messages.length;
@@ -240,7 +268,7 @@ function messenger(strings) {
                 const res = await fetch(url('/messages/send'), {
                     method: 'POST',
                     credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: Object.assign(xhrHeaders(), { 'Content-Type': 'application/x-www-form-urlencoded' }),
                     body: data.toString()
                 });
                 const result = await res.json();

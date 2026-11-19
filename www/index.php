@@ -88,7 +88,10 @@ if ($requestUri === '/' || $requestUri === '/index.php') {
 }
 
 // Keep the current user marked as online for the messenger overlay.
-if (\App\Core\Auth::instance()->check()) {
+// XHR polling must not refresh presence — only page loads and the explicit
+// activity heartbeat do, so "online" expires after a period of inactivity.
+$isXhr = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+if (\App\Core\Auth::instance()->check() && !$isXhr) {
     try {
         \App\Core\Database::execute(
             "INSERT INTO user_presence (user_id, last_seen) VALUES (?, NOW())
@@ -309,6 +312,7 @@ $router->get('/messages/users', 'MessageController@users', ['auth']);
 $router->get('/messages/thread', 'MessageController@thread', ['auth']);
 $router->get('/messages/unread', 'MessageController@unread', ['auth']);
 $router->post('/messages/send', 'MessageController@send', ['auth']);
+$router->post('/messages/heartbeat', 'MessageController@heartbeat', ['auth']);
 
 // Notifications
 $router->get('/notifications', 'NotificationController@index', ['auth']);

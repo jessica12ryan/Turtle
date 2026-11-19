@@ -16,7 +16,8 @@ class MessageController
             return;
         }
         $me = Auth::instance()->id();
-        $cutoff = time() - 60;
+        $cutoff = time() - PRESENCE_TIMEOUT_SECONDS;
+        $presenceSeconds = PRESENCE_TIMEOUT_SECONDS;
         $senderRole = Auth::instance()->user()['role'] ?? '';
         $tenantFilter = $senderRole === 'tenant' ? " AND u.role != 'tenant'" : '';
 
@@ -28,7 +29,7 @@ class MessageController
                  FROM users u
                  LEFT JOIN user_presence p ON p.user_id = u.id
                  WHERE u.archived_at IS NULL AND u.id != ?{$tenantFilter}
-                 ORDER BY (p.last_seen >= DATE_SUB(NOW(), INTERVAL 60 SECOND)) DESC, u.name",
+                 ORDER BY (p.last_seen >= DATE_SUB(NOW(), INTERVAL {$presenceSeconds} SECOND)) DESC, u.name",
                 [$me, $me]
             );
         } catch (\Throwable $e) {
@@ -219,11 +220,30 @@ class MessageController
         ]);
     }
 
+    public function heartbeat(): void
+    {
+        header('Content-Type: application/json');
+        if (!messaging_enabled()) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Messaging is disabled.']);
+            return;
+        }
+
+        Database::execute(
+            "INSERT INTO user_presence (user_id, last_seen) VALUES (?, NOW())
+             ON DUPLICATE KEY UPDATE last_seen = NOW()",
+            [Auth::instance()->id()]
+        );
+
+        echo json_encode(['success' => true]);
+    }
+
     private function isOnline(int $userId): bool
     {
+        $presenceSeconds = PRESENCE_TIMEOUT_SECONDS;
         $row = Database::fetch(
             "SELECT user_id FROM user_presence
-             WHERE user_id = ? AND last_seen >= DATE_SUB(NOW(), INTERVAL 60 SECOND)",
+             WHERE user_id = ? AND last_seen >= DATE_SUB(NOW(), INTERVAL {$presenceSeconds} SECOND)",
             [$userId]
         );
         return $row !== null;
