@@ -138,6 +138,21 @@ try {
         if (($current['value'] ?? '') !== $now) {
             // Another request already claimed this window — skip processing
         } else {
+            // Self-heal tenancy links: an archived tenant account must never
+            // keep a property marked as occupied. This catches rows archived
+            // through older code paths or manual edits where moved_out_at was
+            // left NULL.
+            try {
+                \App\Core\Database::execute(
+                    "UPDATE property_tenant pt
+                     JOIN users u ON u.id = pt.tenant_id
+                     SET pt.moved_out_at = NOW(), pt.updated_at = NOW()
+                     WHERE u.archived_at IS NOT NULL AND pt.moved_out_at IS NULL"
+                );
+            } catch (\Throwable $e) {
+                \App\Core\Logger::error('Tenancy link reconciliation failed: ' . $e->getMessage());
+            }
+
             $expired = \App\Core\Database::fetchAll(
                 "SELECT pt.* FROM property_tenant pt 
                  WHERE pt.move_out_date IS NOT NULL 

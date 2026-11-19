@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
+use App\Core\Tenancy;
 
 class HomeController
 {
@@ -167,7 +168,7 @@ class HomeController
                 $isAdmin = $role === 'admin';
                 $alerts[$isAdmin ? 'warning' : 'critical'][] = ['msg' => 'No properties exist. Create one to get started.', 'link' => '/properties/create'];
             } else {
-                $noTenantProps = Database::fetch("SELECT COUNT(*) as cnt FROM properties p WHERE p.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)");
+                $noTenantProps = Database::fetch("SELECT COUNT(*) as cnt FROM properties p WHERE p.archived_at IS NULL AND NOT " . Tenancy::hasTenantSql('p'));
                 if ($noTenantProps && $noTenantProps['cnt'] > 0) {
                     $count = (int)$noTenantProps['cnt'];
                     $key = $count > 1 ? '%d properties have no tenants.' : '%d property has no tenants.';
@@ -221,13 +222,16 @@ class HomeController
 
             $stats['properties'] = count($props);
             $stats['tenants'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM property_tenant WHERE property_id IN ({$propertyIdList}) AND moved_out_at IS NULL"
+                "SELECT COUNT(*) as count FROM property_tenant pt
+                 JOIN users u ON u.id = pt.tenant_id
+                 WHERE pt.property_id IN ({$propertyIdList})
+                   AND pt.moved_out_at IS NULL AND u.archived_at IS NULL"
             )['count'] ?? 0;
             $stats['leases'] = Database::fetch(
                 "SELECT COUNT(*) as count FROM leases WHERE property_id IN ({$propertyIdList}) AND archived_at IS NULL"
             )['count'] ?? 0;
             $stats['occupied'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = properties.id AND pt.moved_out_at IS NULL)"
+                "SELECT COUNT(*) as count FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL AND " . Tenancy::hasTenantSql('properties')
             )['count'] ?? 0;
             $stats['total_units'] = $stats['properties'];
             $stats['open_tickets'] = Database::fetch(

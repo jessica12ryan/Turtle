@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
+use App\Core\Tenancy;
 
 class AiAssistantController
 {
@@ -155,7 +156,10 @@ class AiAssistantController
         $context['stats'] = [];
         $context['stats']['Total Properties'] = count($props);
         $context['stats']['Active Tenants'] = Database::fetch(
-            "SELECT COUNT(*) as count FROM property_tenant WHERE property_id IN ({$propertyIdList}) AND moved_out_at IS NULL"
+            "SELECT COUNT(*) as count FROM property_tenant pt
+             JOIN users u ON u.id = pt.tenant_id
+             WHERE pt.property_id IN ({$propertyIdList})
+               AND pt.moved_out_at IS NULL AND u.archived_at IS NULL"
         )['count'] ?? 0;
         $context['stats']['Open Tickets'] = Database::fetch(
             "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL"
@@ -166,7 +170,7 @@ class AiAssistantController
 
         $context['properties'] = Database::fetchAll(
             "SELECT p.id, p.name, u.name as landlord_name,
-             (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
+             " . Tenancy::tenantCountSql('p') . " as tenants_count,
              (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count
              FROM properties p JOIN users u ON u.id = p.landlord_id
              WHERE p.id IN ({$propertyIdList}) AND p.archived_at IS NULL

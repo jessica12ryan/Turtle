@@ -350,7 +350,7 @@ class Telemetry
             foreach ([
                 "SELECT COUNT(*) AS cnt FROM users WHERE archived_at IS NULL",
                 "SELECT COUNT(*) AS cnt FROM properties WHERE archived_at IS NULL",
-                "SELECT COUNT(*) AS cnt FROM property_tenant WHERE moved_out_at IS NULL",
+                "SELECT COUNT(*) AS cnt FROM property_tenant pt JOIN users u ON u.id = pt.tenant_id WHERE pt.moved_out_at IS NULL AND u.archived_at IS NULL",
                 "SELECT COUNT(*) AS cnt FROM tickets WHERE archived_at IS NULL",
             ] as $q) {
                 try {

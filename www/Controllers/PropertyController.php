@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
 use App\Core\Validator;
+use App\Core\Tenancy;
 
 class PropertyController
 {
@@ -40,7 +41,7 @@ class PropertyController
         $baseQuery = "p.*, u.name as landlord_name";
         if ($user['role'] !== 'tenant') {
             $baseQuery .= ",
-                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count,
+                 " . Tenancy::tenantCountSql('p') . " as tenants_count,
                  (SELECT COUNT(*) FROM tickets WHERE property_id = p.id AND archived_at IS NULL) as tickets_count";
         }
 

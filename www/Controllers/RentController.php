@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
 use App\Core\Validator;
+use App\Core\Tenancy;
 
 class RentController
 {
@@ -17,7 +18,7 @@ class RentController
         if ($user['role'] === 'admin') {
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
-                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count
+                 " . Tenancy::tenantCountSql('p') . " as tenants_count
                  FROM properties p
                  JOIN users u ON u.id = p.landlord_id
                  WHERE p.archived_at IS NULL
@@ -35,7 +36,7 @@ class RentController
 
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
-                 (SELECT COUNT(*) FROM property_tenant WHERE property_id = p.id AND moved_out_at IS NULL) as tenants_count
+                 " . Tenancy::tenantCountSql('p') . " as tenants_count
                  FROM properties p
                  JOIN users u ON u.id = p.landlord_id
                  WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}

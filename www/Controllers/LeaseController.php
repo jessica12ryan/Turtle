@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
 use App\Core\Validator;
+use App\Core\Tenancy;
 
 class LeaseController
 {
@@ -78,11 +79,11 @@ class LeaseController
         if ($user['role'] === 'admin') {
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
-                 (SELECT pt.tenant_id FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL AND pt.is_main_tenant = 1 LIMIT 1) as main_tenant_id
+                 " . Tenancy::mainTenantIdSql('p') . " as main_tenant_id
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
                  WHERE p.archived_at IS NULL
-                 AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
+                 AND " . Tenancy::hasTenantSql('p') . "
                  ORDER BY p.name"
             );
         } else {
@@ -97,11 +98,11 @@ class LeaseController
 
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name,
-                 (SELECT pt.tenant_id FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL AND pt.is_main_tenant = 1 LIMIT 1) as main_tenant_id
+                 " . Tenancy::mainTenantIdSql('p') . " as main_tenant_id
                  FROM properties p 
                  JOIN users u ON u.id = p.landlord_id 
                  WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
-                 AND EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
+                 AND " . Tenancy::hasTenantSql('p') . "
                  ORDER BY p.name",
                 $params
             );
@@ -124,7 +125,7 @@ class LeaseController
             $tenants = Database::fetchAll(
                 "SELECT u.id, u.name FROM users u 
                  JOIN property_tenant pt ON pt.tenant_id = u.id 
-                 WHERE pt.property_id = ? AND pt.moved_out_at IS NULL 
+                 WHERE pt.property_id = ? AND pt.moved_out_at IS NULL AND u.archived_at IS NULL 
                  ORDER BY pt.is_main_tenant DESC, u.name ASC",
                 [$p['id']]
             );
@@ -139,7 +140,7 @@ class LeaseController
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id
                  WHERE p.archived_at IS NULL
-                 AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
+                 AND NOT " . Tenancy::hasTenantSql('p') . "
                  ORDER BY p.name"
             );
         } else {
@@ -154,7 +155,7 @@ class LeaseController
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN users u ON u.id = p.landlord_id
                  WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause2}
-                 AND NOT EXISTS (SELECT 1 FROM property_tenant pt WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL)
+                 AND NOT " . Tenancy::hasTenantSql('p') . "
                  ORDER BY p.name",
                 $params2
             );
