@@ -139,7 +139,10 @@ class RentController
         }
         // Auto-detect main tenant for this property
         $mainTenant = Database::fetch(
-            "SELECT id FROM property_tenant WHERE property_id = ? AND is_main_tenant = 1 AND moved_out_at IS NULL",
+            "SELECT pt.id FROM property_tenant pt
+             JOIN users u ON u.id = pt.tenant_id
+             WHERE pt.property_id = ? AND pt.is_main_tenant = 1
+               AND " . Tenancy::activeLinkCondition('pt', 'u'),
             [$propertyId]
         );
         if (!$mainTenant) {

@@ -7,6 +7,7 @@ use App\Core\Database;
 use App\Core\View;
 use App\Core\Validator;
 use App\Core\Mailer;
+use App\Core\Tenancy;
 
 class TenantController
 {
@@ -162,7 +163,10 @@ class TenantController
             );
         }
 
-        // Fetch main tenant info per property for auto-fill
+        // Fetch the *current* main tenant per property. This drives both the
+        // secondary-tenant auto-fill and the form's rule that a property with
+        // a main tenant cannot receive another one. Archived/moved-out main
+        // tenants must not count, or their property can never be re-let.
         $mainTenants = [];
         foreach ($properties as $p) {
             $mt = Database::fetch(
@@ -170,7 +174,8 @@ class TenantController
                  FROM property_tenant pt 
                  JOIN users u ON u.id = pt.tenant_id 
                  WHERE pt.property_id = ? AND pt.is_main_tenant = 1
-                 ORDER BY (pt.moved_out_at IS NULL) DESC, pt.id ASC
+                   AND " . Tenancy::activeLinkCondition('pt', 'u') . "
+                 ORDER BY pt.id ASC
                  LIMIT 1",
                 [$p['id']]
             );
@@ -201,7 +206,9 @@ class TenantController
         $existingMain = Database::fetch(
             "SELECT pt.id, pt.lease_start, pt.lease_end, p.name as property_name FROM property_tenant pt 
              JOIN properties p ON p.id = pt.property_id
-             WHERE pt.property_id = ? AND pt.is_main_tenant = 1 AND pt.moved_out_at IS NULL",
+             JOIN users u ON u.id = pt.tenant_id
+             WHERE pt.property_id = ? AND pt.is_main_tenant = 1
+               AND " . Tenancy::activeLinkCondition('pt', 'u'),
             [$_POST['property_id']]
         );
 
