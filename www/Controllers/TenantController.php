@@ -17,6 +17,21 @@ class TenantController
         );
     }
 
+    /**
+     * Reduce a phone number to digits (and the standard US display format)
+     * before it is validated and stored. Doing this first means formatting,
+     * country codes or pasted Unicode separators cannot trip the length rule
+     * even though the stored value fits in the varchar(20) column.
+     */
+    private function normalizePhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+        if (strlen($digits) === 10) {
+            return '(' . substr($digits, 0, 3) . ') ' . substr($digits, 3, 3) . '-' . substr($digits, 6, 4);
+        }
+        return $digits;
+    }
+
     private function archiveSecondaryTenants(int $propertyId, int $mainTenantId): void
     {
         $secondaries = Database::fetchAll(
@@ -180,6 +195,9 @@ class TenantController
             [$_POST['property_id']]
         );
 
+        // Normalize before validation so the rule sees what will be stored.
+        $_POST['phone'] = $this->normalizePhone((string)($_POST['phone'] ?? ''));
+
         $isMainRequest = !empty($_POST['is_main_tenant']) || !$existingMain;
         $rules = [
             'name' => 'required|max:255',
@@ -199,11 +217,7 @@ class TenantController
             redirect('/tenants/create');
         }
 
-        $phone = $_POST['phone'] ?? '';
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        if (strlen($phone) === 10) {
-            $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
-        }
+        $phone = $_POST['phone'];
 
         $password = bin2hex(random_bytes(6));
         $timezone = $_POST['timezone'] ?: null;
@@ -372,6 +386,9 @@ class TenantController
         $currentUser = Auth::instance()->user();
         $canEditEmail = in_array($currentUser['role'] ?? '', ['admin', 'landlord']);
 
+        // Normalize before validation so the rule sees what will be stored.
+        $_POST['phone'] = $this->normalizePhone((string)($_POST['phone'] ?? ''));
+
         $validator = new Validator();
         $rules = ['name' => 'required|max:255'];
         if ($canEditEmail) {
@@ -388,11 +405,7 @@ class TenantController
             redirect('/tenants/' . $id . '/edit');
         }
 
-        $phone = $_POST['phone'] ?? '';
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        if (strlen($phone) === 10) {
-            $phone = '(' . substr($phone, 0, 3) . ') ' . substr($phone, 3, 3) . '-' . substr($phone, 6, 4);
-        }
+        $phone = $_POST['phone'];
 
         $timezone = $_POST['timezone'] ?: null;
         $language = $_POST['language'] ?: null;
