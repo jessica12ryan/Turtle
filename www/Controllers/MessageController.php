@@ -58,7 +58,7 @@ class MessageController
                 'role' => ucwords(str_replace('_', ' ', $row['role'])),
                 'avatar_url' => avatar_url(['id' => $row['id'], 'avatar_path' => $row['avatar_path'] ?? null]),
                 'initials' => initials_for($row['name']),
-                'online' => !empty($row['last_seen']) && strtotime($row['last_seen']) >= $cutoff,
+                'online' => ($seenAt = db_timestamp_epoch($row['last_seen'] ?? null)) !== null && $seenAt >= $cutoff,
                 'last_seen' => !empty($row['last_seen']) ? display_time($row['last_seen']) : null,
                 'unread' => (int)$row['unread'],
             ];

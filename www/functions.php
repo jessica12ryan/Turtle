@@ -861,6 +861,16 @@ function site_url(): string
     return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 }
 
+function db_timestamp_epoch(?string $datetime): ?int
+{
+    if (!$datetime) return null;
+    try {
+        return (new \DateTime($datetime, new \DateTimeZone('UTC')))->getTimestamp();
+    } catch (\Throwable $e) {
+        return null;
+    }
+}
+
 function display_time(?string $datetime, string $format = 'M j, Y g:i A'): string
 {
     if (!$datetime) return '';
