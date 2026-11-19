@@ -10,7 +10,13 @@
                     <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-red-800 dark:text-red-200"><?= h($a['msg']) ?></p>
-                        <?php if (isset($a['link'])): ?>
+                        <?php if (isset($a['links'])): ?>
+                            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                <?php foreach ($a['links'] as $link): ?>
+                                    <a href="<?= h($link['href']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= h($link['label']) ?>"><?= h($link['label']) ?></a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php elseif (isset($a['link'])): ?>
                             <a href="<?= h($a['link']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>
@@ -26,7 +32,13 @@
                     <svg class="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
                     <div class="flex-1">
                         <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200"><?= h($a['msg']) ?></p>
-                        <?php if (isset($a['link'])): ?>
+                        <?php if (isset($a['links'])): ?>
+                            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                <?php foreach ($a['links'] as $link): ?>
+                                    <a href="<?= h($link['href']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline" data-tooltip="<?= h($link['label']) ?>"><?= h($link['label']) ?></a>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php elseif (isset($a['link'])): ?>
                             <a href="<?= h($a['link']) ?>" class="text-sm text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block" data-tooltip="<?= __('View this item') ?>"><?= __('Take action →') ?></a>
                         <?php endif; ?>
                     </div>

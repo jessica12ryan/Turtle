@@ -386,6 +386,7 @@ return [
     'Use System Setting' => 'Usar Configuración del Sistema',
     'Version' => 'Versión',
     'View' => 'Ver',
+    'View Applications' => 'Ver solicitudes',
     'View Calendar' => 'Ver Calendario',
     'View Documents' => 'Ver Documentos',
     'View Properties' => 'Ver Propiedades',

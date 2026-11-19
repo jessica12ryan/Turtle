@@ -173,7 +173,10 @@ class HomeController
                     $key = $count > 1 ? '%d properties have no tenants.' : '%d property has no tenants.';
                     $alerts['warning'][] = [
                         'msg' => sprintf(__($key), $count),
-                        'link' => '/tenants/create',
+                        'links' => [
+                            ['label' => __('Add Tenant'), 'href' => '/tenants/create'],
+                            ['label' => __('View Applications'), 'href' => '/applications'],
+                        ],
                     ];
                 }
             }

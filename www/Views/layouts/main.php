@@ -134,6 +134,8 @@ $themePref = $themeUser['theme'] ?? 'system';
             html.sidebar-collapsed .nav-label { display: none; }
             html.sidebar-collapsed #sidebar .sidebar-logo { display: none; }
             html.sidebar-collapsed #sidebar .sidebar-header { justify-content: center; }
+            #sidebar .collapse-icon { transition: transform 0.2s; }
+            html.sidebar-collapsed #sidebar .collapse-icon { transform: rotate(180deg); }
         }
 
         /* Tooltip system */
