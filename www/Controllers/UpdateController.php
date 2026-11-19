@@ -231,6 +231,7 @@ class UpdateController
 
         $updateId = bin2hex(random_bytes(8));
         $logFile = sys_get_temp_dir() . "/turtle_update_{$updateId}.log";
+        $backupFile = sys_get_temp_dir() . "/turtle_update_{$updateId}_backup.tar.gz";
 
         $repo = self::repoPath();
         $git = 'git -c safe.directory=' . $repo;
@@ -239,12 +240,19 @@ class UpdateController
         $branch = escapeshellarg(trim(shell_exec("{$git} -C {$repo} rev-parse --abbrev-ref HEAD 2>&1") ?: 'master'));
 
         $steps = [
-            'Fixing permissions...' => "chmod 755 {$repo} 2>&1 || echo 'WARNING: chmod repo failed (check ownership, continuing)' >&2; chmod -R 775 {$repo}/storage {$repo}/.git {$repo}/www/assets/uploads 2>&1 || echo 'WARNING: chmod storage/.git failed (check ownership, continuing)' >&2; if command -v sudo >/dev/null 2>&1; then sudo chmod -R 775 {$repo}/storage {$repo}/.git 2>&1 || echo 'sudo chmod failed, continuing without sudo' >&2; fi; rm -f {$repo}/.git/index.lock {$repo}/.git/FETCH_HEAD 2>&1; rm -rf {$repo}/storage/framework {$repo}/storage/logs 2>&1; true",
-            'Preparing working directory...' => "{$cd} && rm -f .git/index.lock .git/FETCH_HEAD 2>&1; {$git} reset --hard HEAD 2>&1 && {$git} clean -fd -e www/assets/uploads/logo/ -e storage/uploads/ 2>&1",
+            // Snapshot everything that is not managed by git before touching
+            // the working tree. Uploads are preserved separately and excluded
+            // from the archive to keep it small.
+            'Backing up current files...' => "tar -czf {$backupFile} -C {$repo} --exclude='./.git' --exclude='./storage/uploads' --exclude='./www/assets/uploads/logo' . 2>&1 && echo \"Backup: {$backupFile}\"",
+            'Fixing permissions...' => "chmod 755 {$repo} 2>&1 || echo 'WARNING: chmod repo failed (check ownership, continuing)' >&2; chmod -R 775 {$repo}/storage {$repo}/.git {$repo}/www/assets/uploads 2>&1 || echo 'WARNING: chmod storage/.git failed (check ownership, continuing)' >&2; if command -v sudo >/dev/null 2>&1; then sudo chmod -R 775 {$repo}/storage {$repo}/.git 2>&1 || echo 'sudo chmod failed, continuing without sudo' >&2; fi; true",
             'Ensuring storage directories...' => "{$cd} && mkdir -p storage/uploads/property_photos storage/uploads/leases storage/uploads/application_photos storage/framework storage/logs www/assets/uploads/logo 2>&1",
             'Fetching latest code...' => "{$cd} && {$git} fetch origin 2>&1",
             'Checking for changes...' => "{$cd} && {$git} log HEAD..origin/{$branch} --oneline 2>&1",
-            'Pulling updates...' => "{$cd} && {$git} pull origin {$branch} 2>&1",
+            // No reset/clean: untracked or locally modified files are never
+            // silently deleted. A fast-forward-only pull fails safely if the
+            // working tree has local changes, and the backup above can be used
+            // to recover.
+            'Pulling updates...' => "{$cd} && {$git} pull --ff-only origin {$branch} 2>&1",
             'Running migrations...' => "{$cd} && bash database/migrate.sh 2>&1",
             'Restarting services...' => "{$cd} && php -r 'opcache_reset();' 2>&1; apachectl graceful 2>&1 || httpd -k graceful 2>&1 || true",
         ];

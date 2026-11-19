@@ -146,6 +146,12 @@ run_sql "ALTER TABLE property_tenant ADD COLUMN emergency_contact_phone VARCHAR(
 run_sql "CREATE TABLE IF NOT EXISTS tenant_applications (id INT AUTO_INCREMENT PRIMARY KEY, property_id INT DEFAULT NULL, status VARCHAR(20) DEFAULT 'new', data LONGTEXT NOT NULL, notes TEXT, archived_at TIMESTAMP NULL DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "ALTER TABLE tenant_applications ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL AFTER notes;"
 run_sql "CREATE TABLE IF NOT EXISTS auth_rate_limits (cache_key VARCHAR(191) PRIMARY KEY, attempts INT NOT NULL DEFAULT 0, window_start INT NOT NULL, last_at DATETIME NOT NULL, INDEX idx_window (window_start)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+# Batch markers let a restore undo only the rows archived by that one action.
+run_sql "ALTER TABLE properties ADD COLUMN archived_batch VARCHAR(32) DEFAULT NULL AFTER archived_at;"
+run_sql "ALTER TABLE property_tenant ADD COLUMN archived_batch VARCHAR(32) DEFAULT NULL AFTER moved_out_at;"
+run_sql "ALTER TABLE payments ADD COLUMN archived_batch VARCHAR(32) DEFAULT NULL AFTER archived_at;"
+run_sql "ALTER TABLE leases ADD COLUMN archived_batch VARCHAR(32) DEFAULT NULL AFTER archived_at;"
+run_sql "ALTER TABLE tickets ADD COLUMN archived_batch VARCHAR(32) DEFAULT NULL AFTER archived_at;"
 # Only re-seed permissions if not in custom mode (preserves user customizations on updates)
 PERM_MODE=$($MYSQL_CMD -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || $MYSQL_ROOT -N -e "SELECT \`value\` FROM settings WHERE \`key\` = 'permissions_mode';" 2>/dev/null || echo "")
 if [ "$PERM_MODE" != "custom" ]; then

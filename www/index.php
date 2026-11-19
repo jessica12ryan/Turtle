@@ -160,29 +160,35 @@ try {
                  AND pt.moved_out_at IS NULL"
             );
             foreach ($expired as $pt) {
+                $batch = bin2hex(random_bytes(16));
                 \App\Core\Database::execute(
-                    "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL",
-                    [$pt['id']]
+                    "UPDATE property_tenant SET moved_out_at = NOW(), archived_batch = ?, updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL",
+                    [$batch, $pt['id']]
                 );
                 \App\Core\Database::execute(
                     "UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL",
                     [$pt['tenant_id']]
                 );
                 \App\Core\Database::execute(
-                    "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
-                    [$pt['tenant_id']]
+                    "UPDATE leases SET archived_at = NOW(), archived_batch = ? WHERE tenant_id = ? AND archived_at IS NULL",
+                    [$batch, $pt['tenant_id']]
+                );
+                \App\Core\Database::execute(
+                    "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL",
+                    [$batch, $pt['id']]
                 );
                 // If main tenant, cascade to secondary tenants
                 if (!empty($pt['is_main_tenant'])) {
                     $secondaries = \App\Core\Database::fetchAll(
-                        "SELECT tenant_id FROM property_tenant 
+                        "SELECT id, tenant_id FROM property_tenant
                          WHERE property_id = ? AND tenant_id != ? AND moved_out_at IS NULL",
                         [$pt['property_id'], $pt['tenant_id']]
                     );
                     foreach ($secondaries as $s) {
-                        \App\Core\Database::execute("UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL", [$s['tenant_id']]);
+                        \App\Core\Database::execute("UPDATE property_tenant SET moved_out_at = NOW(), archived_batch = ?, updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL", [$batch, $s['id']]);
                         \App\Core\Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL", [$s['tenant_id']]);
-                        \App\Core\Database::execute("UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL", [$s['tenant_id']]);
+                        \App\Core\Database::execute("UPDATE leases SET archived_at = NOW(), archived_batch = ? WHERE tenant_id = ? AND archived_at IS NULL", [$batch, $s['tenant_id']]);
+                        \App\Core\Database::execute("UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL", [$batch, $s['id']]);
                     }
                 }
             }

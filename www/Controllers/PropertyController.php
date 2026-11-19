@@ -565,27 +565,76 @@ class PropertyController
             redirectBack();
             return;
         }
-        $property = Database::fetch("SELECT id, name FROM properties WHERE id = ?", [$id]);
+        $property = Database::fetch("SELECT id, name, archived_batch FROM properties WHERE id = ?", [$id]);
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
         Access::require(Access::property($id));
 
-        Database::execute("UPDATE properties SET archived_at = NULL WHERE id = ?", [$id]);
-
-        // Cascade restore tenants, leases, and tickets that were archived with this property
-        $tenantIds = Database::fetchAll("SELECT tenant_id FROM property_tenant WHERE property_id = ? AND moved_out_at IS NOT NULL", [$id]);
-        foreach ($tenantIds as $t) {
-            Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE property_id = ? AND tenant_id = ?", [$id, $t['tenant_id']]);
-            Database::execute("UPDATE users SET archived_at = NULL WHERE id = ?", [$t['tenant_id']]);
+        $batch = $property['archived_batch'] ?? null;
+        if (!$batch) {
+            // Legacy archives have no batch marker. Restoring them wholesale
+            // would re-open links that ended years ago, so only the property
+            // itself is re-activated.
+            Database::execute("UPDATE properties SET archived_at = NULL WHERE id = ?", [$id]);
+            log_activity('property.restored', "Property '{$property['name']}' restored (legacy archive)");
+            flash('success', 'Property restored. Related records from this legacy archive were left unchanged.');
+            redirect('/properties');
         }
-        Database::execute("UPDATE leases SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
-        Database::execute("UPDATE tickets SET archived_at = NULL WHERE property_id = ? AND archived_at IS NOT NULL", [$id]);
+
+        $skipped = 0;
+        $links = Database::fetchAll(
+            "SELECT tenant_id FROM property_tenant
+             WHERE property_id = ? AND moved_out_at IS NOT NULL AND archived_batch = ?",
+            [$id, $batch]
+        );
+        foreach ($links as $link) {
+            $tenantId = (int)$link['tenant_id'];
+            // A tenant who has since moved to another property must not gain a
+            // second active link by restoring this historical one.
+            $elsewhere = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL AND property_id != ?",
+                [$tenantId, $id]
+            );
+            if ($elsewhere) {
+                $skipped++;
+                continue;
+            }
+            Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NULL, archived_batch = NULL, updated_at = NOW()
+                 WHERE property_id = ? AND tenant_id = ? AND archived_batch = ?",
+                [$id, $tenantId, $batch]
+            );
+            $stillActive = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
+                [$tenantId]
+            );
+            if ($stillActive) {
+                Database::execute("UPDATE users SET archived_at = NULL WHERE id = ?", [$tenantId]);
+            }
+        }
+
         Database::execute(
-            "UPDATE payments SET archived_at = NULL WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NOT NULL",
+            "UPDATE leases SET archived_at = NULL, archived_batch = NULL WHERE archived_batch = ?",
+            [$batch]
+        );
+        Database::execute(
+            "UPDATE tickets SET archived_at = NULL, archived_batch = NULL WHERE archived_batch = ?",
+            [$batch]
+        );
+        Database::execute(
+            "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE archived_batch = ?",
+            [$batch]
+        );
+        Database::execute(
+            "UPDATE properties SET archived_at = NULL, archived_batch = NULL WHERE id = ?",
             [$id]
         );
 
         log_activity('property.restored', "Property '{$property['name']}' restored");
-        flash('success', 'Property restored successfully. Related tenants, leases, and tickets have also been restored.');
+        $message = 'Property restored successfully. Related tenants, leases, and tickets have also been restored.';
+        if ($skipped > 0) {
+            $message .= ' Some historical tenancies were left archived because those tenants are assigned elsewhere.';
+        }
+        flash('success', $message);
         redirect('/properties');
     }
 
@@ -600,19 +649,36 @@ class PropertyController
         if (!$property) { http_response_code(404); require base_path('www/Views/errors/404.php'); return; }
         Access::require(Access::property($id));
 
-        Database::execute("UPDATE properties SET archived_at = NOW() WHERE id = ?", [$id]);
+        // Tag every row touched by this archive so a later restore can undo
+        // exactly this operation instead of every historical move-out.
+        $batch = bin2hex(random_bytes(16));
+
+        Database::execute(
+            "UPDATE properties SET archived_at = NOW(), archived_batch = ? WHERE id = ?",
+            [$batch, $id]
+        );
 
         // Cascade archive to related records
         $tenantIds = Database::fetchAll("SELECT tenant_id FROM property_tenant WHERE property_id = ? AND moved_out_at IS NULL", [$id]);
         foreach ($tenantIds as $t) {
-            Database::execute("UPDATE property_tenant SET moved_out_at = NOW() WHERE property_id = ? AND tenant_id = ?", [$id, $t['tenant_id']]);
+            Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NOW(), archived_batch = ?, updated_at = NOW() WHERE property_id = ? AND tenant_id = ? AND moved_out_at IS NULL",
+                [$batch, $id, $t['tenant_id']]
+            );
             Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$t['tenant_id']]);
         }
-        Database::execute("UPDATE leases SET archived_at = NOW() WHERE property_id = ? AND archived_at IS NULL", [$id]);
-        Database::execute("UPDATE tickets SET archived_at = NOW(), status = 'closed' WHERE property_id = ? AND archived_at IS NULL", [$id]);
         Database::execute(
-            "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NULL",
-            [$id]
+            "UPDATE leases SET archived_at = NOW(), archived_batch = ? WHERE property_id = ? AND archived_at IS NULL",
+            [$batch, $id]
+        );
+        Database::execute(
+            "UPDATE tickets SET archived_at = NOW(), archived_batch = ?, status = 'closed' WHERE property_id = ? AND archived_at IS NULL",
+            [$batch, $id]
+        );
+        Database::execute(
+            "UPDATE payments SET archived_at = NOW(), archived_batch = ?
+             WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NULL",
+            [$batch, $id]
         );
 
         log_activity('property.archived', "Property '{$property['name']}' archived");

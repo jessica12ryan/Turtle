@@ -34,7 +34,7 @@ class TenantController
         return $digits;
     }
 
-    private function archiveSecondaryTenants(int $propertyId, int $mainTenantId): void
+    private function archiveSecondaryTenants(int $propertyId, int $mainTenantId, string $batch): void
     {
         $secondaries = Database::fetchAll(
             "SELECT pt.id, pt.tenant_id FROM property_tenant pt
@@ -44,42 +44,60 @@ class TenantController
         foreach ($secondaries as $s) {
             Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$s['tenant_id']]);
             Database::execute(
-                "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
-                [$s['tenant_id']]
+                "UPDATE property_tenant SET moved_out_at = NOW(), archived_batch = ?, updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
+                [$batch, $s['tenant_id']]
             );
             Database::execute(
-                "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
-                [$s['tenant_id']]
+                "UPDATE leases SET archived_at = NOW(), archived_batch = ? WHERE tenant_id = ? AND archived_at IS NULL",
+                [$batch, $s['tenant_id']]
             );
             Database::execute(
-                "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id = ? AND archived_at IS NULL",
-                [$s['id']]
+                "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL",
+                [$batch, $s['id']]
             );
         }
     }
 
-    private function restoreSecondaryTenants(int $propertyId, int $mainTenantId): void
+    private function restoreSecondaryTenants(int $propertyId, int $mainTenantId, string $batch): int
     {
         $secondaries = Database::fetchAll(
             "SELECT pt.id, pt.tenant_id FROM property_tenant pt
-             WHERE pt.property_id = ? AND pt.tenant_id != ? AND pt.moved_out_at IS NOT NULL",
-            [$propertyId, $mainTenantId]
+             WHERE pt.property_id = ? AND pt.tenant_id != ? AND pt.moved_out_at IS NOT NULL
+               AND pt.archived_batch = ?",
+            [$propertyId, $mainTenantId, $batch]
         );
+        $restored = 0;
         foreach ($secondaries as $s) {
-            Database::execute("UPDATE users SET archived_at = NULL WHERE id = ?", [$s['tenant_id']]);
-            Database::execute(
-                "UPDATE property_tenant SET moved_out_at = NULL, updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NOT NULL",
-                [$s['tenant_id']]
+            $tenantId = (int)$s['tenant_id'];
+            $elsewhere = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL AND property_id != ?",
+                [$tenantId, $propertyId]
             );
+            if ($elsewhere) {
+                continue;
+            }
             Database::execute(
-                "UPDATE leases SET archived_at = NULL WHERE tenant_id = ? AND archived_at IS NOT NULL",
-                [$s['tenant_id']]
-            );
-            Database::execute(
-                "UPDATE payments SET archived_at = NULL WHERE property_tenant_id = ? AND archived_at IS NOT NULL",
+                "UPDATE property_tenant SET moved_out_at = NULL, archived_batch = NULL, updated_at = NOW() WHERE id = ?",
                 [$s['id']]
             );
+            Database::execute(
+                "UPDATE leases SET archived_at = NULL, archived_batch = NULL WHERE tenant_id = ? AND archived_batch = ?",
+                [$tenantId, $batch]
+            );
+            Database::execute(
+                "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE property_tenant_id = ? AND archived_batch = ?",
+                [$s['id'], $batch]
+            );
+            $active = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
+                [$tenantId]
+            );
+            if ($active) {
+                Database::execute("UPDATE users SET archived_at = NULL WHERE id = ?", [$tenantId]);
+            }
+            $restored++;
         }
+        return $restored;
     }
 
     public function index(): void
@@ -505,27 +523,77 @@ class TenantController
         }
         Access::require(Access::tenant($id));
 
-        Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
-        $pt = Database::fetch(
+        $links = Database::fetchAll(
             "SELECT * FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NOT NULL",
             [$id]
         );
-        if ($pt) {
-            Database::execute("UPDATE property_tenant SET moved_out_at = NULL WHERE tenant_id = ? AND moved_out_at IS NOT NULL", [$id]);
-            Database::execute("UPDATE payments SET archived_at = NULL WHERE property_tenant_id = ? AND archived_at IS NOT NULL", [$pt['id']]);
+        $restored = 0;
+        $skipped = 0;
+        $batches = [];
+        $mainProperties = [];
+
+        foreach ($links as $link) {
+            $batch = $link['archived_batch'] ?? null;
+            // Without a batch marker this link may have ended years ago; it is
+            // not safe to treat it as part of this restore.
+            if (!$batch) {
+                $skipped++;
+                continue;
+            }
+            $elsewhere = Database::fetch(
+                "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL AND property_id != ?",
+                [$id, $link['property_id']]
+            );
+            if ($elsewhere) {
+                $skipped++;
+                continue;
+            }
+
+            Database::execute(
+                "UPDATE property_tenant SET moved_out_at = NULL, archived_batch = NULL, updated_at = NOW() WHERE id = ?",
+                [$link['id']]
+            );
+            Database::execute(
+                "UPDATE leases SET archived_at = NULL, archived_batch = NULL WHERE tenant_id = ? AND archived_batch = ?",
+                [$id, $batch]
+            );
+            Database::execute(
+                "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE property_tenant_id = ? AND archived_batch = ?",
+                [$link['id'], $batch]
+            );
+
+            $batches[] = $batch;
+            if (!empty($link['is_main_tenant'])) {
+                $mainProperties[] = (int)$link['property_id'];
+            }
+            $restored++;
         }
 
-        // Cascade restore to secondary tenants if this is a main tenant
-        $mainPt = Database::fetch(
-            "SELECT * FROM property_tenant WHERE tenant_id = ? AND is_main_tenant = 1",
+        // Restore co-tenants only from the same archive operation.
+        foreach ($mainProperties as $propertyId) {
+            foreach ($batches as $batch) {
+                $restored += $this->restoreSecondaryTenants($propertyId, $id, $batch);
+            }
+        }
+
+        // Only re-enable the account if at least one tenancy is actually
+        // current again — archived_at is the global login-eligibility flag.
+        $active = Database::fetch(
+            "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
             [$id]
         );
-        if ($mainPt) {
-            $this->restoreSecondaryTenants($mainPt['property_id'], $id);
+        if ($active) {
+            Database::execute("UPDATE users SET archived_at = NULL WHERE id = ? AND role = 'tenant'", [$id]);
         }
 
         log_activity('tenant.restored', "Tenant #{$id} restored");
-        flash('success', 'Tenant restored successfully.');
+        $message = $restored > 0
+            ? 'Tenant restored successfully.'
+            : 'No current tenancy could be restored for this tenant.';
+        if ($skipped > 0) {
+            $message .= ' Some historical tenancies were left archived because they predate batch tracking or the tenant is assigned elsewhere.';
+        }
+        flash($restored > 0 ? 'success' : 'error', $message);
         redirect('/tenants');
     }
 
@@ -544,27 +612,30 @@ class TenantController
         );
 
         if ($pt) {
+            // One batch id marks everything archived by this move-out.
+            $batch = bin2hex(random_bytes(16));
+
             // Archive the tenant
             Database::execute(
-                "UPDATE property_tenant SET moved_out_at = NOW(), updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
-                [$id]
+                "UPDATE property_tenant SET moved_out_at = NOW(), archived_batch = ?, updated_at = NOW() WHERE tenant_id = ? AND moved_out_at IS NULL",
+                [$batch, $id]
             );
             Database::execute(
                 "UPDATE users SET archived_at = NOW() WHERE id = ?",
                 [$id]
             );
             Database::execute(
-                "UPDATE leases SET archived_at = NOW() WHERE tenant_id = ? AND archived_at IS NULL",
-                [$id]
+                "UPDATE leases SET archived_at = NOW(), archived_batch = ? WHERE tenant_id = ? AND archived_at IS NULL",
+                [$batch, $id]
             );
             Database::execute(
-                "UPDATE payments SET archived_at = NOW() WHERE property_tenant_id = ? AND archived_at IS NULL",
-                [$pt['id']]
+                "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL",
+                [$batch, $pt['id']]
             );
 
             // Cascade archive to secondary tenants if this is a main tenant
             if (!empty($pt['is_main_tenant'])) {
-                $this->archiveSecondaryTenants($pt['property_id'], $id);
+                $this->archiveSecondaryTenants($pt['property_id'], $id, $batch);
             }
         }
 
