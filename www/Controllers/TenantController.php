@@ -535,12 +535,51 @@ class TenantController
                 [$id]
             );
 
+            // Several tables reference users(id) without ON DELETE CASCADE
+            // (activity_logs, documents, leases.uploaded_by, notifications,
+            // etc.). A surviving admin must own those records, otherwise the
+            // DELETE fails with a foreign key constraint error.
+            $replacement = Database::fetch(
+                "SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL AND id != ? ORDER BY id LIMIT 1",
+                [$id]
+            );
+            if (!$replacement) {
+                flash('error', 'Cannot permanently delete this tenant because no active admin is available to retain their records.');
+                redirect('/tenants');
+                return;
+            }
+            $replacementId = (int)$replacement['id'];
+
             Database::beginTransaction();
 
-            $deleteUser = function (int $userId): void {
+            $deleteUser = function (int $userId) use ($replacementId): void {
+                // Nullable references.
+                Database::execute("UPDATE properties SET property_manager_id = NULL WHERE property_manager_id = ?", [$userId]);
+                Database::execute("UPDATE tickets SET assigned_to = NULL WHERE assigned_to = ?", [$userId]);
                 Database::execute("UPDATE leases SET tenant_id = NULL WHERE tenant_id = ?", [$userId]);
+
+                // Required references are reassigned to a surviving admin.
+                Database::execute("UPDATE properties SET landlord_id = ? WHERE landlord_id = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE payments SET recorded_by = ? WHERE recorded_by = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE leases SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE ticket_comments SET user_id = ? WHERE user_id = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE ticket_files SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE documents SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE resources SET created_by = ? WHERE created_by = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE activity_logs SET user_id = ? WHERE user_id = ?", [$replacementId, $userId]);
+
+                // Records that belong to the tenant itself.
                 Database::execute("DELETE FROM tickets WHERE tenant_id = ?", [$userId]);
+                Database::execute("DELETE FROM notifications WHERE user_id = ?", [$userId]);
+                Database::execute("DELETE FROM sessions WHERE user_id = ?", [$userId]);
                 Database::execute("DELETE FROM property_tenant WHERE tenant_id = ?", [$userId]);
+
+                $userRow = Database::fetch("SELECT email FROM users WHERE id = ?", [$userId]);
+                if ($userRow) {
+                    Database::execute("DELETE FROM password_reset_tokens WHERE email = ?", [$userRow['email']]);
+                }
+
+                // messages, company_user and user_presence cascade on their own.
                 Database::execute("DELETE FROM users WHERE id = ?", [$userId]);
             };
 
