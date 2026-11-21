@@ -5,6 +5,7 @@ Thank you for considering contributing to Turtle! This document outlines the gui
 ## Table of Contents
 
 - [Development Setup](#development-setup)
+- [Testing](#testing)
 - [Branching Strategy](#branching-strategy)
 - [Coding Standards](#coding-standards)
 - [Security](#security)
@@ -28,6 +29,19 @@ The first boot presents a setup wizard. Choose **New Installation** to configure
 ### Home Assistant App
 
 The app can be tested locally by pointing the app repository to your local clone. See the `turtle-ha/` and `turtle-ha-dev/` directories for app configurations.
+
+## Testing
+
+All automated tests run in Docker so local runs, AI agents, and CI produce the same result:
+
+```bash
+./scripts/test.sh              # PHPUnit (unit + integration) + Playwright E2E
+./scripts/test.sh unit         # pure-logic unit tests only
+./scripts/test.sh integration  # database-backed tests only
+./scripts/test.sh e2e          # browser smoke tests only
+```
+
+The test stack uses throwaway databases and never touches your `.env` or development data. See `AGENTS.md` for agent guidance and instructions on adding tests. Static analysis (`composer lint`) runs separately in `.github/workflows/lint.yml`.
 
 ## Branching Strategy
 

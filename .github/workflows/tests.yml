@@ -1,0 +1,21 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same command developers and AI agents run locally, so a green local
+      # run means a green CI run.
+      - name: Full test suite (PHPUnit + Playwright)
+        run: ./scripts/test.sh

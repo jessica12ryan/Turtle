@@ -1,0 +1,13 @@
+{
+  "name": "turtle-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright HTTP/UI smoke tests for Turtle",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

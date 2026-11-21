@@ -30,8 +30,10 @@ until DB_HOST="${DB_HOST:-mysql}" DB_PORT="${DB_PORT:-3306}" \
 done
 
 # Run schema/migrations — first boot creates tables, every boot runs incremental migrations (idempotent)
+# TURTLE_FORCE_MIGRATIONS is used by the throwaway E2E stack so a stale
+# .db_initialized marker on the host cannot skip setup of the fresh test DB.
 if [ -f database/schema.sql ]; then
-    if [ ! -f storage/.db_initialized ]; then
+    if [ ! -f storage/.db_initialized ] || [ "${TURTLE_FORCE_MIGRATIONS:-0}" = "1" ]; then
         echo ">>> Setting up database (first boot)..."
         bash database/migrate.sh
         touch storage/.db_initialized

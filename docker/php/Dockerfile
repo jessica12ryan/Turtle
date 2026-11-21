@@ -1,5 +1,10 @@
 FROM php:8.5-apache
 
+# Composer is used to install the dev dependencies (PHPUnit) when running the
+# test suites inside this image. Keep it in the image so local, AI and CI runs
+# all use the exact same PHP version and extensions as the app.
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \

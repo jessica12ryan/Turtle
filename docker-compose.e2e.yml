@@ -1,0 +1,78 @@
+# Fresh, throwaway Turtle stack + Playwright for HTTP/UI smoke tests.
+# Run with: docker compose -f docker-compose.e2e.yml run --rm playwright
+name: turtle-e2e
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: turtle
+      MYSQL_USER: turtle
+      MYSQL_PASSWORD: turtle
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      interval: 2s
+      retries: 30
+      timeout: 5s
+    networks:
+      - turtle-e2e
+
+  mailpit:
+    image: axllent/mailpit:latest
+    networks:
+      - turtle-e2e
+
+  app:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    restart: "no"
+    ports:
+      - "8085:80"
+    volumes:
+      - .:/var/www/html
+      - ./tests/empty.env:/var/www/html/.env:ro
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_DATABASE: turtle
+      DB_USERNAME: turtle
+      DB_PASSWORD: turtle
+      # Always (re)apply schema on a fresh E2E database, even if a developer's
+      # storage/.db_initialized marker happens to be present on the host.
+      TURTLE_FORCE_MIGRATIONS: "1"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost/setup > /dev/null"]
+      interval: 3s
+      retries: 40
+      timeout: 5s
+    networks:
+      - turtle-e2e
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.65.0-noble
+    working_dir: /e2e
+    volumes:
+      - ./e2e:/e2e
+    environment:
+      # APIRequestContext (Node) resolves Compose DNS correctly.
+      MAILPIT_URL: http://mailpit:8025
+    depends_on:
+      app:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    networks:
+      - turtle-e2e
+    entrypoint: []
+    # Chromium in the Playwright image fails on Compose DNS names even though
+    # curl/Node resolve them, so resolve the IP once and give it to the browser.
+    command: bash -c "export BASE_URL=http://$$(getent hosts app | cut -d' ' -f1); npm ci --no-audit --no-fund && npx playwright test"
+
+networks:
+  turtle-e2e:
+    driver: bridge
