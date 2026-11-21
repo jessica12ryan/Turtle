@@ -96,10 +96,13 @@ run_sql "SET @fk_name = (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLU
 run_sql "ALTER TABLE users MODIFY COLUMN role ENUM('admin','landlord','property_manager','maintenance','tenant') NOT NULL DEFAULT 'tenant';"
 run_sql "ALTER TABLE users ADD COLUMN phone VARCHAR(20) DEFAULT '' AFTER email;"
 run_sql "ALTER TABLE properties ADD COLUMN landlord_id INT NOT NULL DEFAULT 1 AFTER id;"
-run_sql "ALTER TABLE properties ADD FOREIGN KEY (landlord_id) REFERENCES users(id);"
+# Named, guarded FKs: unnamed ADD FOREIGN KEY creates a new auto-generated
+# constraint on every boot, which eventually makes ALTER TABLE on properties
+# take minutes and blocks the whole app.
+run_sql "SET @fk_name = (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'properties' AND COLUMN_NAME = 'landlord_id' AND REFERENCED_TABLE_NAME = 'users' LIMIT 1); SET @add_fk = IF(@fk_name IS NULL, 'ALTER TABLE properties ADD CONSTRAINT fk_properties_landlord FOREIGN KEY (landlord_id) REFERENCES users(id)', 'SELECT 1'); PREPARE stmt FROM @add_fk; EXECUTE stmt; DEALLOCATE PREPARE stmt;"
 run_sql "ALTER TABLE leases ADD COLUMN tenant_id INT DEFAULT NULL AFTER property_id;"
 run_sql "ALTER TABLE leases ADD COLUMN document_type VARCHAR(50) DEFAULT NULL AFTER title;"
-run_sql "ALTER TABLE leases ADD FOREIGN KEY (tenant_id) REFERENCES users(id);"
+run_sql "SET @fk_name = (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'leases' AND COLUMN_NAME = 'tenant_id' AND REFERENCED_TABLE_NAME = 'users' LIMIT 1); SET @add_fk = IF(@fk_name IS NULL, 'ALTER TABLE leases ADD CONSTRAINT fk_leases_tenant FOREIGN KEY (tenant_id) REFERENCES users(id)', 'SELECT 1'); PREPARE stmt FROM @add_fk; EXECUTE stmt; DEALLOCATE PREPARE stmt;"
 run_sql "CREATE TABLE IF NOT EXISTS property_photos (id INT AUTO_INCREMENT PRIMARY KEY, property_id INT NOT NULL, file_path VARCHAR(500) NOT NULL, original_name VARCHAR(255) NOT NULL, mime_type VARCHAR(100) DEFAULT '', is_main TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE, INDEX idx_property (property_id), INDEX idx_main (property_id, is_main)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "ALTER TABLE property_tenant ADD COLUMN lease_start DATE DEFAULT NULL AFTER moved_out_at;"
 run_sql "ALTER TABLE property_tenant ADD COLUMN lease_end DATE DEFAULT NULL AFTER lease_start;"
@@ -112,7 +115,7 @@ run_sql "ALTER TABLE users ADD COLUMN archived_at TIMESTAMP NULL DEFAULT NULL AF
 run_sql "ALTER TABLE properties ADD COLUMN country VARCHAR(2) DEFAULT 'CA' AFTER postal_code;"
 run_sql "ALTER TABLE properties ADD COLUMN apt_suite VARCHAR(100) DEFAULT '' AFTER address;"
 run_sql "ALTER TABLE properties ADD COLUMN property_manager_id INT DEFAULT NULL AFTER company_id;"
-run_sql "ALTER TABLE properties ADD FOREIGN KEY (property_manager_id) REFERENCES users(id);"
+run_sql "SET @fk_name = (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'properties' AND COLUMN_NAME = 'property_manager_id' AND REFERENCED_TABLE_NAME = 'users' LIMIT 1); SET @add_fk = IF(@fk_name IS NULL, 'ALTER TABLE properties ADD CONSTRAINT fk_properties_manager FOREIGN KEY (property_manager_id) REFERENCES users(id)', 'SELECT 1'); PREPARE stmt FROM @add_fk; EXECUTE stmt; DEALLOCATE PREPARE stmt;"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('default_country', 'CA');"
 run_sql "INSERT IGNORE INTO settings (\`key\`, \`value\`) VALUES ('openai_api_key', '');"
 run_sql "ALTER TABLE property_tenant ADD COLUMN move_out_date DATE DEFAULT NULL AFTER lease_end;"
@@ -140,7 +143,7 @@ run_sql "ALTER TABLE properties ADD COLUMN heating_type VARCHAR(50) DEFAULT NULL
 run_sql "ALTER TABLE properties ADD COLUMN security_deposit DECIMAL(10,2) DEFAULT NULL AFTER heating_type;"
 run_sql "ALTER TABLE properties ADD COLUMN listed TINYINT(1) NOT NULL DEFAULT 1 AFTER security_deposit;"
 # Per-property advertisement copy shown on the public listings page.
-run_sql "ALTER TABLE properties ADD COLUMN ad_description TEXT NULL AFTER security_deposit;"
+run_sql "SET @col_count = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'properties' AND COLUMN_NAME = 'ad_description'); SET @add_col = IF(@col_count = 0, 'ALTER TABLE properties ADD COLUMN ad_description TEXT NULL AFTER security_deposit', 'SELECT 1'); PREPARE stmt FROM @add_col; EXECUTE stmt; DEALLOCATE PREPARE stmt;"
 # Public visitor chats (token hash only; raw token stays with the visitor).
 run_sql "CREATE TABLE IF NOT EXISTS guest_chats (id INT AUTO_INCREMENT PRIMARY KEY, property_id INT NOT NULL, guest_name VARCHAR(255) NOT NULL, guest_email VARCHAR(255) NOT NULL, token_hash CHAR(64) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE, UNIQUE KEY uniq_guest_chat_token (token_hash), INDEX idx_guest_chat_property (property_id), INDEX idx_guest_chat_activity (last_activity)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
 run_sql "CREATE TABLE IF NOT EXISTS guest_chat_messages (id INT AUTO_INCREMENT PRIMARY KEY, chat_id INT NOT NULL, sender_type ENUM('guest','staff') NOT NULL, sender_id INT DEFAULT NULL, body TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, read_at TIMESTAMP NULL DEFAULT NULL, guest_read_at TIMESTAMP NULL DEFAULT NULL, FOREIGN KEY (chat_id) REFERENCES guest_chats(id) ON DELETE CASCADE, FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL, INDEX idx_guest_chat_messages_chat (chat_id, id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
