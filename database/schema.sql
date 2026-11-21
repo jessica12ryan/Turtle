@@ -275,6 +275,32 @@ CREATE TABLE IF NOT EXISTS guest_chat_tokens (
 INSERT IGNORE INTO guest_chat_tokens (chat_id, token_hash, created_at)
 SELECT id, token_hash, created_at FROM guest_chats;
 
+-- A guest is identified by the email address they used. One guest can have
+-- one conversation per property; their hub link lists all of them.
+CREATE TABLE IF NOT EXISTS guest_visitors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(190) NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_guest_visitor_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS guest_visitor_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    guest_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guest_id) REFERENCES guest_visitors(id) ON DELETE CASCADE,
+    UNIQUE KEY uniq_guest_visitor_token_hash (token_hash),
+    INDEX idx_guest_visitor_tokens_guest (guest_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO guest_visitors (email, name, created_at)
+SELECT LOWER(guest_email), MAX(guest_name), MIN(created_at)
+FROM guest_chats
+GROUP BY LOWER(guest_email);
+
 CREATE TABLE IF NOT EXISTS user_presence (
     user_id INT NOT NULL PRIMARY KEY,
     last_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

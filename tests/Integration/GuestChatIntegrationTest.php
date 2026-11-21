@@ -59,12 +59,6 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         );
         GuestChat::registerToken((int) $chatId, $originalToken);
 
-        $found = GuestChat::findByEmail(' case@example.com ');
-        self::assertCount(1, $found);
-        self::assertSame((string) $chatId, (string) $found[0]['id']);
-        self::assertSame('Recoverable Property', $found[0]['property_name']);
-        self::assertSame([], GuestChat::findByEmail('nobody@example.com'));
-
         $newToken = GuestChat::issueToken((int) $chatId);
         self::assertTrue(GuestChat::isValidToken($newToken));
         self::assertNotSame($originalToken, $newToken);
@@ -83,6 +77,61 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
             ['token_hash' => GuestChat::hashToken($newToken)],
         ], $hashes);
         self::assertSame(hash('sha256', 'case@example.com'), GuestChat::emailKey(' Case@Example.com '));
+    }
+
+    public function testGuestHubGroupsConversationsByEmailAndReusesThreads(): void
+    {
+        $landlord = $this->insertUser('hub-owner@example.com', 'landlord');
+        $company = $this->insertCompany();
+        $propertyA = $this->insertProperty($company, $landlord, 'Hub Property A');
+        $propertyB = $this->insertProperty($company, $landlord, 'Hub Property B');
+
+        $guestId = GuestChat::findOrCreateVisitor(' Hub@Example.com ', 'Guest Name');
+        self::assertGreaterThan(0, $guestId);
+        self::assertSame($guestId, GuestChat::findOrCreateVisitor('hub@example.com', 'Updated Name'));
+        $visitor = GuestChat::findVisitorByEmail('HUB@example.com');
+        self::assertNotNull($visitor);
+        self::assertSame('Updated Name', $visitor['name']);
+
+        $tokenA = GuestChat::generateToken();
+        $chatA = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+            [$propertyA, 'Guest Name', 'hub@example.com', GuestChat::hashToken($tokenA)]
+        );
+        GuestChat::registerToken((int) $chatA, $tokenA);
+        $tokenB = GuestChat::generateToken();
+        $chatB = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+            [$propertyB, 'Guest Name', 'hub@example.com', GuestChat::hashToken($tokenB)]
+        );
+        GuestChat::registerToken((int) $chatB, $tokenB);
+
+        $hubToken = GuestChat::issueHubToken($guestId);
+        $fromToken = GuestChat::findVisitorByHubToken($hubToken);
+        self::assertNotNull($fromToken);
+        self::assertSame($guestId, $fromToken['id']);
+        self::assertSame('hub@example.com', $fromToken['email']);
+        self::assertNull(GuestChat::findVisitorByHubToken(str_repeat('0', 64)));
+
+        $chats = GuestChat::chatsForVisitor($guestId);
+        self::assertCount(2, $chats);
+        self::assertContains('Hub Property A', array_column($chats, 'property_name'));
+        self::assertContains('Hub Property B', array_column($chats, 'property_name'));
+        $existing = GuestChat::findChatForVisitorProperty($guestId, $propertyA);
+        self::assertNotNull($existing);
+        self::assertSame((string) $chatA, (string) $existing['id']);
+        self::assertNull(GuestChat::findChatForVisitorProperty($guestId, 999999));
+
+        GuestChat::appendMessage((int) $chatA, 'A follow-up question');
+        $messages = Database::fetchAll(
+            "SELECT body FROM guest_chat_messages WHERE chat_id = ? ORDER BY id ASC",
+            [$chatA]
+        );
+        self::assertCount(1, $messages);
+        self::assertSame('A follow-up question', $messages[0]['body']);
+        self::assertNotNull(GuestChat::findByToken($tokenB), 'other property link must still work');
     }
 
     public function testGuestAndStaffReadStateAreTrackedSeparately(): void

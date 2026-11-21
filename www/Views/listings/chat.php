@@ -14,6 +14,9 @@
             <?= __('Lost this link?') ?>
             <a href="/listings" class="underline"><?= __('Return to the listings page to request a new one.') ?></a>
         </p>
+        <p class="mt-2">
+            <?= __('You can view all of your conversations from the listings page.') ?>
+        </p>
         <div class="mt-3 flex flex-wrap items-center gap-3">
             <button type="button" id="copy-chat-link" class="border border-blue-600 px-3 py-1.5 rounded-lg font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40">
                 <?= __('Copy conversation link') ?>

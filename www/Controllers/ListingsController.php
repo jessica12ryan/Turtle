@@ -34,6 +34,7 @@ class ListingsController
         foreach ($conversations as $chat) {
             $continueChats[(int) $chat['property_id']] = $chat['token'];
         }
+        $hub = GuestChat::hubVisitor();
 
         $view = new View();
         $view->layout('layouts/public', ['title' => __('Properties Available')]);
@@ -41,6 +42,7 @@ class ListingsController
             'properties' => $properties,
             'continueChats' => $continueChats,
             'conversations' => $conversations,
+            'hub' => $hub,
         ]);
     }
 
@@ -92,26 +94,43 @@ class ListingsController
             redirect('/listings');
         }
 
-        $token = GuestChat::generateToken();
-        $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$id, $name, $email, GuestChat::hashToken($token)]
-        );
-        Database::insert(
-            "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
-            [$chatId, $body]
-        );
+        $guestId = GuestChat::findOrCreateVisitor($email, $name);
+        if ($guestId === 0) {
+            flash('error', __('Please complete all fields.'));
+            redirect('/listings');
+        }
 
-        GuestChat::registerToken((int) $chatId, $token);
+        // One conversation per guest and property: a later message is added
+        // to the existing thread instead of creating a duplicate.
+        $existing = GuestChat::findChatForVisitorProperty($guestId, $id);
+        if ($existing !== null) {
+            $chatId = (int) $existing['id'];
+            $token = GuestChat::chatTokenFromCookie($chatId) ?? GuestChat::issueToken($chatId);
+            GuestChat::appendMessage($chatId, $body);
+        } else {
+            $token = GuestChat::generateToken();
+            $chatId = Database::insert(
+                "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+                 VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+                [$id, $name, $email, GuestChat::hashToken($token)]
+            );
+            GuestChat::registerToken((int) $chatId, $token);
+            GuestChat::appendMessage((int) $chatId, $body);
+        }
+
+        $hubToken = GuestChat::hubTokenFor($guestId) ?? GuestChat::issueHubToken($guestId);
         GuestChat::setCookie($chatId, $token);
-        log_activity('guest_chat.started', "Visitor chat #{$chatId} started for property #{$id}");
+        GuestChat::setHubCookie($guestId, $hubToken);
+        log_activity(
+            $existing !== null ? 'guest_chat.message_added' : 'guest_chat.started',
+            "Visitor chat #{$chatId} for property #{$id}"
+        );
 
         $emailSent = false;
         $chat = GuestChat::findById($chatId);
         if ($chat !== null) {
             GuestChat::notifyStaff($chat, $body);
-            $emailSent = GuestChat::emailLink($email, $token, (string) $chat['property_name']);
+            $emailSent = GuestChat::emailLink($email, $token, (string) $chat['property_name'], $hubToken);
         }
 
         if ($emailSent) {
@@ -136,8 +155,13 @@ class ListingsController
         }
 
         // Opening a valid link proves possession of the bearer token, so the
-        // browser can keep a convenience shortcut back to this conversation.
+        // browser can keep convenience shortcuts to this chat and its hub.
         GuestChat::setCookie((int) $chat['id'], $token);
+        $visitor = GuestChat::findVisitorByEmail((string) $chat['guest_email']);
+        if ($visitor !== null && GuestChat::hubTokenFor((int) $visitor['id']) === null) {
+            $hubToken = GuestChat::issueHubToken((int) $visitor['id']);
+            GuestChat::setHubCookie((int) $visitor['id'], $hubToken);
+        }
 
         $view = new View();
         $view->layout('layouts/public', ['title' => __('Conversation')]);
@@ -209,11 +233,11 @@ class ListingsController
     }
 
     /**
-     * Email an additional private link after a visitor loses the original URL.
+     * Email a link to the guest's conversation hub after they lose the URL.
      *
-     * Earlier links stay valid; only hashes of issued tokens are stored. The
-     * response is deliberately generic so the endpoint cannot be used to
-     * discover which addresses have conversations.
+     * The guest is identified by email. A single hub link leads to one
+     * conversation per property; earlier links stay valid. The response is
+     * deliberately generic so this endpoint cannot enumerate email addresses.
      */
     public function emailConversationLink(): void
     {
@@ -237,15 +261,66 @@ class ListingsController
             redirect('/listings');
         }
 
-        $chats = GuestChat::findByEmail($email);
-        foreach ($chats as $chat) {
-            $token = GuestChat::issueToken((int) $chat['id']);
-            GuestChat::emailLink($email, $token, (string) $chat['property_name']);
+        $visitor = GuestChat::findVisitorByEmail($email);
+        if ($visitor !== null) {
+            $chats = GuestChat::chatsForVisitor((int) $visitor['id']);
+            $hubToken = GuestChat::issueHubToken((int) $visitor['id']);
+            GuestChat::emailHubLink($email, $hubToken, count($chats));
+            log_activity('guest_chat.link_requested', 'Conversation hub link request matched ' . count($chats) . ' conversation(s)');
         }
-        log_activity('guest_chat.link_requested', 'Conversation link request matched ' . count($chats) . ' conversation(s)');
 
-        flash('success', __('If a conversation exists for that address, a new link has been sent. You can keep using any earlier links as well.'));
+        flash('success', __('If a conversation exists for that address, a link to your conversations has been sent.'));
         redirect('/listings');
+    }
+
+    /** List all of a guest's property conversations from their hub link. */
+    public function guestHub(string $token): void
+    {
+        header('Cache-Control: private, no-store');
+
+        $visitor = GuestChat::findVisitorByHubToken($token);
+        if ($visitor === null) {
+            http_response_code(404);
+            $view = new View();
+            $view->layout('layouts/public', ['title' => __('Conversation Links Not Found')]);
+            $view->render('listings/hub-missing');
+            return;
+        }
+
+        $view = new View();
+        $view->layout('layouts/public', ['title' => __('Your conversations')]);
+        $view->render('listings/conversations', [
+            'visitor' => $visitor,
+            'chats' => GuestChat::chatsForVisitor((int) $visitor['id']),
+            'hubToken' => $token,
+        ]);
+    }
+
+    /** Open one property conversation from the guest's hub link. */
+    public function openChatFromHub(string $token, int $chatId): void
+    {
+        $visitor = GuestChat::findVisitorByHubToken($token);
+        $chat = null;
+        if ($visitor !== null) {
+            foreach (GuestChat::chatsForVisitor((int) $visitor['id']) as $candidate) {
+                if ((int) $candidate['id'] === $chatId) {
+                    $chat = $candidate;
+                    break;
+                }
+            }
+        }
+        if ($visitor === null || $chat === null) {
+            http_response_code(404);
+            $view = new View();
+            $view->layout('layouts/public', ['title' => __('Conversation Links Not Found')]);
+            $view->render('listings/hub-missing');
+            return;
+        }
+
+        $chatToken = GuestChat::chatTokenFromCookie($chatId) ?? GuestChat::issueToken($chatId);
+        GuestChat::setCookie($chatId, $chatToken);
+        GuestChat::setHubCookie((int) $visitor['id'], $token);
+        redirect('/listings/chat/' . $chatToken);
     }
 
     /** Serve a listing photo without an account, but only for listed properties. */

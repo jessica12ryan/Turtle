@@ -12,6 +12,7 @@ namespace App\Core;
 class GuestChat
 {
     public const COOKIE_PREFIX = 'turtle_chat_';
+    public const HUB_COOKIE_PREFIX = 'turtle_guest_';
     public const MAX_COOKIES = 50;
 
     public static function generateToken(): string
@@ -61,19 +62,39 @@ class GuestChat
 
     public static function setCookie(int $chatId, string $token): void
     {
+        self::writeCookie(self::COOKIE_PREFIX . $chatId, $token);
+    }
+
+    public static function setHubCookie(int $guestId, string $token): void
+    {
+        self::writeCookie(self::HUB_COOKIE_PREFIX . $guestId, $token);
+    }
+
+    private static function writeCookie(string $name, string $token): void
+    {
         if (headers_sent() || !self::isValidToken($token)) {
             return;
         }
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
             || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
-        setcookie(self::COOKIE_PREFIX . $chatId, $token, [
+        setcookie($name, $token, [
             'expires' => time() + 60 * 60 * 24 * 365,
             'path' => '/',
             'secure' => $isHttps,
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
+    }
+
+    /** A still-valid chat token already held by this browser, if any. */
+    public static function chatTokenFromCookie(int $chatId): ?string
+    {
+        $token = $_COOKIE[self::COOKIE_PREFIX . $chatId] ?? '';
+        if (!is_string($token) || !self::isValidToken($token)) {
+            return null;
+        }
+        return self::findByToken($token) !== null ? $token : null;
     }
 
     /**
@@ -126,41 +147,198 @@ class GuestChat
         return $chats;
     }
 
+    /**
+     * Guest identity whose hub token this browser holds.
+     *
+     * @return array{id:int, email:string, name:string, token:string}|null
+     */
+    public static function hubVisitor(): ?array
+    {
+        $candidates = [];
+        $prefix = '/^' . preg_quote(self::HUB_COOKIE_PREFIX, '/') . '([1-9][0-9]*)$/';
+        foreach ($_COOKIE as $name => $value) {
+            if (!is_string($name) || preg_match($prefix, $name, $matches) !== 1) {
+                continue;
+            }
+            $token = (string) $value;
+            if (!self::isValidToken($token)) {
+                continue;
+            }
+            if (count($candidates) >= self::MAX_COOKIES) {
+                break;
+            }
+            $candidates[self::hashToken($token)] = ['id' => (int) $matches[1], 'token' => $token];
+        }
+        if ($candidates === []) {
+            return null;
+        }
+        $placeholders = implode(',', array_fill(0, count($candidates), '?'));
+        $rows = Database::fetchAll(
+            "SELECT gv.id, gv.email, gv.name, gvt.token_hash
+             FROM guest_visitor_tokens gvt
+             JOIN guest_visitors gv ON gv.id = gvt.guest_id
+             WHERE gvt.token_hash IN ({$placeholders})",
+            array_keys($candidates)
+        );
+        foreach ($rows as $row) {
+            $candidate = $candidates[$row['token_hash']] ?? null;
+            if ($candidate !== null && (int) $row['id'] === $candidate['id']) {
+                return [
+                    'id' => (int) $row['id'],
+                    'email' => (string) $row['email'],
+                    'name' => (string) $row['name'],
+                    'token' => $candidate['token'],
+                ];
+            }
+        }
+        return null;
+    }
+
+    /** Reuse the current browser's hub token for a known guest, if available. */
+    public static function hubTokenFor(int $guestId): ?string
+    {
+        $hub = self::hubVisitor();
+        return $hub !== null && (int) $hub['id'] === $guestId ? $hub['token'] : null;
+    }
+
     /** Normalised, non-reversible key for email-based rate limits. */
     public static function emailKey(string $email): string
     {
         return hash('sha256', strtolower(trim($email)));
     }
 
-    /**
-     * Chats started with an email address, most recent activity first.
-     *
-     * @return array<int, array{id:int, property_name:string}>
-     */
-    public static function findByEmail(string $email, int $limit = 5): array
+    /** Find or create the guest identity for an email address. */
+    public static function findOrCreateVisitor(string $email, string $name): int
+    {
+        $email = strtolower(trim($email));
+        $name = trim($name);
+        if ($email === '' || $name === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return 0;
+        }
+        Database::insert(
+            "INSERT IGNORE INTO guest_visitors (email, name, created_at) VALUES (?, ?, NOW())",
+            [$email, $name]
+        );
+        $visitor = Database::fetch("SELECT id FROM guest_visitors WHERE email = ?", [$email]);
+        if ($visitor === null) {
+            return 0;
+        }
+        $id = (int) $visitor['id'];
+        Database::execute("UPDATE guest_visitors SET name = ? WHERE id = ?", [$name, $id]);
+        return $id;
+    }
+
+    /** @return array{id:int, email:string, name:string}|null */
+    public static function findVisitorByEmail(string $email): ?array
     {
         $email = strtolower(trim($email));
         if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return null;
+        }
+        $row = Database::fetch("SELECT id, email, name FROM guest_visitors WHERE email = ?", [$email]);
+        return self::visitorRow($row);
+    }
+
+    /** @return array{id:int, email:string, name:string}|null */
+    public static function findVisitorByHubToken(string $token): ?array
+    {
+        if (!self::isValidToken($token)) {
+            return null;
+        }
+        $hash = self::hashToken($token);
+        $row = Database::fetch(
+            "SELECT gv.id, gv.email, gv.name, gvt.token_hash AS matched_hash
+             FROM guest_visitor_tokens gvt
+             JOIN guest_visitors gv ON gv.id = gvt.guest_id
+             WHERE gvt.token_hash = ?",
+            [$hash]
+        );
+        if ($row === null || !hash_equals($row['matched_hash'], $hash)) {
+            return null;
+        }
+        return self::visitorRow($row);
+    }
+
+    /** @param array<string, mixed>|null $row */
+    private static function visitorRow(?array $row): ?array
+    {
+        if ($row === null) {
+            return null;
+        }
+        return [
+            'id' => (int) $row['id'],
+            'email' => (string) $row['email'],
+            'name' => (string) $row['name'],
+        ];
+    }
+
+    /** Issue an additional hub link; earlier hub links keep working. */
+    public static function issueHubToken(int $guestId): string
+    {
+        $token = self::generateToken();
+        Database::insert(
+            "INSERT INTO guest_visitor_tokens (guest_id, token_hash, created_at) VALUES (?, ?, NOW())",
+            [$guestId, self::hashToken($token)]
+        );
+        return $token;
+    }
+
+    /**
+     * All conversations belonging to a guest, newest activity first.
+     * There is one conversation per property.
+     *
+     * @return array<int, array{id:int, property_id:int, property_name:string, last_activity:string}>
+     */
+    public static function chatsForVisitor(int $guestId): array
+    {
+        $visitor = Database::fetch("SELECT email FROM guest_visitors WHERE id = ?", [$guestId]);
+        if ($visitor === null) {
             return [];
         }
-        $limit = max(1, min(10, $limit));
         $rows = Database::fetchAll(
-            "SELECT gc.id, p.name AS property_name
+            "SELECT gc.id, gc.property_id, gc.last_activity, p.name AS property_name
              FROM guest_chats gc
              JOIN properties p ON p.id = gc.property_id
              WHERE LOWER(gc.guest_email) = ?
-             ORDER BY gc.last_activity DESC, gc.id DESC
-             LIMIT {$limit}",
-            [$email]
+             ORDER BY gc.last_activity DESC, gc.id DESC",
+            [$visitor['email']]
         );
         $chats = [];
         foreach ($rows as $row) {
             $chats[] = [
                 'id' => (int) $row['id'],
+                'property_id' => (int) $row['property_id'],
                 'property_name' => (string) $row['property_name'],
+                'last_activity' => (string) $row['last_activity'],
             ];
         }
         return $chats;
+    }
+
+    /** @return array{id:int, property_id:int}|null */
+    public static function findChatForVisitorProperty(int $guestId, int $propertyId): ?array
+    {
+        $visitor = Database::fetch("SELECT email FROM guest_visitors WHERE id = ?", [$guestId]);
+        if ($visitor === null) {
+            return null;
+        }
+        $row = Database::fetch(
+            "SELECT id, property_id FROM guest_chats
+             WHERE LOWER(guest_email) = ? AND property_id = ?
+             ORDER BY last_activity DESC, id DESC LIMIT 1",
+            [$visitor['email'], $propertyId]
+        );
+        return $row === null ? null : ['id' => (int) $row['id'], 'property_id' => (int) $row['property_id']];
+    }
+
+    /** Append a visitor message and bump the conversation's activity time. */
+    public static function appendMessage(int $chatId, string $body): void
+    {
+        Database::insert(
+            "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
+            [$chatId, $body]
+        );
+        Database::execute("UPDATE guest_chats SET last_activity = NOW(), updated_at = NOW() WHERE id = ?", [$chatId]);
     }
 
     /** Register the hash of a link so it can be used to open the chat. */
@@ -190,7 +368,7 @@ class GuestChat
      * Email the private conversation link. Never sets a cookie: the link
      * itself is the bearer credential and must reach the visitor's inbox.
      */
-    public static function emailLink(string $email, string $token, string $propertyName): bool
+    public static function emailLink(string $email, string $token, string $propertyName, ?string $hubToken = null): bool
     {
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || !self::isValidToken($token)) {
             return false;
@@ -199,6 +377,10 @@ class GuestChat
             . '</strong> at any time using the link below.'
             . '<br><br>Keep this email or bookmark the link — only people with the link can read the conversation.'
             . ' If we have sent you more than one link, you can use any of them.';
+        if ($hubToken !== null && self::isValidToken($hubToken)) {
+            $hubUrl = \site_url() . '/listings/conversations/' . $hubToken;
+            $body .= '<br><br>To see all of your property conversations, visit <a href="' . $hubUrl . '">your conversations</a>.';
+        }
         try {
             return Mailer::sendTemplate(
                 $email,
@@ -210,6 +392,35 @@ class GuestChat
             );
         } catch (\Throwable $e) {
             Logger::error('Guest chat link email failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /** Email a single link that opens the guest's list of conversations. */
+    public static function emailHubLink(string $email, string $hubToken, int $conversationCount): bool
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || !self::isValidToken($hubToken)) {
+            return false;
+        }
+        $body = 'You can return to all of your property conversations using the link below.'
+            . '<br><br>This link is private — only people with it can read your conversations.'
+            . ' Earlier links you received still work too.';
+        if ($conversationCount === 1) {
+            $body .= '<br><br>You currently have one conversation.';
+        } else {
+            $body .= '<br><br>You currently have ' . $conversationCount . ' conversations, one per property.';
+        }
+        try {
+            return Mailer::sendTemplate(
+                $email,
+                __('Your conversations'),
+                'Hello,',
+                $body,
+                \site_url() . '/listings/conversations/' . $hubToken,
+                __('View your conversations')
+            );
+        } catch (\Throwable $e) {
+            Logger::error('Guest conversation list email failed: ' . $e->getMessage());
             return false;
         }
     }

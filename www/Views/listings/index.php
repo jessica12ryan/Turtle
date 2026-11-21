@@ -36,6 +36,14 @@
             <?= __('Email me my link') ?>
         </button>
     </form>
+    <?php if (!empty($hub)): ?>
+        <p class="mt-4">
+            <a href="/listings/conversations/<?= h($hub['token']) ?>"
+               class="font-medium text-blue-600 hover:underline dark:text-blue-400" data-testid="hub-link">
+                <?= __('View all your conversations') ?>
+            </a>
+        </p>
+    <?php endif; ?>
 </section>
 
 <?php if (empty($properties)): ?>

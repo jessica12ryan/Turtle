@@ -14,20 +14,29 @@ async function expectPageOk(page: Page, path: string): Promise<void> {
   await expect(page.locator('body')).not.toContainText('An unexpected error occurred');
 }
 
-/** Return the visitor-chat path from the most recent link email in Mailpit. */
-async function guestLinkFromMailpit(request: APIRequestContext): Promise<string | null> {
+/** Return a visitor link from the matching email in Mailpit. */
+async function linkFromMailpit(request: APIRequestContext, subject: string, pattern: RegExp): Promise<string | null> {
   const list = await request.get(`${mailpitUrl}/api/v1/messages`);
   if (!list.ok()) return null;
   const payload = await list.json();
   const messages = Array.isArray(payload.messages) ? payload.messages : [];
   const linkMessage = messages.find((message: { Subject?: string }) =>
-    String(message.Subject ?? '').includes('Your conversation link'));
+    String(message.Subject ?? '').includes(subject));
   if (!linkMessage) return null;
   const detail = await request.get(`${mailpitUrl}/api/v1/message/${encodeURIComponent(String(linkMessage.ID))}`);
   if (!detail.ok()) return null;
-  const match = (await detail.text()).match(/listings\/chat\/[a-f0-9]{64}/);
+  const match = (await detail.text()).match(pattern);
   return match ? match[0] : null;
 }
+
+const guestLinkFromMailpit = (request: APIRequestContext): Promise<string | null> =>
+  linkFromMailpit(request, 'Your conversation link', /listings\/chat\/[a-f0-9]{64}/);
+
+const guestHubLinkFromMailpit = (request: APIRequestContext): Promise<string | null> =>
+  linkFromMailpit(request, 'Your conversations', /listings\/conversations\/[a-f0-9]{64}/);
+
+const hubLinkFromConversationEmail = (request: APIRequestContext): Promise<string | null> =>
+  linkFromMailpit(request, 'Your conversation link', /listings\/conversations\/[a-f0-9]{64}/);
 
 /** Walk the five-step setup wizard. Only one step is visible at a time. */
 async function completeSetup(page: Page): Promise<void> {
@@ -137,6 +146,26 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
     return emailedPath !== null;
   }, { message: 'the visitor should receive the private link by email' }).toBe(true);
 
+  // A second property gets its own conversation, but the same guest hub.
+  await page.getByRole('link', { name: 'Back to listings' }).click();
+  await expect(page).toHaveURL(/\/listings$/);
+  const secondCard = page.getByTestId('listing-card').nth(1);
+  await secondCard.getByTestId('message-button').click();
+  await secondCard.locator('input[name="guest_name"]').fill('Guest Visitor');
+  await secondCard.locator('input[name="guest_email"]').fill('guest@example.com');
+  await secondCard.locator('textarea[name="body"]').fill('Do you have parking?');
+  await secondCard.getByTestId('send-message').click();
+  await expect(page).toHaveURL(/\/listings\/chat\/[a-f0-9]{64}$/);
+  const secondChatUrl = page.url();
+  expect(secondChatUrl).not.toBe(guestChatUrl);
+  await expect(page.getByTestId('chat-messages')).toContainText('Do you have parking?');
+
+  let firstHubPath: string | null = null;
+  await expect.poll(async () => {
+    firstHubPath = await hubLinkFromConversationEmail(request);
+    return firstHubPath !== null;
+  }, { message: 'the visitor should receive a hub link by email' }).toBe(true);
+
   // Session round-trip: logged out visitors must log back in.
   await page.context().clearCookies();
   await page.goto('/login');
@@ -148,8 +177,8 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
 
   // Staff can reply from the dedicated Guest Chats inbox, and the visitor sees it.
   await page.goto('/guest-chats');
-  await expect(page.getByTestId('guest-chat-row')).toHaveCount(1);
-  await page.getByTestId('guest-chat-row').first().click();
+  await expect(page.getByTestId('guest-chat-row')).toHaveCount(2);
+  await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
   await expect(page).toHaveURL(/\/guest-chats\/\d+$/);
   await page.locator('textarea[name="body"]').fill('Yes, it is available.');
   await page.getByTestId('guest-reply').click();
@@ -164,30 +193,46 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.goto(guestChatUrl);
   await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
 
-  // A visitor who lost every browser trace can request a fresh link by email.
+  // A visitor who lost every browser trace can request a fresh hub link.
   await page.context().clearCookies();
   await page.goto('/listings');
   await page.getByTestId('recovery-form').locator('input[name="email"]').fill('guest@example.com');
   await page.getByTestId('recovery-form').getByRole('button', { name: 'Email me my link' }).click();
   await expect(page.getByText('If a conversation exists for that address', { exact: false })).toBeVisible();
-  await expect(page.getByText('You can keep using any earlier links as well.', { exact: false })).toBeVisible();
 
-  let recoveredPath: string | null = null;
+  let recoveredHubPath: string | null = null;
   await expect.poll(async () => {
-    const candidate = await guestLinkFromMailpit(request);
-    if (!candidate || candidate === emailedPath) return false;
-    recoveredPath = candidate;
+    const candidate = await guestHubLinkFromMailpit(request);
+    if (!candidate || candidate === firstHubPath) return false;
+    recoveredHubPath = candidate;
     return true;
-  }, { message: 'a replacement visitor link should arrive by email' }).toBe(true);
+  }, { message: 'a replacement hub link should arrive by email' }).toBe(true);
 
-  expect((await request.get(emailedPath!)).status(), 'the original emailed link must still work').toBe(200);
-  expect((await request.get(recoveredPath!)).status(), 'the additional link must work').toBe(200);
-  await page.goto(emailedPath!);
+  expect((await request.get(`/${firstHubPath!}`)).status(), 'the earlier hub link must still work').toBe(200);
+  expect((await request.get(`/${recoveredHubPath!}`)).status(), 'the new hub link must work').toBe(200);
+  expect((await request.get(`/${emailedPath!}`)).status(), 'the original direct link must still work').toBe(200);
+
+  // The hub lists one row per property and opens each conversation.
+  await page.goto(`/${recoveredHubPath!}`);
+  await expect(page.getByRole('heading', { name: 'Your conversations' })).toBeVisible();
+  await expect(page.getByTestId('hub-conversation-link')).toHaveCount(2);
+  // The replied-to conversation is the most recently active one.
+  await page.getByTestId('hub-conversation-link').first().click();
+  await expect(page).toHaveURL(/\/listings\/chat\/[a-f0-9]{64}$/);
+  await expect(page.getByTestId('chat-messages')).toContainText('Hello, is this available?');
   await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
-  await page.goto(recoveredPath!);
-  await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
+
+  await page.goto(`/${recoveredHubPath!}`);
+  await page.getByTestId('hub-conversation-link').nth(1).click();
+  await expect(page.getByTestId('chat-messages')).toContainText('Do you have parking?');
+
+  // A hub link must not open an arbitrary conversation id.
+  const mismatchResponse = await request.get(`/${recoveredHubPath!}/chat/999999`);
+  expect(mismatchResponse.status(), 'a hub link must not open another chat').toBe(404);
+
   await page.goto('/listings');
-  await expect(page.getByTestId('conversation-link')).toBeVisible();
+  await expect(page.getByTestId('conversation-link')).toHaveCount(2);
+  await expect(page.getByTestId('hub-link')).toBeVisible();
 
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });
