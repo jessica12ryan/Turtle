@@ -75,6 +75,7 @@
             'applications.archive' => 'Archive Applications',
             'applications.restore' => 'Restore Applications',
             'applications.delete' => 'Delete Applications',
+            'guest_chats.access' => 'View Guest Chats',
         ];
 
         $groupOverrides = [
@@ -100,6 +101,7 @@
             'applications.archive',
             'applications.restore',
             'applications.delete',
+            'guest_chats.access',
         ];
 
         $groups = [];

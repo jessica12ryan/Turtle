@@ -86,6 +86,23 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
     return (await response.text()).includes('Test Email from Turtle') ? 1 : 0;
   }, { message: 'test email should arrive in Mailpit' }).toBe(1);
 
+  // Anonymous visitors land on the public listings page, not the login form.
+  await page.context().clearCookies();
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/listings$/);
+  await expect(page.getByTestId('login-link')).toBeVisible();
+  await expect(page.getByTestId('listing-card').first()).toBeVisible();
+
+  // A visitor starts a two-way chat from a listing.
+  await page.getByTestId('message-button').first().click();
+  await page.locator('input[name="guest_name"]').first().fill('Guest Visitor');
+  await page.locator('input[name="guest_email"]').first().fill('guest@example.com');
+  await page.locator('textarea[name="body"]').first().fill('Hello, is this available?');
+  await page.getByTestId('send-message').first().click();
+  await expect(page).toHaveURL(/\/listings\/chat\/[a-f0-9]{64}$/);
+  const guestChatUrl = page.url();
+  await expect(page.getByTestId('chat-messages')).toContainText('Hello, is this available?');
+
   // Session round-trip: logged out visitors must log back in.
   await page.context().clearCookies();
   await page.goto('/login');
@@ -94,6 +111,24 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.locator('#password').fill(admin.password);
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/home$/);
+
+  // Staff can reply from the dedicated Guest Chats inbox, and the visitor sees it.
+  await page.goto('/guest-chats');
+  await expect(page.getByTestId('guest-chat-row')).toHaveCount(1);
+  await page.getByTestId('guest-chat-row').first().click();
+  await expect(page).toHaveURL(/\/guest-chats\/\d+$/);
+  await page.locator('textarea[name="body"]').fill('Yes, it is available.');
+  await page.getByTestId('guest-reply').click();
+  await expect(page.getByText('Yes, it is available.')).toBeVisible();
+
+  // The saved link works without a cookie, but a guessed token cannot open it.
+  const guessedUrl = guestChatUrl.replace(/[a-f0-9]{64}$/, '0'.repeat(64));
+  const strangerResponse = await request.get(guessedUrl);
+  expect(strangerResponse.status(), 'a guessed token must not open the chat').toBe(404);
+  const savedLinkResponse = await request.get(guestChatUrl);
+  expect(savedLinkResponse.status(), 'the saved link must work without a cookie').toBe(200);
+  await page.goto(guestChatUrl);
+  await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
 
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });

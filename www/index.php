@@ -96,7 +96,9 @@ if ($requestUri === '/' || $requestUri === '/index.php') {
     if (\App\Core\Auth::instance()->check()) {
         redirect('/home');
     } else {
-        redirect('/login');
+        // Anonymous visitors land on the public property listings; staff and
+        // tenants still go straight to their dashboard above.
+        redirect('/listings');
     }
 }
 
@@ -265,6 +267,20 @@ $router->post('/password/change', 'AuthController@changePasswordPost', ['auth'])
 
 // Home
 $router->get('/home', 'HomeController@index', ['auth', 'perm:home.access']);
+
+// Public property listings and visitor chats (no authentication required)
+$router->get('/listings', 'ListingsController@index');
+$router->post('/listings/{id}/chat', 'ListingsController@startChat');
+$router->get('/listings/chat/{token}', 'ListingsController@chat');
+$router->get('/listings/chat/{token}/messages', 'ListingsController@chatMessages');
+$router->post('/listings/chat/{token}/send', 'ListingsController@chatSend');
+$router->get('/listings/{id}/photos/{photoId}', 'ListingsController@servePhoto');
+
+// Staff inbox for visitor chats
+$router->get('/guest-chats', 'GuestChatController@index', ['auth', 'perm:guest_chats.access']);
+$router->get('/guest-chats/{id}', 'GuestChatController@show', ['auth', 'perm:guest_chats.access']);
+$router->get('/guest-chats/{id}/messages', 'GuestChatController@messages', ['auth', 'perm:guest_chats.access']);
+$router->post('/guest-chats/{id}/reply', 'GuestChatController@reply', ['auth', 'perm:guest_chats.access']);
 
 // Resources
 $router->get('/resources', 'ResourceController@index', ['auth', 'perm:resources.access']);

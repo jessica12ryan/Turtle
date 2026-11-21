@@ -41,6 +41,7 @@ Both support **ingress** (embedded in HA UI) and **direct access** via port.
 - **Resources** — shared links page, general and staff-only categories
 - **Backup & Restore** — full system backup (`.turtle` format) via admin settings
 - **Messaging** — side overlay with online users, direct messages, unread badges, sound alerts, rate limiting, admin toggle, and searchable conversation history in Settings
+- **Public Listings & Guest Chats** — anonymous visitors see listed properties with per-property ad copy and can start a private two-way conversation with the property team; staff reply from the Guest Chats inbox
 - **Profile** — personal details, preferences, and profile picture
 - **Email** — lightweight SMTP client, email and in-app notification preferences per role
 - **Role-Based Access** — Admin, Landlord, Property Manager, Maintenance, Tenant
@@ -56,6 +57,12 @@ Access control uses route middleware and granular permissions configurable in **
 | **Property Manager** | Assigned properties, tenants, tickets, rent |
 | **Maintenance** | Tickets (view, update status, comment) |
 | **Tenant** | Own tickets, assigned leases, rent status, resources |
+
+### Public listings and visitor chats
+
+Visitors who are not signed in see the public property listings at `/` instead of the login form; a **Sign In** link is shown in the page header. Only properties marked as listed (and not archived) appear, with their main photo and the manager-authored ad description. Edit the description under the property's edit page; placeholders `{{name}}`, `{{address}}`, `{{city}}`, `{{province}}`, `{{rent}}`, `{{heating}}` and `{{deposit}}` are replaced when the card is rendered.
+
+A visitor can message the property team from any card. This starts a private two-way conversation: the browser receives a long-lived cookie and a shareable URL, while the app stores only a SHA-256 hash of the access token. Only the holder of that URL can read the conversation. Staff with the `guest_chats.access` permission (landlords, property managers and admins by default) read and reply from **Guest Chats**; replies are scoped to properties the staff member manages. New visitor messages also create an in-app notification and an email to the property's landlord, property manager and admins.
 
 ## Email
 

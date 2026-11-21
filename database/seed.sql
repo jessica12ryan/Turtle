@@ -22,11 +22,11 @@ INSERT IGNORE INTO company_user (company_id, user_id) VALUES
 (1, 1), (1, 2), (1, 3), (1, 6), (1, 10);
 
 -- Properties
-INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id, name, address, city, province, postal_code, country, rent_amount, rent_due_day) VALUES
-(1, 6, 1, 2, 'The Wellington', '45 Wellington St W', 'Toronto', 'ON', 'M5V 1E3', 'CA', 2200.00, 1),
-(2, 6, 1, 2, 'King Street Lofts', '120 King St E', 'Toronto', 'ON', 'M5C 1G6', 'CA', 1850.00, 1),
-(3, 6, 1, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'ON', 'M5V 1A2', 'CA', 2500.00, 1),
-(4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA', 2100.00, 1);
+INSERT IGNORE INTO properties (id, landlord_id, company_id, property_manager_id, name, address, city, province, postal_code, country, rent_amount, rent_due_day, listed, ad_description) VALUES
+(1, 6, 1, 2, 'The Wellington', '45 Wellington St W', 'Toronto', 'ON', 'M5V 1E3', 'CA', 2200.00, 1, 1, 'Bright, renovated {{name}} in the heart of {{city}}. Steps from transit, shops and parks. Rent: ${{rent}} per month. Heating: {{heating}}.'),
+(2, 6, 1, 2, 'King Street Lofts', '120 King St E', 'Toronto', 'ON', 'M5C 1G6', 'CA', 1850.00, 1, 1, 'Modern loft living at {{address}}, {{city}}. Open-concept layout and plenty of natural light.'),
+(3, 6, 1, 2, 'Harbourfront Condos', '300 Queens Quay W', 'Toronto', 'ON', 'M5V 1A2', 'CA', 2500.00, 1, 1, 'Waterfront living in {{city}} with lake views, concierge and parking available.'),
+(4, 6, 1, 2, 'Maple Ridge Townhomes', '75 Maple Dr', 'Toronto', 'ON', 'M6A 1A1', 'CA', 2100.00, 1, 1, 'Spacious family townhome in a quiet {{city}} neighbourhood. Security deposit: ${{deposit}}.');
 
 -- Tenant-property assignments (some properties have multiple tenants)
 INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assigned_at, lease_start, lease_end, move_out_date, lease_type, emergency_contact_name, emergency_contact_phone) VALUES

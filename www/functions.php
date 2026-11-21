@@ -85,6 +85,29 @@ function h($value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Render a property's saved advertisement template for the public listings
+ * page. The template and all substituted values are escaped before they are
+ * combined, so manager-entered copy can never inject markup.
+ */
+function render_ad_description(array $property): string
+{
+    $template = trim((string) ($property['ad_description'] ?? ''));
+    if ($template === '') {
+        return '';
+    }
+    $values = [
+        '{{name}}' => h($property['name'] ?? ''),
+        '{{address}}' => h($property['address'] ?? ''),
+        '{{city}}' => h($property['city'] ?? ''),
+        '{{province}}' => h($property['province'] ?? ''),
+        '{{rent}}' => !empty($property['rent_amount']) ? h(number_format((float) $property['rent_amount'], 2)) : '',
+        '{{heating}}' => h($property['heating_type'] ?? ''),
+        '{{deposit}}' => !empty($property['security_deposit']) ? h(number_format((float) $property['security_deposit'], 2)) : '',
+    ];
+    return nl2br(strtr(h($template), $values), false);
+}
+
 function sanitize_filename(string $name): string
 {
     // Strip path traversal, null bytes, and control chars
@@ -560,6 +583,7 @@ function defaultPermissions(): array
             'ai_assistant.access',
             'rents.access', 'rents.payments.create', 'rents.payments.edit', 'rents.payments.archive', 'rents.payments.restore',
             'applications.view', 'applications.edit', 'applications.archive', 'applications.restore',
+            'guest_chats.access',
         ],
         'property_manager' => [
             'home.access',
@@ -575,6 +599,7 @@ function defaultPermissions(): array
             'ai_assistant.access',
             'rents.access', 'rents.payments.create',
             'applications.view', 'applications.edit',
+            'guest_chats.access',
         ],
         'maintenance' => [
             'home.access',

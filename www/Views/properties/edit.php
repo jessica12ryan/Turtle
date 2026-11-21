@@ -93,6 +93,12 @@
                 <option value="Other" <?= ($property['heating_type'] ?? '') === 'Other' ? 'selected' : '' ?>><?= __('Other') ?></option>
             </select>
         </div>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="ad_description"><?= __('Advertisement Description') ?></label>
+            <textarea id="ad_description" name="ad_description" rows="4" maxlength="5000" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="<?= __('Describe this property for the public listings page.') ?>"><?= h($property['ad_description'] ?? '') ?></textarea>
+            <p class="text-xs text-gray-500 mt-1"><?= __('Shown on the public listings page while this property is listed.') ?></p>
+            <p class="text-xs text-gray-500 mt-1"><?= __('Available placeholders') ?>: {{name}}, {{address}}, {{city}}, {{province}}, {{rent}}, {{heating}}, {{deposit}}</p>
+        </div>
         <div class="flex space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Update Property') ?></button>
             <a href="/properties/<?= $property['id'] ?>" class="text-gray-600 px-6 py-2 rounded-lg border hover:bg-gray-50"><?= __('Cancel') ?></a>

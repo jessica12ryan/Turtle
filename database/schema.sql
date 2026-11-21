@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS properties (
     rent_due_day INT DEFAULT NULL,
     heating_type VARCHAR(50) DEFAULT NULL,
     security_deposit DECIMAL(10,2) DEFAULT NULL,
+    ad_description TEXT NULL,
     listed TINYINT(1) NOT NULL DEFAULT 0,
     archived_at TIMESTAMP NULL DEFAULT NULL,
     archived_batch VARCHAR(32) DEFAULT NULL,
@@ -225,6 +226,38 @@ CREATE TABLE IF NOT EXISTS messages (
     FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_conversation (sender_id, recipient_id, created_at),
     INDEX idx_recipient_unread (recipient_id, read_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Public listing visitor chats. The raw token lives only in the visitor's
+-- cookie or URL, the database stores a SHA-256 hash so a DB leak cannot be
+-- used to read a conversation.
+CREATE TABLE IF NOT EXISTS guest_chats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    property_id INT NOT NULL,
+    guest_name VARCHAR(255) NOT NULL,
+    guest_email VARCHAR(255) NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    UNIQUE KEY uniq_guest_chat_token (token_hash),
+    INDEX idx_guest_chat_property (property_id),
+    INDEX idx_guest_chat_activity (last_activity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS guest_chat_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    chat_id INT NOT NULL,
+    sender_type ENUM('guest','staff') NOT NULL,
+    sender_id INT DEFAULT NULL,
+    body TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP NULL DEFAULT NULL,
+    guest_read_at TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (chat_id) REFERENCES guest_chats(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_guest_chat_messages_chat (chat_id, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS user_presence (

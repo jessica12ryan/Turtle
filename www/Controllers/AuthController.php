@@ -78,7 +78,7 @@ class AuthController
             log_activity('auth.logout', "User '{$user['email']}' logged out");
         }
         Auth::instance()->logout();
-        redirect('/login');
+        redirect('/listings');
     }
 
     public function forgotPassword(): void

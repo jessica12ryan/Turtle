@@ -116,4 +116,26 @@ final class HelpersTest extends TestCase
         self::assertNull(avatar_url(['id' => 7, 'avatar_path' => null]));
         self::assertNull(avatar_url(null));
     }
+
+    public function testRenderAdDescriptionSubstitutesPlaceholdersAndEscapes(): void
+    {
+        $property = [
+            'ad_description' => '{{name}} in {{city}} for $' . '{{rent}}' . "\n" . '<strong>Book now</strong>',
+            'name' => '<b>Wellington</b>',
+            'city' => 'Toronto',
+            'rent_amount' => 2200,
+        ];
+
+        $html = render_ad_description($property);
+
+        self::assertStringContainsString('&lt;b&gt;Wellington&lt;/b&gt; in Toronto for $2,200.00', $html);
+        self::assertStringContainsString('&lt;strong&gt;Book now&lt;/strong&gt;', $html, 'manager copy must be escaped');
+        self::assertStringContainsString('<br>', $html);
+    }
+
+    public function testRenderAdDescriptionWithoutTemplateIsEmpty(): void
+    {
+        self::assertSame('', render_ad_description(['ad_description' => null, 'name' => 'Test']));
+        self::assertSame('', render_ad_description(['name' => 'Test']));
+    }
 }

@@ -299,6 +299,7 @@ class PropertyController
             'province' => 'required|max:255',
             'postal_code' => 'required|max:20',
             'country' => 'required|max:2',
+            'ad_description' => 'max:5000',
             ])
         ) {
             $_SESSION['_errors'] = $validator->errors();
@@ -315,8 +316,8 @@ class PropertyController
         $securityDeposit = !empty($_POST['security_deposit']) ? (float)$_POST['security_deposit'] : null;
 
         Database::execute(
-            "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, rent_amount = ?, rent_due_day = ?, heating_type = ?, security_deposit = ?, updated_at = NOW() WHERE id = ?",
-            [(int)$_POST['landlord_id'], $companyId, (int)$_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $securityDeposit, $id]
+            "UPDATE properties SET landlord_id = ?, company_id = ?, property_manager_id = ?, name = ?, address = ?, apt_suite = ?, city = ?, province = ?, postal_code = ?, country = ?, rent_amount = ?, rent_due_day = ?, heating_type = ?, security_deposit = ?, ad_description = ?, updated_at = NOW() WHERE id = ?",
+            [(int)$_POST['landlord_id'], $companyId, (int)$_POST['property_manager_id'], $_POST['name'], $_POST['address'] ?? '', $_POST['apt_suite'] ?? '', $_POST['city'] ?? '', $_POST['province'] ?? '', $_POST['postal_code'] ?? '', $_POST['country'] ?? 'CA', $rentAmount, $rentDueDay, $heatingType, $securityDeposit, trim((string)($_POST['ad_description'] ?? '')) !== '' ? trim((string)$_POST['ad_description']) : null, $id]
         );
 
         log_activity('property.updated', "Property '{$_POST['name']}' updated");
