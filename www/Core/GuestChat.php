@@ -35,13 +35,14 @@ class GuestChat
             return null;
         }
         $chat = Database::fetch(
-            "SELECT gc.*, p.name AS property_name
-             FROM guest_chats gc
+            "SELECT gc.*, p.name AS property_name, gct.token_hash AS matched_hash
+             FROM guest_chat_tokens gct
+             JOIN guest_chats gc ON gc.id = gct.chat_id
              JOIN properties p ON p.id = gc.property_id
-             WHERE gc.token_hash = ?",
+             WHERE gct.token_hash = ?",
             [self::hashToken($token)]
         );
-        if ($chat !== null && !hash_equals($chat['token_hash'], self::hashToken($token))) {
+        if ($chat !== null && !hash_equals($chat['matched_hash'], self::hashToken($token))) {
             return null;
         }
         return $chat;
@@ -102,7 +103,11 @@ class GuestChat
         }
         $placeholders = implode(',', array_fill(0, count($candidates), '?'));
         $rows = Database::fetchAll(
-            "SELECT id, property_id, token_hash FROM guest_chats WHERE token_hash IN ({$placeholders})",
+            "SELECT gc.id, gc.property_id, gct.token_hash, gc.last_activity, p.name AS property_name
+             FROM guest_chat_tokens gct
+             JOIN guest_chats gc ON gc.id = gct.chat_id
+             JOIN properties p ON p.id = gc.property_id
+             WHERE gct.token_hash IN ({$placeholders})",
             array_keys($candidates)
         );
         $chats = [];
@@ -113,10 +118,100 @@ class GuestChat
                     'id' => (int) $row['id'],
                     'property_id' => (int) $row['property_id'],
                     'token' => $candidate['token'],
+                    'property_name' => (string) $row['property_name'],
+                    'last_activity' => (string) $row['last_activity'],
                 ];
             }
         }
         return $chats;
+    }
+
+    /** Normalised, non-reversible key for email-based rate limits. */
+    public static function emailKey(string $email): string
+    {
+        return hash('sha256', strtolower(trim($email)));
+    }
+
+    /**
+     * Chats started with an email address, most recent activity first.
+     *
+     * @return array<int, array{id:int, property_name:string}>
+     */
+    public static function findByEmail(string $email, int $limit = 5): array
+    {
+        $email = strtolower(trim($email));
+        if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            return [];
+        }
+        $limit = max(1, min(10, $limit));
+        $rows = Database::fetchAll(
+            "SELECT gc.id, p.name AS property_name
+             FROM guest_chats gc
+             JOIN properties p ON p.id = gc.property_id
+             WHERE LOWER(gc.guest_email) = ?
+             ORDER BY gc.last_activity DESC, gc.id DESC
+             LIMIT {$limit}",
+            [$email]
+        );
+        $chats = [];
+        foreach ($rows as $row) {
+            $chats[] = [
+                'id' => (int) $row['id'],
+                'property_name' => (string) $row['property_name'],
+            ];
+        }
+        return $chats;
+    }
+
+    /** Register the hash of a link so it can be used to open the chat. */
+    public static function registerToken(int $chatId, string $token): void
+    {
+        if (!self::isValidToken($token)) {
+            return;
+        }
+        Database::insert(
+            "INSERT INTO guest_chat_tokens (chat_id, token_hash, created_at) VALUES (?, ?, NOW())",
+            [$chatId, self::hashToken($token)]
+        );
+    }
+
+    /**
+     * Issue an additional access link. Earlier links are left untouched, so
+     * an emailed link keeps working even after the visitor requests another.
+     */
+    public static function issueToken(int $chatId): string
+    {
+        $token = self::generateToken();
+        self::registerToken($chatId, $token);
+        return $token;
+    }
+
+    /**
+     * Email the private conversation link. Never sets a cookie: the link
+     * itself is the bearer credential and must reach the visitor's inbox.
+     */
+    public static function emailLink(string $email, string $token, string $propertyName): bool
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || !self::isValidToken($token)) {
+            return false;
+        }
+        $body = 'You can return to your private conversation about <strong>' . h($propertyName)
+            . '</strong> at any time using the link below.'
+            . '<br><br>Keep this email or bookmark the link — only people with the link can read the conversation.'
+            . ' If we have sent you more than one link, you can use any of them.';
+        try {
+            return Mailer::sendTemplate(
+                $email,
+                __('Your conversation link'),
+                'Hello,',
+                $body,
+                \site_url() . '/listings/chat/' . $token,
+                __('View conversation')
+            );
+        } catch (\Throwable $e) {
+            Logger::error('Guest chat link email failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

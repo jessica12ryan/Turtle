@@ -260,6 +260,21 @@ CREATE TABLE IF NOT EXISTS guest_chat_messages (
     INDEX idx_guest_chat_messages_chat (chat_id, id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Every access link ever issued for a chat stays valid. Only hashes are kept,
+-- so emailing a replacement link never has to reveal or store the raw token.
+CREATE TABLE IF NOT EXISTS guest_chat_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    chat_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (chat_id) REFERENCES guest_chats(id) ON DELETE CASCADE,
+    UNIQUE KEY uniq_guest_chat_token_hash (token_hash),
+    INDEX idx_guest_chat_tokens_chat (chat_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO guest_chat_tokens (chat_id, token_hash, created_at)
+SELECT id, token_hash, created_at FROM guest_chats;
+
 CREATE TABLE IF NOT EXISTS user_presence (
     user_id INT NOT NULL PRIMARY KEY,
     last_seen TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

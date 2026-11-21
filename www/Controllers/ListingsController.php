@@ -29,14 +29,19 @@ class ListingsController
              ORDER BY p.name ASC"
         );
 
+        $conversations = GuestChat::cookieChats();
         $continueChats = [];
-        foreach (GuestChat::cookieChats() as $chat) {
+        foreach ($conversations as $chat) {
             $continueChats[(int) $chat['property_id']] = $chat['token'];
         }
 
         $view = new View();
         $view->layout('layouts/public', ['title' => __('Properties Available')]);
-        $view->render('listings/index', ['properties' => $properties, 'continueChats' => $continueChats]);
+        $view->render('listings/index', [
+            'properties' => $properties,
+            'continueChats' => $continueChats,
+            'conversations' => $conversations,
+        ]);
     }
 
     public function startChat(int $id): void
@@ -98,15 +103,22 @@ class ListingsController
             [$chatId, $body]
         );
 
+        GuestChat::registerToken((int) $chatId, $token);
         GuestChat::setCookie($chatId, $token);
         log_activity('guest_chat.started', "Visitor chat #{$chatId} started for property #{$id}");
 
+        $emailSent = false;
         $chat = GuestChat::findById($chatId);
         if ($chat !== null) {
             GuestChat::notifyStaff($chat, $body);
+            $emailSent = GuestChat::emailLink($email, $token, (string) $chat['property_name']);
         }
 
-        flash('success', __('Your message has been sent. Save this page link to return to the conversation.'));
+        if ($emailSent) {
+            flash('success', __('Your message has been sent. We emailed your private link to the address you provided. Save that email or bookmark this page to return to this conversation.'));
+        } else {
+            flash('success', __('Your message has been sent. Save this page link to return to the conversation.'));
+        }
         redirect('/listings/chat/' . $token);
     }
 
@@ -122,6 +134,10 @@ class ListingsController
             $view->render('listings/chat-missing');
             return;
         }
+
+        // Opening a valid link proves possession of the bearer token, so the
+        // browser can keep a convenience shortcut back to this conversation.
+        GuestChat::setCookie((int) $chat['id'], $token);
 
         $view = new View();
         $view->layout('layouts/public', ['title' => __('Conversation')]);
@@ -190,6 +206,46 @@ class ListingsController
             'success' => true,
             'message' => ['mine' => true, 'body' => $body, 'time' => date('H:i')],
         ]);
+    }
+
+    /**
+     * Email an additional private link after a visitor loses the original URL.
+     *
+     * Earlier links stay valid; only hashes of issued tokens are stored. The
+     * response is deliberately generic so the endpoint cannot be used to
+     * discover which addresses have conversations.
+     */
+    public function emailConversationLink(): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirect('/listings');
+        }
+
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            flash('error', __('Please enter a valid email address.'));
+            redirect('/listings');
+        }
+
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (
+            !auth_rate_limit('guest_chat_link:ip:' . $ip, 5, 900)
+            || !auth_rate_limit('guest_chat_link:email:' . GuestChat::emailKey($email), 3, 3600)
+        ) {
+            flash('error', __('Too many link requests. Please wait a few minutes.'));
+            redirect('/listings');
+        }
+
+        $chats = GuestChat::findByEmail($email);
+        foreach ($chats as $chat) {
+            $token = GuestChat::issueToken((int) $chat['id']);
+            GuestChat::emailLink($email, $token, (string) $chat['property_name']);
+        }
+        log_activity('guest_chat.link_requested', 'Conversation link request matched ' . count($chats) . ' conversation(s)');
+
+        flash('success', __('If a conversation exists for that address, a new link has been sent. You can keep using any earlier links as well.'));
+        redirect('/listings');
     }
 
     /** Serve a listing photo without an account, but only for listed properties. */

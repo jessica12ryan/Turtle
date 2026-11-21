@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 const admin = {
   name: 'E2E Admin',
@@ -12,6 +12,21 @@ async function expectPageOk(page: Page, path: string): Promise<void> {
   const response = await page.goto(path);
   expect(response?.status(), `${path} should return 200`).toBe(200);
   await expect(page.locator('body')).not.toContainText('An unexpected error occurred');
+}
+
+/** Return the visitor-chat path from the most recent link email in Mailpit. */
+async function guestLinkFromMailpit(request: APIRequestContext): Promise<string | null> {
+  const list = await request.get(`${mailpitUrl}/api/v1/messages`);
+  if (!list.ok()) return null;
+  const payload = await list.json();
+  const messages = Array.isArray(payload.messages) ? payload.messages : [];
+  const linkMessage = messages.find((message: { Subject?: string }) =>
+    String(message.Subject ?? '').includes('Your conversation link'));
+  if (!linkMessage) return null;
+  const detail = await request.get(`${mailpitUrl}/api/v1/message/${encodeURIComponent(String(linkMessage.ID))}`);
+  if (!detail.ok()) return null;
+  const match = (await detail.text()).match(/listings\/chat\/[a-f0-9]{64}/);
+  return match ? match[0] : null;
 }
 
 /** Walk the five-step setup wizard. Only one step is visible at a time. */
@@ -91,10 +106,20 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.goto('/');
   await expect(page).toHaveURL(/\/listings$/);
   await expect(page.getByTestId('login-link')).toBeVisible();
+  await expect(page.getByRole('banner').locator('span')).toHaveCount(0);
   await expect(page.getByTestId('listing-card').first()).toBeVisible();
+  await expect(page.getByTestId('return-conversation')).toBeVisible();
+
+  // Opening one property closes any other open message form.
+  await page.getByTestId('message-button').first().click();
+  await expect(page.locator('[data-testid="message-panel"]:visible')).toHaveCount(1);
+  await page.getByTestId('message-button').nth(1).click();
+  await expect(page.locator('[data-testid="message-panel"]:visible')).toHaveCount(1);
+  await expect(page.getByTestId('message-button').first()).toHaveAttribute('aria-expanded', 'false');
+  await page.getByTestId('message-button').first().click();
+  await expect(page.getByTestId('message-button').first()).toHaveAttribute('aria-expanded', 'true');
 
   // A visitor starts a two-way chat from a listing.
-  await page.getByTestId('message-button').first().click();
   await page.locator('input[name="guest_name"]').first().fill('Guest Visitor');
   await page.locator('input[name="guest_email"]').first().fill('guest@example.com');
   await page.locator('textarea[name="body"]').first().fill('Hello, is this available?');
@@ -102,6 +127,15 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page).toHaveURL(/\/listings\/chat\/[a-f0-9]{64}$/);
   const guestChatUrl = page.url();
   await expect(page.getByTestId('chat-messages')).toContainText('Hello, is this available?');
+  await expect(page.getByText('This conversation is private.', { exact: false })).toBeVisible();
+
+  // The visitor also gets the private link by email, so a cleared browser
+  // does not lock them out of their conversation.
+  let emailedPath: string | null = null;
+  await expect.poll(async () => {
+    emailedPath = await guestLinkFromMailpit(request);
+    return emailedPath !== null;
+  }, { message: 'the visitor should receive the private link by email' }).toBe(true);
 
   // Session round-trip: logged out visitors must log back in.
   await page.context().clearCookies();
@@ -129,6 +163,31 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   expect(savedLinkResponse.status(), 'the saved link must work without a cookie').toBe(200);
   await page.goto(guestChatUrl);
   await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
+
+  // A visitor who lost every browser trace can request a fresh link by email.
+  await page.context().clearCookies();
+  await page.goto('/listings');
+  await page.getByTestId('recovery-form').locator('input[name="email"]').fill('guest@example.com');
+  await page.getByTestId('recovery-form').getByRole('button', { name: 'Email me my link' }).click();
+  await expect(page.getByText('If a conversation exists for that address', { exact: false })).toBeVisible();
+  await expect(page.getByText('You can keep using any earlier links as well.', { exact: false })).toBeVisible();
+
+  let recoveredPath: string | null = null;
+  await expect.poll(async () => {
+    const candidate = await guestLinkFromMailpit(request);
+    if (!candidate || candidate === emailedPath) return false;
+    recoveredPath = candidate;
+    return true;
+  }, { message: 'a replacement visitor link should arrive by email' }).toBe(true);
+
+  expect((await request.get(emailedPath!)).status(), 'the original emailed link must still work').toBe(200);
+  expect((await request.get(recoveredPath!)).status(), 'the additional link must work').toBe(200);
+  await page.goto(emailedPath!);
+  await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
+  await page.goto(recoveredPath!);
+  await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
+  await page.goto('/listings');
+  await expect(page.getByTestId('conversation-link')).toBeVisible();
 
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });

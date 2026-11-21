@@ -274,6 +274,7 @@ $router->post('/listings/{id}/chat', 'ListingsController@startChat');
 $router->get('/listings/chat/{token}', 'ListingsController@chat');
 $router->get('/listings/chat/{token}/messages', 'ListingsController@chatMessages');
 $router->post('/listings/chat/{token}/send', 'ListingsController@chatSend');
+$router->post('/listings/conversation/email-link', 'ListingsController@emailConversationLink');
 $router->get('/listings/{id}/photos/{photoId}', 'ListingsController@servePhoto');
 
 // Staff inbox for visitor chats

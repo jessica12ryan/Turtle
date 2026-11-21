@@ -45,7 +45,6 @@
         <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
             <a href="/listings" class="flex items-center space-x-3 min-w-0">
                 <img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-10 flex-shrink-0<?= site_logo() === '/assets/logo.svg' ? ' logo-default' : '' ?>">
-                <span class="font-semibold text-gray-800 truncate dark:text-slate-100"><?= h(site_name()) ?></span>
             </a>
             <nav class="flex items-center gap-3 sm:gap-5 text-sm">
                 <a href="/applications/create" class="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"><?= __('Application for Tenancy') ?></a>

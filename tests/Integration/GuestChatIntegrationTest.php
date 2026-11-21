@@ -26,6 +26,7 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
             "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
             [$chatId, 'Is this still available?']
         );
+        GuestChat::registerToken((int) $chatId, $token);
 
         $chat = GuestChat::findByToken($token);
         self::assertNotNull($chat);
@@ -43,6 +44,45 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertContains($landlord, $recipients);
         self::assertContains($admin, $recipients, 'admins are a fallback so a chat is never orphaned');
         self::assertNotContains($stranger, $recipients);
+    }
+
+    public function testAdditionalConversationLinksDoNotDisableEarlierOnes(): void
+    {
+        $landlord = $this->insertUser('recover-owner@example.com', 'landlord');
+        $company = $this->insertCompany();
+        $property = $this->insertProperty($company, $landlord, 'Recoverable Property');
+        $originalToken = GuestChat::generateToken();
+        $chatId = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Returning Visitor', 'Case@Example.com', GuestChat::hashToken($originalToken)]
+        );
+        GuestChat::registerToken((int) $chatId, $originalToken);
+
+        $found = GuestChat::findByEmail(' case@example.com ');
+        self::assertCount(1, $found);
+        self::assertSame((string) $chatId, (string) $found[0]['id']);
+        self::assertSame('Recoverable Property', $found[0]['property_name']);
+        self::assertSame([], GuestChat::findByEmail('nobody@example.com'));
+
+        $newToken = GuestChat::issueToken((int) $chatId);
+        self::assertTrue(GuestChat::isValidToken($newToken));
+        self::assertNotSame($originalToken, $newToken);
+        self::assertNotNull(GuestChat::findByToken($originalToken), 'the original emailed link must keep working');
+        self::assertNotNull(GuestChat::findByToken($newToken), 'the new link must work too');
+
+        $stored = Database::fetch("SELECT token_hash FROM guest_chats WHERE id = ?", [$chatId]);
+        self::assertSame(GuestChat::hashToken($originalToken), $stored['token_hash'], 'the original hash must not be replaced');
+        self::assertNotSame($originalToken, $stored['token_hash'], 'the raw token must never be stored');
+        $hashes = Database::fetchAll(
+            "SELECT token_hash FROM guest_chat_tokens WHERE chat_id = ? ORDER BY id ASC",
+            [$chatId]
+        );
+        self::assertSame([
+            ['token_hash' => GuestChat::hashToken($originalToken)],
+            ['token_hash' => GuestChat::hashToken($newToken)],
+        ], $hashes);
+        self::assertSame(hash('sha256', 'case@example.com'), GuestChat::emailKey(' Case@Example.com '));
     }
 
     public function testGuestAndStaffReadStateAreTrackedSeparately(): void

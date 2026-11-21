@@ -9,7 +9,17 @@
     </div>
 
     <div class="bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg px-4 py-3 mb-4 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-200">
-        <?= __('Only you can see this conversation. Save this page address to return to it later.') ?>
+        <p><?= __('This conversation is private. We emailed a link to the address you provided — save that email or bookmark this page to return later.') ?></p>
+        <p class="mt-2">
+            <?= __('Lost this link?') ?>
+            <a href="/listings" class="underline"><?= __('Return to the listings page to request a new one.') ?></a>
+        </p>
+        <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button type="button" id="copy-chat-link" class="border border-blue-600 px-3 py-1.5 rounded-lg font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40">
+                <?= __('Copy conversation link') ?>
+            </button>
+            <span id="copy-link-status" class="hidden" aria-live="polite"></span>
+        </div>
     </div>
 
     <div class="bg-white rounded-xl shadow overflow-hidden dark:bg-slate-800">
@@ -110,6 +120,33 @@
             errorEl.classList.remove('hidden');
         }
     });
+
+    const copyButton = document.getElementById('copy-chat-link');
+    const copyStatus = document.getElementById('copy-link-status');
+    const copiedText = <?= json_encode(__('Link copied')) ?>;
+    const copyManuallyText = <?= json_encode(__('Select the address bar to copy the link.')) ?>;
+
+    async function copyLink() {
+        try {
+            await navigator.clipboard.writeText(location.href);
+            copyStatus.textContent = copiedText;
+        } catch (e) {
+            const field = document.createElement('textarea');
+            field.value = location.href;
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.appendChild(field);
+            field.select();
+            const ok = document.execCommand('copy');
+            field.remove();
+            copyStatus.textContent = ok ? copiedText : copyManuallyText;
+        }
+        copyStatus.classList.remove('hidden');
+    }
+
+    if (copyButton && copyStatus) {
+        copyButton.addEventListener('click', copyLink);
+    }
 
     scrollToBottom();
     setInterval(poll, 5000);
