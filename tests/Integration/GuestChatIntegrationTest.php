@@ -41,9 +41,27 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertNotSame($token, $stored['token_hash'], 'the raw token must never be stored');
 
         $recipients = GuestChat::recipientIds($property);
-        self::assertContains($landlord, $recipients);
-        self::assertContains($admin, $recipients, 'admins are a fallback so a chat is never orphaned');
+        self::assertSame([$landlord], $recipients, 'a property without a manager notifies only its landlord');
+        self::assertNotContains($admin, $recipients, 'admins are not notified about listing messages');
         self::assertNotContains($stranger, $recipients);
+    }
+
+    public function testListingMessagesNotifyOnlyTheAssignedPropertyManager(): void
+    {
+        $landlord = $this->insertUser('manager-case-landlord@example.com', 'landlord');
+        $manager = $this->insertUser('manager-case-manager@example.com', 'property_manager');
+        $admin = $this->insertUser('manager-case-admin@example.com', 'admin');
+        $company = $this->insertCompany();
+        $property = $this->insertProperty($company, $landlord, 'Managed Property');
+        Database::execute("UPDATE properties SET property_manager_id = ? WHERE id = ?", [$manager, $property]);
+
+        $recipients = GuestChat::recipientIds($property);
+        self::assertSame([$manager], $recipients);
+        self::assertNotContains($landlord, $recipients);
+        self::assertNotContains($admin, $recipients);
+
+        Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ?", [$manager]);
+        self::assertSame([], GuestChat::recipientIds($property), 'an archived manager must not receive mail');
     }
 
     public function testAdditionalConversationLinksDoNotDisableEarlierOnes(): void

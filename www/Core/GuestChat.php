@@ -425,9 +425,36 @@ class GuestChat
         }
     }
 
+    /** Email the guest when a staff member posts a new message. */
+    public static function emailStaffReply(array $chat, string $body, string $token): bool
+    {
+        $email = (string) ($chat['guest_email'] ?? '');
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false || !self::isValidToken($token)) {
+            return false;
+        }
+        $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
+        $message = 'The property team replied to your conversation about <strong>'
+            . h((string) ($chat['property_name'] ?? '')) . '</strong>:<br><br>' . nl2br(h($snippet))
+            . '<br><br>Use the link below to read the reply and continue the conversation.'
+            . ' Your earlier links still work too.';
+        try {
+            return Mailer::sendTemplate(
+                $email,
+                __('New reply to your conversation'),
+                'Hello ' . h((string) ($chat['guest_name'] ?? '')) . ',',
+                $message,
+                \site_url() . '/listings/chat/' . $token,
+                __('View conversation')
+            );
+        } catch (\Throwable $e) {
+            Logger::error('Guest reply notification email failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     /**
-     * Staff who should see a property's visitor chat: its landlord, its
-     * property manager, and every admin (so a chat is never orphaned).
+     * Recipient for listing messages: the property's manager if one is set,
+     * otherwise its landlord. Admins are deliberately not notified.
      *
      * @return array<int, int>
      */
@@ -440,14 +467,16 @@ class GuestChat
         if ($property === null) {
             return [];
         }
-        $rows = Database::fetchAll(
-            "SELECT DISTINCT u.id FROM users u
-             WHERE u.archived_at IS NULL
-               AND (u.id = ? OR u.id = ? OR u.role = 'admin')
-             ORDER BY u.id",
-            [$property['landlord_id'], $property['property_manager_id'] ?? null]
+        $managerId = (int) ($property['property_manager_id'] ?? 0);
+        $recipientId = $managerId > 0 ? $managerId : (int) $property['landlord_id'];
+        if ($recipientId <= 0) {
+            return [];
+        }
+        $user = Database::fetch(
+            "SELECT id FROM users WHERE id = ? AND archived_at IS NULL",
+            [$recipientId]
         );
-        return array_map(static fn(array $row): int => (int) $row['id'], $rows);
+        return $user === null ? [] : [(int) $user['id']];
     }
 
     /** Notify the property team (in-app + email) about a visitor message. */

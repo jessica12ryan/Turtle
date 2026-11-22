@@ -38,6 +38,9 @@ const guestHubLinkFromMailpit = (request: APIRequestContext): Promise<string | n
 const hubLinkFromConversationEmail = (request: APIRequestContext): Promise<string | null> =>
   linkFromMailpit(request, 'Your conversation link', /listings\/conversations\/[a-f0-9]{64}/);
 
+const guestReplyLinkFromMailpit = (request: APIRequestContext): Promise<string | null> =>
+  linkFromMailpit(request, 'New reply to your conversation', /listings\/chat\/[a-f0-9]{64}/);
+
 /** Walk the five-step setup wizard. Only one step is visible at a time. */
 async function completeSetup(page: Page): Promise<void> {
   await page.goto('/setup');
@@ -183,6 +186,15 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.locator('textarea[name="body"]').fill('Yes, it is available.');
   await page.getByTestId('guest-reply').click();
   await expect(page.getByText('Yes, it is available.')).toBeVisible();
+
+  // The guest gets a fresh direct link to the conversation by email.
+  let replyEmailPath: string | null = null;
+  await expect.poll(async () => {
+    replyEmailPath = await guestReplyLinkFromMailpit(request);
+    return replyEmailPath !== null;
+  }, { message: 'the guest should be emailed about the staff reply' }).toBe(true);
+  await page.goto(`/${replyEmailPath!}`);
+  await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
 
   // The saved link works without a cookie, but a guessed token cannot open it.
   const guessedUrl = guestChatUrl.replace(/[a-f0-9]{64}$/, '0'.repeat(64));

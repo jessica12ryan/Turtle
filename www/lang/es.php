@@ -1031,6 +1031,7 @@ return [
     'Lost the link? Enter the email address you used and we will send you a new one.' => '¿Perdió el enlace? Introduzca la dirección de correo que usó y le enviaremos uno nuevo.',
     'Lost this link?' => '¿Perdió este enlace?',
     'Message cannot be empty or too long.' => 'El mensaje no puede estar vacío ni ser demasiado largo.',
+    'New reply to your conversation' => 'Nueva respuesta a su conversación',
     'No properties are currently listed.' => 'No hay propiedades disponibles actualmente.',
     'Open conversation' => 'Abrir conversación',
     'Only you can see this conversation. Save this page address to return to it later.' => 'Solo usted puede ver esta conversación. Guarde la dirección de esta página para volver más tarde.',

@@ -105,7 +105,8 @@ class GuestChatController
             flash('error', __('Invalid form token. Please try again.'));
             redirect('/guest-chats/' . $id);
         }
-        if ($this->findScoped($id) === null) {
+        $chat = $this->findScoped($id);
+        if ($chat === null) {
             http_response_code(404);
             require base_path('www/Views/errors/404.php');
             return;
@@ -123,6 +124,12 @@ class GuestChatController
             [$id, Auth::instance()->id(), $body]
         );
         Database::execute("UPDATE guest_chats SET last_activity = NOW(), updated_at = NOW() WHERE id = ?", [$id]);
+
+        // The guest never stores the raw token, so issue a fresh direct link
+        // for this email. Earlier links stay valid.
+        $token = GuestChat::issueToken($id);
+        GuestChat::emailStaffReply($chat, $body, $token);
+
         log_activity('guest_chat.replied', "Staff replied to visitor chat #{$id}");
         flash('success', __('Reply sent.'));
         redirect('/guest-chats/' . $id);
