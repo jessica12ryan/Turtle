@@ -182,9 +182,10 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   // Staff can reply from the dedicated Guest Chats inbox, and the visitor sees it.
   await page.goto('/guest-chats');
   await expect(page.getByTestId('guest-chat-group')).toHaveCount(1);
-  await expect(page.getByTestId('guest-chat-group-name')).toHaveText('Guest Visitor');
   await expect(page.getByTestId('guest-chat-group-email')).toHaveText('guest@example.com');
   await expect(page.getByTestId('guest-chat-row')).toHaveCount(2);
+  await expect(page.getByTestId('guest-chat-row-name')).toHaveCount(2);
+  await expect(page.getByTestId('guest-chat-row-name').first()).toHaveText('Guest Visitor');
   await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
   await expect(page).toHaveURL(/\/guest-chats\/\d+$/);
   await page.locator('textarea[name="body"]').fill('Yes, it is available.');

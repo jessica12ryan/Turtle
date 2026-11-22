@@ -33,7 +33,6 @@ class GuestChatController
             $email = strtolower((string) ($chat['guest_email'] ?? ''));
             if (!isset($groups[$email])) {
                 $groups[$email] = [
-                    'guest_name' => (string) $chat['guest_name'],
                     'guest_email' => (string) $chat['guest_email'],
                     'unread' => 0,
                     'last_activity' => (string) $chat['last_activity'],

@@ -15,12 +15,11 @@
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="min-w-0">
                             <div class="flex items-center gap-2">
-                                <span class="font-semibold text-gray-800 truncate dark:text-slate-100" data-testid="guest-chat-group-name"><?= h($group['guest_name']) ?></span>
+                                <span class="font-semibold text-gray-800 truncate dark:text-slate-100" data-testid="guest-chat-group-email"><?= h($group['guest_email']) ?></span>
                                 <?php if ((int) $group['unread'] > 0): ?>
                                     <span class="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5" data-testid="guest-chat-group-unread"><?= (int) $group['unread'] ?></span>
                                 <?php endif; ?>
                             </div>
-                            <div class="text-xs text-gray-500 truncate dark:text-slate-400" data-testid="guest-chat-group-email"><?= h($group['guest_email']) ?></div>
                         </div>
                         <div class="text-xs text-gray-400 dark:text-slate-500"><?= h(display_time($group['last_activity'])) ?></div>
                     </div>
@@ -36,6 +35,7 @@
                                         <span class="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5"><?= (int) $chat['unread'] ?></span>
                                     <?php endif; ?>
                                 </div>
+                                <div class="text-sm text-gray-500 truncate dark:text-slate-400" data-testid="guest-chat-row-name"><?= h($chat['guest_name']) ?></div>
                                 <?php if (!empty($chat['last_body'])): ?>
                                     <div class="text-xs text-gray-400 truncate mt-1 dark:text-slate-500"><?= h($chat['last_body']) ?></div>
                                 <?php endif; ?>
