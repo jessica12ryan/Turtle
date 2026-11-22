@@ -177,15 +177,20 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.locator('#password').fill(admin.password);
   await page.getByRole('button', { name: 'Sign In' }).click();
   await expect(page).toHaveURL(/\/home$/);
+  await expect(page.getByTestId('guest-chat-unread-badge')).toHaveText('2');
 
   // Staff can reply from the dedicated Guest Chats inbox, and the visitor sees it.
   await page.goto('/guest-chats');
+  await expect(page.getByTestId('guest-chat-group')).toHaveCount(1);
+  await expect(page.getByTestId('guest-chat-group-name')).toHaveText('Guest Visitor');
+  await expect(page.getByTestId('guest-chat-group-email')).toHaveText('guest@example.com');
   await expect(page.getByTestId('guest-chat-row')).toHaveCount(2);
   await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
   await expect(page).toHaveURL(/\/guest-chats\/\d+$/);
   await page.locator('textarea[name="body"]').fill('Yes, it is available.');
   await page.getByTestId('guest-reply').click();
   await expect(page.getByText('Yes, it is available.')).toBeVisible();
+  await expect(page.getByTestId('guest-chat-unread-badge')).toHaveText('1');
 
   // The guest gets a fresh direct link to the conversation by email.
   let replyEmailPath: string | null = null;

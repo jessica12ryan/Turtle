@@ -60,6 +60,71 @@ class GuestChat
         );
     }
 
+    /**
+     * Property access filter shared by the staff inbox and the sidebar badge.
+     *
+     * @param array<string, mixed> $user
+     * @return array{0:string, 1:array<int, mixed>}
+     */
+    private static function scopeFor(array $user): array
+    {
+        $where = 'p.archived_at IS NULL';
+        $params = [];
+        if (($user['role'] ?? '') !== 'admin') {
+            if (($user['role'] ?? '') === 'property_manager') {
+                $where .= ' AND p.property_manager_id = ?';
+                $params[] = $user['id'];
+            } else {
+                $companyIds = Database::fetchAll(
+                    "SELECT company_id FROM company_user WHERE user_id = ?",
+                    [$user['id']]
+                );
+                $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+                $where .= " AND p.company_id IN ({$companyIdList})";
+            }
+        }
+        return [$where, $params];
+    }
+
+    /**
+     * Conversations a staff member is allowed to see, newest activity first.
+     *
+     * @param array<string, mixed> $user
+     * @return array<int, array<string, mixed>>
+     */
+    public static function scopedChats(array $user): array
+    {
+        [$where, $params] = self::scopeFor($user);
+        return Database::fetchAll(
+            "SELECT gc.id, gc.guest_name, gc.guest_email, gc.last_activity, gc.property_id, p.name AS property_name,
+                    (SELECT COUNT(*) FROM guest_chat_messages m
+                     WHERE m.chat_id = gc.id AND m.sender_type = 'guest' AND m.read_at IS NULL) AS unread,
+                    (SELECT m.body FROM guest_chat_messages m
+                     WHERE m.chat_id = gc.id ORDER BY m.id DESC LIMIT 1) AS last_body
+             FROM guest_chats gc
+             JOIN properties p ON p.id = gc.property_id
+             WHERE {$where}
+             ORDER BY gc.last_activity DESC, gc.id DESC",
+            $params
+        );
+    }
+
+    /** Number of conversations with unread guest messages for this user. */
+    public static function unreadCount(array $user): int
+    {
+        [$where, $params] = self::scopeFor($user);
+        $row = Database::fetch(
+            "SELECT COUNT(DISTINCT gc.id) AS total
+             FROM guest_chats gc
+             JOIN properties p ON p.id = gc.property_id
+             JOIN guest_chat_messages m
+               ON m.chat_id = gc.id AND m.sender_type = 'guest' AND m.read_at IS NULL
+             WHERE {$where}",
+            $params
+        );
+        return $row === null ? 0 : (int) $row['total'];
+    }
+
     public static function setCookie(int $chatId, string $token): void
     {
         self::writeCookie(self::COOKIE_PREFIX . $chatId, $token);

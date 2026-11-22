@@ -1032,6 +1032,7 @@ return [
     'Lost this link?' => 'Lien perdu ?',
     'Message cannot be empty or too long.' => 'Le message ne peut pas être vide ni trop long.',
     'New reply to your conversation' => 'Nouvelle réponse à votre conversation',
+    'unread' => 'non lues',
     'No properties are currently listed.' => 'Aucune propriété n\'est actuellement disponible.',
     'Open conversation' => 'Ouvrir la conversation',
     'Only you can see this conversation. Save this page address to return to it later.' => 'Vous seul pouvez voir cette conversation. Enregistrez l\'adresse de cette page pour y revenir plus tard.',

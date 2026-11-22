@@ -3,6 +3,9 @@ $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $user = \App\Core\Auth::instance()->user();
 $logoUrl = site_logo();
 $isDefaultLogo = $logoUrl === '/assets/logo.svg';
+$guestChatUnread = can('guest_chats.access') && ($user['role'] ?? '') !== 'tenant'
+    ? \App\Core\GuestChat::unreadCount($user)
+    : 0;
 
 function navActive(string $prefix, string $currentUri): string
 {
@@ -71,17 +74,26 @@ function navActive(string $prefix, string $currentUri): string
             $items[] = ['/applications', __('Applications'), 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'];
         }
         if (can('guest_chats.access') && $user['role'] !== 'tenant') {
-            $items[] = ['/guest-chats', __('Guest Chats'), 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'];
+            $items[] = ['/guest-chats', __('Guest Chats'), 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', $guestChatUnread];
         }
 
-        foreach ($items as [$href, $label, $icon]) {
+        foreach ($items as $item) {
+            [$href, $label, $icon] = $item;
+            $badge = $item[3] ?? 0;
             ?>
             <a href="<?= $href ?>"
                data-tooltip="<?= h($label) ?>"
                aria-label="<?= h($label) ?>"
                @click="sidebarOpen = false"
                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition <?= navActive($href, $currentUri) ?>">
-                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $icon ?>"/></svg>
+                <span class="relative flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?= $icon ?>"/></svg>
+                    <?php if ($badge > 0): ?>
+                        <span class="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-semibold flex items-center justify-center"
+                              data-testid="guest-chat-unread-badge"
+                              aria-label="<?= (int) $badge ?> <?= __('unread') ?>"><?= (int) $badge ?></span>
+                    <?php endif; ?>
+                </span>
                 <span class="truncate nav-label"><?= h($label) ?></span>
             </a>
             <?php

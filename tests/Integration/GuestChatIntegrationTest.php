@@ -152,6 +152,46 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertNotNull(GuestChat::findByToken($tokenB), 'other property link must still work');
     }
 
+    public function testInboxRowsAndUnreadBadgeAreScopedForStaff(): void
+    {
+        $landlord = $this->insertUser('inbox-landlord@example.com', 'landlord');
+        $admin = $this->insertUser('inbox-admin@example.com', 'admin');
+        $outsider = $this->insertUser('inbox-outsider@example.com', 'landlord');
+        $company = $this->insertCompany();
+        $property = $this->insertProperty($company, $landlord, 'Inbox Property');
+        Database::insert("INSERT INTO company_user (company_id, user_id) VALUES (?, ?)", [$company, $landlord]);
+
+        $token = GuestChat::generateToken();
+        $chatId = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Inbox Guest', 'inbox@example.com', GuestChat::hashToken($token)]
+        );
+        GuestChat::registerToken((int) $chatId, $token);
+        Database::insert(
+            "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
+            [$chatId, 'Any updates?']
+        );
+
+        $adminRow = Database::fetch("SELECT * FROM users WHERE id = ?", [$admin]);
+        $landlordRow = Database::fetch("SELECT * FROM users WHERE id = ?", [$landlord]);
+        $outsiderRow = Database::fetch("SELECT * FROM users WHERE id = ?", [$outsider]);
+        self::assertNotNull($adminRow);
+        self::assertNotNull($landlordRow);
+        self::assertNotNull($outsiderRow);
+
+        $rows = GuestChat::scopedChats($adminRow);
+        self::assertCount(1, $rows);
+        self::assertSame('inbox@example.com', $rows[0]['guest_email']);
+        self::assertSame(1, (int) $rows[0]['unread']);
+        self::assertSame(1, GuestChat::unreadCount($adminRow));
+        self::assertSame(1, GuestChat::unreadCount($landlordRow));
+        self::assertSame(0, GuestChat::unreadCount($outsiderRow));
+
+        Database::execute("UPDATE guest_chat_messages SET read_at = NOW() WHERE chat_id = ?", [$chatId]);
+        self::assertSame(0, GuestChat::unreadCount($adminRow));
+    }
+
     public function testGuestAndStaffReadStateAreTrackedSeparately(): void
     {
         $landlord = $this->insertUser('owner@example.com', 'landlord');

@@ -17,35 +17,40 @@ class GuestChatController
     /** @return array<int, array<string, mixed>> */
     private function scopedChats(): array
     {
-        $user = Auth::instance()->user();
-        $where = 'p.archived_at IS NULL';
-        $params = [];
-        if (($user['role'] ?? '') !== 'admin') {
-            if (($user['role'] ?? '') === 'property_manager') {
-                $where .= ' AND p.property_manager_id = ?';
-                $params[] = $user['id'];
-            } else {
-                $companyIds = Database::fetchAll(
-                    "SELECT company_id FROM company_user WHERE user_id = ?",
-                    [$user['id']]
-                );
-                $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
-                $where .= " AND p.company_id IN ({$companyIdList})";
-            }
-        }
+        return GuestChat::scopedChats(Auth::instance()->user());
+    }
 
-        return Database::fetchAll(
-            "SELECT gc.id, gc.guest_name, gc.last_activity, gc.property_id, p.name AS property_name,
-                    (SELECT COUNT(*) FROM guest_chat_messages m
-                     WHERE m.chat_id = gc.id AND m.sender_type = 'guest' AND m.read_at IS NULL) AS unread,
-                    (SELECT m.body FROM guest_chat_messages m
-                     WHERE m.chat_id = gc.id ORDER BY m.id DESC LIMIT 1) AS last_body
-             FROM guest_chats gc
-             JOIN properties p ON p.id = gc.property_id
-             WHERE {$where}
-             ORDER BY gc.last_activity DESC",
-            $params
+    /**
+     * Group conversations by the guest's email address, most recently active
+     * guest first. Each group keeps its own property conversations in order.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function groupedChats(): array
+    {
+        $groups = [];
+        foreach ($this->scopedChats() as $chat) {
+            $email = strtolower((string) ($chat['guest_email'] ?? ''));
+            if (!isset($groups[$email])) {
+                $groups[$email] = [
+                    'guest_name' => (string) $chat['guest_name'],
+                    'guest_email' => (string) $chat['guest_email'],
+                    'unread' => 0,
+                    'last_activity' => (string) $chat['last_activity'],
+                    'chats' => [],
+                ];
+            }
+            $groups[$email]['unread'] += (int) $chat['unread'];
+            if (strcmp((string) $chat['last_activity'], (string) $groups[$email]['last_activity']) > 0) {
+                $groups[$email]['last_activity'] = (string) $chat['last_activity'];
+            }
+            $groups[$email]['chats'][] = $chat;
+        }
+        usort(
+            $groups,
+            static fn(array $a, array $b): int => strcmp((string) $b['last_activity'], (string) $a['last_activity'])
         );
+        return $groups;
     }
 
     /** @return array<string, mixed>|null */
@@ -63,7 +68,7 @@ class GuestChatController
     {
         $view = new View();
         $view->layout('layouts/main', ['title' => __('Guest Chats')]);
-        $view->render('guest_chats/index', ['chats' => $this->scopedChats()]);
+        $view->render('guest_chats/index', ['groups' => $this->groupedChats()]);
     }
 
     public function show(int $id): void

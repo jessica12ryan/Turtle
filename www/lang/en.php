@@ -935,6 +935,7 @@
     'Lost this link?' => 'Lost this link?',
     'Message cannot be empty or too long.' => 'Message cannot be empty or too long.',
     'New reply to your conversation' => 'New reply to your conversation',
+    'unread' => 'unread',
     'No properties are currently listed.' => 'No properties are currently listed.',
     'Open conversation' => 'Open conversation',
     'Only you can see this conversation. Save this page address to return to it later.' => 'Only you can see this conversation. Save this page address to return to it later.',
