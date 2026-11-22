@@ -129,6 +129,10 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
 
   // Photos can be reordered by dragging; the main photo stays pinned first.
   await page.goto('/properties/2/edit');
+  await page.evaluate(() => { (window as any).__photoManagerNoReload = true; });
+  const noReload = async (): Promise<void> => {
+    expect(await page.evaluate(() => (window as any).__photoManagerNoReload)).toBe(true);
+  };
   const photoTiles = page.getByTestId('photo-tile');
   await expect(photoTiles).toHaveCount(3);
   const tileOrder = (): Promise<string[]> => photoTiles.locator('img').evaluateAll((imgs) =>
@@ -161,14 +165,33 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.mouse.up();
   const draggedOrder = [originalOrder[0], originalOrder[2], originalOrder[1]];
   await waitForOrder(draggedOrder);
+  await noReload();
 
   // The arrow buttons offer the same control without drag and drop.
   await photoTiles.nth(2).getByTestId('move-photo-left').click();
   await waitForOrder(originalOrder);
+  await noReload();
 
   // "Set as Main" stays available and moves the chosen photo to the front.
   await photoTiles.nth(1).getByTestId('set-as-main').click();
-  await expect(photoTiles.first()).toContainText('Main');
+  await waitForOrder([originalOrder[1], originalOrder[0], originalOrder[2]]);
+  await expect(photoTiles.first().getByTestId('main-badge')).toBeVisible();
+  await expect(photoTiles.first().getByTestId('set-as-main')).toBeHidden();
+  await noReload();
+
+  // Deleting a photo also updates the grid in place.
+  const keptOrder = await tileOrder();
+  page.once('dialog', (dialog) => dialog.accept());
+  await photoTiles.last().getByTestId('delete-photo').click();
+  await expect(photoTiles).toHaveCount(2);
+  await noReload();
+  expect((await tileOrder()).join('|')).toBe(keptOrder.slice(0, 2).join('|'));
+
+  // A real reload confirms the in-place changes were persisted.
+  await page.reload();
+  await expect(photoTiles).toHaveCount(2);
+  await expect(photoTiles.first().getByTestId('main-badge')).toBeVisible();
+  expect((await tileOrder()).join('|')).toBe(keptOrder.slice(0, 2).join('|'));
 
   // Tampered reorder requests are rejected.
   const photoIds = await photoTiles.evaluateAll((tiles) =>

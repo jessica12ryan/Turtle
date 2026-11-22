@@ -736,6 +736,8 @@
     'Move photo left' => 'Move photo left',
     'Move photo right' => 'Move photo right',
     'Could not reorder photos.' => 'Could not reorder photos.',
+    'Could not set the main photo.' => 'Could not set the main photo.',
+    'Could not delete the photo.' => 'Could not delete the photo.',
     'Property archived successfully. Related tenants, leases, and tickets have also been archived.' => 'Property archived successfully. Related tenants, leases, and tickets have also been archived.',
     'Property created successfully.' => 'Property created successfully.',
     'Property not found.' => 'Property not found.',

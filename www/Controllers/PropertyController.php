@@ -474,16 +474,49 @@ class PropertyController
         ]);
     }
 
+    /** AJAX requests from the photo manager get JSON instead of a redirect. */
+    private function wantsJson(): bool
+    {
+        $requestedWith = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+        $accept = strtolower((string) ($_SERVER['HTTP_ACCEPT'] ?? ''));
+        return $requestedWith === 'xmlhttprequest' || str_contains($accept, 'application/json');
+    }
+
     public function setMainPhoto(int $id, int $photoId): void
     {
+        $json = $this->wantsJson();
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            if ($json) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Invalid form token.']);
+                return;
+            }
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
         }
         Access::require(Access::property($id));
         $this->ensurePhotosTable();
+        $photo = Database::fetch("SELECT id FROM property_photos WHERE id = ? AND property_id = ?", [$photoId, $id]);
+        if ($photo === null) {
+            if ($json) {
+                http_response_code(404);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Photo not found.']);
+                return;
+            }
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
         Database::execute("UPDATE property_photos SET is_main = 0 WHERE property_id = ?", [$id]);
         Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
+        log_activity('property.photo_main', "Photo #{$photoId} set as main for property #{$id}");
+        if ($json) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'photo_id' => $photoId]);
+            return;
+        }
         flash('success', __('Main photo updated.'));
         redirect('/properties/' . $id . '/edit');
     }
@@ -554,7 +587,14 @@ class PropertyController
 
     public function deletePhoto(int $id, int $photoId): void
     {
+        $json = $this->wantsJson();
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            if ($json) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode(['error' => 'Invalid form token.']);
+                return;
+            }
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
         }
@@ -575,6 +615,12 @@ class PropertyController
                 }
             }
             Database::execute("DELETE FROM property_photos WHERE id = ?", [$photoId]);
+        }
+        log_activity('property.photo_deleted', "Photo #{$photoId} deleted from property #{$id}");
+        if ($json) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'photo_id' => $photoId]);
+            return;
         }
         flash('success', __('Photo deleted.'));
         redirect('/properties/' . $id . '/edit');

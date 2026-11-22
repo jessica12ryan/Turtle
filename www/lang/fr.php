@@ -239,6 +239,8 @@ return [
     'Move photo left' => 'Déplacer la photo à gauche',
     'Move photo right' => 'Déplacer la photo à droite',
     'Could not reorder photos.' => 'Impossible de réorganiser les photos.',
+    'Could not set the main photo.' => 'Impossible de définir la photo principale.',
+    'Could not delete the photo.' => 'Impossible de supprimer la photo.',
     'Province' => 'Province',
     'Recent Tickets' => 'Tickets récents',
     'Require changing password on next login' => 'Exiger un changement de mot de passe à la prochaine connexion',

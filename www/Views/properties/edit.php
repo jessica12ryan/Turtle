@@ -131,37 +131,85 @@
                 break;
             }
         }
-        $nonMainTotal = 0;
-        foreach ($photos as $photo) {
-            if (empty($photo['is_main'])) {
-                $nonMainTotal++;
-            }
-        }
         $photoIdsJson = h(json_encode(array_map('intval', array_column($photos, 'id')), JSON_INVALID_UTF8_SUBSTITUTE));
-        $nonMainPosition = 0;
+        $reorderError = h(json_encode(__('Could not reorder photos.'), JSON_INVALID_UTF8_SUBSTITUTE));
+        $setMainError = h(json_encode(__('Could not set the main photo.'), JSON_INVALID_UTF8_SUBSTITUTE));
+        $deleteError = h(json_encode(__('Could not delete the photo.'), JSON_INVALID_UTF8_SUBSTITUTE));
+        $deleteConfirm = h(json_encode(__('Delete this photo?'), JSON_INVALID_UTF8_SUBSTITUTE));
         ?>
         <p class="text-xs text-gray-500 mb-3"><?= __('Drag photos to reorder. The main photo stays first.') ?></p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4"
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" data-photo-grid
              x-data="{
                  draggedId: null,
                  overId: null,
                  photoIds: <?= $photoIdsJson ?>,
                  mainId: <?= $mainPhotoId !== null ? (int) $mainPhotoId : 'null' ?>,
+                 csrf: '<?= h(csrf_token()) ?>',
+                 applyOrder(ids) {
+                     this.photoIds = ids;
+                     const grid = document.querySelector('[data-photo-grid]');
+                     const tiles = [...grid.querySelectorAll('[data-photo-id]')];
+                     const byId = new Map(tiles.map(tile => [Number(tile.dataset.photoId), tile]));
+                     ids.forEach(id => {
+                         if (byId.has(id)) { grid.appendChild(byId.get(id)); }
+                     });
+                 },
                  save(ids) {
                      fetch((window.baseUrl || '') + '/properties/<?= (int) $property['id'] ?>/photos/reorder', {
                          method: 'POST',
                          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                         body: JSON.stringify({ ids: ids, _csrf: '<?= h(csrf_token()) ?>' })
+                         body: JSON.stringify({ ids: ids, _csrf: this.csrf })
                      })
                      .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
                      .then(result => {
                          if (result.ok && result.data.success) {
-                             window.location.reload();
+                             this.applyOrder(ids);
                          } else {
-                             alert(result.data.error || '<?= __('Could not reorder photos.') ?>');
+                             alert(result.data.error || <?= $reorderError ?>);
                          }
                      })
-                     .catch(() => alert('<?= __('Could not reorder photos.') ?>'));
+                     .catch(() => alert(<?= $reorderError ?>));
+                 },
+                 setMain(photoId) {
+                     const body = new URLSearchParams({ _csrf: this.csrf });
+                     fetch((window.baseUrl || '') + '/properties/<?= (int) $property['id'] ?>/photos/' + photoId + '/main', {
+                         method: 'POST',
+                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                         body: body
+                     })
+                     .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
+                     .then(result => {
+                         if (result.ok && result.data.success) {
+                             this.mainId = photoId;
+                             this.applyOrder([photoId, ...this.photoIds.filter(id => id !== photoId)]);
+                         } else {
+                             alert(result.data.error || <?= $setMainError ?>);
+                         }
+                     })
+                     .catch(() => alert(<?= $setMainError ?>));
+                 },
+                 remove(photoId) {
+                     if (!confirm(<?= $deleteConfirm ?>)) { return; }
+                     const body = new URLSearchParams({ _csrf: this.csrf });
+                     fetch((window.baseUrl || '') + '/properties/<?= (int) $property['id'] ?>/photos/' + photoId + '/delete', {
+                         method: 'POST',
+                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                         body: body
+                     })
+                     .then(r => r.json().then(data => ({ ok: r.ok, data: data })))
+                     .then(result => {
+                         if (result.ok && result.data.success) {
+                             const grid = document.querySelector('[data-photo-grid]');
+                             const tile = [...grid.querySelectorAll('[data-photo-id]')]
+                                 .find(node => Number(node.dataset.photoId) === photoId);
+                             if (tile) { tile.remove(); }
+                             if (this.mainId === photoId) { this.mainId = null; }
+                             this.applyOrder(this.photoIds.filter(id => id !== photoId));
+                         } else {
+                             alert(result.data.error || <?= $deleteError ?>);
+                         }
+                     })
+                     .catch(() => alert(<?= $deleteError ?>));
                  },
                  reorder(targetId) {
                      const from = this.photoIds.indexOf(this.draggedId);
@@ -185,51 +233,48 @@
                  }
              }">
             <?php foreach ($photos as $photo): ?>
-                <?php
-                $photoId = (int) $photo['id'];
-                $isMainPhoto = !empty($photo['is_main']);
-                if (!$isMainPhoto) {
-                    $nonMainPosition++;
-                }
-                ?>
-                <div class="relative group border rounded-lg overflow-hidden <?= $isMainPhoto ? 'ring-2 ring-blue-500' : 'cursor-move' ?>"
+                <?php $photoId = (int) $photo['id']; ?>
+                <div class="relative group border rounded-lg overflow-hidden"
                      data-testid="photo-tile" data-photo-id="<?= $photoId ?>"
-                     <?php if (!$isMainPhoto): ?>draggable="true" @dragstart="draggedId = <?= $photoId ?>" @dragend="draggedId = null; overId = null"<?php endif; ?>
+                     :draggable="mainId === <?= $photoId ?> ? 'false' : 'true'"
+                     @dragstart="draggedId = mainId === <?= $photoId ?> ? null : <?= $photoId ?>"
+                     @dragend="draggedId = null; overId = null"
                      @dragover.prevent="overId = <?= $photoId ?>"
                      @drop.prevent="reorder(<?= $photoId ?>)"
-                     :class="draggedId === <?= $photoId ?> ? 'opacity-50' : (overId === <?= $photoId ?> && draggedId !== <?= $photoId ?> ? 'ring-2 ring-green-500' : '')">
+                     :class="(mainId === <?= $photoId ?> ? 'ring-2 ring-blue-500' : 'cursor-move') +
+                             (draggedId === <?= $photoId ?> ? ' opacity-50' : (overId === <?= $photoId ?> && draggedId !== <?= $photoId ?> ? ' ring-2 ring-green-500' : ''))">
                     <img src="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>" alt="<?= h($photo['original_name']) ?>" class="w-full h-32 object-cover pointer-events-none">
-                    <?php if ($isMainPhoto): ?>
-                        <span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded"><?= __('Main') ?></span>
-                    <?php else: ?>
-                        <form method="POST" action="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>/main" class="absolute top-1 right-1 z-10">
-                            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                            <button type="submit" data-testid="set-as-main" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700"><?= __('Set as Main') ?></button>
-                        </form>
-                    <?php endif; ?>
+                    <span x-show="mainId === <?= $photoId ?>" x-cloak data-testid="main-badge" class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded"><?= __('Main') ?></span>
+                    <form method="POST" action="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>/main"
+                          @submit.prevent="setMain(<?= $photoId ?>)" x-show="mainId !== <?= $photoId ?>" x-cloak
+                          class="absolute top-1 right-1 z-10">
+                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                        <button type="submit" data-testid="set-as-main" class="bg-blue-600 text-white text-xs px-2 py-1 rounded hover:bg-blue-700"><?= __('Set as Main') ?></button>
+                    </form>
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100">
                         <a href="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>/download" class="bg-white text-gray-800 p-1.5 rounded-full hover:bg-gray-100" title="<?= __('Download') ?>">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </a>
-                        <form method="POST" action="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>/delete" class="inline" onsubmit="return confirm('<?= __('Delete this photo?') ?>')">
+                        <form method="POST" action="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>/delete"
+                              @submit.prevent="remove(<?= $photoId ?>)" class="inline">
                             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                            <button type="submit" class="bg-red-600 text-white text-xs px-3 py-1.5 rounded hover:bg-red-700"><?= __('Delete') ?></button>
+                            <button type="submit" data-testid="delete-photo" class="bg-red-600 text-white text-xs px-3 py-1.5 rounded hover:bg-red-700"><?= __('Delete') ?></button>
                         </form>
                     </div>
-                    <?php if (!$isMainPhoto): ?>
-                        <div class="absolute bottom-1 left-1 z-10 flex gap-1">
-                            <button type="button" @click="move(<?= $photoId ?>, -1)" <?= $nonMainPosition === 1 ? 'disabled' : '' ?>
-                                    data-testid="move-photo-left" aria-label="<?= __('Move photo left') ?>" title="<?= __('Move photo left') ?>"
-                                    class="bg-white/90 text-gray-800 rounded p-1 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                            </button>
-                            <button type="button" @click="move(<?= $photoId ?>, 1)" <?= $nonMainPosition === $nonMainTotal ? 'disabled' : '' ?>
-                                    data-testid="move-photo-right" aria-label="<?= __('Move photo right') ?>" title="<?= __('Move photo right') ?>"
-                                    class="bg-white/90 text-gray-800 rounded p-1 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                            </button>
-                        </div>
-                    <?php endif; ?>
+                    <div x-show="mainId !== <?= $photoId ?>" x-cloak class="absolute bottom-1 left-1 z-10 flex gap-1">
+                        <button type="button" @click="move(<?= $photoId ?>, -1)"
+                                :disabled="photoIds.indexOf(<?= $photoId ?>) === (mainId === null ? 0 : 1)"
+                                data-testid="move-photo-left" aria-label="<?= __('Move photo left') ?>" title="<?= __('Move photo left') ?>"
+                                class="bg-white/90 text-gray-800 rounded p-1 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        </button>
+                        <button type="button" @click="move(<?= $photoId ?>, 1)"
+                                :disabled="photoIds.indexOf(<?= $photoId ?>) === photoIds.length - 1"
+                                data-testid="move-photo-right" aria-label="<?= __('Move photo right') ?>" title="<?= __('Move photo right') ?>"
+                                class="bg-white/90 text-gray-800 rounded p-1 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
