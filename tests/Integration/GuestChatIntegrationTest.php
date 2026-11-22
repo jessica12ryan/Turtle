@@ -192,6 +192,47 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertSame(0, GuestChat::unreadCount($adminRow));
     }
 
+    public function testArchivedConversationsAreHiddenAndCanBeRestoredOrDeleted(): void
+    {
+        $landlord = $this->insertUser('archive-owner@example.com', 'landlord');
+        $admin = $this->insertUser('archive-admin@example.com', 'admin');
+        $company = $this->insertCompany();
+        $property = $this->insertProperty($company, $landlord, 'Archived Property');
+        $guestId = GuestChat::findOrCreateVisitor('archive@example.com', 'Archive Guest');
+        $token = GuestChat::generateToken();
+        $chatId = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Archive Guest', 'archive@example.com', GuestChat::hashToken($token)]
+        );
+        GuestChat::registerToken((int) $chatId, $token);
+        Database::insert(
+            "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
+            [$chatId, 'Before archive']
+        );
+        $adminRow = Database::fetch("SELECT * FROM users WHERE id = ?", [$admin]);
+        self::assertNotNull($adminRow);
+        self::assertNotNull(GuestChat::findByToken($token));
+        self::assertCount(1, GuestChat::chatsForVisitor($guestId));
+
+        Database::execute("UPDATE guest_chats SET archived_at = NOW() WHERE id = ?", [$chatId]);
+        self::assertNull(GuestChat::findByToken($token), 'guests lose access to archived chats');
+        self::assertSame([], GuestChat::chatsForVisitor($guestId));
+        self::assertNull(GuestChat::findChatForVisitorProperty($guestId, $property));
+        self::assertCount(0, GuestChat::scopedChats($adminRow));
+        self::assertCount(1, GuestChat::scopedChats($adminRow, true));
+        self::assertSame(0, GuestChat::unreadCount($adminRow));
+
+        Database::execute("UPDATE guest_chats SET archived_at = NULL WHERE id = ?", [$chatId]);
+        self::assertNotNull(GuestChat::findByToken($token), 'restoring re-enables the guest link');
+        self::assertCount(1, GuestChat::scopedChats($adminRow));
+
+        Database::execute("DELETE FROM guest_chats WHERE id = ?", [$chatId]);
+        self::assertNull(GuestChat::findByToken($token));
+        self::assertSame([], Database::fetchAll("SELECT id FROM guest_chat_messages WHERE chat_id = ?", [$chatId]));
+        self::assertSame([], Database::fetchAll("SELECT id FROM guest_chat_tokens WHERE chat_id = ?", [$chatId]));
+    }
+
     public function testGuestAndStaffReadStateAreTrackedSeparately(): void
     {
         $landlord = $this->insertUser('owner@example.com', 'landlord');

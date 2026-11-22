@@ -76,6 +76,9 @@
             'applications.restore' => 'Restore Applications',
             'applications.delete' => 'Delete Applications',
             'guest_chats.access' => 'View Guest Chats',
+            'guest_chats.archive' => 'Archive Guest Chats',
+            'guest_chats.restore' => 'Restore Guest Chats',
+            'guest_chats.delete' => 'Delete Guest Chats',
         ];
 
         $groupOverrides = [
@@ -84,6 +87,7 @@
 
         $groupLabels = [
             'ai_assistant' => 'AI Assistant',
+            'guest_chats' => 'Guest Chats',
         ];
 
         $hiddenTenantPerms = [
@@ -102,6 +106,9 @@
             'applications.restore',
             'applications.delete',
             'guest_chats.access',
+            'guest_chats.archive',
+            'guest_chats.restore',
+            'guest_chats.delete',
         ];
 
         $groups = [];

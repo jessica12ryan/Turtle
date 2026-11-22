@@ -179,6 +179,13 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page).toHaveURL(/\/home$/);
   await expect(page.getByTestId('guest-chat-unread-badge')).toHaveText('2');
 
+  // The permissions page labels the guest chat section and new actions clearly.
+  await page.goto('/settings?tab=permissions');
+  await expect(page.getByText('Guest_chats', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Archive Guest Chats', { exact: true })).toBeVisible();
+  await expect(page.getByText('Restore Guest Chats', { exact: true })).toBeVisible();
+  await expect(page.getByText('Delete Guest Chats', { exact: true })).toBeVisible();
+
   // Staff can reply from the dedicated Guest Chats inbox, and the visitor sees it.
   await page.goto('/guest-chats');
   await expect(page.getByTestId('guest-chat-group')).toHaveCount(1);
@@ -251,6 +258,37 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.goto('/listings');
   await expect(page.getByTestId('conversation-link')).toHaveCount(2);
   await expect(page.getByTestId('hub-link')).toBeVisible();
+
+  // Archiving hides a chat from guests; restoring brings it back; delete removes it.
+  await page.context().clearCookies();
+  await page.goto('/login');
+  await expect(page).toHaveURL(/\/login$/);
+  await page.locator('#email').fill(admin.email);
+  await page.locator('#password').fill(admin.password);
+  await page.getByRole('button', { name: 'Sign In' }).click();
+  await expect(page).toHaveURL(/\/home$/);
+
+  await page.goto('/guest-chats');
+  await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByTestId('guest-chat-archive').click();
+  await expect(page).toHaveURL(/\/guest-chats$/);
+  await expect(page.getByTestId('guest-chat-row')).toHaveCount(1);
+  expect((await request.get(guestChatUrl)).status(), 'an archived chat must be hidden from guests').toBe(404);
+
+  await page.getByTestId('guest-chat-archived-toggle').click();
+  await expect(page.getByTestId('guest-chat-archived-badge')).toBeVisible();
+  await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
+  await page.getByTestId('guest-chat-restore').click();
+  await expect(page).toHaveURL(/\/guest-chats\/\d+$/);
+  expect((await request.get(guestChatUrl)).status(), 'a restored chat must be accessible again').toBe(200);
+
+  await page.goto('/guest-chats');
+  await page.getByTestId('guest-chat-row').filter({ hasText: 'King Street Lofts' }).click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByTestId('guest-chat-delete').click();
+  await expect(page).toHaveURL(/\/guest-chats$/);
+  expect((await request.get(secondChatUrl)).status(), 'a deleted chat must be gone').toBe(404);
 
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });

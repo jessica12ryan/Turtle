@@ -240,6 +240,7 @@ CREATE TABLE IF NOT EXISTS guest_chats (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    archived_at TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
     UNIQUE KEY uniq_guest_chat_token (token_hash),
     INDEX idx_guest_chat_property (property_id),

@@ -83,6 +83,12 @@ final class HelpersTest extends TestCase
         self::assertContains('tickets.create', $permissions['tenant']);
         self::assertContains('properties.create', $permissions['landlord']);
         self::assertNotContains('properties.create', $permissions['maintenance']);
+        self::assertContains('guest_chats.archive', $permissions['landlord']);
+        self::assertContains('guest_chats.restore', $permissions['landlord']);
+        self::assertNotContains('guest_chats.archive', $permissions['property_manager']);
+        foreach ($permissions as $perms) {
+            self::assertNotContains('guest_chats.delete', $perms);
+        }
 
         $notifications = defaultNotifications();
         self::assertContains('admin', $notifications['ticket_created']);

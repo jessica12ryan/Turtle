@@ -284,6 +284,9 @@ $router->get('/guest-chats', 'GuestChatController@index', ['auth', 'perm:guest_c
 $router->get('/guest-chats/{id}', 'GuestChatController@show', ['auth', 'perm:guest_chats.access']);
 $router->get('/guest-chats/{id}/messages', 'GuestChatController@messages', ['auth', 'perm:guest_chats.access']);
 $router->post('/guest-chats/{id}/reply', 'GuestChatController@reply', ['auth', 'perm:guest_chats.access']);
+$router->post('/guest-chats/{id}/archive', 'GuestChatController@archive', ['auth', 'perm:guest_chats.archive']);
+$router->post('/guest-chats/{id}/restore', 'GuestChatController@restore', ['auth', 'perm:guest_chats.restore']);
+$router->post('/guest-chats/{id}/delete', 'GuestChatController@delete', ['auth', 'perm:guest_chats.delete']);
 
 // Resources
 $router->get('/resources', 'ResourceController@index', ['auth', 'perm:resources.access']);

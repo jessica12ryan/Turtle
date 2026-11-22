@@ -583,7 +583,7 @@ function defaultPermissions(): array
             'ai_assistant.access',
             'rents.access', 'rents.payments.create', 'rents.payments.edit', 'rents.payments.archive', 'rents.payments.restore',
             'applications.view', 'applications.edit', 'applications.archive', 'applications.restore',
-            'guest_chats.access',
+            'guest_chats.access', 'guest_chats.archive', 'guest_chats.restore',
         ],
         'property_manager' => [
             'home.access',

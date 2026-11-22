@@ -40,7 +40,7 @@ class GuestChat
              FROM guest_chat_tokens gct
              JOIN guest_chats gc ON gc.id = gct.chat_id
              JOIN properties p ON p.id = gc.property_id
-             WHERE gct.token_hash = ?",
+             WHERE gct.token_hash = ? AND gc.archived_at IS NULL",
             [self::hashToken($token)]
         );
         if ($chat !== null && !hash_equals($chat['matched_hash'], self::hashToken($token))) {
@@ -92,11 +92,14 @@ class GuestChat
      * @param array<string, mixed> $user
      * @return array<int, array<string, mixed>>
      */
-    public static function scopedChats(array $user): array
+    public static function scopedChats(array $user, bool $showArchived = false): array
     {
         [$where, $params] = self::scopeFor($user);
+        if (!$showArchived) {
+            $where .= ' AND gc.archived_at IS NULL';
+        }
         return Database::fetchAll(
-            "SELECT gc.id, gc.guest_name, gc.guest_email, gc.last_activity, gc.property_id, p.name AS property_name,
+            "SELECT gc.id, gc.guest_name, gc.guest_email, gc.last_activity, gc.archived_at, gc.property_id, p.name AS property_name,
                     (SELECT COUNT(*) FROM guest_chat_messages m
                      WHERE m.chat_id = gc.id AND m.sender_type = 'guest' AND m.read_at IS NULL) AS unread,
                     (SELECT m.body FROM guest_chat_messages m
@@ -104,7 +107,7 @@ class GuestChat
              FROM guest_chats gc
              JOIN properties p ON p.id = gc.property_id
              WHERE {$where}
-             ORDER BY gc.last_activity DESC, gc.id DESC",
+             ORDER BY (gc.archived_at IS NULL) DESC, gc.last_activity DESC, gc.id DESC",
             $params
         );
     }
@@ -119,7 +122,7 @@ class GuestChat
              JOIN properties p ON p.id = gc.property_id
              JOIN guest_chat_messages m
                ON m.chat_id = gc.id AND m.sender_type = 'guest' AND m.read_at IS NULL
-             WHERE {$where}",
+             WHERE {$where} AND gc.archived_at IS NULL",
             $params
         );
         return $row === null ? 0 : (int) $row['total'];
@@ -193,7 +196,7 @@ class GuestChat
              FROM guest_chat_tokens gct
              JOIN guest_chats gc ON gc.id = gct.chat_id
              JOIN properties p ON p.id = gc.property_id
-             WHERE gct.token_hash IN ({$placeholders})",
+             WHERE gct.token_hash IN ({$placeholders}) AND gc.archived_at IS NULL",
             array_keys($candidates)
         );
         $chats = [];
@@ -364,7 +367,7 @@ class GuestChat
             "SELECT gc.id, gc.property_id, gc.last_activity, p.name AS property_name
              FROM guest_chats gc
              JOIN properties p ON p.id = gc.property_id
-             WHERE LOWER(gc.guest_email) = ?
+             WHERE LOWER(gc.guest_email) = ? AND gc.archived_at IS NULL
              ORDER BY gc.last_activity DESC, gc.id DESC",
             [$visitor['email']]
         );
@@ -389,7 +392,7 @@ class GuestChat
         }
         $row = Database::fetch(
             "SELECT id, property_id FROM guest_chats
-             WHERE LOWER(guest_email) = ? AND property_id = ?
+             WHERE LOWER(guest_email) = ? AND property_id = ? AND archived_at IS NULL
              ORDER BY last_activity DESC, id DESC LIMIT 1",
             [$visitor['email'], $propertyId]
         );

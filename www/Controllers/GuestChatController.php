@@ -15,9 +15,9 @@ use App\Core\View;
 class GuestChatController
 {
     /** @return array<int, array<string, mixed>> */
-    private function scopedChats(): array
+    private function scopedChats(bool $showArchived = false): array
     {
-        return GuestChat::scopedChats(Auth::instance()->user());
+        return GuestChat::scopedChats(Auth::instance()->user(), $showArchived);
     }
 
     /**
@@ -26,10 +26,10 @@ class GuestChatController
      *
      * @return array<int, array<string, mixed>>
      */
-    private function groupedChats(): array
+    private function groupedChats(bool $showArchived = false): array
     {
         $groups = [];
-        foreach ($this->scopedChats() as $chat) {
+        foreach ($this->scopedChats($showArchived) as $chat) {
             $email = strtolower((string) ($chat['guest_email'] ?? ''));
             if (!isset($groups[$email])) {
                 $groups[$email] = [
@@ -65,9 +65,13 @@ class GuestChatController
 
     public function index(): void
     {
+        $showArchived = !empty($_GET['show_archived']);
         $view = new View();
         $view->layout('layouts/main', ['title' => __('Guest Chats')]);
-        $view->render('guest_chats/index', ['groups' => $this->groupedChats()]);
+        $view->render('guest_chats/index', [
+            'groups' => $this->groupedChats($showArchived),
+            'showArchived' => $showArchived,
+        ]);
     }
 
     public function show(int $id): void
@@ -115,6 +119,10 @@ class GuestChatController
             require base_path('www/Views/errors/404.php');
             return;
         }
+        if (!empty($chat['archived_at'])) {
+            flash('error', __('This conversation is archived. Restore it before replying.'));
+            redirect('/guest-chats/' . $id);
+        }
 
         $body = trim((string) ($_POST['body'] ?? ''));
         if ($body === '' || mb_strlen($body) > 2000) {
@@ -137,6 +145,70 @@ class GuestChatController
         log_activity('guest_chat.replied', "Staff replied to visitor chat #{$id}");
         flash('success', __('Reply sent.'));
         redirect('/guest-chats/' . $id);
+    }
+
+    public function archive(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+        }
+        $chat = $this->findScoped($id);
+        if ($chat === null) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+        if (!empty($chat['archived_at'])) {
+            redirect('/guest-chats');
+        }
+        Database::execute(
+            "UPDATE guest_chats SET archived_at = NOW(), updated_at = NOW() WHERE id = ?",
+            [$id]
+        );
+        log_activity('guest_chat.archived', "Visitor chat #{$id} archived");
+        flash('success', __('Guest chat archived successfully.'));
+        redirect('/guest-chats');
+    }
+
+    public function restore(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+        }
+        $chat = $this->findScoped($id);
+        if ($chat === null || empty($chat['archived_at'])) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+        Database::execute(
+            "UPDATE guest_chats SET archived_at = NULL, updated_at = NOW() WHERE id = ?",
+            [$id]
+        );
+        log_activity('guest_chat.restored', "Visitor chat #{$id} restored");
+        flash('success', __('Guest chat restored successfully.'));
+        redirect('/guest-chats/' . $id);
+    }
+
+    public function delete(int $id): void
+    {
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            flash('error', __('Invalid form token. Please try again.'));
+            redirectBack();
+        }
+        $chat = $this->findScoped($id);
+        if ($chat === null) {
+            http_response_code(404);
+            require base_path('www/Views/errors/404.php');
+            return;
+        }
+        // guest_chat_messages and guest_chat_tokens cascade from the chat.
+        Database::execute("DELETE FROM guest_chats WHERE id = ?", [$id]);
+        log_activity('guest_chat.deleted', "Visitor chat #{$id} deleted");
+        flash('success', __('Guest chat deleted successfully.'));
+        redirect('/guest-chats');
     }
 
     private function markGuestMessagesRead(int $chatId): void

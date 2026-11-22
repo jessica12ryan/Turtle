@@ -8,6 +8,35 @@
     <a href="/guest-chats" class="text-sm text-blue-600 hover:underline dark:text-blue-400"><?= __('Back to Guest Chats') ?></a>
 </div>
 
+<?php if (!empty($chat['archived_at'])): ?>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-200">
+        <?= __('This conversation is archived and no longer available to the guest. Restore it to re-enable their access.') ?>
+    </div>
+<?php endif; ?>
+
+<div class="mb-4 flex flex-wrap items-center gap-3">
+    <?php if (empty($chat['archived_at']) && can('guest_chats.archive')): ?>
+        <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/archive"
+              onsubmit="return confirm('<?= h(__('Archive this conversation? The guest will no longer be able to access it.')) ?>')">
+            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+            <button type="submit" data-testid="guest-chat-archive" class="border border-orange-500 text-orange-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-50 dark:hover:bg-slate-700"><?= __('Archive') ?></button>
+        </form>
+    <?php endif; ?>
+    <?php if (!empty($chat['archived_at']) && can('guest_chats.restore')): ?>
+        <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/restore">
+            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+            <button type="submit" data-testid="guest-chat-restore" class="border border-orange-500 text-orange-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-50 dark:hover:bg-slate-700"><?= __('Restore') ?></button>
+        </form>
+    <?php endif; ?>
+    <?php if (can('guest_chats.delete')): ?>
+        <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/delete"
+              onsubmit="return confirm('<?= h(__('Permanently delete this conversation and all its messages? This cannot be undone.')) ?>')">
+            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+            <button type="submit" data-testid="guest-chat-delete" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700"><?= __('Delete') ?></button>
+        </form>
+    <?php endif; ?>
+</div>
+
 <div class="bg-white rounded-lg shadow overflow-hidden max-w-4xl dark:bg-slate-800">
     <div id="guest-chat-messages" class="p-5 space-y-3" style="max-height: 55vh; overflow-y: auto;">
         <?php foreach ($messages as $message): ?>
@@ -19,11 +48,13 @@
             </div>
         <?php endforeach; ?>
     </div>
-    <form id="guest-chat-reply-form" method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/reply" class="border-t border-gray-200 p-4 flex gap-2 dark:border-slate-700">
-        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-        <textarea id="guest-chat-reply-body" name="body" rows="1" required maxlength="2000" placeholder="<?= __('Type a message...') ?>" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"></textarea>
-        <button type="submit" data-testid="guest-reply" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Reply') ?></button>
-    </form>
+    <?php if (empty($chat['archived_at'])): ?>
+        <form id="guest-chat-reply-form" method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/reply" class="border-t border-gray-200 p-4 flex gap-2 dark:border-slate-700">
+            <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+            <textarea id="guest-chat-reply-body" name="body" rows="1" required maxlength="2000" placeholder="<?= __('Type a message...') ?>" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+            <button type="submit" data-testid="guest-reply" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Reply') ?></button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <script>

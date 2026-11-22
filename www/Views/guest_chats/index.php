@@ -1,6 +1,13 @@
 <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-800 dark:text-slate-100"><?= __('Guest Chats') ?></h1>
     <p class="text-gray-500 mt-1 dark:text-slate-400"><?= __('Conversations started by visitors on the public listings page.') ?></p>
+    <?php if (can('guest_chats.archive') || can('guest_chats.restore')): ?>
+        <a href="/guest-chats?show_archived=<?= ($showArchived ?? false) ? '0' : '1' ?>"
+           class="inline-block mt-3 text-sm text-blue-600 hover:underline dark:text-blue-400"
+           data-testid="guest-chat-archived-toggle">
+            <?= ($showArchived ?? false) ? __('Showing archived') : __('Show archived') ?>
+        </a>
+    <?php endif; ?>
 </div>
 
 <?php if (empty($groups)): ?>
@@ -31,6 +38,9 @@
                             <div class="min-w-0">
                                 <div class="flex items-center gap-2">
                                     <span class="font-medium text-gray-800 truncate dark:text-slate-100"><?= h($chat['property_name']) ?></span>
+                                    <?php if (!empty($chat['archived_at'])): ?>
+                                        <span class="bg-red-100 text-red-700 text-xs rounded-full px-2 py-0.5" data-testid="guest-chat-archived-badge"><?= __('Archived') ?></span>
+                                    <?php endif; ?>
                                     <?php if ((int) $chat['unread'] > 0): ?>
                                         <span class="bg-blue-600 text-white text-xs rounded-full px-2 py-0.5"><?= (int) $chat['unread'] ?></span>
                                     <?php endif; ?>
