@@ -183,6 +183,8 @@
         <div x-show="lightboxPhotos.length > 0" x-cloak
              class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
              @click.self="closeLightbox()" @keydown.escape.window="closeLightbox()" @contextmenu.prevent
+             @keydown.left.window="lightboxPhotos.length > 0 && (prevPhoto(), $event.preventDefault())"
+             @keydown.right.window="lightboxPhotos.length > 0 && (nextPhoto(), $event.preventDefault())"
              role="dialog" aria-modal="true" aria-label="<?= __('Photos') ?>" data-testid="photo-lightbox">
             <template x-if="lightboxPhotos.length > 0">
                 <div class="relative flex items-center justify-center w-full max-w-4xl">

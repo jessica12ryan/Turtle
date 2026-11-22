@@ -150,6 +150,13 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(photoTiles.first()).not.toHaveAttribute('draggable', 'true');
   await expect(photoTiles.nth(1).getByTestId('set-as-main')).toBeVisible();
 
+  // Arrow icons stay dark on their light buttons in dark mode.
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  const arrowStroke = await photoTiles.nth(1).getByTestId('move-photo-left').locator('svg')
+    .evaluate((el) => getComputedStyle(el).stroke);
+  expect(arrowStroke).toBe('rgb(30, 41, 59)');
+  await page.evaluate(() => document.documentElement.classList.remove('dark'));
+
   // Use real mouse movements: Playwright's dragTo() dispatches synthetic drag
   // events and misses broken native drag sources (e.g. a non-draggable image).
   await photoTiles.nth(2).scrollIntoViewIfNeeded();
@@ -271,6 +278,11 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await lightbox.getByTestId('lightbox-photo').click();
   await expect(lightbox).toContainText('1 / 2');
   await lightbox.getByTestId('lightbox-next').click();
+  await expect(lightbox).toContainText('2 / 2');
+  // The keyboard arrows navigate too.
+  await page.keyboard.press('ArrowLeft');
+  await expect(lightbox).toContainText('1 / 2');
+  await page.keyboard.press('ArrowRight');
   await expect(lightbox).toContainText('2 / 2');
   await page.keyboard.press('Escape');
   await expect(lightbox).toBeHidden();
