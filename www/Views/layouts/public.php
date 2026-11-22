@@ -38,6 +38,8 @@
         .dark input,
         .dark textarea { background-color: #0f172a !important; color: #e2e8f0 !important; border-color: #475569 !important; }
         .dark .logo-default { filter: brightness(0) invert(0.85); }
+        .listing-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .listing-clamp-expanded { display: block; overflow: visible; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">

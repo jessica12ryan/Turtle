@@ -41,6 +41,24 @@ const hubLinkFromConversationEmail = (request: APIRequestContext): Promise<strin
 const guestReplyLinkFromMailpit = (request: APIRequestContext): Promise<string | null> =>
   linkFromMailpit(request, 'New reply to your conversation', /listings\/chat\/[a-f0-9]{64}/);
 
+/** Give the first seeded property two photos so listing media is exercised. */
+async function addListingPhotos(page: Page): Promise<void> {
+  const photos = [
+    'iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAxklEQVR4nO3QQREAIAzAMMC/5+GiPEgU9LpnUTivA35hdMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOXBitAZ9Q1fboAAAAAElFTkSuQmCC',
+    'iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAyUlEQVR4nO3QQRHAIADAMJhynIOKlQeJgl7nWHvwv+92wCuMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNGRA4D3Ah9SPBpWAAAAAElFTkSuQmCC',
+  ];
+  await page.goto('/properties/1/edit');
+  for (const [index, base64] of photos.entries()) {
+    await page.locator('#photo-upload-form input[type="file"]').setInputFiles({
+      name: `listing-${index + 1}.png`,
+      mimeType: 'image/png',
+      buffer: Buffer.from(base64, 'base64'),
+    });
+    await page.locator('#photo-upload-form button[type="submit"]').click();
+    await expect(page.locator('img[src^="/properties/1/photos/"]')).toHaveCount(index + 1);
+  }
+}
+
 /** Walk the five-step setup wizard. Only one step is visible at a time. */
 async function completeSetup(page: Page): Promise<void> {
   await page.goto('/setup');
@@ -94,6 +112,8 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page).toHaveURL(/\/tickets\/\d+$/);
   await expect(page.locator('body')).toContainText('E2E leaking tap');
 
+  await addListingPhotos(page);
+
   // The wizard saved mailpit as the SMTP host; send a test email from Settings.
   await page.goto('/settings');
   const csrf = await page.locator('input[name="_csrf"]').first().getAttribute('value');
@@ -121,6 +141,28 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page.getByRole('banner').locator('span')).toHaveCount(0);
   await expect(page.getByTestId('listing-card').first()).toBeVisible();
   await expect(page.getByTestId('return-conversation')).toBeVisible();
+
+  // Descriptions are clamped; "See more" reveals the full text and the gallery.
+  const photoCard = page.getByTestId('listing-card').filter({ hasText: 'The Wellington' });
+  const description = photoCard.getByTestId('listing-description');
+  await expect(description).toHaveClass(/listing-clamp/);
+  await expect(photoCard.getByTestId('see-more')).toBeVisible();
+  await expect(photoCard.getByTestId('listing-gallery')).toBeHidden();
+  await photoCard.getByTestId('see-more').click();
+  await expect(photoCard.getByTestId('see-more')).toContainText('See less');
+  await expect(description).toHaveClass(/listing-clamp-expanded/);
+  await expect(photoCard.getByTestId('listing-gallery').locator('img')).toHaveCount(2);
+
+  // The photo badge opens a lightbox with navigation; Escape closes it.
+  await expect(photoCard.getByTestId('more-photos')).toContainText('View all 2 photos');
+  await photoCard.getByTestId('more-photos').click();
+  const lightbox = page.getByTestId('photo-lightbox');
+  await expect(lightbox).toBeVisible();
+  await expect(lightbox).toContainText('1 / 2');
+  await lightbox.getByRole('button', { name: 'Next' }).click();
+  await expect(lightbox).toContainText('2 / 2');
+  await page.keyboard.press('Escape');
+  await expect(lightbox).toBeHidden();
 
   // Opening one property closes any other open message form.
   await page.getByTestId('message-button').first().click();

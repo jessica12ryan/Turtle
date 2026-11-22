@@ -29,6 +29,28 @@ class ListingsController
              ORDER BY p.name ASC"
         );
 
+        // Every photo for the listed properties, so cards can offer a gallery.
+        // Access is still checked per request by servePhoto().
+        $photosByProperty = [];
+        if ($properties !== []) {
+            $propertyIds = array_map(static fn (array $property): int => (int) $property['id'], $properties);
+            $placeholders = implode(',', array_fill(0, count($propertyIds), '?'));
+            $photoRows = Database::fetchAll(
+                "SELECT property_id, id, original_name
+                 FROM property_photos
+                 WHERE property_id IN ({$placeholders})
+                 ORDER BY property_id ASC, is_main DESC, created_at ASC, id ASC",
+                $propertyIds
+            );
+            foreach ($photoRows as $photo) {
+                $propertyId = (int) $photo['property_id'];
+                $photosByProperty[$propertyId][] = [
+                    'src' => '/listings/' . $propertyId . '/photos/' . (int) $photo['id'],
+                    'alt' => (string) $photo['original_name'],
+                ];
+            }
+        }
+
         $conversations = GuestChat::cookieChats();
         $continueChats = [];
         foreach ($conversations as $chat) {
@@ -40,6 +62,7 @@ class ListingsController
         $view->layout('layouts/public', ['title' => __('Properties Available')]);
         $view->render('listings/index', [
             'properties' => $properties,
+            'photos' => $photosByProperty,
             'continueChats' => $continueChats,
             'conversations' => $conversations,
             'hub' => $hub,

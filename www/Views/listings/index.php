@@ -51,20 +51,52 @@
         <p class="text-gray-600 dark:text-slate-300"><?= __('No properties are currently listed.') ?></p>
     </div>
 <?php else: ?>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" x-data="{ openId: null }">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+         x-data="{
+             openId: null,
+             detailsId: null,
+             lightboxPhotos: [],
+             lightboxIndex: 0,
+             openLightbox(photos, index) { this.lightboxPhotos = photos; this.lightboxIndex = index; },
+             closeLightbox() { this.lightboxPhotos = []; },
+             nextPhoto() { if (this.lightboxPhotos.length) { this.lightboxIndex = (this.lightboxIndex + 1) % this.lightboxPhotos.length; } },
+             prevPhoto() { if (this.lightboxPhotos.length) { this.lightboxIndex = (this.lightboxIndex - 1 + this.lightboxPhotos.length) % this.lightboxPhotos.length; } }
+         }">
         <?php foreach ($properties as $property): ?>
             <?php
             $pid = (int) $property['id'];
             $ad = render_ad_description($property);
             $hasChat = isset($continueChats[$pid]);
+            $gallery = $photos[$pid] ?? [];
+            $galleryJson = h(json_encode($gallery, JSON_INVALID_UTF8_SUBSTITUTE));
+            $photoCount = count($gallery);
+            $isLongAd = mb_strlen(trim(strip_tags($ad))) > 160 || substr_count($ad, '<br') > 2;
+            $showDetails = $ad !== '' && ($isLongAd || $photoCount > 1);
             ?>
             <article class="bg-white rounded-xl shadow overflow-hidden flex flex-col dark:bg-slate-800" data-testid="listing-card">
                 <?php if (!empty($property['main_photo_id'])): ?>
-                    <img src="/listings/<?= $pid ?>/photos/<?= (int) $property['main_photo_id'] ?>"
-                         alt="<?= h($property['name']) ?>" class="h-48 w-full object-cover">
+                    <div class="relative">
+                        <img src="/listings/<?= $pid ?>/photos/<?= (int) $property['main_photo_id'] ?>"
+                             alt="<?= h($property['name']) ?>" class="h-48 w-full object-cover">
+                        <?php if ($photoCount > 1): ?>
+                            <button type="button" @click="openLightbox(<?= $galleryJson ?>, 0)"
+                                    data-testid="more-photos"
+                                    class="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 hover:bg-black/80 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4-4 3 3 5-6 4 7M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+                                <?= __('View all :count photos', [':count' => $photoCount]) ?>
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 <?php else: ?>
-                    <div class="h-48 w-full bg-gray-200 flex items-center justify-center text-gray-400 dark:bg-slate-700">
+                    <div class="h-48 w-full bg-gray-200 flex items-center justify-center text-gray-400 relative dark:bg-slate-700">
                         <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 21V5a2 2 0 012-2h8a2 2 0 012 2v16M16 21V9h2a2 2 0 012 2v10M3 21h18"/></svg>
+                        <?php if ($photoCount > 1): ?>
+                            <button type="button" @click="openLightbox(<?= $galleryJson ?>, 0)"
+                                    data-testid="more-photos"
+                                    class="absolute bottom-2 right-2 flex items-center gap-1 bg-black/60 hover:bg-black/80 text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                                <?= __('View all :count photos', [':count' => $photoCount]) ?>
+                            </button>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
                 <div class="p-5 flex-1 flex flex-col">
@@ -76,8 +108,38 @@
                     <?php if (!empty($property['rent_amount'])): ?>
                         <p class="mt-2 font-semibold text-gray-800 dark:text-slate-100"><?= __('Monthly Rent') ?>: <?= h(number_format((float) $property['rent_amount'], 2)) ?></p>
                     <?php endif; ?>
-                    <?php if ($ad !== ''): ?>
-                        <div class="mt-3 text-sm text-gray-600 dark:text-slate-300"><?= $ad ?></div>
+                    <?php if ($ad !== '' || $photoCount > 1): ?>
+                        <div class="mt-3 text-sm text-gray-600 dark:text-slate-300">
+                            <?php if ($ad !== ''): ?>
+                                <div id="description-<?= $pid ?>" data-testid="listing-description"
+                                     class="listing-clamp" :class="detailsId === <?= $pid ?> ? 'listing-clamp-expanded' : ''">
+                                    <?= $ad ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if ($showDetails): ?>
+                                <button type="button" @click="detailsId = detailsId === <?= $pid ?> ? null : <?= $pid ?>"
+                                        :aria-expanded="detailsId === <?= $pid ?> ? 'true' : 'false'"
+                                        aria-controls="description-<?= $pid ?>"
+                                        data-testid="see-more"
+                                        class="mt-1 text-blue-600 hover:underline dark:text-blue-400 font-medium">
+                                    <span x-show="detailsId !== <?= $pid ?>"><?= __('See more') ?></span>
+                                    <span x-show="detailsId === <?= $pid ?>" x-cloak><?= __('See less') ?></span>
+                                </button>
+                            <?php endif; ?>
+                            <?php if ($photoCount > 1): ?>
+                                <div x-show="detailsId === <?= $pid ?>" x-cloak data-testid="listing-gallery" class="mt-3">
+                                    <p class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-2"><?= __('Photos') ?></p>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <?php foreach ($gallery as $index => $photo): ?>
+                                            <button type="button" @click="openLightbox(<?= $galleryJson ?>, <?= $index ?>)"
+                                                    class="rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <img src="<?= h($photo['src']) ?>" alt="<?= h($photo['alt']) ?>" class="w-full h-20 object-cover">
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     <?php endif; ?>
 
                     <div class="mt-auto pt-4">
@@ -117,5 +179,31 @@
                 </div>
             </article>
         <?php endforeach; ?>
+
+        <div x-show="lightboxPhotos.length > 0" x-cloak
+             class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+             @click.self="closeLightbox()" @keydown.escape.window="closeLightbox()"
+             role="dialog" aria-modal="true" aria-label="<?= __('Photos') ?>" data-testid="photo-lightbox">
+            <template x-if="lightboxPhotos.length > 0">
+                <div class="relative flex items-center justify-center w-full max-w-4xl">
+                    <button type="button" @click="closeLightbox()" aria-label="<?= __('Close') ?>"
+                            class="absolute -top-2 right-0 text-white bg-black/50 hover:bg-black/70 rounded-full w-9 h-9 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <button type="button" @click="prevPhoto()" aria-label="<?= __('Previous') ?>"
+                            class="flex-shrink-0 text-white bg-black/50 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <img :src="lightboxPhotos[lightboxIndex].src" :alt="lightboxPhotos[lightboxIndex].alt"
+                         class="max-h-[80vh] max-w-full rounded-lg shadow-xl object-contain">
+                    <button type="button" @click="nextPhoto()" aria-label="<?= __('Next') ?>"
+                            class="flex-shrink-0 text-white bg-black/50 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center ml-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                    <p class="absolute bottom-0 left-0 right-0 text-center text-white text-sm"
+                       x-text="(lightboxIndex + 1) + ' / ' + lightboxPhotos.length"></p>
+                </div>
+            </template>
+        </div>
     </div>
 <?php endif; ?>
