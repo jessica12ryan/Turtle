@@ -41,13 +41,13 @@ const hubLinkFromConversationEmail = (request: APIRequestContext): Promise<strin
 const guestReplyLinkFromMailpit = (request: APIRequestContext): Promise<string | null> =>
   linkFromMailpit(request, 'New reply to your conversation', /listings\/chat\/[a-f0-9]{64}/);
 
-/** Give the first seeded property two photos so listing media is exercised. */
-async function addListingPhotos(page: Page): Promise<void> {
+/** Give a seeded property two photos so listing media is exercised. */
+async function addListingPhotos(page: Page, propertyId: number): Promise<void> {
   const photos = [
     'iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAxklEQVR4nO3QQREAIAzAMMC/5+GiPEgU9LpnUTivA35hdMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOXBitAZ9Q1fboAAAAAElFTkSuQmCC',
     'iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAyUlEQVR4nO3QQRHAIADAMJhynIOKlQeJgl7nWHvwv+92wCuMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNGRA4D3Ah9SPBpWAAAAAElFTkSuQmCC',
   ];
-  await page.goto('/properties/1/edit');
+  await page.goto(`/properties/${propertyId}/edit`);
   for (const [index, base64] of photos.entries()) {
     await page.locator('#photo-upload-form input[type="file"]').setInputFiles({
       name: `listing-${index + 1}.png`,
@@ -55,7 +55,7 @@ async function addListingPhotos(page: Page): Promise<void> {
       buffer: Buffer.from(base64, 'base64'),
     });
     await page.locator('#photo-upload-form button[type="submit"]').click();
-    await expect(page.locator('img[src^="/properties/1/photos/"]')).toHaveCount(index + 1);
+    await expect(page.locator(`img[src^="/properties/${propertyId}/photos/"]`)).toHaveCount(index + 1);
   }
 }
 
@@ -112,7 +112,10 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page).toHaveURL(/\/tickets\/\d+$/);
   await expect(page.locator('body')).toContainText('E2E leaking tap');
 
-  await addListingPhotos(page);
+  // Two properties in the same grid row get photos, so expansion of one card
+  // can be checked against a sibling that stays collapsed.
+  await addListingPhotos(page, 1);
+  await addListingPhotos(page, 2);
 
   // The wizard saved mailpit as the SMTP host; send a test email from Settings.
   await page.goto('/settings');
@@ -141,6 +144,16 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page.getByRole('banner').locator('span')).toHaveCount(0);
   await expect(page.getByTestId('listing-card').first()).toBeVisible();
   await expect(page.getByTestId('return-conversation')).toBeVisible();
+  await expect(page.getByTestId('listing-card').filter({ hasText: 'The Wellington' }))
+    .toContainText('Monthly Rent: $2,200.00');
+
+  // Expanding one card must not stretch its row neighbours.
+  const kingCard = page.getByTestId('listing-card').filter({ hasText: 'King Street Lofts' });
+  const neighbourCard = page.getByTestId('listing-card').filter({ hasText: 'Harbourfront Condos' });
+  const neighbourHeight = await neighbourCard.evaluate((el) => el.getBoundingClientRect().height);
+  await kingCard.getByTestId('see-more').click();
+  await expect(kingCard.getByTestId('see-more')).toContainText('See less');
+  expect(await neighbourCard.evaluate((el) => el.getBoundingClientRect().height)).toBeCloseTo(neighbourHeight, 0);
 
   // Descriptions are clamped; "See more" reveals the full text and the gallery.
   const photoCard = page.getByTestId('listing-card').filter({ hasText: 'The Wellington' });
@@ -159,7 +172,12 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   const lightbox = page.getByTestId('photo-lightbox');
   await expect(lightbox).toBeVisible();
   await expect(lightbox).toContainText('1 / 2');
-  await lightbox.getByRole('button', { name: 'Next' }).click();
+  // Clicking the displayed photo advances, wrapping back to the first one.
+  await lightbox.getByTestId('lightbox-photo').click();
+  await expect(lightbox).toContainText('2 / 2');
+  await lightbox.getByTestId('lightbox-photo').click();
+  await expect(lightbox).toContainText('1 / 2');
+  await lightbox.getByTestId('lightbox-next').click();
   await expect(lightbox).toContainText('2 / 2');
   await page.keyboard.press('Escape');
   await expect(lightbox).toBeHidden();

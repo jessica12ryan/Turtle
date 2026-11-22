@@ -51,7 +51,7 @@
         <p class="text-gray-600 dark:text-slate-300"><?= __('No properties are currently listed.') ?></p>
     </div>
 <?php else: ?>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-start"
          x-data="{
              openId: null,
              detailsId: null,
@@ -106,7 +106,7 @@
                         <p class="text-sm text-gray-500 mt-1 dark:text-slate-400"><?= h($location) ?></p>
                     <?php endif; ?>
                     <?php if (!empty($property['rent_amount'])): ?>
-                        <p class="mt-2 font-semibold text-gray-800 dark:text-slate-100"><?= __('Monthly Rent') ?>: <?= h(number_format((float) $property['rent_amount'], 2)) ?></p>
+                        <p class="mt-2 font-semibold text-gray-800 dark:text-slate-100"><?= __('Monthly Rent') ?>: $<?= h(number_format((float) $property['rent_amount'], 2)) ?></p>
                     <?php endif; ?>
                     <?php if ($ad !== '' || $photoCount > 1): ?>
                         <div class="mt-3 text-sm text-gray-600 dark:text-slate-300">
@@ -194,9 +194,12 @@
                             class="flex-shrink-0 text-white bg-black/50 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center mr-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <img :src="lightboxPhotos[lightboxIndex].src" :alt="lightboxPhotos[lightboxIndex].alt"
-                         class="max-h-[80vh] max-w-full rounded-lg shadow-xl object-contain">
                     <button type="button" @click="nextPhoto()" aria-label="<?= __('Next') ?>"
+                            data-testid="lightbox-photo" class="cursor-pointer focus:outline-none focus:ring-2 focus:ring-white rounded-lg">
+                        <img :src="lightboxPhotos[lightboxIndex].src" :alt="lightboxPhotos[lightboxIndex].alt"
+                             class="max-h-[80vh] max-w-full rounded-lg shadow-xl object-contain">
+                    </button>
+                    <button type="button" @click="nextPhoto()" aria-label="<?= __('Next') ?>" data-testid="lightbox-next"
                             class="flex-shrink-0 text-white bg-black/50 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center ml-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>
