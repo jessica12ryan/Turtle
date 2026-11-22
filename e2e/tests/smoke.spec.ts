@@ -269,24 +269,24 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page).toHaveURL(/\/home$/);
 
   await page.goto('/guest-chats');
-  await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
+  const firstRow = page.getByTestId('guest-chat-row-wrapper').filter({ hasText: 'Harbourfront Condos' });
   page.once('dialog', (dialog) => dialog.accept());
-  await page.getByTestId('guest-chat-archive').click();
+  await firstRow.getByTestId('guest-chat-list-archive').click();
   await expect(page).toHaveURL(/\/guest-chats$/);
   await expect(page.getByTestId('guest-chat-row')).toHaveCount(1);
   expect((await request.get(guestChatUrl)).status(), 'an archived chat must be hidden from guests').toBe(404);
 
   await page.getByTestId('guest-chat-archived-toggle').click();
   await expect(page.getByTestId('guest-chat-archived-badge')).toBeVisible();
-  await page.getByTestId('guest-chat-row').filter({ hasText: 'Harbourfront Condos' }).click();
-  await page.getByTestId('guest-chat-restore').click();
+  const archivedRow = page.getByTestId('guest-chat-row-wrapper').filter({ hasText: 'Harbourfront Condos' });
+  await archivedRow.getByTestId('guest-chat-list-restore').click();
   await expect(page).toHaveURL(/\/guest-chats\/\d+$/);
   expect((await request.get(guestChatUrl)).status(), 'a restored chat must be accessible again').toBe(200);
 
   await page.goto('/guest-chats');
-  await page.getByTestId('guest-chat-row').filter({ hasText: 'King Street Lofts' }).click();
+  const secondRow = page.getByTestId('guest-chat-row-wrapper').filter({ hasText: 'King Street Lofts' });
   page.once('dialog', (dialog) => dialog.accept());
-  await page.getByTestId('guest-chat-delete').click();
+  await secondRow.getByTestId('guest-chat-list-delete').click();
   await expect(page).toHaveURL(/\/guest-chats$/);
   expect((await request.get(secondChatUrl)).status(), 'a deleted chat must be gone').toBe(404);
 
