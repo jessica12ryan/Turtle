@@ -40,6 +40,7 @@
         .dark .logo-default { filter: brightness(0) invert(0.85); }
         .listing-clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .listing-clamp-expanded { display: block; overflow: visible; }
+        .listing-photo { -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">

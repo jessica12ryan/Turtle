@@ -75,9 +75,9 @@
             ?>
             <article class="bg-white rounded-xl shadow overflow-hidden flex flex-col dark:bg-slate-800" data-testid="listing-card">
                 <?php if (!empty($property['main_photo_id'])): ?>
-                    <div class="relative">
+                    <div class="relative" @contextmenu.prevent>
                         <img src="/listings/<?= $pid ?>/photos/<?= (int) $property['main_photo_id'] ?>"
-                             alt="<?= h($property['name']) ?>" class="h-48 w-full object-cover">
+                             alt="<?= h($property['name']) ?>" class="h-48 w-full object-cover listing-photo" draggable="false">
                         <?php if ($photoCount > 1): ?>
                             <button type="button" @click="openLightbox(<?= $galleryJson ?>, 0)"
                                     data-testid="more-photos"
@@ -131,9 +131,9 @@
                                     <p class="text-xs font-medium text-gray-500 dark:text-slate-400 mb-2"><?= __('Photos') ?></p>
                                     <div class="grid grid-cols-3 gap-2">
                                         <?php foreach ($gallery as $index => $photo): ?>
-                                            <button type="button" @click="openLightbox(<?= $galleryJson ?>, <?= $index ?>)"
+                                            <button type="button" @click="openLightbox(<?= $galleryJson ?>, <?= $index ?>)" @contextmenu.prevent
                                                     class="rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                                <img src="<?= h($photo['src']) ?>" alt="<?= h($photo['alt']) ?>" class="w-full h-20 object-cover">
+                                                <img src="<?= h($photo['src']) ?>" alt="<?= h($photo['alt']) ?>" class="w-full h-20 object-cover listing-photo" draggable="false">
                                             </button>
                                         <?php endforeach; ?>
                                     </div>
@@ -182,7 +182,7 @@
 
         <div x-show="lightboxPhotos.length > 0" x-cloak
              class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-             @click.self="closeLightbox()" @keydown.escape.window="closeLightbox()"
+             @click.self="closeLightbox()" @keydown.escape.window="closeLightbox()" @contextmenu.prevent
              role="dialog" aria-modal="true" aria-label="<?= __('Photos') ?>" data-testid="photo-lightbox">
             <template x-if="lightboxPhotos.length > 0">
                 <div class="relative flex items-center justify-center w-full max-w-4xl">
@@ -197,7 +197,7 @@
                     <button type="button" @click="nextPhoto()" aria-label="<?= __('Next') ?>"
                             data-testid="lightbox-photo" class="cursor-pointer focus:outline-none focus:ring-2 focus:ring-white rounded-lg">
                         <img :src="lightboxPhotos[lightboxIndex].src" :alt="lightboxPhotos[lightboxIndex].alt"
-                             class="max-h-[80vh] max-w-full rounded-lg shadow-xl object-contain">
+                             class="max-h-[80vh] max-w-full rounded-lg shadow-xl object-contain listing-photo" draggable="false">
                     </button>
                     <button type="button" @click="nextPhoto()" aria-label="<?= __('Next') ?>" data-testid="lightbox-next"
                             class="flex-shrink-0 text-white bg-black/50 hover:bg-black/70 rounded-full w-10 h-10 flex items-center justify-center ml-3">

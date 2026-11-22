@@ -334,6 +334,7 @@ $router->post('/properties/{id}/hard-delete', 'PropertyController@hardDelete', [
 $router->post('/properties/{id}/restore', 'PropertyController@restore', ['auth', 'perm:properties.restore']);
 $router->post('/properties/{id}/photos', 'PropertyController@uploadPhoto', ['auth', 'perm:photos.create']);
 $router->post('/properties/{id}/photos/{photoId}/main', 'PropertyController@setMainPhoto', ['auth', 'perm:photos.edit']);
+$router->post('/properties/{id}/photos/reorder', 'PropertyController@reorderPhotos', ['auth', 'perm:photos.edit']);
 $router->post('/properties/{id}/photos/{photoId}/delete', 'PropertyController@deletePhoto', ['auth', 'perm:photos.delete']);
 $router->get('/properties/{id}/photos/{photoId}', 'PropertyController@servePhoto', ['auth', 'perm:photos.download']);
 $router->get('/properties/{id}/photos/{photoId}/download', 'PropertyController@downloadPhoto', ['auth', 'perm:photos.download']);

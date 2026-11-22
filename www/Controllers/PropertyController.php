@@ -209,7 +209,7 @@ class PropertyController
         );
 
         $photos = Database::fetchAll(
-            "SELECT * FROM property_photos WHERE property_id = ? ORDER BY is_main DESC, created_at ASC",
+            "SELECT * FROM property_photos WHERE property_id = ? ORDER BY is_main DESC, sort_order ASC, created_at ASC, id ASC",
             [$id]
         );
 
@@ -270,7 +270,7 @@ class PropertyController
         );
 
         $photos = Database::fetchAll(
-            "SELECT * FROM property_photos WHERE property_id = ? ORDER BY is_main DESC, created_at ASC",
+            "SELECT * FROM property_photos WHERE property_id = ? ORDER BY is_main DESC, sort_order ASC, created_at ASC, id ASC",
             [$id]
         );
 
@@ -359,10 +359,12 @@ class PropertyController
                 original_name VARCHAR(255) NOT NULL,
                 mime_type VARCHAR(100) DEFAULT '',
                 is_main TINYINT(1) DEFAULT 0,
+                sort_order INT NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
                 INDEX idx_property (property_id),
-                INDEX idx_main (property_id, is_main)
+                INDEX idx_main (property_id, is_main),
+                INDEX idx_sort (property_id, sort_order)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         }
     }
@@ -456,12 +458,13 @@ class PropertyController
             return;
         }
 
-        $existingPhotos = Database::fetch("SELECT COUNT(*) as cnt FROM property_photos WHERE property_id = ?", [$id]);
+        $existingPhotos = Database::fetch("SELECT COUNT(*) as cnt, COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM property_photos WHERE property_id = ?", [$id]);
         $isMain = ($existingPhotos && (int)$existingPhotos['cnt'] === 0) ? 1 : 0;
+        $sortOrder = (int) ($existingPhotos['next_order'] ?? 0);
 
         $photoId = Database::insert(
-            "INSERT INTO property_photos (property_id, file_path, original_name, mime_type, is_main, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
-            [$id, $loc['prefix'] . '/' . $id . '/' . $storedName, $_FILES['photo']['name'], $type, $isMain]
+            "INSERT INTO property_photos (property_id, file_path, original_name, mime_type, is_main, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+            [$id, $loc['prefix'] . '/' . $id . '/' . $storedName, $_FILES['photo']['name'], $type, $isMain, $sortOrder]
         );
 
         echo json_encode([
@@ -483,6 +486,70 @@ class PropertyController
         Database::execute("UPDATE property_photos SET is_main = 1 WHERE id = ? AND property_id = ?", [$photoId, $id]);
         flash('success', __('Main photo updated.'));
         redirect('/properties/' . $id . '/edit');
+    }
+
+    /** Persist a new display order. The main photo is kept first by the ORDER BY. */
+    public function reorderPhotos(int $id): void
+    {
+        header('Content-Type: application/json');
+
+        $payload = json_decode((string) file_get_contents('php://input'), true);
+        $token = is_array($payload) ? (string) ($payload['_csrf'] ?? '') : '';
+        if (!verify_csrf($token)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Invalid form token.']);
+            return;
+        }
+
+        Access::require(Access::property($id));
+        $this->ensurePhotosTable();
+
+        $submitted = is_array($payload) ? ($payload['ids'] ?? null) : null;
+        if (!is_array($submitted)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid photo order.']);
+            return;
+        }
+
+        $orderedIds = array_values(array_map('intval', $submitted));
+        if (
+            $orderedIds === [] || min($orderedIds) < 1
+            || count(array_unique($orderedIds)) !== count($orderedIds)
+        ) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid photo order.']);
+            return;
+        }
+
+        $rows = Database::fetchAll("SELECT id FROM property_photos WHERE property_id = ?", [$id]);
+        $existingIds = array_map(static fn (array $row): int => (int) $row['id'], $rows);
+        $checkSubmitted = $orderedIds;
+        sort($checkSubmitted);
+        sort($existingIds);
+        if ($checkSubmitted !== $existingIds) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Photos do not belong to this property.']);
+            return;
+        }
+
+        Database::beginTransaction();
+        try {
+            foreach ($orderedIds as $position => $photoId) {
+                Database::execute(
+                    "UPDATE property_photos SET sort_order = ? WHERE id = ? AND property_id = ?",
+                    [$position, $photoId, $id]
+                );
+            }
+            Database::commit();
+        } catch (\Throwable $e) {
+            Database::rollback();
+            http_response_code(500);
+            echo json_encode(['error' => 'Could not reorder photos.']);
+            return;
+        }
+
+        log_activity('property.photos_reordered', "Photos reordered for property #{$id}");
+        echo json_encode(['success' => true]);
     }
 
     public function deletePhoto(int $id, int $photoId): void

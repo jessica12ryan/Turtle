@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 const admin = {
   name: 'E2E Admin',
@@ -41,18 +41,27 @@ const hubLinkFromConversationEmail = (request: APIRequestContext): Promise<strin
 const guestReplyLinkFromMailpit = (request: APIRequestContext): Promise<string | null> =>
   linkFromMailpit(request, 'New reply to your conversation', /listings\/chat\/[a-f0-9]{64}/);
 
-/** Give a seeded property two photos so listing media is exercised. */
-async function addListingPhotos(page: Page, propertyId: number): Promise<void> {
+/** True when a context menu event is suppressed on the given element. */
+async function contextMenuBlocked(locator: Locator): Promise<boolean> {
+  return locator.evaluate((el) => {
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    el.dispatchEvent(event);
+    return event.defaultPrevented;
+  });
+}
+
+/** Give a seeded property photos so listing media and ordering are exercised. */
+async function addListingPhotos(page: Page, propertyId: number, count = 2): Promise<void> {
   const photos = [
     'iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAxklEQVR4nO3QQREAIAzAMMC/5+GiPEgU9LpnUTivA35hdMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOXBitAZ9Q1fboAAAAAElFTkSuQmCC',
     'iVBORw0KGgoAAAANSUhEUgAAAHgAAABQCAIAAABd+SbeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAyUlEQVR4nO3QQRHAIADAMJhynIOKlQeJgl7nWHvwv+92wCuMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNERoyNGR4yOGB0xOmJ0xOiI0RGjI0ZHjI4YHTE6YnTE6IjREaMjRkeMjhgdMTpidMToiNGRA4D3Ah9SPBpWAAAAAElFTkSuQmCC',
   ];
   await page.goto(`/properties/${propertyId}/edit`);
-  for (const [index, base64] of photos.entries()) {
+  for (let index = 0; index < count; index++) {
     await page.locator('#photo-upload-form input[type="file"]').setInputFiles({
       name: `listing-${index + 1}.png`,
       mimeType: 'image/png',
-      buffer: Buffer.from(base64, 'base64'),
+      buffer: Buffer.from(photos[index % photos.length], 'base64'),
     });
     await page.locator('#photo-upload-form button[type="submit"]').click();
     await expect(page.locator(`img[src^="/properties/${propertyId}/photos/"]`)).toHaveCount(index + 1);
@@ -113,9 +122,46 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page.locator('body')).toContainText('E2E leaking tap');
 
   // Two properties in the same grid row get photos, so expansion of one card
-  // can be checked against a sibling that stays collapsed.
+  // can be checked against a sibling that stays collapsed. The second gets a
+  // third photo so reordering can be exercised.
   await addListingPhotos(page, 1);
-  await addListingPhotos(page, 2);
+  await addListingPhotos(page, 2, 3);
+
+  // Photos can be reordered by dragging; the main photo stays pinned first.
+  await page.goto('/properties/2/edit');
+  const photoTiles = page.getByTestId('photo-tile');
+  await expect(photoTiles).toHaveCount(3);
+  const tileOrder = (): Promise<string[]> => photoTiles.locator('img').evaluateAll((imgs) =>
+    imgs.map((img) => (img as HTMLImageElement).getAttribute('src') || ''));
+  const waitForOrder = async (expected: string[]): Promise<void> => {
+    await expect.poll(async () => {
+      try {
+        return (await tileOrder()).join('|');
+      } catch {
+        return '';
+      }
+    }).toBe(expected.join('|'));
+  };
+  const originalOrder = await tileOrder();
+  await expect(photoTiles.first()).not.toHaveAttribute('draggable', 'true');
+  await photoTiles.nth(2).dragTo(photoTiles.nth(1));
+  const draggedOrder = [originalOrder[0], originalOrder[2], originalOrder[1]];
+  await waitForOrder(draggedOrder);
+
+  // The arrow buttons offer the same control without drag and drop.
+  await photoTiles.nth(2).getByTestId('move-photo-left').click();
+  await waitForOrder(originalOrder);
+
+  // Tampered reorder requests are rejected.
+  const photoIds = await photoTiles.evaluateAll((tiles) =>
+    tiles.map((tile) => Number((tile as HTMLElement).dataset.photoId)));
+  const reorderCsrf = await page.locator('#photo-upload-form input[name="_csrf"]').getAttribute('value');
+  expect((await page.request.post('/properties/2/photos/reorder', {
+    data: { ids: photoIds, _csrf: 'invalid' },
+  })).status()).toBe(403);
+  expect((await page.request.post('/properties/2/photos/reorder', {
+    data: { ids: [photoIds[0], photoIds[1], 999999], _csrf: reorderCsrf },
+  })).status()).toBe(400);
 
   // The wizard saved mailpit as the SMTP host; send a test email from Settings.
   await page.goto('/settings');
@@ -158,6 +204,10 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   // Descriptions are clamped; "See more" reveals the full text and the gallery.
   const photoCard = page.getByTestId('listing-card').filter({ hasText: 'The Wellington' });
   const description = photoCard.getByTestId('listing-description');
+  const mainPhoto = photoCard.locator('img.listing-photo').first();
+  expect(await contextMenuBlocked(mainPhoto)).toBe(true);
+  await expect(mainPhoto).toHaveAttribute('draggable', 'false');
+  expect(await contextMenuBlocked(description), 'text menus must stay available').toBe(false);
   await expect(description).toHaveClass(/listing-clamp/);
   await expect(photoCard.getByTestId('see-more')).toBeVisible();
   await expect(photoCard.getByTestId('listing-gallery')).toBeHidden();
@@ -165,12 +215,14 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(photoCard.getByTestId('see-more')).toContainText('See less');
   await expect(description).toHaveClass(/listing-clamp-expanded/);
   await expect(photoCard.getByTestId('listing-gallery').locator('img')).toHaveCount(2);
+  expect(await contextMenuBlocked(photoCard.getByTestId('listing-gallery').locator('img').first())).toBe(true);
 
   // The photo badge opens a lightbox with navigation; Escape closes it.
   await expect(photoCard.getByTestId('more-photos')).toContainText('View all 2 photos');
   await photoCard.getByTestId('more-photos').click();
   const lightbox = page.getByTestId('photo-lightbox');
   await expect(lightbox).toBeVisible();
+  expect(await contextMenuBlocked(lightbox.getByTestId('lightbox-photo').locator('img'))).toBe(true);
   await expect(lightbox).toContainText('1 / 2');
   // Clicking the displayed photo advances, wrapping back to the first one.
   await lightbox.getByTestId('lightbox-photo').click();

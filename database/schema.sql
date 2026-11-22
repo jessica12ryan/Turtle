@@ -315,10 +315,12 @@ CREATE TABLE IF NOT EXISTS property_photos (
     original_name VARCHAR(255) NOT NULL,
     mime_type VARCHAR(100) DEFAULT '',
     is_main TINYINT(1) DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
     INDEX idx_property (property_id),
-    INDEX idx_main (property_id, is_main)
+    INDEX idx_main (property_id, is_main),
+    INDEX idx_sort (property_id, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS resources (

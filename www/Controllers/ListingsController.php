@@ -39,7 +39,7 @@ class ListingsController
                 "SELECT property_id, id, original_name
                  FROM property_photos
                  WHERE property_id IN ({$placeholders})
-                 ORDER BY property_id ASC, is_main DESC, created_at ASC, id ASC",
+                 ORDER BY property_id ASC, is_main DESC, sort_order ASC, created_at ASC, id ASC",
                 $propertyIds
             );
             foreach ($photoRows as $photo) {
