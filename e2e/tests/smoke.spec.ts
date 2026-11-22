@@ -144,13 +144,31 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   };
   const originalOrder = await tileOrder();
   await expect(photoTiles.first()).not.toHaveAttribute('draggable', 'true');
-  await photoTiles.nth(2).dragTo(photoTiles.nth(1));
+  await expect(photoTiles.nth(1).getByTestId('set-as-main')).toBeVisible();
+
+  // Use real mouse movements: Playwright's dragTo() dispatches synthetic drag
+  // events and misses broken native drag sources (e.g. a non-draggable image).
+  await photoTiles.nth(2).scrollIntoViewIfNeeded();
+  const from = await photoTiles.nth(2).boundingBox();
+  const to = await photoTiles.nth(1).boundingBox();
+  if (!from || !to) {
+    throw new Error('photo tiles should have bounding boxes');
+  }
+  await page.mouse.move(from.x + 24, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 36, from.y + from.height / 2 + 12, { steps: 5 });
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+  await page.mouse.up();
   const draggedOrder = [originalOrder[0], originalOrder[2], originalOrder[1]];
   await waitForOrder(draggedOrder);
 
   // The arrow buttons offer the same control without drag and drop.
   await photoTiles.nth(2).getByTestId('move-photo-left').click();
   await waitForOrder(originalOrder);
+
+  // "Set as Main" stays available and moves the chosen photo to the front.
+  await photoTiles.nth(1).getByTestId('set-as-main').click();
+  await expect(photoTiles.first()).toContainText('Main');
 
   // Tampered reorder requests are rejected.
   const photoIds = await photoTiles.evaluateAll((tiles) =>
