@@ -776,12 +776,21 @@ class SettingsController
         if ($mode === 'custom') {
             if (isset($_POST['events'])) {
                 $roles = ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'];
+                $allowedEvents = array_keys(notificationEventLabels());
+                $propertyEvents = propertyNotificationEvents();
                 Database::execute("DELETE FROM notification_events WHERE 1=1", []);
                 foreach ($_POST['events'] as $event => $grantedRoles) {
+                    if (!in_array($event, $allowedEvents, true) || !is_array($grantedRoles)) {
+                        continue;
+                    }
                     foreach ($grantedRoles as $role) {
-                        if (in_array($role, $roles)) {
-                            Database::execute("INSERT INTO notification_events (event, role) VALUES (?, ?)", [$event, $role]);
+                        if (!in_array($role, $roles, true)) {
+                            continue;
                         }
+                        if ($role === 'tenant' && in_array($event, $propertyEvents, true)) {
+                            continue;
+                        }
+                        Database::execute("INSERT INTO notification_events (event, role) VALUES (?, ?)", [$event, $role]);
                     }
                 }
             } else {
@@ -819,16 +828,25 @@ class SettingsController
 
         if ($mode === 'custom') {
             $roles = ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'];
+            $allowedEvents = array_keys(notificationEventLabels());
+            $propertyEvents = propertyNotificationEvents();
             Database::execute("DELETE FROM inapp_notification_events WHERE 1=1", []);
             if (isset($_POST['inapp_events'])) {
                 foreach ($_POST['inapp_events'] as $event => $grantedRoles) {
+                    if (!in_array($event, $allowedEvents, true) || !is_array($grantedRoles)) {
+                        continue;
+                    }
                     foreach ($grantedRoles as $role) {
-                        if (in_array($role, $roles, true)) {
-                            Database::execute(
-                                "INSERT IGNORE INTO inapp_notification_events (event, role) VALUES (?, ?)",
-                                [$event, $role]
-                            );
+                        if (!in_array($role, $roles, true)) {
+                            continue;
                         }
+                        if ($role === 'tenant' && in_array($event, $propertyEvents, true)) {
+                            continue;
+                        }
+                        Database::execute(
+                            "INSERT IGNORE INTO inapp_notification_events (event, role) VALUES (?, ?)",
+                            [$event, $role]
+                        );
                     }
                 }
             }

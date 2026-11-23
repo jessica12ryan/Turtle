@@ -78,12 +78,40 @@ class ApplicationController
             );
 
             log_activity('application.created', "Tenancy application #{$id} submitted");
+            $this->notifyNewApplication($id, $propertyId);
             flash('success', __('Your application has been submitted successfully. We will be in touch.'));
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
             \App\Core\Logger::error('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             flash('error', __('Submission failed. Please try again.'));
             redirect('/applications/create');
+        }
+    }
+
+    /** Notify the applicant property's team (manager, else landlord). */
+    private function notifyNewApplication(int $applicationId, int $propertyId): void
+    {
+        $property = Database::fetch("SELECT name FROM properties WHERE id = ?", [$propertyId]);
+        $propertyName = (string) ($property['name'] ?? __('Property'));
+        $data = __('New Application') . ': ' . $propertyName;
+        $url = site_url() . '/applications/' . $applicationId;
+
+        foreach (propertyNotificationRecipients($propertyId, 'new_application', 'inapp') as $user) {
+            notifyInApp((int) $user['id'], 'new_application', $data, 'application', 'property_manager');
+        }
+        foreach (propertyNotificationRecipients($propertyId, 'new_application', 'email') as $user) {
+            try {
+                \App\Core\Mailer::sendTemplate(
+                    (string) $user['email'],
+                    __('New Application') . ': ' . $propertyName,
+                    'Hello ' . $user['name'] . ',',
+                    __('A new tenancy application was submitted for') . ' <strong>' . h($propertyName) . '</strong>.',
+                    $url,
+                    __('View Application')
+                );
+            } catch (\Throwable $e) {
+                \App\Core\Logger::error('New application email failed: ' . $e->getMessage());
+            }
         }
     }
 

@@ -252,6 +252,20 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
     return (await response.text()).includes('Test Email from Turtle') ? 1 : 0;
   }, { message: 'test email should arrive in Mailpit' }).toBe(1);
 
+  // New property-scoped notification sets appear in both email and in-app tables.
+  await page.goto('/settings?tab=notifications');
+  for (const label of ['New Application', 'New Guest Chat', 'Guest Chat Reply']) {
+    const rows = page.locator('tr').filter({ hasText: label });
+    await expect(rows).toHaveCount(2);
+    for (let i = 0; i < 2; i++) {
+      const row = rows.nth(i);
+      await expect(row.getByText('—', { exact: true })).toHaveCount(1);
+      const checked = row.locator('input[type="checkbox"]:checked');
+      await expect(checked).toHaveCount(1);
+      await expect(checked.first()).toHaveAttribute('value', 'property_manager');
+    }
+  }
+
   // Anonymous visitors land on the public listings page, not the login form.
   await page.context().clearCookies();
   await page.goto('/');

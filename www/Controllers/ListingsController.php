@@ -242,12 +242,18 @@ class ListingsController
             return;
         }
 
+        $priorMessages = Database::fetch(
+            "SELECT COUNT(*) AS cnt FROM guest_chat_messages WHERE chat_id = ?",
+            [$chat['id']]
+        );
+        $event = ($priorMessages && (int) $priorMessages['cnt'] > 0) ? 'guest_chat_reply' : 'new_guest_chat';
+
         Database::insert(
             "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
             [$chat['id'], $body]
         );
         Database::execute("UPDATE guest_chats SET last_activity = NOW(), updated_at = NOW() WHERE id = ?", [$chat['id']]);
-        GuestChat::notifyStaff($chat, $body);
+        GuestChat::notifyStaff($chat, $body, $event);
 
         echo json_encode([
             'success' => true,

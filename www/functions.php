@@ -859,6 +859,9 @@ function defaultNotifications(): array
         'tenant_welcome' => ['tenant'],
         'password_reset' => ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'],
         'onboarding' => ['admin', 'landlord', 'property_manager', 'maintenance', 'tenant'],
+        'new_application' => ['property_manager'],
+        'new_guest_chat' => ['property_manager'],
+        'guest_chat_reply' => ['property_manager'],
     ];
 
     // Admin defaults mirror the Landlord defaults for every event.
@@ -908,6 +911,12 @@ function messaging_enabled(): bool
     }
 }
 
+/** Property-scoped events whose recipients are the manager (or landlord fallback). */
+function propertyNotificationEvents(): array
+{
+    return ['new_application', 'new_guest_chat', 'guest_chat_reply'];
+}
+
 function notificationEventLabels(): array
 {
     return [
@@ -921,6 +930,9 @@ function notificationEventLabels(): array
         'tenant_welcome' => __('Tenant Welcome'),
         'password_reset' => __('Password Reset'),
         'onboarding' => __('Onboarding'),
+        'new_application' => __('New Application'),
+        'new_guest_chat' => __('New Guest Chat'),
+        'guest_chat_reply' => __('Guest Chat Reply'),
     ];
 }
 
@@ -932,6 +944,32 @@ function inappNotificationMode(): string
     } catch (\Throwable $e) {
         return 'default';
     }
+}
+
+function emailNotificationMode(): string
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'notification_mode'");
+        return $row['value'] ?? 'default';
+    } catch (\Throwable $e) {
+        return 'default';
+    }
+}
+
+function shouldNotifyEmail(string $event, string $role): bool
+{
+    try {
+        if (emailNotificationMode() === 'custom') {
+            $row = \App\Core\Database::fetch(
+                "SELECT 1 FROM notification_events WHERE event = ? AND role = ?",
+                [$event, $role]
+            );
+            return $row !== null;
+        }
+    } catch (\Throwable $e) {
+        // Fall back to defaults if the table is not available yet.
+    }
+    return in_array($role, defaultNotifications()[$event] ?? [], true);
 }
 
 function shouldNotifyInApp(string $event, string $role): bool
@@ -950,11 +988,11 @@ function shouldNotifyInApp(string $event, string $role): bool
     return in_array($role, defaultNotifications()[$event] ?? [], true);
 }
 
-function notifyInApp(int $userId, string $event, string $data, ?string $type = null): void
+function notifyInApp(int $userId, string $event, string $data, ?string $type = null, ?string $roleOverride = null): void
 {
     try {
         $user = \App\Core\Database::fetch("SELECT role FROM users WHERE id = ? AND archived_at IS NULL", [$userId]);
-        if (!$user || !shouldNotifyInApp($event, $user['role'])) {
+        if (!$user || !shouldNotifyInApp($event, $roleOverride ?? (string) $user['role'])) {
             return;
         }
 
@@ -980,6 +1018,51 @@ function notifyInAppRoles(string $event, string $data, ?int $excludeUserId = nul
         }
     } catch (\Throwable $e) {
         \App\Core\Logger::error('In-app role notification failed: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Recipients for a property-scoped notification: the property's manager, or
+ * its landlord when no manager is set. The property-manager setting governs
+ * the notification in either case, so the fallback is always honoured.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function propertyNotificationRecipients(int $propertyId, string $event, string $channel): array
+{
+    $gateRole = 'property_manager';
+    $allowed = $channel === 'email'
+        ? shouldNotifyEmail($event, $gateRole)
+        : shouldNotifyInApp($event, $gateRole);
+    if (!$allowed) {
+        return [];
+    }
+
+    try {
+        $property = \App\Core\Database::fetch(
+            "SELECT landlord_id, property_manager_id FROM properties WHERE id = ? AND archived_at IS NULL",
+            [$propertyId]
+        );
+        if ($property === null) {
+            return [];
+        }
+        $managerId = (int) ($property['property_manager_id'] ?? 0);
+        $landlordId = (int) ($property['landlord_id'] ?? 0);
+        $recipientId = $managerId > 0 ? $managerId : $landlordId;
+        if ($recipientId <= 0) {
+            return [];
+        }
+        $user = \App\Core\Database::fetch(
+            "SELECT id, name, email, role FROM users WHERE id = ? AND archived_at IS NULL",
+            [$recipientId]
+        );
+        if ($user === null || ($user['role'] ?? '') === 'tenant') {
+            return [];
+        }
+        return [$user];
+    } catch (\Throwable $e) {
+        \App\Core\Logger::error('Property notification recipient lookup failed: ' . $e->getMessage());
+        return [];
     }
 }
 

@@ -144,4 +144,13 @@ final class HelpersTest extends TestCase
         self::assertSame('', render_ad_description(['ad_description' => null, 'name' => 'Test']));
         self::assertSame('', render_ad_description(['name' => 'Test']));
     }
+
+    public function testPropertyNotificationDefaultsOnlyEnableManager(): void
+    {
+        foreach (propertyNotificationEvents() as $event) {
+            self::assertSame(['property_manager'], defaultNotifications()[$event]);
+            self::assertTrue(shouldNotifyEmail($event, 'property_manager'));
+            self::assertFalse(shouldNotifyEmail($event, 'tenant'));
+        }
+    }
 }

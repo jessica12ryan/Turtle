@@ -548,28 +548,27 @@ class GuestChat
     }
 
     /** Notify the property team (in-app + email) about a visitor message. */
-    public static function notifyStaff(array $chat, string $body): void
+    public static function notifyStaff(array $chat, string $body, string $event = 'new_guest_chat'): void
     {
-        $recipientIds = self::recipientIds((int) $chat['property_id']);
-        if ($recipientIds === []) {
-            return;
-        }
         $snippet = mb_strlen($body) > 120 ? mb_substr($body, 0, 117) . '...' : $body;
         $data = $chat['guest_name'] . ' (' . $chat['property_name'] . '): ' . $snippet;
-        $placeholders = implode(',', array_fill(0, count($recipientIds), '?'));
-        $users = Database::fetchAll(
-            "SELECT id, email, name FROM users WHERE id IN ({$placeholders})",
-            $recipientIds
-        );
-        foreach ($users as $user) {
-            \notifyInApp((int) $user['id'], 'new_message', $data, 'guest_chat');
+        $propertyId = (int) $chat['property_id'];
+
+        foreach (propertyNotificationRecipients($propertyId, $event, 'inapp') as $user) {
+            \notifyInApp((int) $user['id'], $event, $data, 'guest_chat', 'property_manager');
+        }
+
+        $subject = $event === 'guest_chat_reply'
+            ? 'New guest reply about '
+            : 'New visitor message about ';
+        foreach (propertyNotificationRecipients($propertyId, $event, 'email') as $user) {
             if (!filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
                 continue;
             }
             try {
                 Mailer::sendTemplate(
                     $user['email'],
-                    'New visitor message about ' . $chat['property_name'],
+                    $subject . $chat['property_name'],
                     'Hello ' . $user['name'] . ',',
                     'A visitor (' . h($chat['guest_name']) . ', ' . h($chat['guest_email']) . ') sent a message about '
                         . '<strong>' . h($chat['property_name']) . '</strong>:<br><br>' . nl2br(h($snippet)),
