@@ -282,13 +282,17 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page.getByTestId('login-link')).toHaveCount(0);
   await expect(page.getByTestId('dashboard-link')).toBeVisible();
   await expect(page.getByTestId('dashboard-link')).toHaveAttribute('href', '/home');
-  await expect(page.getByTestId('logout-button')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Application for Tenancy' })).toHaveCount(0);
+  const logoutButton = page.getByTestId('logout-button');
+  await expect(logoutButton).toContainText(admin.name);
+  expect((await logoutButton.boundingBox())?.width ?? 0, 'logout button stays compact').toBeLessThanOrEqual(176);
 
   // Anonymous visitors land on the public listings page, not the login form.
   await page.context().clearCookies();
   await page.goto('/');
   await expect(page).toHaveURL(/\/listings$/);
   await expect(page.getByTestId('login-link')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Application for Tenancy' })).toBeVisible();
   await expect(page.getByTestId('dashboard-link')).toHaveCount(0);
   await expect(page.getByTestId('logout-button')).toHaveCount(0);
   await expect(page.getByRole('banner').locator('span')).toHaveCount(0);

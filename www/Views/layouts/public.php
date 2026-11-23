@@ -51,14 +51,20 @@
                 <img src="<?= h(site_logo()) ?>" alt="<?= h(site_name()) ?>" class="h-10 flex-shrink-0<?= site_logo() === '/assets/logo.svg' ? ' logo-default' : '' ?>">
             </a>
             <nav class="flex items-center gap-3 sm:gap-5 text-sm">
-                <a href="/applications/create" class="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"><?= __('Application for Tenancy') ?></a>
                 <?php if ($publicUser): ?>
                     <a href="/home" data-testid="dashboard-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Dashboard') ?></a>
                     <form method="POST" action="/logout" class="inline">
                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                        <button type="submit" data-testid="logout-button" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"><?= __('Logout') ?></button>
+                        <button type="submit" data-testid="logout-button"
+                                aria-label="<?= __('Logout') ?>: <?= h($publicUser['name']) ?>"
+                                title="<?= __('Logout') ?>: <?= h($publicUser['name']) ?>"
+                                class="flex items-center gap-1.5 max-w-[11rem] border border-gray-300 text-gray-700 px-3 py-2 rounded-lg font-medium hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            <span class="truncate"><?= h($publicUser['name']) ?></span>
+                        </button>
                     </form>
                 <?php else: ?>
+                    <a href="/applications/create" class="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"><?= __('Application for Tenancy') ?></a>
                     <a href="/login" data-testid="login-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Sign In') ?></a>
                 <?php endif; ?>
             </nav>
