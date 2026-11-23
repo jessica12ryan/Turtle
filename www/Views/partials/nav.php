@@ -1,6 +1,7 @@
 <?php
 $user = \App\Core\Auth::instance()->user();
 $unread = \App\Core\Database::fetch("SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND read_at IS NULL AND (type IS NULL OR type != 'message')", [$user['id']])['count'] ?? 0;
+$listedPropertyCount = (int) (\App\Core\Database::fetch("SELECT COUNT(*) as count FROM properties WHERE listed = 1 AND archived_at IS NULL")['count'] ?? 0);
 $logoUrl = site_logo();
 $isDefaultLogo = $logoUrl === '/assets/logo.svg';
 ?>
@@ -20,6 +21,13 @@ $isDefaultLogo = $logoUrl === '/assets/logo.svg';
             </div>
 
             <div class="flex items-center space-x-2">
+                <?php if ($listedPropertyCount > 0): ?>
+                    <a href="/listings" target="_blank" rel="noopener noreferrer"
+                       data-testid="view-listings-link" data-tooltip="<?= __('View Listings') ?>"
+                       class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-2 py-1">
+                        <?= __('View Listings') ?>
+                    </a>
+                <?php endif; ?>
                 <?php if (messaging_enabled()): ?>
                     <button type="button" id="messenger-toggle" onclick="window.dispatchEvent(new Event('messenger:toggle'))" class="panel-toggle relative text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white p-1" data-tooltip="<?= __('Messages') ?>" aria-label="<?= __('Messages') ?>">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>

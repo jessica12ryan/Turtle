@@ -408,6 +408,7 @@ return [
     'Version' => 'Version',
     'View' => 'Voir',
     'View Applications' => 'Voir les candidatures',
+    'View Listings' => 'Voir les annonces',
     'View Guest Chats' => 'Voir les conversations visiteurs',
     'View Calendar' => 'Voir le calendrier',
     'View Documents' => 'Voir les documents',

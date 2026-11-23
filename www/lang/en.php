@@ -892,6 +892,7 @@
     'Use default timezone' => 'Use default timezone',
     'Version' => 'Version',
     'View Applications' => 'View Applications',
+    'View Listings' => 'View Listings',
     'View Guest Chats' => 'View Guest Chats',
     'View Properties' => 'View Properties',
     'View all' => 'View all',
