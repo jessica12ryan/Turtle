@@ -1,3 +1,4 @@
+<?php $publicUser = \App\Core\Auth::instance()->user(); ?>
 <!DOCTYPE html>
 <html lang="<?= h(current_language()) ?>" data-theme="system">
 <head>
@@ -51,7 +52,15 @@
             </a>
             <nav class="flex items-center gap-3 sm:gap-5 text-sm">
                 <a href="/applications/create" class="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"><?= __('Application for Tenancy') ?></a>
-                <a href="/login" data-testid="login-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Sign In') ?></a>
+                <?php if ($publicUser): ?>
+                    <a href="/home" data-testid="dashboard-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Dashboard') ?></a>
+                    <form method="POST" action="/logout" class="inline">
+                        <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+                        <button type="submit" data-testid="logout-button" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"><?= __('Logout') ?></button>
+                    </form>
+                <?php else: ?>
+                    <a href="/login" data-testid="login-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Sign In') ?></a>
+                <?php endif; ?>
             </nav>
         </div>
     </header>

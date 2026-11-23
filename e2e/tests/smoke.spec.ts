@@ -277,11 +277,20 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
     }
   }
 
+  // Logged-in staff see Dashboard/Logout instead of Sign In on public pages.
+  await page.goto('/listings');
+  await expect(page.getByTestId('login-link')).toHaveCount(0);
+  await expect(page.getByTestId('dashboard-link')).toBeVisible();
+  await expect(page.getByTestId('dashboard-link')).toHaveAttribute('href', '/home');
+  await expect(page.getByTestId('logout-button')).toBeVisible();
+
   // Anonymous visitors land on the public listings page, not the login form.
   await page.context().clearCookies();
   await page.goto('/');
   await expect(page).toHaveURL(/\/listings$/);
   await expect(page.getByTestId('login-link')).toBeVisible();
+  await expect(page.getByTestId('dashboard-link')).toHaveCount(0);
+  await expect(page.getByTestId('logout-button')).toHaveCount(0);
   await expect(page.getByRole('banner').locator('span')).toHaveCount(0);
   await expect(page.getByTestId('listing-card').first()).toBeVisible();
   await expect(page.getByTestId('return-conversation')).toBeVisible();

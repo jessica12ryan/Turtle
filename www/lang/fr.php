@@ -352,6 +352,7 @@ return [
     'Show archived' => 'Afficher les archivés',
     'Showing archived' => 'Affichage des archivés',
     'Sign In' => 'Connexion',
+    'Dashboard' => 'Tableau de bord',
     'Site Info' => 'Infos du site',
     'Site Information' => 'Informations du site',
     'Site Name' => 'Nom du site',

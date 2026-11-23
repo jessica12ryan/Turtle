@@ -813,6 +813,7 @@
     'Showing approved' => 'Showing approved',
     'Showing rejected' => 'Showing rejected',
     'Sign In' => 'Sign In',
+    'Dashboard' => 'Dashboard',
     'Site Info' => 'Site Info',
     'Site Information' => 'Site Information',
     'Site Name' => 'Site Name',
