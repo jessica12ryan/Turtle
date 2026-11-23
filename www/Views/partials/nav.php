@@ -22,7 +22,7 @@ $isDefaultLogo = $logoUrl === '/assets/logo.svg';
 
             <div class="flex items-center space-x-2">
                 <?php if ($listedPropertyCount > 0): ?>
-                    <a href="/listings" target="_blank" rel="noopener noreferrer"
+                    <a href="/listings"
                        data-testid="view-listings-link" data-tooltip="<?= __('View Listings') ?>"
                        class="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white px-2 py-1">
                         <?= __('View Listings') ?>

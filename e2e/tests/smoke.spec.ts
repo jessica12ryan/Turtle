@@ -105,16 +105,13 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page).toHaveURL(/\/home$/);
   await expect(page.locator('h1').first()).toBeVisible();
 
-  // Staff can open the public listings in a new window when properties are listed.
+  // Staff can open the public listings in the same window when properties are listed.
   const viewListings = page.getByTestId('view-listings-link');
   await expect(viewListings).toBeVisible();
   await expect(viewListings).toHaveAttribute('href', '/listings');
-  const [listingsPopup] = await Promise.all([
-    page.waitForEvent('popup'),
-    viewListings.click(),
-  ]);
-  await expect(listingsPopup).toHaveURL(/\/listings$/);
-  await listingsPopup.close();
+  expect(await viewListings.getAttribute('target')).toBeNull();
+  await viewListings.click();
+  await expect(page).toHaveURL(/\/listings$/);
 
   for (const path of ['/properties', '/tenants', '/tickets', '/settings']) {
     await expectPageOk(page, path);
