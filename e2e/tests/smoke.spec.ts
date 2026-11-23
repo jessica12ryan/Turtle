@@ -211,6 +211,28 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
     data: { ids: [photoIds[0], photoIds[1], 999999], _csrf: reorderCsrf },
   })).status()).toBe(400);
 
+  // A property with no tenants adds a View Guest Chats shortcut on the dashboard.
+  const createdProperty = await page.request.post('/properties', {
+    form: {
+      _csrf: reorderCsrf!,
+      landlord_id: '6',
+      property_manager_id: '2',
+      name: 'No Tenant Property',
+      address: '1 Test St',
+      city: 'Toronto',
+      country: 'CA',
+      province: 'ON',
+      postal_code: 'M5V 1A1',
+    },
+  });
+  expect(createdProperty.ok()).toBe(true);
+  await page.goto('/home');
+  const noTenantAlert = page.locator('div.bg-yellow-50').filter({ hasText: 'no tenants' });
+  await expect(noTenantAlert).toBeVisible();
+  await expect(noTenantAlert.getByRole('link', { name: /Add Tenant/ })).toBeVisible();
+  await expect(noTenantAlert.getByRole('link', { name: /View Applications/ })).toBeVisible();
+  await expect(noTenantAlert.getByRole('link', { name: /View Guest Chats/ })).toBeVisible();
+
   // The wizard saved mailpit as the SMTP host; send a test email from Settings.
   await page.goto('/settings');
   const csrf = await page.locator('input[name="_csrf"]').first().getAttribute('value');
@@ -364,6 +386,18 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.getByTestId('guest-reply').click();
   await expect(page.getByText('Yes, it is available.')).toBeVisible();
   await expect(page.getByTestId('guest-chat-unread-badge')).toHaveText('1');
+
+  // The always-on settings tab shows guest chat history like the messenger page.
+  await page.goto('/settings?tab=guest_chats');
+  await expect(page.getByTestId('guest-chat-history')).toBeVisible();
+  await expect(page.locator('a[href="/settings?tab=guest_chats"]')).toHaveClass(/bg-blue-50/);
+  await expect(page.getByTestId('guest-chat-conversation')).toHaveCount(2);
+  await page.getByTestId('guest-chat-conversation').filter({ hasText: 'Harbourfront Condos' }).click();
+  await expect(page.getByTestId('guest-chat-thread')).toContainText('Yes, it is available.');
+  await expect(page.locator('input[name="messaging_enabled"]')).toHaveCount(0);
+  await page.locator('input[name="q"]').fill('parking');
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(page.getByTestId('guest-chat-conversation')).toHaveCount(1);
 
   // The guest gets a fresh direct link to the conversation by email.
   let replyEmailPath: string | null = null;

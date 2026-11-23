@@ -172,12 +172,16 @@ class HomeController
                 if ($noTenantProps && $noTenantProps['cnt'] > 0) {
                     $count = (int)$noTenantProps['cnt'];
                     $key = $count > 1 ? '%d properties have no tenants.' : '%d property has no tenants.';
+                    $links = [
+                        ['label' => __('Add Tenant'), 'href' => '/tenants/create'],
+                        ['label' => __('View Applications'), 'href' => '/applications'],
+                    ];
+                    if (can('guest_chats.access')) {
+                        $links[] = ['label' => __('View Guest Chats'), 'href' => '/guest-chats'];
+                    }
                     $alerts['warning'][] = [
                         'msg' => sprintf(__($key), $count),
-                        'links' => [
-                            ['label' => __('Add Tenant'), 'href' => '/tenants/create'],
-                            ['label' => __('View Applications'), 'href' => '/applications'],
-                        ],
+                        'links' => $links,
                     ];
                 }
             }

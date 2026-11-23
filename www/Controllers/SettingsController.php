@@ -12,7 +12,7 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications', 'messenger'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications', 'messenger', 'guest_chats'])) {
             $tab = 'general';
         }
 
@@ -265,6 +265,75 @@ class SettingsController
             $data['conversations'] = $conversations;
             $data['selectedConversation'] = $selectedKey;
             $data['threadMessages'] = $thread;
+        }
+
+        if ($tab === 'guest_chats') {
+            $guestSearch = trim((string)($_GET['q'] ?? ''));
+            $needle = $guestSearch !== '' ? mb_strtolower($guestSearch) : '';
+
+            $rows = Database::fetchAll(
+                "SELECT gc.id AS chat_id, gc.guest_name, gc.guest_email, gc.archived_at, gc.last_activity,
+                        p.name AS property_name, m.body, m.created_at, m.sender_type,
+                        u.name AS staff_name
+                 FROM guest_chats gc
+                 JOIN properties p ON p.id = gc.property_id
+                 JOIN guest_chat_messages m ON m.chat_id = gc.id
+                 LEFT JOIN users u ON u.id = m.sender_id
+                 ORDER BY gc.last_activity DESC, m.id DESC
+                 LIMIT 2000",
+                []
+            );
+
+            $guestConversations = [];
+            $matchedRows = [];
+            foreach ($rows as $row) {
+                $haystack = mb_strtolower(
+                    $row['guest_name'] . ' ' . $row['guest_email'] . ' ' . $row['property_name'] . ' ' . $row['body']
+                );
+                if ($needle !== '' && strpos($haystack, $needle) === false) {
+                    continue;
+                }
+                $matchedRows[] = $row;
+                $chatId = (int)$row['chat_id'];
+                if (!isset($guestConversations[$chatId])) {
+                    $guestConversations[$chatId] = [
+                        'key' => (string)$chatId,
+                        'name' => $row['guest_name'] . ' — ' . $row['property_name'],
+                        'email' => (string)$row['guest_email'],
+                        'property' => (string)$row['property_name'],
+                        'archived' => !empty($row['archived_at']),
+                        'count' => 0,
+                        'last_at' => (string)$row['last_activity'],
+                        'last_body' => (string)$row['body'],
+                    ];
+                }
+                $guestConversations[$chatId]['count']++;
+            }
+
+            $selectedKey = (string)($_GET['conversation'] ?? '');
+            if ($selectedKey === '' || !isset($guestConversations[$selectedKey])) {
+                $selectedKey = (string)(array_key_first($guestConversations) ?? '');
+            }
+            $thread = [];
+            foreach ($matchedRows as $row) {
+                if ((string)$row['chat_id'] !== $selectedKey) {
+                    continue;
+                }
+                $thread[] = [
+                    'from_staff' => $row['sender_type'] === 'staff',
+                    'sender_name' => $row['sender_type'] === 'guest'
+                        ? (string)$row['guest_name']
+                        : ((string)($row['staff_name'] ?? '') !== '' ? (string)$row['staff_name'] : __('Staff')),
+                    'body' => (string)$row['body'],
+                    'created_at' => (string)$row['created_at'],
+                ];
+            }
+            $thread = array_reverse($thread);
+
+            $data['guestChatSearch'] = $guestSearch;
+            $data['guestChatConversations'] = $guestConversations;
+            $data['selectedGuestChat'] = $selectedKey;
+            $data['guestChatThread'] = $thread;
         }
 
         $view = new View();

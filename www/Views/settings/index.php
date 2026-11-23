@@ -18,6 +18,10 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                 <span><?= __('Messenger') ?></span>
             </a>
+            <a href="/settings?tab=guest_chats" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'guest_chats' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?>">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2v-3m12-9V6a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2h3m9-9l-5 4-5-4"/></svg>
+                <span><?= __('Guest Chats') ?></span>
+            </a>
             <a href="/settings?tab=permissions" class="flex items-center space-x-3 px-4 py-3 text-sm font-medium <?= $tab === 'permissions' ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' ?>">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 <span><?= __('Permissions') ?></span>
@@ -53,6 +57,8 @@
             <?php require base_path('www/Views/settings/partials/notifications.php'); ?>
         <?php elseif ($tab === 'messenger'): ?>
             <?php require base_path('www/Views/settings/partials/messenger.php'); ?>
+        <?php elseif ($tab === 'guest_chats'): ?>
+            <?php require base_path('www/Views/settings/partials/guest_chats.php'); ?>
         <?php elseif ($tab === 'permissions'): ?>
             <?php require base_path('www/Views/settings/partials/permissions.php'); ?>
         <?php elseif ($tab === 'backup'): ?>
