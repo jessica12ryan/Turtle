@@ -48,10 +48,11 @@ INSERT IGNORE INTO payments (property_tenant_id, amount, payment_date, payment_m
 (4, 2100.00, '2025-06-01', 'e-transfer', '2025-06-maple', 'June rent', 6, NOW());
 
 -- Leases
-INSERT IGNORE INTO leases (id, property_id, tenant_id, title, start_date, end_date, rent_amount, created_at, updated_at) VALUES
-(1, 1, 4, 'Lease Agreement - Wellington', '2025-01-01', '2025-12-31', 2200.00, NOW(), NOW()),
-(2, 2, 5, 'Lease Contract - King Street Lofts', '2025-03-01', '2026-02-28', 1850.00, NOW(), NOW()),
-(3, 3, 7, 'Rental Agreement - Harbourfront', '2025-02-15', '2026-02-14', 2500.00, NOW(), NOW());
+-- Lease dates live in property_tenant; leases store the document metadata.
+INSERT IGNORE INTO leases (id, property_id, tenant_id, title, document_type, description, uploaded_by, created_at, updated_at) VALUES
+(1, 1, 4, 'Lease Agreement - Wellington', 'lease', 'Fixed term 2025-01-01 to 2025-12-31', 1, NOW(), NOW()),
+(2, 2, 5, 'Lease Contract - King Street Lofts', 'lease', 'Fixed term 2025-03-01 to 2026-02-28', 1, NOW(), NOW()),
+(3, 3, 7, 'Rental Agreement - Harbourfront', 'lease', 'Fixed term 2025-02-15 to 2026-02-14', 1, NOW(), NOW());
 
 -- Tickets (mix of statuses and priorities)
 INSERT IGNORE INTO tickets (id, property_id, tenant_id, subject, description, category, status, priority, assigned_to) VALUES

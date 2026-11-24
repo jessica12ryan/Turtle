@@ -104,21 +104,9 @@ class SetupController
             if (!empty($_POST['load_sample_data'])) {
                 $seedFile = base_path('database/seed.sql');
                 if (file_exists($seedFile)) {
-                    $pdo = \App\Core\Database::instance()->getConnection();
-                    $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
-                    $raw = file_get_contents($seedFile);
-                    $raw = preg_replace('/^-- .*/m', '', $raw);
-                    $statements = explode(';', $raw);
-                    foreach ($statements as $stmt) {
-                        $stmt = trim($stmt);
-                        if ($stmt !== '') {
-                            try {
-                                $pdo->exec($stmt);
-                            } catch (\Throwable $e) {
-                                \App\Core\Logger::error('Seed data exec failed: ' . $e->getMessage());
-                            }
-                        }
-                    }
+                    // Quote-aware splitting: semicolons inside sample text must
+                    // not break statements. A failure aborts setup loudly.
+                    \App\Core\Database::executeSql((string)file_get_contents($seedFile));
                 }
             }
 
@@ -286,19 +274,8 @@ class SetupController
             }
             $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
 
-            // Execute SQL
-            $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, 1);
-            $statements = explode(";\n", $sqlContent);
-            foreach ($statements as $stmt) {
-                $stmt = trim($stmt);
-                if ($stmt !== '') {
-                    try {
-                        $pdo->exec($stmt);
-                    } catch (\Throwable $e) {
-                        \App\Core\Logger::error('Restore SQL exec failed: ' . $e->getMessage());
-                    }
-                }
-            }
+            // Quote-aware splitting; abort on the first failing statement.
+            \App\Core\Database::executeSql($sqlContent);
         } catch (\Throwable $e) {
             $zip->close();
             unlink($destPath);

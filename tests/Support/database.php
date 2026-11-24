@@ -35,12 +35,8 @@ function turtle_test_database(string $database = 'turtle_test'): \PDO
     );
 
     $schema = (string) file_get_contents(base_path('database/schema.sql'));
-    $schema = preg_replace('/^-- .*/m', '', $schema) ?? $schema;
-    foreach (explode(';', $schema) as $statement) {
-        $statement = trim($statement);
-        if ($statement !== '') {
-            $pdo->exec($statement);
-        }
+    foreach (\App\Core\Database::splitSql($schema) as $statement) {
+        $pdo->exec($statement);
     }
 
     $reflection = new \ReflectionClass(\App\Core\Database::class);

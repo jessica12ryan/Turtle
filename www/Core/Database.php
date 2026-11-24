@@ -132,16 +132,15 @@ class Database
             $next = $i + 1 < $length ? $sql[$i + 1] : '';
 
             if ($lineComment) {
-                $current .= $char;
+                // Drop comment text so it never becomes part of a statement.
                 if ($char === "\n") {
+                    $current .= "\n";
                     $lineComment = false;
                 }
                 continue;
             }
             if ($blockComment) {
-                $current .= $char;
                 if ($char === '*' && $next === '/') {
-                    $current .= $next;
                     $i++;
                     $blockComment = false;
                 }
@@ -165,17 +164,16 @@ class Database
 
             if ($char === '-' && $next === '-' && ($i + 2 >= $length || ctype_space($sql[$i + 2]))) {
                 $lineComment = true;
-                $current .= $char;
+                $i++;
                 continue;
             }
             if ($char === '#') {
                 $lineComment = true;
-                $current .= $char;
                 continue;
             }
             if ($char === '/' && $next === '*') {
                 $blockComment = true;
-                $current .= $char;
+                $i++;
                 continue;
             }
             if ($char === "'" || $char === '"' || $char === '`') {
@@ -209,7 +207,11 @@ class Database
             if (str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#')) {
                 continue;
             }
-            self::instance()->pdo->exec($statement);
+            // query() + closeCursor() also consumes result sets from stray
+            // SELECTs, so the connection is never left with an unbuffered
+            // statement active (which would break the next query).
+            $result = self::instance()->pdo->query($statement);
+            $result->closeCursor();
         }
     }
 

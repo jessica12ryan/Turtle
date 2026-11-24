@@ -141,7 +141,9 @@ CREATE TABLE IF NOT EXISTS tickets (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
     FOREIGN KEY (tenant_id) REFERENCES users(id),
-    FOREIGN KEY (assigned_to) REFERENCES users(id)
+    FOREIGN KEY (assigned_to) REFERENCES users(id),
+    CONSTRAINT chk_tickets_status CHECK (status IN ('open','in_progress','awaiting_parts','awaiting_contractor','resolved','closed')),
+    CONSTRAINT chk_tickets_priority CHECK (priority IN ('low','medium','high','emergency'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS ticket_comments (
@@ -181,12 +183,12 @@ CREATE TABLE IF NOT EXISTS documents (
     original_name VARCHAR(255) NOT NULL,
     size INT DEFAULT NULL,
     mime_type VARCHAR(100) DEFAULT NULL,
-    uploaded_by INT NOT NULL,
+    uploaded_by INT NULL,
     archived_at TIMESTAMP NULL DEFAULT NULL,
     archived_batch VARCHAR(32) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (uploaded_by) REFERENCES users(id),
+    FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_documentable (documentable_type, documentable_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -366,7 +368,8 @@ CREATE TABLE IF NOT EXISTS tenant_applications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_status (status),
-    INDEX idx_created (created_at)
+    INDEX idx_created (created_at),
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- activity logs
