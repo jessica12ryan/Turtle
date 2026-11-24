@@ -20,7 +20,7 @@
             </span>
         </div>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-            <?= __('Submitted') ?>: <?= date('F j, Y g:i A', strtotime($application['created_at'])) ?>
+            <?= __('Submitted') ?>: <?= h(display_time($application['created_at'], 'F j, Y g:i A')) ?>
         </div>
     </div>
     <div class="text-sm text-gray-600 dark:text-gray-400">

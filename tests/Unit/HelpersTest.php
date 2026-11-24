@@ -116,6 +116,19 @@ final class HelpersTest extends TestCase
         self::assertSame('', display_time(null));
     }
 
+    public function testDisplayTimeConvertsUtcToConfiguredTimezone(): void
+    {
+        $original = date_default_timezone_get();
+        try {
+            date_default_timezone_set('America/New_York');
+            self::assertSame('Dec 31, 2019 7:00 PM', display_time('2020-01-01 00:00:00', 'M j, Y g:i A'));
+            date_default_timezone_set('Asia/Tokyo');
+            self::assertSame('Jan 1, 2020 9:00 AM', display_time('2020-01-01 00:00:00', 'M j, Y g:i A'));
+        } finally {
+            date_default_timezone_set($original);
+        }
+    }
+
     public function testAvatarUrl(): void
     {
         self::assertSame('/users/7/avatar', avatar_url(['id' => 7, 'avatar_path' => 'a.png']));
