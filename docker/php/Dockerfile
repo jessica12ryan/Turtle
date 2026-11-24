@@ -1,9 +1,12 @@
-FROM php:8.5-apache
+# Digests resolved 2026-11-24; update deliberately via Dependabot.
+FROM composer:2@sha256:cd3a90dc5624c59a2f9ddf80dad08569f06416db31de519024f249d63bca554b AS composer
+
+FROM php:8.5-apache@sha256:fcf1877806085ea8ceec1072f93c1fed4df701f5da21ff5c976c3c362e4b7859
 
 # Composer is used to install the dev dependencies (PHPUnit) when running the
 # test suites inside this image. Keep it in the image so local, AI and CI runs
 # all use the exact same PHP version and extensions as the app.
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update && apt-get install -y \
     libpng-dev \

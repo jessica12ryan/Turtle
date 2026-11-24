@@ -197,9 +197,9 @@ class SetupController
     {
         // This endpoint exists for restoring a backup on a fresh install,
         // where there is no account to log in with yet. Once an admin exists it
-        // must be disabled entirely: the restore drops every table, executes
-        // SQL from the archive and replaces .env. Admins use Settings restore
-        // instead, which never touches .env.
+        // must be disabled entirely: the restore drops every table and executes
+        // SQL from the archive. It never writes .env — archives containing one
+        // are rejected. Admins use Settings restore for the same reason.
         $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
         if ($admin) {
             http_response_code(403);

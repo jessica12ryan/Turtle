@@ -18,7 +18,8 @@ services:
       - turtle
 
   mysql:
-    image: mysql:8.0
+    # mysql 8.0 — digest resolved 2026-11-24; update deliberately via Dependabot
+    image: mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
     restart: unless-stopped
     # Keep the error log in the data volume (also mounted read-only into the
     # app) instead of only streaming it to container stdout.
@@ -40,7 +41,8 @@ services:
       - turtle
 
   mailpit:
-    image: axllent/mailpit:latest
+    # Mailpit latest — digest resolved 2026-11-24 (matches the HA add-on's pinned release family)
+    image: axllent/mailpit@sha256:23a2ef85bc50853ab3093645d1d64679afd8887e89da5e48a88940c172591a4e
     restart: unless-stopped
     ports:
       - "127.0.0.1:1025:1025"   # SMTP - loopback only; the app reaches it over the Compose network

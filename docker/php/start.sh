@@ -15,17 +15,32 @@ if [ -f .env ]; then
     done
 fi
 
-# Wait for MySQL
-echo ">>> Waiting for MySQL..."
-until DB_HOST="${DB_HOST:-mysql}" DB_PORT="${DB_PORT:-3306}" \
-      DB_DATABASE="${DB_DATABASE:-turtle}" DB_USERNAME="${DB_USERNAME:-turtle}" \
-      DB_PASSWORD="${DB_PASSWORD:-turtle}" DB_SOCKET="${DB_SOCKET:-}" php -r '
-    $socket = (string) getenv("DB_SOCKET");
-    $dsn = $socket !== ""
-        ? "mysql:unix_socket={$socket};dbname=" . getenv("DB_DATABASE")
-        : "mysql:host=" . getenv("DB_HOST") . ";port=" . getenv("DB_PORT") . ";dbname=" . getenv("DB_DATABASE");
-    new PDO($dsn, getenv("DB_USERNAME"), getenv("DB_PASSWORD"));
-' 2>/dev/null; do
+# Wait for MySQL, but never forever: a misconfigured DB must fail loudly so
+# Compose/CI sees an unhealthy container instead of a silent, idle app.
+DB_WAIT_SECONDS="${DB_WAIT_SECONDS:-120}"
+if [ -n "${DB_SOCKET:-}" ]; then
+    DB_TARGET="socket ${DB_SOCKET}"
+else
+    DB_TARGET="${DB_HOST:-mysql}:${DB_PORT:-3306}"
+fi
+echo ">>> Waiting for MySQL at ${DB_TARGET} (timeout ${DB_WAIT_SECONDS}s)..."
+DB_DEADLINE=$(( $(date +%s) + DB_WAIT_SECONDS ))
+while true; do
+    if DB_HOST="${DB_HOST:-mysql}" DB_PORT="${DB_PORT:-3306}" \
+          DB_DATABASE="${DB_DATABASE:-turtle}" DB_USERNAME="${DB_USERNAME:-turtle}" \
+          DB_PASSWORD="${DB_PASSWORD:-turtle}" DB_SOCKET="${DB_SOCKET:-}" php -r '
+        $socket = (string) getenv("DB_SOCKET");
+        $dsn = $socket !== ""
+            ? "mysql:unix_socket={$socket};dbname=" . getenv("DB_DATABASE")
+            : "mysql:host=" . getenv("DB_HOST") . ";port=" . getenv("DB_PORT") . ";dbname=" . getenv("DB_DATABASE");
+        new PDO($dsn, getenv("DB_USERNAME"), getenv("DB_PASSWORD"));
+    ' >/dev/null 2>&1; then
+        break
+    fi
+    if [ "$(date +%s)" -ge "$DB_DEADLINE" ]; then
+        echo ">>> MySQL at ${DB_TARGET} did not become available within ${DB_WAIT_SECONDS}s. Check DB_* configuration and database logs." >&2
+        exit 1
+    fi
     sleep 1
 done
 
