@@ -29,22 +29,44 @@ function __(string $text, array $replace = []): string
     return $replace ? strtr($translated, $replace) : $translated;
 }
 
+/**
+ * Read a setting with a request-scoped cache only.
+ *
+ * Values are never stored in $_SESSION: that duplicated identical settings
+ * into every anonymous visitor's session and kept them stale for up to five
+ * minutes after an admin changed them. The $ttl argument is kept for callers
+ * that pass it, but the cache now lives for a single request only.
+ */
 function getCachedSetting(string $key, int $ttl = 300): ?string
 {
-    $cacheKey = '_setting_cache_' . $key;
-    $expiryKey = $cacheKey . '_expiry';
-    if (isset($_SESSION[$cacheKey]) && isset($_SESSION[$expiryKey]) && $_SESSION[$expiryKey] > time()) {
-        return $_SESSION[$cacheKey];
+    if (!isset($GLOBALS['turtle_setting_cache']) || !is_array($GLOBALS['turtle_setting_cache'])) {
+        $GLOBALS['turtle_setting_cache'] = [];
     }
+    if (array_key_exists($key, $GLOBALS['turtle_setting_cache'])) {
+        return $GLOBALS['turtle_setting_cache'][$key];
+    }
+
     try {
         $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$key]);
-        $val = $row['value'] ?? null;
-        $_SESSION[$cacheKey] = $val;
-        $_SESSION[$expiryKey] = time() + $ttl;
-        return $val;
+        $value = ($row && array_key_exists('value', $row) && $row['value'] !== null)
+            ? (string)$row['value']
+            : null;
     } catch (\Throwable $e) {
-        return null;
+        $value = null;
     }
+
+    $GLOBALS['turtle_setting_cache'][$key] = $value;
+    return $value;
+}
+
+/** Drop cached settings, optionally just one key (useful after a settings write). */
+function clearSettingCache(?string $key = null): void
+{
+    if ($key === null) {
+        unset($GLOBALS['turtle_setting_cache']);
+        return;
+    }
+    unset($GLOBALS['turtle_setting_cache'][$key]);
 }
 
 function current_language(): string
