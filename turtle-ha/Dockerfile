@@ -5,6 +5,7 @@ FROM ${BUILD_FROM}
 RUN apk add --no-cache \
     apache2 \
     apache2-ctl \
+    apache2-proxy \
     apache2-utils \
     mariadb \
     mariadb-client \
@@ -53,9 +54,12 @@ RUN MPVER="v1.30.2" \
 # php82 -> php alias for scripts that call `php`
 RUN ln -sf /usr/bin/php82 /usr/bin/php
 
-# Clone Turtle stable branch at build time; in-app updater handles future updates via git pull
+# Clone Turtle stable branch at build time; in-app updater handles future updates via git pull.
+# The web group owns the code; only the dirs the updater/app write are group writable.
 RUN git clone --depth=1 --branch stable https://github.com/jessica12ryan/Turtle.git /var/www/turtle \
-    && chmod -R a+w /var/www/turtle
+    && chown -R root:apache /var/www/turtle \
+    && chmod -R u=rwX,g=rX,o= /var/www/turtle \
+    && chmod -R u=rwX,g=rwX,o= /var/www/turtle/.git /var/www/turtle/storage /var/www/turtle/www/assets/uploads
 
 # Apache: enable rewrite
 RUN sed -i 's/#LoadModule rewrite_module/LoadModule rewrite_module/' /etc/apache2/httpd.conf \

@@ -13,7 +13,7 @@ ports:
   8025/tcp: 8025
 ports_description:
   80/tcp: Turtle Dev web UI
-  8025/tcp: Mailpit web UI
+  8025/tcp: Mailpit web UI (private networks only)
 ingress: true
 ingress_port: 80
 panel_icon: mdi:turtle

@@ -137,31 +137,100 @@ class Mailer
         return $_ENV[$envKey] ?? $default;
     }
 
-    public static function send(string $to, string $subject, string $body): bool
+    /**
+     * Remove characters that can terminate or inject SMTP headers.
+     *
+     * @internal Exposed for unit tests.
+     */
+    public static function sanitizeHeader(string $value): string
+    {
+        $value = preg_replace('/[\r\n\0]+/', ' ', $value) ?? '';
+        $value = preg_replace('/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]+/', ' ', $value) ?? '';
+        $value = preg_replace('/[ \t]+/', ' ', $value) ?? '';
+        return trim($value);
+    }
+
+    /**
+     * Return a validated bare email address, or null when it is not usable.
+     *
+     * @internal Exposed for unit tests.
+     */
+    public static function sanitizeAddress(string $value): ?string
+    {
+        $value = self::sanitizeHeader($value);
+        if ($value === '' || strlen($value) > 254) {
+            return null;
+        }
+        return filter_var($value, FILTER_VALIDATE_EMAIL) !== false ? $value : null;
+    }
+
+    /**
+     * RFC 2047 encode a header value so non-ASCII text survives safely.
+     *
+     * @internal Exposed for unit tests.
+     */
+    public static function encodeHeader(string $value): string
+    {
+        $value = self::sanitizeHeader($value);
+        if ($value === '') {
+            return '';
+        }
+        if (function_exists('mb_encode_mimeheader')) {
+            return mb_encode_mimeheader($value, 'UTF-8', 'B', "\r\n", 0);
+        }
+        return '=?UTF-8?B?' . base64_encode($value) . '?=';
+    }
+
+    /**
+     * Escape a value for inclusion in the HTML body of an email.
+     *
+     * @internal Exposed for unit tests.
+     */
+    public static function escapeHtml(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    /**
+     * Apply SMTP dot-stuffing so message lines beginning with "." survive DATA.
+     *
+     * @internal Exposed for unit tests.
+     */
+    public static function dotStuff(string $data): string
+    {
+        return preg_replace('/^\./m', '..', $data) ?? $data;
+    }
+
+    private static function messageId(string $fromAddress): string
+    {
+        $domain = substr(strrchr($fromAddress, '@') ?: '', 1) ?: 'localhost';
+        return '<' . bin2hex(random_bytes(8)) . '.' . time() . '@' . $domain . '>';
+    }
+
+    private static function sanitizeActionUrl(string $url): string
+    {
+        $url = self::sanitizeHeader($url);
+        if ($url === '') {
+            return '';
+        }
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return '';
+        }
+        return self::escapeHtml($url);
+    }
+
+    /**
+     * Open an SMTP connection and deliver a pre-built message.
+     */
+    private static function deliver(string $to, string $fromAddress, string $headers, string $body): bool
     {
         $host = self::getConfig('mail_host', 'mailpit');
         $port = (int)(self::getConfig('mail_port', '1025'));
         $username = self::getConfig('mail_username', '') ?: null;
         $password = self::getConfig('mail_password', '') ?: null;
-        $fromAddress = self::getConfig('mail_from_address', 'noreply@turtleapp.com');
-        $fromName = self::getConfig('mail_from_name', 'Turtle');
 
-        $html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>{$subject}</title></head><body style=\"font-family: Arial, sans-serif; padding: 20px;\">{$body}</body></html>";
-
-        $mailData = [
-            'From' => "{$fromName} <{$fromAddress}>",
-            'To' => $to,
-            'Subject' => $subject,
-            'MIME-Version' => '1.0',
-            'Content-Type' => 'text/html; charset=UTF-8',
-            'Message-ID' => '<' . time() . '.' . uniqid() . '@turtleapp.com>',
-        ];
-
-        $mailStr = '';
-        foreach ($mailData as $key => $value) {
-            $mailStr .= "{$key}: {$value}\r\n";
-        }
-        $mailStr .= "\r\n{$html}";
+        $mailStr = $headers . "\r\n\r\n" . $body;
 
         $prefix = ($port === 465) ? 'ssl://' : '';
         $errno = 0;
@@ -197,12 +266,12 @@ class Mailer
             fclose($socket);
             return false;
         }
-        if (!self::smtpCommand($socket, "DATA", '354', 'DATA')) {
+        if (!self::smtpCommand($socket, 'DATA', '354', 'DATA')) {
             fclose($socket);
             return false;
         }
 
-        fwrite($socket, $mailStr . "\r\n.\r\n");
+        fwrite($socket, self::dotStuff($mailStr) . "\r\n.\r\n");
         $response = '';
         while (true) {
             $line = fgets($socket, 512);
@@ -224,7 +293,41 @@ class Mailer
         fwrite($socket, "QUIT\r\n");
         fclose($socket);
 
-        \log_activity('notifications.email_sent', "Email sent to {$to} — {$subject}");
+        return true;
+    }
+
+    public static function send(string $to, string $subject, string $body): bool
+    {
+        $to = self::sanitizeAddress($to) ?? '';
+        $fromAddress = self::sanitizeAddress(self::getConfig('mail_from_address', 'noreply@turtleapp.com')) ?? '';
+        if ($to === '' || $fromAddress === '') {
+            \App\Core\Logger::error('Mailer: Refusing to send email with an invalid recipient or sender address.');
+            return false;
+        }
+
+        $fromName = self::encodeHeader(self::getConfig('mail_from_name', 'Turtle'));
+        $encodedSubject = self::encodeHeader($subject);
+        $logSubject = self::sanitizeHeader($subject);
+        $safeTitle = self::escapeHtml($logSubject);
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' . $safeTitle
+            . '</title></head><body style="font-family: Arial, sans-serif; padding: 20px;">'
+            . $body . '</body></html>';
+
+        $headers = implode("\r\n", [
+            'From: ' . ($fromName !== '' ? $fromName . ' ' : '') . '<' . $fromAddress . '>',
+            'To: <' . $to . '>',
+            'Subject: ' . $encodedSubject,
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=UTF-8',
+            'Message-ID: ' . self::messageId($fromAddress),
+        ]);
+
+        if (!self::deliver($to, $fromAddress, $headers, $html)) {
+            return false;
+        }
+
+        \log_activity('notifications.email_sent', "Email sent to {$to} — {$logSubject}");
         return true;
     }
 
@@ -232,7 +335,13 @@ class Mailer
     {
         $actionHtml = '';
         if ($actionUrl && $actionText) {
-            $actionHtml = "<p style=\"text-align: center; margin: 30px 0;\"><a href=\"{$actionUrl}\" style=\"display: inline-block; padding: 12px 24px; background-color: #0d9488; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;\">{$actionText}</a></p>";
+            $safeUrl = self::sanitizeActionUrl($actionUrl);
+            if ($safeUrl !== '') {
+                $actionHtml = '<p style="text-align: center; margin: 30px 0;"><a href="' . $safeUrl
+                    . '" style="display: inline-block; padding: 12px 24px; background-color: #0d9488;'
+                    . ' color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold;">'
+                    . self::escapeHtml($actionText) . '</a></p>';
+            }
         }
 
         $logoHtml = '<h1 style="color: white; margin: 0; font-size: 24px;">Turtle</h1>';
@@ -240,7 +349,7 @@ class Mailer
             $logo = \site_logo();
             if ($logo) {
                 $logoUrl = \site_url() . $logo;
-                $logoHtml = '<img src="' . $logoUrl . '" alt="Logo" style="max-height: 50px; width: auto;">';
+                $logoHtml = '<img src="' . self::escapeHtml($logoUrl) . '" alt="Logo" style="max-height: 50px; width: auto;">';
             }
         } catch (\Throwable $e) {
         }
@@ -268,7 +377,17 @@ class Mailer
 
     public static function sendWithAttachments(string $to, string $subject, string $htmlBody, array $attachments): bool
     {
-        $boundary = '----=' . md5(uniqid());
+        $to = self::sanitizeAddress($to) ?? '';
+        $fromAddress = self::sanitizeAddress(self::getConfig('mail_from_address', 'noreply@turtleapp.com')) ?? '';
+        if ($to === '' || $fromAddress === '') {
+            \App\Core\Logger::error('Mailer: Refusing to send email with an invalid recipient or sender address.');
+            return false;
+        }
+
+        $fromName = self::encodeHeader(self::getConfig('mail_from_name', 'Turtle'));
+        $encodedSubject = self::encodeHeader($subject);
+        $logSubject = self::sanitizeHeader($subject);
+        $boundary = '----=' . md5(uniqid('', true));
 
         $body = "--{$boundary}\r\n"
             . "Content-Type: text/html; charset=UTF-8\r\n"
@@ -308,84 +427,20 @@ class Mailer
 
         $body .= "--{$boundary}--\r\n";
 
-        $host = self::getConfig('mail_host', 'mailpit');
-        $port = (int)(self::getConfig('mail_port', '1025'));
-        $username = self::getConfig('mail_username', '') ?: null;
-        $password = self::getConfig('mail_password', '') ?: null;
-        $fromAddress = self::getConfig('mail_from_address', 'noreply@turtleapp.com');
-        $fromName = self::getConfig('mail_from_name', 'Turtle');
+        $headers = implode("\r\n", [
+            'From: ' . ($fromName !== '' ? $fromName . ' ' : '') . '<' . $fromAddress . '>',
+            'To: <' . $to . '>',
+            'Subject: ' . $encodedSubject,
+            'MIME-Version: 1.0',
+            'Content-Type: multipart/mixed; boundary="' . $boundary . '"',
+            'Message-ID: ' . self::messageId($fromAddress),
+        ]);
 
-        $headers = "From: {$fromName} <{$fromAddress}>\r\n"
-            . "To: {$to}\r\n"
-            . "Subject: {$subject}\r\n"
-            . "MIME-Version: 1.0\r\n"
-            . "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n"
-            . "Message-ID: <" . time() . '.' . uniqid() . "@turtleapp.com>\r\n";
-
-        $mailStr = $headers . "\r\n" . $body;
-
-        $prefix = ($port === 465) ? 'ssl://' : '';
-        $errno = 0;
-        $errstr = '';
-        $socket = @fsockopen($prefix . $host, $port, $errno, $errstr, 10);
-        if (!$socket) {
-            \App\Core\Logger::error("Mailer: Failed to connect to {$prefix}{$host}:{$port} — {$errstr}");
+        if (!self::deliver($to, $fromAddress, $headers, $body)) {
             return false;
         }
 
-        stream_set_timeout($socket, 10);
-
-        if (!self::readResponse($socket, '220', 'Connection greeting')) {
-            fclose($socket);
-            return false;
-        }
-
-        if (!self::smtpCommand($socket, 'EHLO turtle', '250', 'EHLO')) {
-            fclose($socket);
-            return false;
-        }
-
-        if (!self::authenticate($socket, $port, $username, $password)) {
-            fclose($socket);
-            return false;
-        }
-
-        if (!self::smtpCommand($socket, "MAIL FROM:<{$fromAddress}>", '250', 'MAIL FROM')) {
-            fclose($socket);
-            return false;
-        }
-        if (!self::smtpCommand($socket, "RCPT TO:<{$to}>", '250', 'RCPT TO')) {
-            fclose($socket);
-            return false;
-        }
-        if (!self::smtpCommand($socket, "DATA", '354', 'DATA')) {
-            fclose($socket);
-            return false;
-        }
-
-        fwrite($socket, $mailStr . "\r\n.\r\n");
-        $response = '';
-        while (true) {
-            $line = fgets($socket, 512);
-            if ($line === false) {
-                break;
-            }
-            $response .= $line;
-            if (isset($line[3]) && $line[3] === ' ') {
-                break;
-            }
-        }
-        $code = substr($response, 0, 3);
-        if ($code !== '250') {
-            \App\Core\Logger::error("Mailer: Message delivery failed — got {$code}. Response: " . trim($response));
-            fclose($socket);
-            return false;
-        }
-
-        fwrite($socket, "QUIT\r\n");
-        fclose($socket);
-
-        \log_activity('notifications.email_sent', "Email sent to {$to} — {$subject}");
+        \log_activity('notifications.email_sent', "Email sent to {$to} — {$logSubject}");
         return true;
     }
 }

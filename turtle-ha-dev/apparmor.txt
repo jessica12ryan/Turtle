@@ -29,7 +29,12 @@ profile turtle_dev flags=(attach_disconnected,mediate_deleted) {
   /tmp/** rwk,
 
   /etc/s6-overlay/** rwix,
-  /var/www/turtle/** rw,
+  /etc/apache2/conf.d/** rwk,
+  /usr/lib/apache2/** mr,
+  /var/www/turtle/** r,
+  /var/www/turtle/.git/** rw,
+  /var/www/turtle/storage/** rw,
+  /var/www/turtle/www/assets/uploads/** rw,
   /data/** rw,
 
   /usr/sbin/httpd ix,

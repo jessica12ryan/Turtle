@@ -24,7 +24,7 @@ open http://localhost
 
 The first boot presents a setup wizard. Choose **New Installation** to configure the site and create your admin account.
 
-**Mailpit** (email testing): http://localhost:8025
+**Mailpit** (email testing): http://localhost:8025. The UI binds to loopback by default; set `MAILPIT_UI_BIND` to a host LAN IP in `.env` if you need same-subnet access, and add any DNS name you use to `MAILPIT_ALLOWED_HOSTS`. Never bind Mailpit to `0.0.0.0`.
 
 ### Home Assistant App
 

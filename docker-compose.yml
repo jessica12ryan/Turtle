@@ -43,8 +43,14 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:1025:1025"   # SMTP - localhost/127.0.0.1 only
-      - "0.0.0.0:8025:8025"     # Web UI - local subnet (LAN) + localhost/127.0.0.1 (WAN blocked by router NAT)
+      - "127.0.0.1:1025:1025"   # SMTP - loopback only; the app reaches it over the Compose network
+      # Web UI defaults to loopback. Set MAILPIT_UI_BIND to a host LAN IP to
+      # allow same-subnet access. Never set this to 0.0.0.0.
+      - "${MAILPIT_UI_BIND:-127.0.0.1}:8025:8025"
+    environment:
+      # DNS-rebinding protection for named hosts. Loopback names, raw IPs and
+      # the Compose DNS name below are always accepted by Mailpit.
+      - MP_ALLOWED_HOSTS=${MAILPIT_ALLOWED_HOSTS:-mailpit}
     networks:
       - turtle
 

@@ -25,7 +25,10 @@ jobs:
         run: composer install --no-interaction --no-progress
 
       - name: PHP syntax
-        run: find www tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: |
+          find www tests -name '*.php' -print0 | xargs -0 -n1 php -l
+          php -l turtle-ha/rootfs/usr/bin/sync-mail-settings.php
+          php -l turtle-ha-dev/rootfs/usr/bin/sync-mail-settings.php
 
       - name: PHPStan
         run: composer analyse

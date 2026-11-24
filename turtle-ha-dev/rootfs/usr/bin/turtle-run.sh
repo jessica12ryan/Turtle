@@ -1,6 +1,9 @@
 #!/usr/bin/env bashio
 set -e
 
+# New files (uploads, git pull, logs) should stay group-writable.
+umask 0002
+
 TURTLE_DIR=/var/www/turtle
 DATA_DIR=/data
 
@@ -19,6 +22,18 @@ MAIL_OAUTH_REFRESH_TOKEN=$(bashio::config 'mail_oauth_refresh_token')
 MAIL_OAUTH_EMAIL=$(bashio::config 'mail_oauth_email')
 MAILPIT_PORT=$(bashio::config 'mailpit_port')
 MAILPIT_UI_PORT=$(bashio::config 'mailpit_ui_port')
+
+# Track whether a value came from the operator or from the add-on default. The
+# sync script only overwrites UI-configured mail settings for explicit values.
+MAIL_HOST_EXPLICIT=0
+[ -n "${MAIL_HOST}" ] && MAIL_HOST_EXPLICIT=1
+# The configured port only has meaning when a remote host was configured;
+# otherwise it is replaced with the bundled Mailpit port below.
+MAIL_PORT_EXPLICIT="${MAIL_HOST_EXPLICIT}"
+MAIL_FROM_EXPLICIT=0
+if [ -n "${MAIL_FROM}" ] && [ "${MAIL_FROM}" != "noreply@turtle.local" ]; then
+    MAIL_FROM_EXPLICIT=1
+fi
 
 if [ -z "$APP_URL" ]; then
     APP_URL="http://homeassistant.local:80"
@@ -91,7 +106,11 @@ for _mp_exe in /proc/[0-9]*/exe; do
 done
 unset _mp_exe _mp_pid
 sleep 1
-# Validate the configured UI port (default preserves historical behaviour).
+# Mailpit itself only listens on loopback. Apache publishes the UI on the
+# add-on's UI port and restricts it to loopback/private networks.
+MAILPIT_UI_INTERNAL=18025
+
+# Validate the configured public UI port (default preserves historical behaviour).
 case "${MAILPIT_UI_PORT}" in
     ''|*[!0-9]*|??????*)
         bashio::log.warning "Invalid mailpit_ui_port — falling back to 8025."
@@ -102,9 +121,13 @@ if [ "${MAILPIT_UI_PORT}" -lt 1 ] || [ "${MAILPIT_UI_PORT}" -gt 65535 ]; then
     bashio::log.warning "mailpit_ui_port out of range — falling back to 8025."
     MAILPIT_UI_PORT=8025
 fi
-# Pick a free UI port: configured port, then the next two. A busy UI port is
-# non-fatal — SMTP delivery must still work, so as a last resort bind the UI
-# to an OS-assigned ephemeral port (effectively UI-unavailable, SMTP intact).
+if [ "${MAILPIT_UI_PORT}" = "80" ] || [ "${MAILPIT_UI_PORT}" = "${MAILPIT_PORT}" ]; then
+    bashio::log.warning "mailpit_ui_port conflicts with another Turtle port — falling back to 8025."
+    MAILPIT_UI_PORT=8025
+fi
+
+# Pick a free public port for Apache: configured port, then the next two. A busy
+# UI port is non-fatal — SMTP delivery must still work; only the UI is skipped.
 _port_busy() {
     php -r '$s = @fsockopen("127.0.0.1", (int) $argv[1], $e, $m, 1); if ($s) { fclose($s); exit(0); } exit(1);' "$1" 2>/dev/null
 }
@@ -123,21 +146,38 @@ while [ "${_mp_tries}" -lt 3 ]; do
 done
 bashio::log.info "Starting Mailpit on port ${MAILPIT_PORT}..."
 mkdir -p "${DATA_DIR}/mailpit"
-if [ -z "${MAILPIT_UI_ACTUAL}" ]; then
-    bashio::log.warning "No free Mailpit UI port near ${MAILPIT_UI_PORT} — starting SMTP-only (UI unavailable)."
-    # Port 0 asks the OS for a free ephemeral port; UI effectively unavailable.
-    /usr/local/bin/mailpit \
-        --smtp "127.0.0.1:${MAILPIT_PORT}" \
-        --listen "127.0.0.1:0" \
-        --database "${DATA_DIR}/mailpit/mailpit.db" &
+/usr/local/bin/mailpit \
+    --smtp "127.0.0.1:${MAILPIT_PORT}" \
+    --listen "127.0.0.1:${MAILPIT_UI_INTERNAL}" \
+    --database "${DATA_DIR}/mailpit/mailpit.db" &
+
+# Generate the Apache reverse proxy. Remove any stale vhost from a previous
+# boot so a changed port cannot leave a second Listen directive behind.
+# Prefix with zz- so Apache parses this after proxy.conf, which loads mod_proxy.
+MAILPIT_PROXY_CONF=/etc/apache2/conf.d/zz-mailpit-ui.conf
+rm -f "${MAILPIT_PROXY_CONF}"
+if [ -n "${MAILPIT_UI_ACTUAL}" ]; then
+    cat > "${MAILPIT_PROXY_CONF}" <<EOF
+Listen ${MAILPIT_UI_ACTUAL}
+<VirtualHost *:${MAILPIT_UI_ACTUAL}>
+    ServerName mailpit.local
+    ProxyPreserveHost On
+    ProxyRequests Off
+    ProxyPass / http://127.0.0.1:${MAILPIT_UI_INTERNAL}/ retry=0
+    ProxyPassReverse / http://127.0.0.1:${MAILPIT_UI_INTERNAL}/
+    <Location />
+        Require ip 127.0.0.1 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+    </Location>
+    ErrorLog /data/logs/mailpit_ui_error.log
+    CustomLog /data/logs/mailpit_ui_access.log combined
+</VirtualHost>
+EOF
+    chmod 644 "${MAILPIT_PROXY_CONF}"
 else
-    /usr/local/bin/mailpit \
-        --smtp "127.0.0.1:${MAILPIT_PORT}" \
-        --listen "0.0.0.0:${MAILPIT_UI_ACTUAL}" \
-        --database "${DATA_DIR}/mailpit/mailpit.db" &
+    bashio::log.warning "No free Mailpit UI port near ${MAILPIT_UI_PORT} — UI unavailable; SMTP still works."
 fi
 unset _mp_candidate _mp_tries
-bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :${MAILPIT_UI_ACTUAL:-unavailable})"
+bashio::log.info "Mailpit started (SMTP :${MAILPIT_PORT}, UI :${MAILPIT_UI_ACTUAL:-unavailable}, private networks only)"
 
 # ── Derive mail defaults ───────────────────────────────────────────────────────
 if [ -z "$MAIL_HOST" ]; then
@@ -205,12 +245,41 @@ set +a
 chmod 644 "${TURTLE_DIR}/.env"
 
 # ── Symlink persistent storage into app ───────────────────────────────────────
-rm -rf "${TURTLE_DIR}/storage/uploads"
-ln -sf "${DATA_DIR}/uploads"   "${TURTLE_DIR}/storage/uploads"
-rm -rf "${TURTLE_DIR}/storage/logs"
-ln -sf "${DATA_DIR}/logs"      "${TURTLE_DIR}/storage/logs"
-rm -rf "${TURTLE_DIR}/storage/framework"
-ln -sf "${DATA_DIR}/framework" "${TURTLE_DIR}/storage/framework"
+# Never delete a data directory. If a previous boot (or a restore) left a real
+# directory at a link path, migrate its contents into /data and keep a backup
+# instead of rm -rf'ing uploads/logs/framework.
+ensure_persistent_link() {
+    local target="$1" link="$2"
+    mkdir -p "${target}"
+
+    if [ -L "${link}" ]; then
+        [ "$(readlink "${link}")" = "${target}" ] && return 0
+        rm -f "${link}" # only the symlink
+    elif [ -e "${link}" ]; then
+        if [ ! -d "${link}" ]; then
+            bashio::log.warning "Unexpected file at ${link}; leaving it untouched."
+            return 1
+        fi
+        if [ -n "$(ls -A "${link}" 2>/dev/null)" ]; then
+            local backup="${link}.pre-symlink.$(date +%s)"
+            bashio::log.info "Migrating ${link} into ${target}..."
+            cp -a "${link}/." "${target}/" || {
+                bashio::log.error "Copy failed; keeping ${link} untouched."
+                return 1
+            }
+            mv "${link}" "${backup}"
+            bashio::log.info "Original preserved at ${backup}"
+        else
+            rmdir "${link}"
+        fi
+    fi
+
+    ln -sfn "${target}" "${link}"
+}
+
+ensure_persistent_link "${DATA_DIR}/uploads"   "${TURTLE_DIR}/storage/uploads"
+ensure_persistent_link "${DATA_DIR}/logs"      "${TURTLE_DIR}/storage/logs"
+ensure_persistent_link "${DATA_DIR}/framework" "${TURTLE_DIR}/storage/framework"
 
 # ── Run database schema directly (before patched migrate.sh) ──────────────────
 # Run schema.sql directly so errors are visible
@@ -249,44 +318,52 @@ mysql --socket=/tmp/mysql.sock -u root turtle -e "INSERT INTO settings (\`key\`,
     || bashio::log.warning "Setting update_channel default failed — continuing boot."
 
 # ── Sync mail settings to database ────────────────────────────────────────────
-# The Mailer reads DB first, so upsert the add-on config values
+# The Mailer reads DB first, so push add-on values into the DB. Values are passed
+# via the environment to a PHP helper that uses prepared statements — interpolating
+# secrets into a SQL heredoc breaks on quotes and allows SQL injection.
 bashio::log.info "Syncing mail settings to database..."
-# Guarded: mail sync is best-effort — the Mailer falls back to .env values.
-mysql --socket=/tmp/mysql.sock -u root turtle <<SQL || bashio::log.warning "Mail settings sync failed — continuing boot."
-INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_host', '${MAIL_HOST}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_HOST}';
-INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_port', '${MAIL_PORT}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PORT}';
-INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_username', '${MAIL_USER}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_USER}';
-INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_password', '${MAIL_PASS}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_PASS}';
-INSERT INTO settings (\`key\`, \`value\`) VALUES ('mail_from_address', '${MAIL_FROM}') ON DUPLICATE KEY UPDATE \`value\` = '${MAIL_FROM}';
-SQL
+export TURTLE_MAIL_HOST="${MAIL_HOST}"
+export TURTLE_MAIL_PORT="${MAIL_PORT}"
+export TURTLE_MAIL_USERNAME="${MAIL_USER}"
+export TURTLE_MAIL_PASSWORD="${MAIL_PASS}"
+export TURTLE_MAIL_FROM_ADDRESS="${MAIL_FROM}"
+export TURTLE_MAIL_HOST_EXPLICIT="${MAIL_HOST_EXPLICIT}"
+export TURTLE_MAIL_PORT_EXPLICIT="${MAIL_PORT_EXPLICIT}"
+export TURTLE_MAIL_FROM_EXPLICIT="${MAIL_FROM_EXPLICIT}"
+export TURTLE_MAIL_AUTH_MODE="${MAIL_AUTH_MODE}"
+export TURTLE_MAIL_OAUTH_CLIENT_ID="${MAIL_OAUTH_CLIENT_ID}"
+export TURTLE_MAIL_OAUTH_CLIENT_SECRET="${MAIL_OAUTH_CLIENT_SECRET}"
+export TURTLE_MAIL_OAUTH_REFRESH_TOKEN="${MAIL_OAUTH_REFRESH_TOKEN}"
+export TURTLE_MAIL_OAUTH_EMAIL="${MAIL_OAUTH_EMAIL}"
 
-# OAuth credentials are optional: only sync values explicitly set in the
-# add-on options, so a connection configured in the UI survives restarts.
-OAUTH_SYNC=""
-for oauth_pair in \
-    "mail_auth_mode|${MAIL_AUTH_MODE}" \
-    "mail_oauth_client_id|${MAIL_OAUTH_CLIENT_ID}" \
-    "mail_oauth_client_secret|${MAIL_OAUTH_CLIENT_SECRET}" \
-    "mail_oauth_refresh_token|${MAIL_OAUTH_REFRESH_TOKEN}" \
-    "mail_oauth_email|${MAIL_OAUTH_EMAIL}"; do
-    oauth_key=${oauth_pair%%|*}
-    oauth_value=${oauth_pair#*|}
-    [ -z "$oauth_value" ] && continue
-    oauth_value=$(printf '%s' "$oauth_value" | sed "s/'/''/g")
-    OAUTH_SYNC="${OAUTH_SYNC}INSERT INTO settings (\`key\`, \`value\`) VALUES ('${oauth_key}', '${oauth_value}') ON DUPLICATE KEY UPDATE \`value\` = '${oauth_value}';
-"
-done
-if [ -n "$OAUTH_SYNC" ]; then
-    printf '%s\n' "$OAUTH_SYNC" | mysql --socket=/tmp/mysql.sock -u root turtle \
-        || bashio::log.warning "OAuth mail settings sync failed — continuing boot."
+# Guarded: mail sync is best-effort — the Mailer falls back to .env values.
+if php /usr/bin/sync-mail-settings.php; then
+    bashio::log.info "Mail settings synced."
+else
+    bashio::log.warning "Mail settings sync failed — continuing boot."
 fi
+unset TURTLE_MAIL_PASSWORD TURTLE_MAIL_OAUTH_CLIENT_SECRET TURTLE_MAIL_OAUTH_REFRESH_TOKEN
 
 # ── Permissions ───────────────────────────────────────────────────────────────
-chmod -R 775 "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"
-# Least-privilege: only persistent data dirs and .git writable
-chown -R root:root "${TURTLE_DIR}" 2>/dev/null || true
-chmod 755 "${TURTLE_DIR}" 2>/dev/null || true
-chmod -R 775 "${TURTLE_DIR}/.git" "${TURTLE_DIR}/storage" "${TURTLE_DIR}/www/assets/uploads" 2>/dev/null || true
+# Least privilege: the code tree is readable by the web group, never world
+# writable. Only the directories the app/updater actually writes are group
+# writable; everything under /data that Apache touches is group-owned too.
+WEB_GROUP=$(id -gn apache 2>/dev/null || echo www-data)
+chown -R "root:${WEB_GROUP}" "${TURTLE_DIR}" 2>/dev/null || true
+chmod -R u=rwX,g=rX,o= "${TURTLE_DIR}" 2>/dev/null || true
+
+# The in-app updater (git pull), logs, and uploads need group write access.
+for writable in "${TURTLE_DIR}/.git" "${TURTLE_DIR}/storage" "${TURTLE_DIR}/www/assets/uploads"; do
+    [ -e "${writable}" ] || continue
+    chown -R "root:${WEB_GROUP}" "${writable}" 2>/dev/null || true
+    chmod -R u=rwX,g=rwX,o= "${writable}" 2>/dev/null || true
+done
+
+# Persistent data dirs are written by Apache (group apache), not just by root.
+for data_dir in "${DATA_DIR}/uploads" "${DATA_DIR}/logs" "${DATA_DIR}/framework"; do
+    chown -R "root:${WEB_GROUP}" "${data_dir}" 2>/dev/null || true
+    chmod -R u=rwX,g=rwX,o= "${data_dir}" 2>/dev/null || true
+done
 
 # ── Shutdown handler ──────────────────────────────────────────────────────────
 _cleanup() {

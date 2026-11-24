@@ -104,7 +104,7 @@ class ApplicationController
                 \App\Core\Mailer::sendTemplate(
                     (string) $user['email'],
                     __('New Application') . ': ' . $propertyName,
-                    'Hello ' . $user['name'] . ',',
+                    'Hello ' . h($user['name']) . ',',
                     __('A new tenancy application was submitted for') . ' <strong>' . h($propertyName) . '</strong>.',
                     $url,
                     __('View Application')

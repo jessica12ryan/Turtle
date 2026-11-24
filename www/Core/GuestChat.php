@@ -569,7 +569,7 @@ class GuestChat
                 Mailer::sendTemplate(
                     $user['email'],
                     $subject . $chat['property_name'],
-                    'Hello ' . $user['name'] . ',',
+                    'Hello ' . h($user['name']) . ',',
                     'A visitor (' . h($chat['guest_name']) . ', ' . h($chat['guest_email']) . ') sent a message about '
                         . '<strong>' . h($chat['property_name']) . '</strong>:<br><br>' . nl2br(h($snippet)),
                     \site_url() . '/guest-chats/' . $chat['id'],

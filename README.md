@@ -15,7 +15,9 @@ open http://localhost
 
 The first boot presents a setup wizard. Choose **New Installation** to configure site information or **Restore Backup** to upload a `.turtle` backup.
 
-**Email testing:** http://localhost:8025 (Mailpit)
+**Email testing:** http://localhost:8025 (Mailpit). The UI is bound to `127.0.0.1` by default. To open it from another device on the same LAN, set `MAILPIT_UI_BIND` to this host's LAN IP in `.env` (for example `MAILPIT_UI_BIND=192.168.1.10`) and recreate the container. Do **not** set it to `0.0.0.0` — that would expose the UI (and its API) beyond the local network. SMTP stays on loopback; the app reaches it over the Compose network. If you access Mailpit through a DNS name rather than an IP, add that name to `MAILPIT_ALLOWED_HOSTS` to preserve DNS-rebinding protection.
+
+The Home Assistant add-on publishes the same UI on port 8025, but only accepts connections from loopback and RFC 1918 private networks (`10/8`, `172.16/12`, `192.168/16`). All other source addresses receive HTTP 403.
 
 ### Home Assistant App
 
