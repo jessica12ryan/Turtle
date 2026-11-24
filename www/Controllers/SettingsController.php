@@ -19,7 +19,7 @@ class SettingsController
         $data = ['tab' => $tab];
 
         if ($tab === 'general') {
-            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_auth_mode', 'mail_oauth_client_id', 'mail_oauth_client_secret', 'mail_oauth_refresh_token', 'mail_oauth_email', 'timezone', 'ntp_server', 'site_name', 'site_url', 'logo_path', 'default_country', 'default_language', 'openai_api_key'];
+            $keys = ['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name', 'mail_auth_mode', 'mail_oauth_client_id', 'mail_oauth_client_secret', 'mail_oauth_refresh_token', 'mail_oauth_email', 'timezone', 'ntp_server', 'site_name', 'site_url', 'logo_path', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['mail'] = [];
             foreach ($rows as $row) {
@@ -444,6 +444,16 @@ class SettingsController
             );
         }
 
+        // Only the AI form posts openai_api_key; other General forms share this
+        // endpoint and must not silently turn the assistant off.
+        if (array_key_exists('openai_api_key', $_POST)) {
+            $aiEnabled = !empty($_POST['ai_assistant_enabled']) ? '1' : '0';
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('ai_assistant_enabled', ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$aiEnabled, $aiEnabled]
+            );
+        }
+
         log_activity('settings.general_saved', __('General settings saved'));
         flash('success', __('General settings saved successfully.'));
         redirect('/settings?tab=general');
@@ -552,7 +562,7 @@ class SettingsController
             Database::execute("DELETE FROM property_photos WHERE 1=1", []);
             Database::execute("DELETE FROM activity_logs WHERE 1=1", []);
             // Reset all user-configurable settings (setup re-creates what it needs)
-            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($settingsKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $settingsKeys);
             // Reset permissions to "Use defaults"

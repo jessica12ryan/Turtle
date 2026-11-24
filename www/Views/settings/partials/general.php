@@ -102,6 +102,14 @@
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
 
         <div class="mb-4">
+            <label class="inline-flex items-center">
+                <input type="checkbox" name="ai_assistant_enabled" value="1" <?= ($mail['ai_assistant_enabled'] ?? '0') === '1' ? 'checked' : '' ?> class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <span class="ml-2 text-sm font-medium text-gray-700"><?= __('Enable AI Assistant') ?></span>
+            </label>
+            <p class="text-xs text-gray-400 mt-1"><?= __('Staff with the AI Assistant permission can use it when enabled. Tenants never have access.') ?></p>
+        </div>
+
+        <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('OpenAI API Key') ?></label>
             <input type="password" name="openai_api_key" value="<?= h($mail['openai_api_key'] ?? '') ?>" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off" placeholder="sk-...">
             <p class="text-xs text-gray-400 mt-1"><?= __('Your API key is stored securely in the database and used only for AI Assistant requests.') ?></p>

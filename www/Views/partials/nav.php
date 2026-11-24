@@ -52,7 +52,7 @@ $isDefaultLogo = $logoUrl === '/assets/logo.svg';
                     </button>
                     <div x-show="open" x-cloak x-transition @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50 dark:bg-slate-900 dark:border-slate-700">
                         <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg dark:text-gray-200 dark:hover:bg-slate-800" data-tooltip="<?= __('Edit your profile') ?>"><?= __('Profile') ?></a>
-                        <?php if (can('ai_assistant.access')): ?>
+                        <?php if (can('ai_assistant.access') && getCachedSetting('ai_assistant_enabled') === '1'): ?>
                             <a href="/ai-assistant" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-slate-800" data-tooltip="<?= __('Open AI assistant') ?>"><?= __('AI Assistant') ?></a>
                         <?php endif; ?>
                         <?php if ($user['role'] === 'admin'): ?>

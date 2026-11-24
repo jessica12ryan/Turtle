@@ -552,6 +552,25 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });
 
+test('AI assistant can be enabled and a chat created', async ({ page }) => {
+  await page.goto('/login');
+  await page.locator('#email').fill(admin.email);
+  await page.locator('#password').fill(admin.password);
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/home$/);
+
+  await page.goto('/settings?tab=general');
+  await page.locator('input[name="ai_assistant_enabled"]').check();
+  await page.locator('form:has(input[name="ai_assistant_enabled"]) button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/settings/);
+
+  await page.goto('/ai-assistant');
+  await expect(page.getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'New chat', exact: true }).click();
+  await expect(page.locator('button.flex-1.text-left')).toHaveCount(1);
+  await expect(page.locator('input[placeholder="Ask the AI Assistant..."]')).toBeEnabled();
+});
+
 test('settings backup and restore round-trip', async ({ page }) => {
   await page.goto('/login');
   await page.locator('#email').fill(admin.email);

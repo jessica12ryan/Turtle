@@ -387,3 +387,15 @@ CREATE TABLE IF NOT EXISTS activity_logs (
     INDEX idx_created (created_at),
     INDEX idx_created_date (created_at, user_id, action)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- AI assistant conversations (per user; messages are capped JSON)
+CREATE TABLE IF NOT EXISTS ai_conversations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL DEFAULT '',
+    messages TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_ai_conversations_user (user_id, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

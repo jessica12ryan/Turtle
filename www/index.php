@@ -402,6 +402,10 @@ $router->post('/notifications/{id}/read', 'NotificationController@read', ['auth'
 // AI Assistant
 $router->get('/ai-assistant', 'AiAssistantController@index', ['auth', 'perm:ai_assistant.access']);
 $router->post('/ai-assistant/chat', 'AiAssistantController@chat', ['auth', 'perm:ai_assistant.access']);
+$router->get('/ai-assistant/conversations/{id}', 'AiAssistantController@getConversation', ['auth', 'perm:ai_assistant.access']);
+$router->post('/ai-assistant/conversations', 'AiAssistantController@createConversation', ['auth', 'perm:ai_assistant.access']);
+$router->post('/ai-assistant/conversations/{id}/chat', 'AiAssistantController@conversationChat', ['auth', 'perm:ai_assistant.access']);
+$router->post('/ai-assistant/conversations/{id}/delete', 'AiAssistantController@deleteConversation', ['auth', 'perm:ai_assistant.access']);
 
 // Tenancy Applications (public)
 $router->get('/applications/create', 'ApplicationController@create', ['guest']);
