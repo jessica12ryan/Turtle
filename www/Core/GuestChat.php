@@ -40,7 +40,7 @@ class GuestChat
              FROM guest_chat_tokens gct
              JOIN guest_chats gc ON gc.id = gct.chat_id
              JOIN properties p ON p.id = gc.property_id
-             WHERE gct.token_hash = ? AND gc.archived_at IS NULL",
+             WHERE gct.token_hash = ? AND gc.archived_at IS NULL AND p.archived_at IS NULL",
             [self::hashToken($token)]
         );
         if ($chat !== null && !hash_equals($chat['matched_hash'], self::hashToken($token))) {
@@ -196,7 +196,7 @@ class GuestChat
              FROM guest_chat_tokens gct
              JOIN guest_chats gc ON gc.id = gct.chat_id
              JOIN properties p ON p.id = gc.property_id
-             WHERE gct.token_hash IN ({$placeholders}) AND gc.archived_at IS NULL",
+             WHERE gct.token_hash IN ({$placeholders}) AND gc.archived_at IS NULL AND p.archived_at IS NULL",
             array_keys($candidates)
         );
         $chats = [];
@@ -367,7 +367,7 @@ class GuestChat
             "SELECT gc.id, gc.property_id, gc.last_activity, p.name AS property_name
              FROM guest_chats gc
              JOIN properties p ON p.id = gc.property_id
-             WHERE LOWER(gc.guest_email) = ? AND gc.archived_at IS NULL
+             WHERE LOWER(gc.guest_email) = ? AND gc.archived_at IS NULL AND p.archived_at IS NULL
              ORDER BY gc.last_activity DESC, gc.id DESC",
             [$visitor['email']]
         );
@@ -391,10 +391,11 @@ class GuestChat
             return null;
         }
         $row = Database::fetch(
-            "SELECT id, property_id FROM guest_chats
-             WHERE LOWER(guest_email) = ? AND property_id = ? AND archived_at IS NULL
-             ORDER BY last_activity DESC, id DESC LIMIT 1",
-            [$visitor['email'], $propertyId]
+            "SELECT id, property_id FROM guest_chats gc
+             WHERE LOWER(gc.guest_email) = ? AND gc.property_id = ? AND gc.archived_at IS NULL
+               AND EXISTS (SELECT 1 FROM properties p WHERE p.id = ? AND p.archived_at IS NULL)
+             ORDER BY gc.last_activity DESC, gc.id DESC LIMIT 1",
+            [$visitor['email'], $propertyId, $propertyId]
         );
         return $row === null ? null : ['id' => (int) $row['id'], 'property_id' => (int) $row['property_id']];
     }

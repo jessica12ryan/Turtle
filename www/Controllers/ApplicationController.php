@@ -35,6 +35,7 @@ class ApplicationController
 
     public function store(): void
     {
+        $uploaded = [];
         try {
             $settings = $this->getSettings();
             if ($settings['enabled'] !== '1') {
@@ -51,7 +52,11 @@ class ApplicationController
                 redirect('/applications/create');
             }
 
-            $this->handlePhotoUploads();
+            $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+            if (!auth_rate_limit('application:ip:' . $ip, 3, 900)) {
+                flash('error', __('Too many applications submitted. Please try again later.'));
+                redirect('/applications/create');
+            }
 
             $propertyId = !empty($_POST['property_id']) ? (int)$_POST['property_id'] : null;
             if (!$propertyId) {
@@ -63,10 +68,30 @@ class ApplicationController
                 flash('error', __('Selected property is not available.'));
                 redirect('/applications/create');
             }
+            if (!auth_rate_limit('application:property:' . $propertyId . ':' . $ip, 2, 3600)) {
+                flash('error', __('Too many applications submitted for this property. Please try again later.'));
+                redirect('/applications/create');
+            }
+
+            // Honeypot: bots fill every field, people never see this one.
+            if (!empty($_POST['website'])) {
+                redirect('/applications/thank-you');
+            }
+
+            $errors = $this->validateApplication($_POST);
+            if ($errors !== []) {
+                flash('error', implode(' ', $errors));
+                redirect('/applications/create');
+            }
+
+            // Uploads happen only after all validation passes, so rejected
+            // submissions never leave orphaned files behind.
+            $uploaded = $this->handlePhotoUploads();
             $data = $this->buildData();
 
             $json = json_encode($data, JSON_UNESCAPED_UNICODE);
             if ($json === false) {
+                $this->deleteUploadedPhotos($uploaded);
                 \App\Core\Logger::error('Application submission failed: json_encode error: ' . (json_last_error_msg()));
                 flash('error', __('Submission failed: :details', [':details' => json_last_error_msg()]));
                 redirect('/applications/create');
@@ -82,6 +107,7 @@ class ApplicationController
             flash('success', __('Your application has been submitted successfully. We will be in touch.'));
             redirect('/applications/thank-you');
         } catch (\Throwable $e) {
+            $this->deleteUploadedPhotos($uploaded);
             \App\Core\Logger::error('Application submission failed: ' . get_class($e) . ': ' . $e->getMessage() . "\n" . $e->getTraceAsString());
             flash('error', __('Submission failed. Please try again.'));
             redirect('/applications/create');
@@ -610,6 +636,51 @@ class ApplicationController
         redirect('/applications');
     }
 
+    /** Server-side validation for the public application form. */
+    private function validateApplication(array $post): array
+    {
+        $errors = [];
+        $required = [
+            'primary_last_name' => __('Last name'),
+            'primary_first_name' => __('First name'),
+            'primary_email' => __('Email'),
+            'primary_phone' => __('Phone'),
+            'expected_move_in_date' => __('Expected move in date'),
+        ];
+        foreach ($required as $field => $label) {
+            if (trim((string)($post[$field] ?? '')) === '') {
+                $errors[] = $label . ' ' . __('is required.');
+            }
+        }
+        $email = trim((string)($post['primary_email'] ?? ''));
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            $errors[] = __('Please enter a valid email address.');
+        }
+        $moveIn = trim((string)($post['expected_move_in_date'] ?? ''));
+        if ($moveIn !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $moveIn)) {
+            $errors[] = __('Please enter a valid move in date.');
+        }
+        if (mb_strlen(trim((string)($post['primary_other_info'] ?? ''))) > 10000) {
+            $errors[] = __('Additional information is too long.');
+        }
+        return $errors;
+    }
+
+    /** Remove files uploaded by an application attempt that did not persist. */
+    private function deleteUploadedPhotos(array $paths): void
+    {
+        $base = realpath(base_path('storage/uploads/application_photos'));
+        if ($base === false) {
+            return;
+        }
+        foreach ($paths as $path) {
+            $full = realpath(base_path($path));
+            if ($full !== false && str_starts_with($full, $base . '/')) {
+                @unlink($full);
+            }
+        }
+    }
+
     private function buildData(): array
     {
         return [
@@ -858,37 +929,54 @@ class ApplicationController
         redirect('/settings?tab=applications');
     }
 
-    private function handlePhotoUploads(): void
+    private const MAX_OTHER_PHOTOS = 5;
+    private const MAX_TOTAL_UPLOAD_BYTES = 20 * 1024 * 1024;
+
+    /** @return list<string> relative paths of files that were moved */
+    private function handlePhotoUploads(): array
     {
         $uploadDir = base_path('storage/uploads/application_photos');
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
+        $saved = [];
 
         if (!empty($_FILES['primary_photo_id']) && $_FILES['primary_photo_id']['error'] === UPLOAD_ERR_OK) {
             $path = $this->moveUploadedFile($_FILES['primary_photo_id'], $uploadDir);
             if ($path) {
                 $_POST['primary_photo_id'] = $path;
+                $saved[] = $path;
             }
         }
 
         if (!empty($_FILES['other_tenant_photo_id']) && is_array($_FILES['other_tenant_photo_id']['name'])) {
+            $count = 0;
             foreach ($_FILES['other_tenant_photo_id']['name'] as $i => $name) {
+                if ($count >= self::MAX_OTHER_PHOTOS) {
+                    break;
+                }
                 if (!empty($name) && ($_FILES['other_tenant_photo_id']['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $size = (int)($_FILES['other_tenant_photo_id']['size'][$i] ?? 0);
+                    if ($size > self::MAX_TOTAL_UPLOAD_BYTES) {
+                        continue;
+                    }
                     $file = [
                         'name' => $_FILES['other_tenant_photo_id']['name'][$i],
                         'type' => $_FILES['other_tenant_photo_id']['type'][$i],
                         'tmp_name' => $_FILES['other_tenant_photo_id']['tmp_name'][$i],
                         'error' => $_FILES['other_tenant_photo_id']['error'][$i],
-                        'size' => $_FILES['other_tenant_photo_id']['size'][$i],
+                        'size' => $size,
                     ];
                     $path = $this->moveUploadedFile($file, $uploadDir);
                     if ($path) {
                         $_POST['other_tenant_photo_id'][$i] = $path;
+                        $saved[] = $path;
+                        $count++;
                     }
                 }
             }
         }
+        return $saved;
     }
 
     private function moveUploadedFile(array $file, string $uploadDir): ?string

@@ -18,9 +18,9 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
 
         $token = GuestChat::generateToken();
         $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$property, 'Jane Visitor', 'jane@example.com', GuestChat::hashToken($token)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Jane Visitor', 'jane@example.com']
         );
         Database::insert(
             "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",
@@ -36,9 +36,9 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertNull(GuestChat::findByToken(str_repeat('a', 64)), 'a different token must not open the chat');
         self::assertNull(GuestChat::findByToken('not-a-valid-token'));
 
-        $stored = Database::fetch("SELECT token_hash FROM guest_chats WHERE id = ?", [$chatId]);
-        self::assertSame(hash('sha256', $token), $stored['token_hash']);
-        self::assertNotSame($token, $stored['token_hash'], 'the raw token must never be stored');
+        $stored = Database::fetchAll("SELECT token_hash FROM guest_chat_tokens WHERE chat_id = ?", [$chatId]);
+        self::assertSame([['token_hash' => hash('sha256', $token)]], $stored);
+        self::assertNotSame($token, $stored[0]['token_hash'], 'the raw token must never be stored');
 
         $recipients = GuestChat::recipientIds($property);
         self::assertSame([$landlord], $recipients, 'a property without a manager notifies only its landlord');
@@ -71,9 +71,9 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         $property = $this->insertProperty($company, $landlord, 'Recoverable Property');
         $originalToken = GuestChat::generateToken();
         $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$property, 'Returning Visitor', 'Case@Example.com', GuestChat::hashToken($originalToken)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Returning Visitor', 'Case@Example.com']
         );
         GuestChat::registerToken((int) $chatId, $originalToken);
 
@@ -83,9 +83,6 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertNotNull(GuestChat::findByToken($originalToken), 'the original emailed link must keep working');
         self::assertNotNull(GuestChat::findByToken($newToken), 'the new link must work too');
 
-        $stored = Database::fetch("SELECT token_hash FROM guest_chats WHERE id = ?", [$chatId]);
-        self::assertSame(GuestChat::hashToken($originalToken), $stored['token_hash'], 'the original hash must not be replaced');
-        self::assertNotSame($originalToken, $stored['token_hash'], 'the raw token must never be stored');
         $hashes = Database::fetchAll(
             "SELECT token_hash FROM guest_chat_tokens WHERE chat_id = ? ORDER BY id ASC",
             [$chatId]
@@ -113,16 +110,16 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
 
         $tokenA = GuestChat::generateToken();
         $chatA = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$propertyA, 'Guest Name', 'hub@example.com', GuestChat::hashToken($tokenA)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$propertyA, 'Guest Name', 'hub@example.com']
         );
         GuestChat::registerToken((int) $chatA, $tokenA);
         $tokenB = GuestChat::generateToken();
         $chatB = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$propertyB, 'Guest Name', 'hub@example.com', GuestChat::hashToken($tokenB)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$propertyB, 'Guest Name', 'hub@example.com']
         );
         GuestChat::registerToken((int) $chatB, $tokenB);
 
@@ -163,9 +160,9 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
 
         $token = GuestChat::generateToken();
         $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$property, 'Inbox Guest', 'inbox@example.com', GuestChat::hashToken($token)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Inbox Guest', 'inbox@example.com']
         );
         GuestChat::registerToken((int) $chatId, $token);
         Database::insert(
@@ -201,9 +198,9 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         $guestId = GuestChat::findOrCreateVisitor('archive@example.com', 'Archive Guest');
         $token = GuestChat::generateToken();
         $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$property, 'Archive Guest', 'archive@example.com', GuestChat::hashToken($token)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Archive Guest', 'archive@example.com']
         );
         GuestChat::registerToken((int) $chatId, $token);
         Database::insert(
@@ -233,15 +230,39 @@ final class GuestChatIntegrationTest extends IntegrationTestCase
         self::assertSame([], Database::fetchAll("SELECT id FROM guest_chat_tokens WHERE chat_id = ?", [$chatId]));
     }
 
+    public function testTokensStopWorkingWhenPropertyIsArchived(): void
+    {
+        $landlord = $this->insertUser('archived-property-owner@example.com', 'landlord');
+        $company = $this->insertCompany();
+        $property = $this->insertProperty($company, $landlord, 'Soon Archived Property');
+        $guestId = GuestChat::findOrCreateVisitor('archived-property@example.com', 'Archived Guest');
+        $token = GuestChat::generateToken();
+        $chatId = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Archived Guest', 'archived-property@example.com']
+        );
+        GuestChat::registerToken((int)$chatId, $token);
+
+        self::assertNotNull(GuestChat::findByToken($token));
+        self::assertCount(1, GuestChat::chatsForVisitor($guestId));
+
+        Database::execute("UPDATE properties SET archived_at = NOW() WHERE id = ?", [$property]);
+
+        self::assertNull(GuestChat::findByToken($token), 'a chat link must not survive property archival');
+        self::assertSame([], GuestChat::chatsForVisitor($guestId), 'the hub must not list archived properties');
+        self::assertNull(GuestChat::findChatForVisitorProperty($guestId, $property));
+    }
+
     public function testGuestAndStaffReadStateAreTrackedSeparately(): void
     {
         $landlord = $this->insertUser('owner@example.com', 'landlord');
         $company = $this->insertCompany();
         $property = $this->insertProperty($company, $landlord);
         $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$property, 'Visitor', 'visitor@example.com', GuestChat::hashToken(GuestChat::generateToken())]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$property, 'Visitor', 'visitor@example.com']
         );
         Database::insert(
             "INSERT INTO guest_chat_messages (chat_id, sender_type, body, created_at) VALUES (?, 'guest', ?, NOW())",

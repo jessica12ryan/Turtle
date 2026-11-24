@@ -10,6 +10,11 @@
 
     <form method="POST" action="/applications" class="space-y-8" x-data="applicationForm()" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
+        <!-- Honeypot: hidden from people, irresistible to bots. -->
+        <div class="absolute left-[-9999px]" aria-hidden="true">
+            <label for="application_website">Website</label>
+            <input type="text" id="application_website" name="website" tabindex="-1" autocomplete="off">
+        </div>
 
         <!-- Property ID -->
         <div class="bg-white rounded-lg shadow p-6">

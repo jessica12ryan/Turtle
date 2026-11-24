@@ -131,30 +131,13 @@ class AiAssistantController
 
     private function buildContext(array $user): array
     {
-        $auth = Auth::instance();
-        $role = $user['role'];
         $context = [];
 
-        $isAdmin = $role === 'admin';
-
-        if ($isAdmin) {
-            $propertyIds = "SELECT id FROM properties WHERE archived_at IS NULL";
-        } else {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$auth->id()]
-            );
-            $companyIds = array_column($companyIds, 'company_id');
-            $companyIdList = implode(',', array_map('intval', $companyIds)) ?: '0';
-            $pmClause = $role === 'property_manager' ? ' AND property_manager_id = ' . (int)$auth->id() : '';
-            $propertyIds = "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL{$pmClause}";
-        }
-
-        $props = Database::fetchAll("SELECT id FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL");
-        $propertyIdList = implode(',', array_column($props, 'id')) ?: '0';
+        // Shared scoping honours secondary roles for every staff feature.
+        $propertyIdList = implode(',', accessible_property_ids($user)) ?: '0';
 
         $context['stats'] = [];
-        $context['stats']['Total Properties'] = count($props);
+        $context['stats']['Total Properties'] = count(explode(',', $propertyIdList));
         $context['stats']['Active Tenants'] = Database::fetch(
             "SELECT COUNT(*) as count FROM property_tenant pt
              JOIN users u ON u.id = pt.tenant_id

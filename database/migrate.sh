@@ -153,7 +153,9 @@ run_sql "CREATE TABLE IF NOT EXISTS guest_chat_messages (id INT AUTO_INCREMENT P
 # Additional access links stay valid; only their hashes are kept. Backfill
 # existing chats with their original link so old bookmarks keep working.
 run_sql "CREATE TABLE IF NOT EXISTS guest_chat_tokens (id INT AUTO_INCREMENT PRIMARY KEY, chat_id INT NOT NULL, token_hash CHAR(64) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (chat_id) REFERENCES guest_chats(id) ON DELETE CASCADE, UNIQUE KEY uniq_guest_chat_token_hash (token_hash), INDEX idx_guest_chat_tokens_chat (chat_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
-run_sql "INSERT IGNORE INTO guest_chat_tokens (chat_id, token_hash, created_at) SELECT id, token_hash, created_at FROM guest_chats;"
+# Backfill the legacy guest_chats.token_hash column, then remove it:
+# guest_chat_tokens is now the single source of truth for access links.
+run_sql "SET @col_count = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'guest_chats' AND COLUMN_NAME = 'token_hash'); SET @backfill = IF(@col_count > 0, 'INSERT IGNORE INTO guest_chat_tokens (chat_id, token_hash, created_at) SELECT id, token_hash, created_at FROM guest_chats', 'SELECT 1'); PREPARE stmt FROM @backfill; EXECUTE stmt; DEALLOCATE PREPARE stmt; SET @drop_col = IF(@col_count > 0, 'ALTER TABLE guest_chats DROP COLUMN token_hash', 'SELECT 1'); PREPARE stmt2 FROM @drop_col; EXECUTE stmt2; DEALLOCATE PREPARE stmt2;"
 # One guest (by email) can have a conversation per property. Their hub link
 # lists them all; hub tokens follow the same hash-only, additive model.
 run_sql "CREATE TABLE IF NOT EXISTS guest_visitors (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(190) NOT NULL, name VARCHAR(120) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uniq_guest_visitor_email (email)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"

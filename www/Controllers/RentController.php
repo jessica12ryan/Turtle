@@ -16,35 +16,16 @@ class RentController
         $auth = Auth::instance();
         $user = $auth->user();
 
-        if ($user['role'] === 'admin') {
-            $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name,
-                 " . Tenancy::tenantCountSql('p') . " as tenants_count
-                 FROM properties p
-                 JOIN users u ON u.id = p.landlord_id
-                 WHERE p.archived_at IS NULL
-                 ORDER BY p.name"
-            );
-        } else {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$auth->id()]
-            );
-            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
+        $propertyIdList = implode(',', accessible_property_ids($user)) ?: '0';
 
-            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
-            $params = $pmClause ? [$auth->id()] : [];
-
-            $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name,
-                 " . Tenancy::tenantCountSql('p') . " as tenants_count
-                 FROM properties p
-                 JOIN users u ON u.id = p.landlord_id
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
-                 ORDER BY p.name",
-                $params
-            );
-        }
+        $properties = Database::fetchAll(
+            "SELECT p.*, u.name as landlord_name,
+             " . Tenancy::tenantCountSql('p') . " as tenants_count
+             FROM properties p
+             JOIN users u ON u.id = p.landlord_id
+             WHERE p.id IN ({$propertyIdList}) AND p.archived_at IS NULL
+             ORDER BY p.name"
+        );
 
         $currentMonth = date('Y-m');
         $rentData = [];

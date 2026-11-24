@@ -22,34 +22,8 @@ class CalendarController
         $user = Auth::instance()->user();
         $events = [];
 
-        // Determine accessible property IDs for event filtering
-        $accessiblePropertyIds = [];
-        if ($user['role'] === 'admin') {
-            $rows = Database::fetchAll("SELECT id FROM properties WHERE archived_at IS NULL");
-            $accessiblePropertyIds = array_column($rows, 'id');
-        } elseif ($user['role'] === 'tenant') {
-            $rows = Database::fetchAll(
-                "SELECT p.id FROM properties p
-                 JOIN property_tenant pt ON pt.property_id = p.id
-                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
-                [$user['id']]
-            );
-            $accessiblePropertyIds = array_column($rows, 'id');
-        } else {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$user['id']]
-            );
-            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
-            $pmClause = $user['role'] === 'property_manager' ? ' AND property_manager_id = ?' : '';
-            $params = $pmClause ? [$user['id']] : [];
-            $rows = Database::fetchAll(
-                "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL{$pmClause}",
-                $params
-            );
-            $accessiblePropertyIds = array_column($rows, 'id');
-        }
-        $accessibleIdList = implode(',', $accessiblePropertyIds ?: ['0']);
+        // Honour primary and secondary roles via the shared scoping helper.
+        $accessibleIdList = implode(',', accessible_property_ids($user) ?: ['0']);
 
         // Tenant move-in dates (filtered by property access)
         $moveIns = Database::fetchAll(

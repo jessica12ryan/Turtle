@@ -135,9 +135,9 @@ class ListingsController
 
         $token = GuestChat::generateToken();
         $chatId = Database::insert(
-            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-            [$id, $name, $email, GuestChat::hashToken($token)]
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, NOW(), NOW(), NOW())",
+            [$id, $name, $email]
         );
         GuestChat::registerToken((int) $chatId, $token);
         GuestChat::appendMessage((int) $chatId, $body);

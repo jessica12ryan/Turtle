@@ -94,7 +94,7 @@ class Logger
             E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR => 'error',
             E_WARNING, E_CORE_WARNING, E_COMPILE_WARNING, E_USER_WARNING => 'warning',
             E_NOTICE, E_USER_NOTICE => 'notice',
-            E_DEPRECATED, E_USER_DEPRECATED, E_STRICT => 'debug',
+            E_DEPRECATED, E_USER_DEPRECATED => 'debug',
             default => 'error',
         };
     }
@@ -106,7 +106,7 @@ class Logger
     {
         return match (self::level()) {
             'info' => E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED,
-            'notice' => E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_STRICT,
+            'notice' => E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED,
             'warning' => E_ERROR | E_WARNING | E_PARSE | E_CORE_ERROR | E_CORE_WARNING
                 | E_COMPILE_ERROR | E_COMPILE_WARNING | E_USER_ERROR | E_USER_WARNING
                 | E_RECOVERABLE_ERROR,

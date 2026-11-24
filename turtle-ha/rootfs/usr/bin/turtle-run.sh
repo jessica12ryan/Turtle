@@ -6,6 +6,7 @@ umask 0002
 
 TURTLE_DIR=/var/www/turtle
 DATA_DIR=/data
+WEB_GROUP=$(id -gn apache 2>/dev/null || echo www-data)
 
 # ── Read HA options ────────────────────────────────────────────────────────────
 DB_PASSWORD=$(bashio::config 'db_password')
@@ -200,7 +201,11 @@ if [ ! -f "${TURTLE_DIR}/.env" ] || ! grep -Eq '^APP_KEY=base64:.{20,}' "${TURTL
 else
     GENERATED_KEY=$(grep '^APP_KEY=' "${TURTLE_DIR}/.env" | cut -d= -f2-)
 fi
-cat > "${TURTLE_DIR}/.env" <<ENV
+# Build the add-on-managed keys separately, then merge them into the existing
+# .env. Keys added by an operator (or by a restore) are preserved, and empty
+# add-on options are written explicitly so cleared credentials do not linger.
+MANAGED_ENV=$(mktemp)
+cat > "${MANAGED_ENV}" <<ENV
 APP_NAME=Turtle
 APP_ENV=production
 APP_KEY=${GENERATED_KEY}
@@ -232,11 +237,27 @@ MAIL_OAUTH_REFRESH_TOKEN=${MAIL_OAUTH_REFRESH_TOKEN}
 MAIL_OAUTH_EMAIL=${MAIL_OAUTH_EMAIL}
 ENV
 
-# Export env vars for Apache/PHP and ensure .env is readable by apache user
+MERGED_ENV=$(mktemp)
+if [ -f "${TURTLE_DIR}/.env" ]; then
+    while IFS='=' read -r env_key env_value; do
+        case "${env_key}" in ''|\#*) continue ;; esac
+        if ! grep -q "^${env_key}=" "${MANAGED_ENV}"; then
+            printf '%s=%s\n' "${env_key}" "${env_value}" >> "${MERGED_ENV}"
+        fi
+    done < "${TURTLE_DIR}/.env"
+fi
+cat "${MANAGED_ENV}" >> "${MERGED_ENV}"
+mv "${MERGED_ENV}" "${TURTLE_DIR}/.env"
+rm -f "${MANAGED_ENV}"
+unset env_key env_value
+
+# Export env vars for Apache/PHP. The file holds secrets: owner-only with
+# group read for the web server, never world-readable.
 set -a
 . "${TURTLE_DIR}/.env"
 set +a
-chmod 644 "${TURTLE_DIR}/.env"
+chown "root:${WEB_GROUP}" "${TURTLE_DIR}/.env" 2>/dev/null || true
+chmod 640 "${TURTLE_DIR}/.env"
 
 # ── Symlink persistent storage into app ───────────────────────────────────────
 # Never delete a data directory. If a previous boot (or a restore) left a real
@@ -335,7 +356,6 @@ unset TURTLE_MAIL_PASSWORD TURTLE_MAIL_OAUTH_CLIENT_SECRET TURTLE_MAIL_OAUTH_REF
 # Least privilege: the code tree is readable by the web group, never world
 # writable. Only the directories the app/updater actually writes are group
 # writable; everything under /data that Apache touches is group-owned too.
-WEB_GROUP=$(id -gn apache 2>/dev/null || echo www-data)
 chown -R "root:${WEB_GROUP}" "${TURTLE_DIR}" 2>/dev/null || true
 chmod -R u=rwX,g=rX,o= "${TURTLE_DIR}" 2>/dev/null || true
 

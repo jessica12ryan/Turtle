@@ -202,7 +202,7 @@ class TicketController
             [$id]
         );
 
-        $statuses = ['open', 'in_progress', 'awaiting_parts', 'awaiting_contractor', 'closed'];
+        $statuses = ticket_statuses();
         $categories = ['plumbing', 'electrical', 'hvac', 'appliances', 'structural', 'pest_control', 'general_repair', 'other'];
         $priorities = ['low', 'medium', 'high', 'emergency'];
 
@@ -244,8 +244,8 @@ class TicketController
                 "SELECT company_id, property_manager_id FROM properties WHERE id = ?",
                 [$ticket['property_id']]
             );
-            if (!$property || !user_can_access_property($assignee, $property)) {
-                flash('error', __('Selected assignee does not have access to this property.'));
+            if (!$property || !$this->canBeTicketAssignee($assignee, $property)) {
+                flash('error', __('Selected assignee is not a staff member with access to this property.'));
                 redirectBack();
             }
         }
@@ -422,12 +422,18 @@ class TicketController
         }
         Access::require(Access::ticket($id));
 
+        $submittedStatus = (string)($_POST['status'] ?? '');
+        if (!is_valid_ticket_status($submittedStatus)) {
+            flash('error', __('Invalid ticket status.'));
+            redirect('/tickets/' . $id);
+        }
+
         $oldStatus = str_replace('_', ' ', $ticket['status']);
-        $newStatus = str_replace('_', ' ', $_POST['status']);
+        $newStatus = str_replace('_', ' ', $submittedStatus);
 
         Database::execute(
             "UPDATE tickets SET status = ?, updated_at = NOW() WHERE id = ?",
-            [$_POST['status'], $id]
+            [$submittedStatus, $id]
         );
 
         $user = Auth::instance()->user();
@@ -442,14 +448,14 @@ class TicketController
                 $tenant['email'],
                 'Ticket Update: ' . $ticket['subject'],
                 'Hello ' . h($tenant['name']) . ',',
-                'Your ticket status has been updated.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>New Status:</strong> ' . ucfirst(str_replace('_', ' ', $_POST['status'])),
+                'Your ticket status has been updated.<br><br><strong>Subject:</strong> ' . h($ticket['subject']) . '<br><strong>New Status:</strong> ' . ucfirst($newStatus),
                 \site_url() . '/tickets/' . $id,
                 'View Ticket'
             );
             notifyInApp(
                 (int)$ticket['tenant_id'],
                 'ticket_status_updated',
-                'Ticket status updated: ' . $ticket['subject'] . ' — ' . ucfirst(str_replace('_', ' ', $_POST['status']))
+                'Ticket status updated: ' . $ticket['subject'] . ' — ' . ucfirst($newStatus)
             );
         }
 
@@ -669,31 +675,30 @@ class TicketController
         redirect('/tickets');
     }
 
+    /** An assignee must be active staff with ticket access to this property. */
+    private function canBeTicketAssignee(array $user, array $property): bool
+    {
+        $staffRoles = ['admin', 'landlord', 'property_manager', 'maintenance'];
+        if (!array_intersect(effective_roles($user), $staffRoles)) {
+            return false;
+        }
+        if (!user_can($user, 'tickets.access')) {
+            return false;
+        }
+        return user_can_access_property($user, $property);
+    }
+
     private function assignableStaffForProperty(array $property): array
     {
         $staffUsers = Database::fetchAll(
-            "SELECT u.* FROM users u 
-             WHERE u.archived_at IS NULL 
-               AND u.role IN ('admin','landlord','property_manager','maintenance')
+            "SELECT u.* FROM users u
+             WHERE u.archived_at IS NULL
              ORDER BY u.name"
         );
 
-        $staffIds = array_column($staffUsers, 'id');
-        $companyMap = [];
-        if (!empty($staffIds)) {
-            $placeholders = implode(',', array_fill(0, count($staffIds), '?'));
-            $companyRows = Database::fetchAll(
-                "SELECT user_id, company_id FROM company_user WHERE user_id IN ({$placeholders})",
-                $staffIds
-            );
-            foreach ($companyRows as $row) {
-                $companyMap[(int)$row['user_id']][] = (int)$row['company_id'];
-            }
-        }
-
         return array_values(array_filter(
             $staffUsers,
-            fn($u) => user_can_access_property($u, $property, $companyMap[(int)$u['id']] ?? [])
+            fn($u) => $this->canBeTicketAssignee($u, $property)
         ));
     }
 

@@ -470,6 +470,52 @@ function httpPostJson(string $url, string $jsonBody, array $headers = [], int $t
     return null;
 }
 
+/**
+ * Normalise a configured HTTP(S) endpoint to HTTPS. Returns null when the
+ * value cannot be used safely (no scheme, or a non-HTTP scheme).
+ */
+function httpsOnlyUrl(string $url): ?string
+{
+    $url = trim($url);
+    if ($url === '') {
+        return null;
+    }
+    $parts = parse_url($url);
+    if ($parts === false || empty($parts['host'])) {
+        return null;
+    }
+    $scheme = strtolower((string)($parts['scheme'] ?? ''));
+    if (!in_array($scheme, ['http', 'https'], true)) {
+        return null;
+    }
+    // Upgrade plaintext URLs rather than falling back to them.
+    $parts['scheme'] = 'https';
+    $port = $parts['port'] ?? null;
+    if ($scheme === 'http' && $port === 80) {
+        unset($parts['port']);
+    }
+
+    $host = $parts['host'];
+    if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $host = '[' . $host . ']';
+    }
+    $userInfo = isset($parts['user'])
+        ? $parts['user'] . (isset($parts['pass']) ? ':' . $parts['pass'] : '') . '@'
+        : '';
+    $result = 'https://' . $userInfo . $host;
+    if (isset($parts['port'])) {
+        $result .= ':' . $parts['port'];
+    }
+    $result .= $parts['path'] ?? '';
+    if (isset($parts['query'])) {
+        $result .= '?' . $parts['query'];
+    }
+    if (isset($parts['fragment'])) {
+        $result .= '#' . $parts['fragment'];
+    }
+    return $result;
+}
+
 function checkNtpTime(): ?array
 {
     try {
@@ -510,10 +556,8 @@ function checkNtpTime(): ?array
 
     // Try 1: time.gov XML API
     if ($server === 'time.gov') {
+        // HTTPS only: a plaintext fallback lets a network attacker spoof time.
         $body = httpGet('https://time.gov/actualtime.cgi');
-        if ($body === null) {
-            $body = httpGet('http://time.gov/actualtime.cgi');
-        }
         if ($body !== null) {
             $xml = @simplexml_load_string($body);
             if ($xml && isset($xml['time'])) {
@@ -521,24 +565,26 @@ function checkNtpTime(): ?array
             }
         }
     } else {
-        $result = httpGetWithHeaders($server);
-        if ($result !== null) {
-            $ntpTs = parseHttpDateHeader($result['headers']);
-            if ($ntpTs === null) {
-                $xml = @simplexml_load_string($result['body']);
-                if ($xml && isset($xml['time'])) {
-                    $ntpTs = (int)($xml['time']) / 1000;
+        $secureServer = httpsOnlyUrl($server);
+        if ($secureServer === null) {
+            \App\Core\Logger::warning('NTP server URL is invalid or uses an unsupported scheme; ignoring.');
+        } else {
+            $result = httpGetWithHeaders($secureServer);
+            if ($result !== null) {
+                $ntpTs = parseHttpDateHeader($result['headers']);
+                if ($ntpTs === null) {
+                    $xml = @simplexml_load_string($result['body']);
+                    if ($xml && isset($xml['time'])) {
+                        $ntpTs = (int)($xml['time']) / 1000;
+                    }
                 }
             }
         }
     }
 
-    // Try 2: Google Date header (most reliable HTTP endpoint)
+    // Try 2: Google Date header (HTTPS only)
     if ($ntpTs === null) {
         $result = httpGetWithHeaders('https://www.google.com/');
-        if ($result === null) {
-            $result = httpGetWithHeaders('http://www.google.com/');
-        }
         if ($result !== null) {
             $ntpTs = parseHttpDateHeader($result['headers']);
         }
@@ -638,17 +684,16 @@ function can(string $permission): bool
     } catch (\Throwable $e) {
         return false;
     }
-    if (!$user) {
-        return false;
-    }
+    return $user ? user_can($user, $permission) : false;
+}
 
-    $rolesToCheck = [$user['role']];
-    if (!empty($user['secondary_roles'])) {
-        $secondary = array_map('trim', explode(',', $user['secondary_roles']));
-        $rolesToCheck = array_merge($rolesToCheck, $secondary);
-    }
-
-    foreach ($rolesToCheck as $role) {
+/**
+ * Permission check for an explicit user (not necessarily the logged-in one).
+ * Mirrors can() so callers can validate a target user such as a ticket assignee.
+ */
+function user_can(array $user, string $permission): bool
+{
+    foreach (effective_roles($user) as $role) {
         if ($role === 'admin') {
             return true;
         }
@@ -667,12 +712,108 @@ function can(string $permission): bool
         }
 
         $defaults = defaultPermissions();
-        if (in_array($permission, $defaults[$role] ?? [])) {
+        if (in_array($permission, $defaults[$role] ?? [], true)) {
             return true;
         }
     }
 
     return false;
+}
+
+function has_role(array $user, string $role): bool
+{
+    return in_array($role, effective_roles($user), true);
+}
+
+function is_admin_user(array $user): bool
+{
+    return has_role($user, 'admin');
+}
+
+function is_tenant_only_user(array $user): bool
+{
+    $roles = effective_roles($user);
+    if (!in_array('tenant', $roles, true)) {
+        return false;
+    }
+    return !array_intersect($roles, ['admin', 'landlord', 'property_manager', 'maintenance']);
+}
+
+function is_property_manager_user(array $user): bool
+{
+    return has_role($user, 'property_manager');
+}
+
+/**
+ * Property IDs visible to a user, honouring primary and secondary roles.
+ * A property is included when any effective role grants access:
+ * admin (all), landlord/maintenance (company), property_manager (managed),
+ * or tenant (active tenancy).
+ */
+function accessible_property_ids(array $user): array
+{
+    if (is_admin_user($user)) {
+        return array_map('intval', array_column(
+            \App\Core\Database::fetchAll("SELECT id FROM properties WHERE archived_at IS NULL"),
+            'id'
+        ));
+    }
+
+    if (is_tenant_only_user($user)) {
+        return array_map('intval', array_column(
+            \App\Core\Database::fetchAll(
+                "SELECT p.id FROM properties p
+                 JOIN property_tenant pt ON pt.property_id = p.id
+                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL",
+                [$user['id']]
+            ),
+            'id'
+        ));
+    }
+
+    $companyIds = user_company_ids((int)($user['id'] ?? 0));
+    $candidates = [];
+    if ($companyIds !== []) {
+        $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
+        $candidates = \App\Core\Database::fetchAll(
+            "SELECT id, company_id, property_manager_id FROM properties
+             WHERE company_id IN ({$placeholders}) AND archived_at IS NULL",
+            $companyIds
+        );
+    }
+    if (is_property_manager_user($user)) {
+        $managed = \App\Core\Database::fetchAll(
+            "SELECT id, company_id, property_manager_id FROM properties
+             WHERE property_manager_id = ? AND archived_at IS NULL",
+            [$user['id']]
+        );
+        $candidates = array_merge($candidates, $managed);
+    }
+
+    $seen = [];
+    $ids = [];
+    foreach ($candidates as $property) {
+        $id = (int)$property['id'];
+        if (isset($seen[$id])) {
+            continue;
+        }
+        $seen[$id] = true;
+        if (user_can_access_property($user, $property, $companyIds)) {
+            $ids[] = $id;
+        }
+    }
+    return $ids;
+}
+
+/** Canonical ticket statuses. Includes `resolved` for legacy seeded data. */
+function ticket_statuses(): array
+{
+    return ['open', 'in_progress', 'awaiting_parts', 'awaiting_contractor', 'resolved', 'closed'];
+}
+
+function is_valid_ticket_status(string $status): bool
+{
+    return in_array($status, ticket_statuses(), true);
 }
 
 function ticket_assignment_comment_body(string $actorName, ?string $assigneeName): string

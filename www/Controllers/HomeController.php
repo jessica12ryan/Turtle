@@ -14,8 +14,10 @@ class HomeController
         $auth = Auth::instance();
         $user = $auth->user();
         $role = $user['role'];
+        $isAdmin = is_admin_user($user);
+        $isTenant = is_tenant_only_user($user);
 
-        if ($role === 'tenant') {
+        if ($isTenant) {
             $properties = Database::fetchAll(
                 "SELECT p.*, u.name as landlord_name FROM properties p 
                  JOIN property_tenant pt ON pt.property_id = p.id 
@@ -105,10 +107,10 @@ class HomeController
         if (!\App\Core\Telemetry::isEnabled()) {
             $alerts['critical'][] = [
                 'msg' => 'Sharing telemetry data is turned off. Turn it on to help with development.',
-            ] + ($role === 'admin' ? ['link' => '/settings?tab=updates'] : []);
+            ] + ($isAdmin ? ['link' => '/settings?tab=updates'] : []);
         }
 
-        if ($role === 'admin') {
+        if ($isAdmin) {
             $adminCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE role = 'admin' AND archived_at IS NULL");
             if (!$adminCount || $adminCount['cnt'] === 0) {
                 $alerts['critical'][] = ['msg' => 'No admin account exists. Create one to maintain system access.', 'link' => '/setup'];
@@ -125,11 +127,11 @@ class HomeController
                 $current = $currentVer['value'] ?? '0.0.0';
                 if ($channel === 'development') {
                     if ($latestFromGit !== $current) {
-                        $alerts['warning'][] = ['msg' => 'Development update (' . h($latestFromGit) . ') is available.', 'link' => '/settings?tab=updates'];
+                        $alerts['warning'][] = ['msg' => 'Development update (' . $latestFromGit . ') is available.', 'link' => '/settings?tab=updates'];
                     }
                 } else {
                     if (version_compare($latestFromGit, $current, '>')) {
-                        $alerts['warning'][] = ['msg' => 'Update v' . h($latestFromGit) . ' is available.', 'link' => '/settings?tab=updates'];
+                        $alerts['warning'][] = ['msg' => 'Update v' . $latestFromGit . ' is available.', 'link' => '/settings?tab=updates'];
                     }
                 }
             }
@@ -162,43 +164,39 @@ class HomeController
             }
         }
 
-        if (in_array($role, ['admin', 'landlord', 'property_manager'])) {
-            $propCount = Database::fetch("SELECT COUNT(*) as cnt FROM properties WHERE archived_at IS NULL");
-            if (!$propCount || $propCount['cnt'] === 0) {
-                $isAdmin = $role === 'admin';
-                $alerts[$isAdmin ? 'warning' : 'critical'][] = ['msg' => 'No properties exist. Create one to get started.', 'link' => '/properties/create'];
-            } else {
-                $noTenantProps = Database::fetch("SELECT COUNT(*) as cnt FROM properties p WHERE p.archived_at IS NULL AND NOT " . Tenancy::hasTenantSql('p'));
-                if ($noTenantProps && $noTenantProps['cnt'] > 0) {
-                    $count = (int)$noTenantProps['cnt'];
-                    $key = $count > 1 ? '%d properties have no tenants.' : '%d property has no tenants.';
-                    $links = [
-                        ['label' => __('Add Tenant'), 'href' => '/tenants/create'],
-                        ['label' => __('View Applications'), 'href' => '/applications'],
-                    ];
-                    if (can('guest_chats.access')) {
-                        $links[] = ['label' => __('View Guest Chats'), 'href' => '/guest-chats'];
-                    }
-                    $alerts['warning'][] = [
-                        'msg' => sprintf(__($key), $count),
-                        'links' => $links,
-                    ];
+        $propCount = Database::fetch("SELECT COUNT(*) as cnt FROM properties WHERE archived_at IS NULL");
+        if (!$propCount || $propCount['cnt'] === 0) {
+            $alerts[$isAdmin ? 'warning' : 'critical'][] = ['msg' => 'No properties exist. Create one to get started.', 'link' => '/properties/create'];
+        } else {
+            $noTenantProps = Database::fetch("SELECT COUNT(*) as cnt FROM properties p WHERE p.archived_at IS NULL AND NOT " . Tenancy::hasTenantSql('p'));
+            if ($noTenantProps && $noTenantProps['cnt'] > 0) {
+                $count = (int)$noTenantProps['cnt'];
+                $key = $count > 1 ? '%d properties have no tenants.' : '%d property has no tenants.';
+                $links = [
+                    ['label' => __('Add Tenant'), 'href' => '/tenants/create'],
+                    ['label' => __('View Applications'), 'href' => '/applications'],
+                ];
+                if (can('guest_chats.access')) {
+                    $links[] = ['label' => __('View Guest Chats'), 'href' => '/guest-chats'];
                 }
-            }
-
-            $tenantCount = Database::fetch("SELECT COUNT(*) as cnt FROM users u JOIN property_tenant pt ON pt.tenant_id = u.id WHERE pt.moved_out_at IS NULL AND u.archived_at IS NULL");
-            if (!$tenantCount || $tenantCount['cnt'] === 0) {
-                $isAdmin = $role === 'admin';
-                $alerts[$isAdmin ? 'warning' : 'critical'][] = ['msg' => 'No tenants exist. Add tenants to your properties.', 'link' => '/tenants/create'];
-            }
-
-            $openTickets = Database::fetch("SELECT COUNT(*) as cnt FROM tickets WHERE status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL");
-            if ($openTickets && $openTickets['cnt'] > 5) {
-                $alerts['warning'][] = ['msg' => $openTickets['cnt'] . ' open tickets need attention.', 'link' => '/tickets'];
+                $alerts['warning'][] = [
+                    'msg' => sprintf(__($key), $count),
+                    'links' => $links,
+                ];
             }
         }
 
-        if ($role === 'admin' || $role === 'landlord') {
+        $tenantCount = Database::fetch("SELECT COUNT(*) as cnt FROM users u JOIN property_tenant pt ON pt.tenant_id = u.id WHERE pt.moved_out_at IS NULL AND u.archived_at IS NULL");
+        if (!$tenantCount || $tenantCount['cnt'] === 0) {
+            $alerts[$isAdmin ? 'warning' : 'critical'][] = ['msg' => 'No tenants exist. Add tenants to your properties.', 'link' => '/tenants/create'];
+        }
+
+        $openTickets = Database::fetch("SELECT COUNT(*) as cnt FROM tickets WHERE status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL");
+        if ($openTickets && $openTickets['cnt'] > 5) {
+            $alerts['warning'][] = ['msg' => $openTickets['cnt'] . ' open tickets need attention.', 'link' => '/tickets'];
+        }
+
+        if ($isAdmin || has_role($user, 'landlord')) {
             $staffCount = Database::fetch("SELECT COUNT(*) as cnt FROM users WHERE archived_at IS NULL AND (role IN ('property_manager','maintenance') OR FIND_IN_SET('property_manager', REPLACE(COALESCE(secondary_roles,''), ' ', '')) OR FIND_IN_SET('maintenance', REPLACE(COALESCE(secondary_roles,''), ' ', '')))");
             if (!$staffCount || $staffCount['cnt'] === 0) {
                 $alerts['warning'][] = ['msg' => 'No staff members exist. Invite property managers or maintenance staff.', 'link' => '/staff/create'];
@@ -207,58 +205,41 @@ class HomeController
 
         $recentTickets = [];
         $stats = [];
-        if (in_array($role, ['admin', 'landlord', 'property_manager'])) {
-            $isAdmin = $role === 'admin';
-            if ($isAdmin) {
-                $propertyIds = "SELECT id FROM properties WHERE archived_at IS NULL";
-            } else {
-                $companyIds = Database::fetchAll(
-                    "SELECT company_id FROM company_user WHERE user_id = ?",
-                    [$auth->id()]
-                );
-                $companyIds = array_column($companyIds, 'company_id');
-                $companyIdList = implode(',', array_map('intval', $companyIds)) ?: '0';
-                $pmClause = $role === 'property_manager' ? ' AND property_manager_id = ' . (int)$auth->id() : '';
-                $propertyIds = "SELECT id FROM properties WHERE company_id IN ({$companyIdList}) AND archived_at IS NULL{$pmClause}";
-            }
+        $propertyIdList = implode(',', accessible_property_ids($user)) ?: '0';
 
-            $props = Database::fetchAll("SELECT id FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL");
-            $propertyIdList = implode(',', array_column($props, 'id')) ?: '0';
+        $stats['properties'] = count(explode(',', $propertyIdList));
+        $stats['tenants'] = Database::fetch(
+            "SELECT COUNT(*) as count FROM property_tenant pt
+             JOIN users u ON u.id = pt.tenant_id
+             WHERE pt.property_id IN ({$propertyIdList})
+               AND pt.moved_out_at IS NULL AND u.archived_at IS NULL"
+        )['count'] ?? 0;
+        $stats['leases'] = Database::fetch(
+            "SELECT COUNT(*) as count FROM leases WHERE property_id IN ({$propertyIdList}) AND archived_at IS NULL"
+        )['count'] ?? 0;
+        $stats['occupied'] = Database::fetch(
+            "SELECT COUNT(*) as count FROM properties WHERE id IN ({$propertyIdList}) AND archived_at IS NULL AND " . Tenancy::hasTenantSql('properties')
+        )['count'] ?? 0;
+        $stats['total_units'] = $stats['properties'];
+        $stats['open_tickets'] = Database::fetch(
+            "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL"
+        )['count'] ?? 0;
 
-            $stats['properties'] = count($props);
-            $stats['tenants'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM property_tenant pt
-                 JOIN users u ON u.id = pt.tenant_id
-                 WHERE pt.property_id IN ({$propertyIdList})
-                   AND pt.moved_out_at IS NULL AND u.archived_at IS NULL"
+        try {
+            $stats['applications'] = Database::fetch(
+                "SELECT COUNT(*) as count FROM tenant_applications WHERE property_id IN ({$propertyIdList}) AND status IN ('new','in_progress') AND archived_at IS NULL"
             )['count'] ?? 0;
-            $stats['leases'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM leases WHERE property_id IN ({$propertyIdList}) AND archived_at IS NULL"
-            )['count'] ?? 0;
-            $stats['occupied'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM properties WHERE id IN ({$propertyIds}) AND archived_at IS NULL AND " . Tenancy::hasTenantSql('properties')
-            )['count'] ?? 0;
-            $stats['total_units'] = $stats['properties'];
-            $stats['open_tickets'] = Database::fetch(
-                "SELECT COUNT(*) as count FROM tickets WHERE property_id IN ({$propertyIdList}) AND status IN ('open','in_progress','awaiting_parts','awaiting_contractor') AND archived_at IS NULL"
-            )['count'] ?? 0;
-
-            try {
-                $stats['applications'] = Database::fetch(
-                    "SELECT COUNT(*) as count FROM tenant_applications WHERE property_id IN ({$propertyIdList}) AND status IN ('new','in_progress') AND archived_at IS NULL"
-                )['count'] ?? 0;
-            } catch (\Throwable $e) {
-                $stats['applications'] = 0;
-            }
-
-            $recentTickets = Database::fetchAll(
-                "SELECT t.*, p.name as property_name, u.name as tenant_name FROM tickets t 
-                 JOIN properties p ON p.id = t.property_id 
-                 JOIN users u ON u.id = t.tenant_id 
-                 WHERE t.property_id IN ({$propertyIdList}) AND t.archived_at IS NULL 
-                 ORDER BY t.created_at DESC LIMIT 5"
-            );
+        } catch (\Throwable $e) {
+            $stats['applications'] = 0;
         }
+
+        $recentTickets = Database::fetchAll(
+            "SELECT t.*, p.name as property_name, u.name as tenant_name FROM tickets t 
+             JOIN properties p ON p.id = t.property_id 
+             JOIN users u ON u.id = t.tenant_id 
+             WHERE t.property_id IN ({$propertyIdList}) AND t.archived_at IS NULL 
+             ORDER BY t.created_at DESC LIMIT 5"
+        );
 
         $view = new View();
         $view->layout('layouts/main', ['title' => 'Home']);

@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\Access;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
@@ -158,6 +159,8 @@ class ProfileController
 
     public function avatar(int $id): void
     {
+        Access::require(Access::avatar($id));
+
         if (!$this->avatarColumnExists()) {
             http_response_code(404);
             require base_path('www/Views/errors/404.php');

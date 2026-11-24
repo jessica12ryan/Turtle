@@ -29,11 +29,44 @@ class Access
     /** True only when the account is a tenant without any staff role. */
     private static function isTenantOnly(array $user): bool
     {
-        $roles = \effective_roles($user);
-        if (!in_array('tenant', $roles, true)) {
+        return \is_tenant_only_user($user);
+    }
+
+    /** Whether a user may view another user's avatar. */
+    public static function avatar(int $userId, ?array $actor = null): bool
+    {
+        $target = Database::fetch(
+            "SELECT id, archived_at FROM users WHERE id = ?",
+            [$userId]
+        );
+        if (!$target || $target['archived_at'] !== null) {
             return false;
         }
-        return !array_intersect($roles, ['admin', 'landlord', 'property_manager', 'maintenance']);
+
+        $actor = self::user($actor);
+        if (!$actor) {
+            return false;
+        }
+        if ((int)($actor['id'] ?? 0) === $userId || \is_admin_user($actor)) {
+            return true;
+        }
+
+        if (\is_tenant_only_user($actor)) {
+            // A tenant may see the avatar of the landlord/PM of their property.
+            $row = Database::fetch(
+                "SELECT 1 FROM property_tenant pt
+                 JOIN properties p ON p.id = pt.property_id
+                 WHERE pt.tenant_id = ? AND pt.moved_out_at IS NULL AND p.archived_at IS NULL
+                   AND (p.landlord_id = ? OR p.property_manager_id = ?) LIMIT 1",
+                [$actor['id'], $userId, $userId]
+            );
+            return (bool)$row;
+        }
+
+        // Staff may see avatars of other staff in a shared company.
+        $actorCompanies = \user_company_ids((int)($actor['id'] ?? 0));
+        $targetCompanies = \user_company_ids($userId);
+        return (bool)array_intersect($actorCompanies, $targetCompanies);
     }
 
     /** Abort with a 403 for the current request. */

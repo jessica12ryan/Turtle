@@ -236,13 +236,11 @@ CREATE TABLE IF NOT EXISTS guest_chats (
     property_id INT NOT NULL,
     guest_name VARCHAR(255) NOT NULL,
     guest_email VARCHAR(255) NOT NULL,
-    token_hash CHAR(64) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     archived_at TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
-    UNIQUE KEY uniq_guest_chat_token (token_hash),
     INDEX idx_guest_chat_property (property_id),
     INDEX idx_guest_chat_activity (last_activity)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -272,9 +270,6 @@ CREATE TABLE IF NOT EXISTS guest_chat_tokens (
     UNIQUE KEY uniq_guest_chat_token_hash (token_hash),
     INDEX idx_guest_chat_tokens_chat (chat_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-INSERT IGNORE INTO guest_chat_tokens (chat_id, token_hash, created_at)
-SELECT id, token_hash, created_at FROM guest_chats;
 
 -- A guest is identified by the email address they used. One guest can have
 -- one conversation per property; their hub link lists all of them.
@@ -358,17 +353,6 @@ CREATE TABLE IF NOT EXISTS role_permissions (
     role VARCHAR(50) NOT NULL,
     permission VARCHAR(100) NOT NULL,
     PRIMARY KEY (role, permission)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS sessions (
-    id VARCHAR(255) PRIMARY KEY,
-    user_id INT DEFAULT NULL,
-    ip_address VARCHAR(45) DEFAULT NULL,
-    user_agent TEXT,
-    payload TEXT NOT NULL,
-    last_activity INT NOT NULL,
-    INDEX idx_user (user_id),
-    INDEX idx_last_activity (last_activity)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- tenant applications

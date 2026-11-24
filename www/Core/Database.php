@@ -112,6 +112,143 @@ class Database
         return $stmt->rowCount();
     }
 
+    /**
+     * Split a SQL dump into statements, respecting quoted strings and comments.
+     * Unlike explode(';') this does not break on semicolons inside data.
+     *
+     * @return list<string>
+     */
+    public static function splitSql(string $sql): array
+    {
+        $statements = [];
+        $current = '';
+        $length = strlen($sql);
+        $quote = null;
+        $lineComment = false;
+        $blockComment = false;
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $sql[$i];
+            $next = $i + 1 < $length ? $sql[$i + 1] : '';
+
+            if ($lineComment) {
+                $current .= $char;
+                if ($char === "\n") {
+                    $lineComment = false;
+                }
+                continue;
+            }
+            if ($blockComment) {
+                $current .= $char;
+                if ($char === '*' && $next === '/') {
+                    $current .= $next;
+                    $i++;
+                    $blockComment = false;
+                }
+                continue;
+            }
+            if ($quote !== null) {
+                $current .= $char;
+                if ($char === '\\' && $next !== '') {
+                    $current .= $next;
+                    $i++;
+                } elseif ($char === $quote) {
+                    if ($next === $quote) {
+                        $current .= $next;
+                        $i++;
+                    } else {
+                        $quote = null;
+                    }
+                }
+                continue;
+            }
+
+            if ($char === '-' && $next === '-' && ($i + 2 >= $length || ctype_space($sql[$i + 2]))) {
+                $lineComment = true;
+                $current .= $char;
+                continue;
+            }
+            if ($char === '#') {
+                $lineComment = true;
+                $current .= $char;
+                continue;
+            }
+            if ($char === '/' && $next === '*') {
+                $blockComment = true;
+                $current .= $char;
+                continue;
+            }
+            if ($char === "'" || $char === '"' || $char === '`') {
+                $quote = $char;
+                $current .= $char;
+                continue;
+            }
+            if ($char === ';') {
+                $statement = trim($current);
+                if ($statement !== '') {
+                    $statements[] = $statement;
+                }
+                $current = '';
+                continue;
+            }
+            $current .= $char;
+        }
+
+        $statement = trim($current);
+        if ($statement !== '') {
+            $statements[] = $statement;
+        }
+        return $statements;
+    }
+
+    /** Execute every statement in a dump, aborting on the first error. */
+    public static function executeSql(string $sql): void
+    {
+        foreach (self::splitSql($sql) as $statement) {
+            $trimmed = ltrim($statement);
+            if (str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#')) {
+                continue;
+            }
+            self::instance()->pdo->exec($statement);
+        }
+    }
+
+    /** Logical backup of every table, reused by export and restore rollback. */
+    public static function dumpSql(): string
+    {
+        $pdo = self::instance()->getConnection();
+        $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+
+        $sql = "-- Turtle Database Backup\n";
+        $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
+        $sql .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+
+        foreach ($tables as $table) {
+            $row = $pdo->query("SHOW CREATE TABLE `{$table}`")->fetch(\PDO::FETCH_NUM);
+            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
+            $sql .= $row[1] . ";\n\n";
+
+            $rows = $pdo->query("SELECT * FROM `{$table}`")->fetchAll(\PDO::FETCH_ASSOC);
+            if ($rows === []) {
+                continue;
+            }
+            $columns = array_keys($rows[0]);
+            $colList = '`' . implode('`,`', $columns) . '`';
+            foreach ($rows as $row) {
+                $values = [];
+                foreach ($columns as $column) {
+                    $value = $row[$column];
+                    $values[] = $value === null ? 'NULL' : $pdo->quote((string)$value);
+                }
+                $sql .= "INSERT INTO `{$table}` ({$colList}) VALUES (" . implode(', ', $values) . ");\n";
+            }
+            $sql .= "\n";
+        }
+
+        $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+        return $sql;
+    }
+
     public static function beginTransaction(): void
     {
         self::instance()->pdo->beginTransaction();

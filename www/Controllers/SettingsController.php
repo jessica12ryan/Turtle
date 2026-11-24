@@ -992,43 +992,7 @@ class SettingsController
                 redirect('/settings');
             }
 
-            $db = \App\Core\Database::instance()->getConnection();
-
-            // Collect all table names
-            $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
-
-            // Build SQL dump
-            $sql = "-- Turtle Database Backup\n";
-            $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n\n";
-            $sql .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
-
-            foreach ($tables as $table) {
-                $stmt = $db->query("SHOW CREATE TABLE `{$table}`");
-                $row = $stmt->fetch(\PDO::FETCH_NUM);
-                $createSql = $row[1];
-                $sql .= "DROP TABLE IF EXISTS `{$table}`;\n";
-                $sql .= "{$createSql};\n\n";
-
-                $rows = $db->query("SELECT * FROM `{$table}`")->fetchAll(\PDO::FETCH_ASSOC);
-                if (empty($rows)) {
-                    continue;
-                }
-
-                $columns = array_keys($rows[0]);
-                $colList = '`' . implode('`,`', $columns) . '`';
-
-                foreach ($rows as $row) {
-                    $vals = [];
-                    foreach ($columns as $col) {
-                        $v = $row[$col];
-                        $vals[] = $v === null ? 'NULL' : $db->quote($v);
-                    }
-                    $sql .= "INSERT INTO `{$table}` ({$colList}) VALUES (" . implode(',', $vals) . ");\n";
-                }
-                $sql .= "\n";
-            }
-
-            $sql .= "SET FOREIGN_KEY_CHECKS = 1;\n";
+            $sql = \App\Core\Database::dumpSql();
 
             // Create temp dir
             $tmpDir = sys_get_temp_dir() . '/turtle_backup_' . bin2hex(random_bytes(8));
@@ -1221,32 +1185,43 @@ class SettingsController
         }
 
         $db = \App\Core\Database::instance()->getConnection();
+        $restoreSql = (string)file_get_contents($sqlFile);
+
+        // Pre-flight: a truncated or foreign dump must never reach DROP TABLE.
+        $requiredTables = ['settings', 'users', 'properties'];
+        foreach ($requiredTables as $table) {
+            if (!preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?' . preg_quote($table, '/') . '`?/i', $restoreSql)) {
+                self::rrmdir($tmpDir);
+                flash('error', __('Invalid backup file: required table :table is missing.', [':table' => $table]));
+                redirect('/settings?tab=backup');
+            }
+        }
+
+        // Snapshot the live database first. DDL implicitly commits in MySQL,
+        // so a transaction cannot protect us — replaying this dump can.
+        $snapshot = \App\Core\Database::dumpSql();
 
         try {
-            // Disable foreign key checks (SET and DDL can't be in a transaction)
             $db->exec("SET FOREIGN_KEY_CHECKS = 0");
 
-            // Drop all existing tables so the backup SQL fully replaces everything
             $existingTables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
             foreach ($existingTables as $table) {
                 $db->exec("DROP TABLE IF EXISTS `{$table}`");
             }
 
-            // Execute backup SQL — generated with one statement per line ending in ;\n
-            $sql = file_get_contents($sqlFile);
-            $statements = explode(";\n", $sql);
-            foreach ($statements as $stmt) {
-                $stmt = trim($stmt);
-                if ($stmt === '' || str_starts_with($stmt, '--') || str_starts_with($stmt, '#')) {
-                    continue;
-                }
-                $db->exec($stmt);
-            }
-
+            \App\Core\Database::executeSql($restoreSql);
             $db->exec("SET FOREIGN_KEY_CHECKS = 1");
         } catch (\Throwable $e) {
+            \App\Core\Logger::error('Database restore failed, replaying snapshot: ' . $e->getMessage());
+            try {
+                $db->exec("SET FOREIGN_KEY_CHECKS = 0");
+                \App\Core\Database::executeSql($snapshot);
+                $db->exec("SET FOREIGN_KEY_CHECKS = 1");
+            } catch (\Throwable $rollbackError) {
+                \App\Core\Logger::error('Restore rollback also failed: ' . $rollbackError->getMessage());
+            }
             self::rrmdir($tmpDir);
-            flash('error', __('Database restore failed. Please check the error logs for details.'));
+            flash('error', __('Database restore failed. The previous database was restored; check the error logs for details.'));
             redirect('/settings?tab=backup');
         }
 
