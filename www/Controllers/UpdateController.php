@@ -54,6 +54,20 @@ class UpdateController
         if (isset($result['latest_version'])) {
             Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$result['latest_version']]);
         }
+        if (array_key_exists('update_available', $result)) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('update_available', ?)
+                 ON DUPLICATE KEY UPDATE `value` = ?",
+                [$result['update_available'] ? '1' : '0', $result['update_available'] ? '1' : '0']
+            );
+        }
+        if (isset($result['behind_count'])) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES ('behind_count', ?)
+                 ON DUPLICATE KEY UPDATE `value` = ?",
+                [(string)$result['behind_count'], (string)$result['behind_count']]
+            );
+        }
 
         echo json_encode(array_merge([
             'current_version' => $currentVersion,
@@ -294,6 +308,10 @@ class UpdateController
         if ($targetVersion === '') {
             $targetVersion = 'unknown';
         }
+
+        // The pending-update banner is based on the last check; an apply makes
+        // that result stale regardless of whether the update succeeds.
+        Database::execute("UPDATE settings SET `value` = '0' WHERE `key` = 'update_available'");
 
         log_activity('update.applied', "Update started on {$branch} branch to {$targetVersion} (PID: {$pid})");
 

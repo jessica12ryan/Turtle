@@ -126,7 +126,10 @@ class HomeController
             $current = $currentVer['value'] ?? '0.0.0';
             if ($latestFromGit !== '') {
                 if ($channel === 'development') {
-                    if ($latestFromGit !== $current) {
+                    // app_version is a tag while latest_version is a commit
+                    // hash here, so compare the persisted check result instead.
+                    $updateAvailable = trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_available'")['value'] ?? ''));
+                    if (has_available_update(['update_available' => $updateAvailable])) {
                         $alerts['warning'][] = ['msg' => 'Development update (' . $latestFromGit . ') is available.', 'link' => '/settings?tab=updates'];
                     }
                 } elseif (version_compare($latestFromGit, $current, '>')) {

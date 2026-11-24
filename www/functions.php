@@ -124,6 +124,15 @@ function sanitize_filename(string $name): string
     return $name;
 }
 
+/**
+ * Whether the last update check reported an update. Used instead of comparing
+ * app_version (a tag) with latest_version (a commit hash on the dev channel).
+ */
+function has_available_update(array $settings): bool
+{
+    return (string)($settings['update_available'] ?? '0') === '1';
+}
+
 /** Per-request CSP nonce, set by the front controller. */
 function csp_nonce(): string
 {
