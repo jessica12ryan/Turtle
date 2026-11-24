@@ -2,7 +2,7 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Edit Staff Member') ?></h1>
 </div>
 <div class="bg-white rounded-lg shadow p-6 max-w-lg">
-    <script>
+    <script nonce="<?= h(csp_nonce()) ?>">
     var staffEditData = function() {
         return {
             secondaryRoleMap: <?= json_encode($secondaryRoleMap, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>,
@@ -19,7 +19,7 @@
         };
     };
     </script>
-    <form method="POST" action="/staff/<?= $staff['id'] ?>/update" x-data="staffEditData()">
+    <form method="POST" action="/staff/<?= $staff['id'] ?>/update" x-data='staffEditData()'>
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>
@@ -94,7 +94,7 @@
     <?php if (can('staff.delete')): ?>
         <div class="mt-8 pt-6 border-t">
             <h3 class="text-lg font-medium text-red-600 mb-2"><?= __('Danger Zone') ?></h3>
-            <form method="POST" action="/staff/<?= $staff['id'] ?>/hard-delete" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this staff member and all associated records. This is NOT reversible. Continue?') ?>')">
+            <form method="POST" action="/staff/<?= $staff['id'] ?>/hard-delete" data-confirm="<?= __('WARNING: This will permanently delete this staff member and all associated records. This is NOT reversible. Continue?') ?>">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"><?= __('Delete Staff Member') ?></button>
             </form>

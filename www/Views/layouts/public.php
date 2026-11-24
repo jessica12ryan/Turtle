@@ -9,9 +9,10 @@
     <base href="<?= h(base_url()) ?>/">
     <link rel="icon" type="image/svg+xml" href="/assets/logo-icon.svg">
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" sizes="any">
-    <script>window.baseUrl = '<?= h(base_url()) ?>';</script>
+    <script nonce="<?= h(csp_nonce()) ?>">window.baseUrl = '<?= h(base_url()) ?>';</script>
+    <link rel="stylesheet" href="/assets/css/turtle.css">
     <title><?= h($title ?? site_name()) ?> - <?= h(site_name()) ?></title>
-    <script>
+    <script nonce="<?= h(csp_nonce()) ?>">
         (function() {
             var theme = document.documentElement.getAttribute('data-theme') || 'light';
             function apply() {
@@ -27,12 +28,9 @@
             }
         })();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" integrity="sha384-X9kJyAubVxnP0hcA+AMMs21U445qsnqhnUF8EBlEpP3a42Kh/JwWjlv2ZcvGfphb" crossorigin="anonymous"></script>
-    <style>
+    <script defer src="/assets/vendor/alpine.min.js"></script>
+    <script defer src="/assets/js/actions.js"></script>
+    <style nonce="<?= h(csp_nonce()) ?>">
         [x-cloak] { display: none !important; }
         .dark,
         .dark body { background-color: #0f172a; color: #e2e8f0; }

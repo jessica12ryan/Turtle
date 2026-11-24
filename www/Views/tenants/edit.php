@@ -55,7 +55,7 @@
                 <p class="text-xs text-gray-400 mt-1"><?= __('Optional — tenant auto-archives on this date.') ?></p>
             </div>
         </div>
-        <div class="mb-4" id="lease-type-row" <?= $tenant['is_main_tenant'] ? '' : 'style="display:none"' ?>>
+        <div class="mb-4 <?= $tenant['is_main_tenant'] ? '' : 'hidden' ?>" id="lease-type-row">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Lease Type') ?> <span class="text-red-500">*</span></label>
             <?php if ($tenant['is_main_tenant']): ?>
                 <select name="lease_type" id="lease-type" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
@@ -120,7 +120,7 @@
     <?php if (can('tenants.delete')): ?>
         <div class="mt-8 pt-6 border-t">
             <h3 class="text-lg font-medium text-red-600 mb-2"><?= __('Danger Zone') ?></h3>
-            <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this tenant and all associated records. This is NOT reversible. Continue?') ?>')">
+            <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" data-confirm="<?= __('WARNING: This will permanently delete this tenant and all associated records. This is NOT reversible. Continue?') ?>">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"><?= __('Delete Tenant') ?></button>
             </form>

@@ -601,6 +601,18 @@ test('security headers apply to static files and dotfiles are blocked', async ({
   const pageResponse = await page.goto('/');
   expect(pageResponse?.headers()['x-content-type-options']).toBe('nosniff');
 
+  const csp = pageResponse?.headers()['content-security-policy'] ?? '';
+  expect(csp).toContain("script-src 'self' 'nonce-");
+  expect(csp).not.toContain('unsafe-inline');
+  // Alpine's standard build still requires unsafe-eval for x-for expressions.
+  expect(csp).toContain("'unsafe-eval'");
+  expect(csp).not.toContain('https://');
+
+  for (const path of ['/assets/css/turtle.css', '/assets/vendor/alpine.min.js', '/assets/vendor/marked.min.js', '/assets/vendor/purify.min.js']) {
+    const response = await page.request.get(path);
+    expect(response.ok(), `${path} should be served locally`).toBeTruthy();
+  }
+
   const assetResponse = await page.request.get('/assets/favicon.ico');
   expect(assetResponse.ok()).toBeTruthy();
   expect(assetResponse.headers()['x-content-type-options']).toBe('nosniff');

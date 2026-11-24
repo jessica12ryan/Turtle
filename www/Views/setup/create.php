@@ -1,4 +1,4 @@
-<style>
+<style nonce="<?= h(csp_nonce()) ?>">
 .setup-wide { max-width: 48rem !important; }
 .step-indicator { display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding: 0 0.5rem; }
 .step-dot { display: flex; align-items: center; justify-content: center; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; flex-shrink: 0; transition: all 0.2s; }
@@ -16,7 +16,7 @@
 .step-content.active { display: block; }
 </style>
 
-<div class="setup-wide" style="margin: 0 auto;">
+<div class="setup-wide mx-auto">
     <h1 class="text-2xl font-bold text-gray-800 mb-1 text-center"><?= __('Welcome to Turtle') ?></h1>
     <p class="text-gray-500 mb-6 text-center"><?= __("Let's get your portal set up.") ?></p>
 
@@ -27,11 +27,11 @@
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <div class="flex items-center space-x-6 mb-2">
             <label class="flex items-center space-x-2 cursor-pointer">
-                <input type="radio" name="setup_mode" value="new" checked onchange="toggleSetupMode()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="setup_mode" value="new" checked data-action="toggleSetupMode" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('New Installation') ?></span>
             </label>
             <label class="flex items-center space-x-2 cursor-pointer">
-                <input type="radio" name="setup_mode" value="restore" onchange="toggleSetupMode()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="setup_mode" value="restore" data-action="toggleSetupMode" class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Restore Backup') ?></span>
             </label>
         </div>
@@ -141,7 +141,7 @@
             </div>
 
             <div class="flex justify-end mt-6">
-                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
+                <button type="button" data-action="nextStep" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
             </div>
         </div>
 
@@ -177,8 +177,8 @@
             </div>
 
             <div class="flex justify-between mt-6">
-                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
-                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
+                <button type="button" data-action="prevStep" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" data-action="nextStep" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
             </div>
         </div>
 
@@ -210,8 +210,8 @@
             </div>
 
             <div class="flex justify-between mt-6">
-                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
-                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
+                <button type="button" data-action="prevStep" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" data-action="nextStep" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
             </div>
         </div>
 
@@ -253,8 +253,8 @@
             </div>
 
             <div class="flex justify-between mt-6">
-                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
-                <button type="button" onclick="nextStep()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
+                <button type="button" data-action="prevStep" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" data-action="nextStep" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium"><?= __('Next →') ?></button>
             </div>
         </div>
 
@@ -289,7 +289,7 @@
             </div>
 
             <div class="flex justify-between mt-6">
-                <button type="button" onclick="prevStep()" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
+                <button type="button" data-action="prevStep" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium"><?= __('← Back') ?></button>
                 <button type="submit" id="finish-btn" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 font-medium inline-flex items-center">
                     <span id="finish-text"><?= __('Finish Setup') ?></span>
                     <svg id="finish-spinner" class="hidden animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -302,7 +302,7 @@
     </form>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 var currentStep = 1;
 var totalSteps = 5;
 

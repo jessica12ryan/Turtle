@@ -57,7 +57,7 @@ $otherTenants = $data['other_tenants'] ?? [];
                     <dt class="text-gray-500 dark:text-gray-400 mb-1"><?= __('Government Issued Photo ID') ?></dt>
                     <dd>
                         <a href="/applications/<?= $application['id'] ?>/photo/primary" target="_blank" rel="noopener">
-                            <img src="/applications/<?= $application['id'] ?>/photo/primary" alt="Photo ID" class="max-w-full h-auto rounded border border-gray-300 dark:border-gray-600" style="max-height:200px">
+                            <img src="/applications/<?= $application['id'] ?>/photo/primary" alt="Photo ID" class="max-w-full h-auto max-h-[200px] rounded border border-gray-300 dark:border-gray-600">
                         </a>
                         <p class="mt-1"><a href="/applications/<?= $application['id'] ?>/photo/primary" target="_blank" class="text-blue-600 hover:underline text-sm"><?= __('View Document') ?></a></p>
                     </dd>
@@ -124,7 +124,7 @@ $otherTenants = $data['other_tenants'] ?? [];
                     <?php if (!empty($ot['photo_id'])): ?>
                     <div class="mt-2">
                         <a href="/applications/<?= $application['id'] ?>/photo/tenant_<?= $i ?>" target="_blank" rel="noopener">
-                            <img src="/applications/<?= $application['id'] ?>/photo/tenant_<?= $i ?>" alt="Photo ID" class="max-w-full h-auto rounded border border-gray-300 dark:border-gray-600" style="max-height:120px">
+                            <img src="/applications/<?= $application['id'] ?>/photo/tenant_<?= $i ?>" alt="Photo ID" class="max-w-full h-auto max-h-[120px] rounded border border-gray-300 dark:border-gray-600">
                         </a>
                     </div>
                     <?php endif; ?>

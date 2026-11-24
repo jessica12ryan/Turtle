@@ -131,7 +131,7 @@ $resolverConfig = [
     </form>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function archiveConflictResolver(config) {
     const blank = (ids) => Object.fromEntries(ids.map(id => [id, '']));
     return {

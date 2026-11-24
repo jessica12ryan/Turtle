@@ -1,6 +1,6 @@
 <h1 class="text-2xl font-bold text-gray-800 mb-6"><?= __('Calendar') ?></h1>
 
-<div class="bg-white rounded-lg shadow p-6" x-data="calendar()">
+<div class="bg-white rounded-lg shadow p-6" x-data='calendar()'>
     <div class="flex items-center justify-between mb-6">
         <button @click="prevMonth()" class="p-2 rounded-lg hover:bg-gray-100">
             <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -59,7 +59,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function calendar() {
     return {
         events: [],

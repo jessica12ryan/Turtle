@@ -248,11 +248,14 @@ class SetupController
             redirect('/setup');
         }
 
-        // Extract .env
-        $envContent = $zip->getFromName('.env');
-        if ($envContent !== false) {
-            $envPath = base_path('.env');
-            file_put_contents($envPath, $envContent);
+        // Exported backups never contain .env (it holds APP_KEY and DB/mail
+        // credentials). A crafted archive that does contain one is rejected so
+        // it cannot redirect the app at an attacker-controlled database.
+        if (backup_archive_contains_env($zip)) {
+            $zip->close();
+            unlink($destPath);
+            flash('error', __('Invalid backup file: archives must not contain .env.'));
+            redirect('/setup');
         }
 
         try {

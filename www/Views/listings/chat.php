@@ -26,7 +26,7 @@
     </div>
 
     <div class="bg-white rounded-xl shadow overflow-hidden dark:bg-slate-800">
-        <div id="guest-chat-messages" class="p-5 space-y-3" style="max-height: 55vh; overflow-y: auto;" data-testid="chat-messages">
+        <div id="guest-chat-messages" class="p-5 space-y-3 max-h-[55vh] overflow-y-auto" data-testid="chat-messages">
             <?php foreach ($messages as $message): ?>
                 <div class="flex <?= $message['mine'] ? 'justify-end' : 'justify-start' ?>" data-message-id="<?= (int) $message['id'] ?>">
                     <div class="max-w-[80%] rounded-lg px-4 py-2 <?= $message['mine'] ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-100' ?>">
@@ -44,7 +44,7 @@
         <p id="guest-chat-error" class="hidden px-4 pb-4 text-sm text-red-600"></p>
     </div>
 </div>
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 (function () {
     const token = <?= json_encode($chatToken) ?>;
     const url = (path) => (window.baseUrl || '') + path;

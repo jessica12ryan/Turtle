@@ -1,0 +1,10 @@
+{
+  "name": "turtle-assets",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i input.css -o ../www/assets/css/turtle.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

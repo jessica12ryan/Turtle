@@ -133,7 +133,7 @@
 
         <div class="mb-4">
             <label for="mail_auth_mode" class="block text-sm font-medium text-gray-700 mb-1"><?= __('Authentication Method') ?></label>
-            <select id="mail_auth_mode" name="mail_auth_mode" onchange="toggleMailAuth()" class="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            <select id="mail_auth_mode" name="mail_auth_mode" data-action="toggleMailAuth" class="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                 <option value="password" <?= ($mail['mail_auth_mode'] ?? 'password') === 'password' ? 'selected' : '' ?>><?= __('Password') ?></option>
                 <option value="oauth2" <?= ($mail['mail_auth_mode'] ?? '') === 'oauth2' ? 'selected' : '' ?>><?= __('OAuth2 (Google)') ?></option>
             </select>
@@ -196,7 +196,7 @@
 
         <div class="flex items-center space-x-3">
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Save Mail Settings') ?></button>
-            <button type="button" onclick="testMail()" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium text-sm"><?= __('Send Test Email') ?></button>
+            <button type="button" data-action="testMail" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium text-sm"><?= __('Send Test Email') ?></button>
         </div>
         <div id="mail-test-result" class="mt-3 hidden"></div>
     </form>
@@ -209,7 +209,7 @@
     <?php endif; ?>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function toggleMailAuth() {
     var mode = document.getElementById('mail_auth_mode').value;
     document.getElementById('mail-password-fields').classList.toggle('hidden', mode !== 'password');

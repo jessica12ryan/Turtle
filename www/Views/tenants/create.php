@@ -91,7 +91,7 @@
     </form>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 document.querySelector('form').addEventListener('submit', function() {
     if (document.getElementById('is-main-tenant').checked) {
         document.querySelectorAll('#lease-start, #lease-end, #move-out-date').forEach(el => el.removeAttribute('disabled'));

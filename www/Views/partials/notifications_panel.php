@@ -17,8 +17,8 @@ $panelStrings = [
      x-data='notificationsPanel(<?= json_encode($panelStrings, JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'
      x-cloak
      class="fixed inset-y-0 right-0 z-50 w-full sm:w-[26rem] bg-white shadow-2xl border-l border-gray-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col"
-     :class="open ? '' : 'hidden'"
-     :style="panelStyle">
+     x-show="open"
+    >
     <div class="hidden sm:block absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-blue-500"
          @mousedown="startResize($event)" :title="strings.resize"></div>
 
@@ -30,7 +30,7 @@ $panelStrings = [
     </div>
 
     <div class="px-4 py-2 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between space-x-2">
-        <button type="button" @click="toggleRead()" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" x-text="showRead ? strings.showingRead : strings.showRead"></button>
+        <button type="button" @click="toggleRead()" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" x-text="readLabel"></button>
         <button type="button" @click="markAll()" class="text-xs text-blue-600 dark:text-blue-400 hover:underline" x-text="strings.markAll"></button>
     </div>
 
@@ -56,7 +56,7 @@ $panelStrings = [
     </div>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function notificationsPanel(strings) {
     const url = (path) => (window.baseUrl || '') + path;
     const csrf = () => document.getElementById('notifications-csrf').value;
@@ -77,9 +77,11 @@ function notificationsPanel(strings) {
             if (isNaN(saved) || saved === 384) return 416;
             return saved;
         })(),
-        get panelStyle() {
-            if (window.innerWidth < 640) return '';
-            return 'width: ' + this.panelWidth + 'px';
+        applyPanelWidth() {
+            this.$el.style.width = window.innerWidth < 640 ? '' : this.panelWidth + 'px';
+        },
+        get readLabel() {
+            return this.showRead ? this.strings.showingRead : this.strings.showRead;
         },
         startResize(event) {
             event.preventDefault();
@@ -88,6 +90,7 @@ function notificationsPanel(strings) {
             const onMove = (moveEvent) => {
                 const next = startWidth + (startX - moveEvent.clientX);
                 this.panelWidth = Math.max(320, Math.min(window.innerWidth * 0.8, Math.round(next)));
+                this.applyPanelWidth();
             };
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
@@ -147,6 +150,7 @@ function notificationsPanel(strings) {
         },
         toggleRead() {
             this.showRead = !this.showRead;
+            this.applyPanelWidth();
             this.load();
         },
         async markRead(id) {

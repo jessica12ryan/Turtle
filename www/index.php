@@ -68,6 +68,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Per-request nonce for inline scripts/styles; views read it via csp_nonce().
+$GLOBALS['turtle_csp_nonce'] = base64_encode(random_bytes(16));
+
 // Security headers
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
@@ -76,10 +79,10 @@ header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 }
-// Minimal CSP. 'unsafe-inline'/'unsafe-eval' are currently required by the
-// Tailwind CDN script and Alpine's CDN build; object/base/form directives
-// close the remaining common injection vectors.
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';");
+// All assets are self-hosted; inline scripts/styles carry a per-request nonce.
+// Alpine's standard build still needs 'unsafe-eval' for x-for/x-bind expressions.
+$nonce = "'nonce-" . $GLOBALS['turtle_csp_nonce'] . "'";
+header("Content-Security-Policy: default-src 'self'; script-src 'self' {$nonce} 'unsafe-eval'; style-src 'self' {$nonce}; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';");
 
 // Session idle timeout (1 hour)
 $sessionTimeout = 3600;

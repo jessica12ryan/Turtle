@@ -58,7 +58,7 @@
                             </form>
                         <?php endif; ?>
                         <?php if (can('properties.delete')): ?>
-                            <form method="POST" action="/properties/<?= $property['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this property and all associated data. This action cannot be undone. Continue?') ?>')">
+                            <form method="POST" action="/properties/<?= $property['id'] ?>/hard-delete" class="inline" data-confirm="<?= __('WARNING: This will permanently delete this property and all associated data. This action cannot be undone. Continue?') ?>">
                                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                 <button type="submit" class="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded hover:bg-red-200" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
                             </form>

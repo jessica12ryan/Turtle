@@ -3,7 +3,7 @@
     <p class="text-gray-500 mt-1"><?= __('Ask questions, get insights, and automate tasks with the AI Assistant.') ?></p>
 </div>
 
-<div class="bg-white rounded-lg shadow flex flex-col" style="height: 65vh;" x-data="chat()">
+<div class="bg-white rounded-lg shadow flex flex-col h-[65vh]" x-data='chat()'>
     <!-- Messages -->
     <div class="flex-1 overflow-y-auto p-6 space-y-4" x-ref="messages">
         <template x-for="(msg, i) in messages" :key="i">
@@ -53,7 +53,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function chat() {
     return {
         messages: [],

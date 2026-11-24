@@ -59,13 +59,13 @@
                             <?php if (!$tenant['archived_at']): ?>
                                 <a href="/tenants/<?= $tenant['id'] ?>/edit" class="text-blue-600 hover:underline text-sm" data-tooltip="<?= __('Edit this item') ?>"><?= __('Edit') ?></a>
                                 <?php if (can('tenants.archive')): ?>
-                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this tenant and is not reversible. They will be removed from the property and their account disabled. Continue?') ?>')">
+                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/move-out" class="inline" data-confirm="<?= __('WARNING: This will archive this tenant and is not reversible. They will be removed from the property and their account disabled. Continue?') ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-orange-600 hover:underline text-sm" data-tooltip="<?= __('Archive this item') ?>"><?= __('Archive') ?></button>
                                     </form>
                                 <?php endif; ?>
                                 <?php if (can('tenants.delete')): ?>
-                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this tenant and all associated data. This action cannot be undone. Continue?') ?>')">
+                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" class="inline" data-confirm="<?= __('WARNING: This will permanently delete this tenant and all associated data. This action cannot be undone. Continue?') ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-red-600 hover:underline text-sm" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
                                     </form>
@@ -78,7 +78,7 @@
                                     </form>
                                 <?php endif; ?>
                                 <?php if (can('tenants.delete')): ?>
-                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this tenant and all associated data. This action cannot be undone. Continue?') ?>')">
+                                    <form method="POST" action="/tenants/<?= $tenant['id'] ?>/delete" class="inline" data-confirm="<?= __('WARNING: This will permanently delete this tenant and all associated data. This action cannot be undone. Continue?') ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-red-600 hover:underline text-sm" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
                                     </form>

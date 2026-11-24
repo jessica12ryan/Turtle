@@ -6,7 +6,7 @@
     <div class="mb-8 p-4 border border-blue-200 rounded-lg bg-blue-50">
         <h3 class="text-md font-semibold text-blue-800 mb-2"><?= __('Create Backup') ?></h3>
         <p class="text-sm text-blue-600 mb-4"><?= __('Downloads a .turtle file containing your entire database, uploaded files, logo, and settings.') ?></p>
-        <iframe name="download-frame" style="display:none" aria-hidden="true"></iframe>
+        <iframe name="download-frame" class="hidden" aria-hidden="true"></iframe>
         <form method="POST" action="/settings/backup" id="backup-form" target="download-frame">
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <button type="submit" id="backup-btn" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 font-medium inline-flex items-center">
@@ -42,7 +42,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 document.getElementById('backup-form')?.addEventListener('submit', function(e) {
     var btn = document.getElementById('backup-btn');
     if (btn.disabled) {

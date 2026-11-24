@@ -124,6 +124,18 @@ function sanitize_filename(string $name): string
     return $name;
 }
 
+/** Per-request CSP nonce, set by the front controller. */
+function csp_nonce(): string
+{
+    return (string)($GLOBALS['turtle_csp_nonce'] ?? '');
+}
+
+/** Backups must never carry .env: it contains APP_KEY and DB/mail secrets. */
+function backup_archive_contains_env(\ZipArchive $zip): bool
+{
+    return $zip->locateName('.env') !== false;
+}
+
 /** MIME types the app accepts for image uploads. HEIC/HEIF are converted to JPEG. */
 function image_upload_mimes(): array
 {

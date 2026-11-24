@@ -28,7 +28,7 @@
                                 <a href="/resources/<?= $link['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
                             <?php endif; ?>
                             <?php if (can('resources.delete')): ?>
-                                <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Delete this resource?') ?>')">
+                                <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" data-confirm="<?= __('Delete this resource?') ?>">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                 </form>
@@ -60,7 +60,7 @@
                                 <a href="/resources/<?= $link['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="text-blue-600 hover:underline text-sm"><?= __('Edit') ?></a>
                             <?php endif; ?>
                             <?php if (can('resources.delete')): ?>
-                                <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Delete this resource?') ?>')">
+                                <form method="POST" action="/resources/<?= $link['id'] ?>/delete" class="inline" data-confirm="<?= __('Delete this resource?') ?>">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-600 hover:underline text-sm"><?= __('Delete') ?></button>
                                 </form>

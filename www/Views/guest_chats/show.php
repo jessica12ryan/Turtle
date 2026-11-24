@@ -17,7 +17,7 @@
 <div class="mb-4 flex flex-wrap items-center gap-3">
     <?php if (empty($chat['archived_at']) && can('guest_chats.archive')): ?>
         <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/archive"
-              onsubmit="return confirm('<?= h(__('Archive this conversation? The guest will no longer be able to access it.')) ?>')">
+              data-confirm="<?= h(__('Archive this conversation? The guest will no longer be able to access it.')) ?>">
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <button type="submit" data-testid="guest-chat-archive" class="border border-orange-500 text-orange-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-50 dark:hover:bg-slate-700"><?= __('Archive') ?></button>
         </form>
@@ -30,7 +30,7 @@
     <?php endif; ?>
     <?php if (can('guest_chats.delete')): ?>
         <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/delete"
-              onsubmit="return confirm('<?= h(__('Permanently delete this conversation and all its messages? This cannot be undone.')) ?>')">
+              data-confirm="<?= h(__('Permanently delete this conversation and all its messages? This cannot be undone.')) ?>">
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <button type="submit" data-testid="guest-chat-delete" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700"><?= __('Delete') ?></button>
         </form>
@@ -38,7 +38,7 @@
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden max-w-4xl dark:bg-slate-800">
-    <div id="guest-chat-messages" class="p-5 space-y-3" style="max-height: 55vh; overflow-y: auto;">
+    <div id="guest-chat-messages" class="p-5 space-y-3 max-h-[55vh] overflow-y-auto">
         <?php foreach ($messages as $message): ?>
             <div class="flex <?= $message['mine'] ? 'justify-end' : 'justify-start' ?>" data-message-id="<?= (int) $message['id'] ?>">
                 <div class="max-w-[80%] rounded-lg px-4 py-2 <?= $message['mine'] ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-100' ?>">
@@ -57,7 +57,7 @@
     <?php endif; ?>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 (function () {
     const chatId = <?= (int) $chat['id'] ?>;
     const url = (path) => (window.baseUrl || '') + path;

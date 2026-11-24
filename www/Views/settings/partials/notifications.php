@@ -15,12 +15,12 @@ $hideNotifCell = function (string $event, string $role): bool {
 
         <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
             <label class="flex items-center space-x-3">
-                <input type="radio" name="notification_mode" value="default" <?= ($notificationMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="notification_mode" value="default" <?= ($notificationMode ?? 'default') === 'default' ? 'checked' : '' ?> data-auto-submit class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Use default email notifications') ?></span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use the default notifications designed for Turtle.') ?></p>
             <label class="flex items-center space-x-3 mt-2">
-                <input type="radio" name="notification_mode" value="custom" <?= ($notificationMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="notification_mode" value="custom" <?= ($notificationMode ?? 'default') === 'custom' ? 'checked' : '' ?> data-auto-submit class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Custom email notifications') ?></span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Manually configure who receives each notification.') ?></p>
@@ -73,7 +73,7 @@ $hideNotifCell = function (string $event, string $role): bool {
                                                value="<?= h($role) ?>"
                                                <?= $checked ? 'checked' : '' ?>
                                                <?= $isDefault ? 'disabled' : '' ?>
-                                               onchange="this.form.submit()"
+                                               data-auto-submit
                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
                                     </td>
                                 <?php endif; ?>
@@ -96,12 +96,12 @@ $hideNotifCell = function (string $event, string $role): bool {
 
         <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
             <label class="flex items-center space-x-3">
-                <input type="radio" name="inapp_mode" value="default" <?= ($inappMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="inapp_mode" value="default" <?= ($inappMode ?? 'default') === 'default' ? 'checked' : '' ?> data-auto-submit class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Use default in-app notifications') ?></span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use the default notifications designed for Turtle.') ?></p>
             <label class="flex items-center space-x-3 mt-2">
-                <input type="radio" name="inapp_mode" value="custom" <?= ($inappMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="inapp_mode" value="custom" <?= ($inappMode ?? 'default') === 'custom' ? 'checked' : '' ?> data-auto-submit class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700"><?= __('Custom in-app notifications') ?></span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Manually configure who receives each notification.') ?></p>
@@ -139,7 +139,7 @@ $hideNotifCell = function (string $event, string $role): bool {
                                                value="<?= h($role) ?>"
                                                <?= $checked ? 'checked' : '' ?>
                                                <?= $inappIsDefault ? 'disabled' : '' ?>
-                                               onchange="this.form.submit()"
+                                               data-auto-submit
                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 <?= $inappIsDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
                                     </td>
                                 <?php endif; ?>

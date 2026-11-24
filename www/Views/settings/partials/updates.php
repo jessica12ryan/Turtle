@@ -12,7 +12,7 @@
         </div>
         <div class="flex items-center space-x-3">
             <span class="text-sm font-medium <?= $channel === 'stable' ? 'text-blue-700' : 'text-gray-500' ?>"><?= __('Stable') ?></span>
-            <button type="button" id="channel-toggle" onclick="toggleChannel()" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 <?= $channel === 'development' ? 'bg-yellow-500' : 'bg-blue-600' ?>">
+            <button type="button" id="channel-toggle" data-action="toggleChannel" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 <?= $channel === 'development' ? 'bg-yellow-500' : 'bg-blue-600' ?>">
                 <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 <?= $channel === 'development' ? 'translate-x-6' : 'translate-x-1' ?>"></span>
             </button>
             <span class="text-sm font-medium <?= $channel === 'development' ? 'text-yellow-700' : 'text-gray-500' ?>"><?= __('Development') ?></span>
@@ -58,7 +58,7 @@
                 <h2 class="text-lg font-semibold text-gray-800"><?= __('Update Available') ?></h2>
                 <p class="text-sm text-gray-600 mt-1"><?= __('Version') ?> <span id="update-latest-version"></span> <?= __('is available.') ?></p>
                 <div id="release-notes" class="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 max-h-64 overflow-y-auto prose prose-sm max-w-none"></div>
-                <button id="apply-btn" onclick="applyUpdate()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium">
+                <button id="apply-btn" data-action="applyUpdate" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium">
                     <?= __('Apply Update') ?>
                 </button>
             </div>
@@ -72,7 +72,7 @@
         <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Applying Update...') ?></h2>
         <div class="mb-4">
             <div class="w-full bg-gray-200 rounded-full h-3">
-                <div id="progress-bar" class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div id="progress-bar" class="bg-blue-600 h-3 w-0 rounded-full transition-all duration-500"></div>
             </div>
             <p id="progress-text" class="text-sm text-gray-600 mt-2"><?= __('Starting...') ?></p>
         </div>
@@ -144,7 +144,7 @@
             <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <h2 class="text-xl font-bold text-gray-800 mb-2"><?= __('Update Complete!') ?></h2>
             <p class="text-gray-600 mb-4"><?= __('The application has been updated successfully.') ?></p>
-            <button onclick="window.location.href='/settings?tab=updates'" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Reload') ?></button>
+            <button data-navigate="/settings?tab=updates" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"><?= __('Reload') ?></button>
         </div>
     </div>
 </div>
@@ -172,14 +172,14 @@
         <form method="POST" action="/settings/telemetry" class="flex items-center space-x-3 flex-shrink-0">
             <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
             <label class="flex items-center space-x-2 text-sm text-gray-600">
-                <input type="checkbox" name="telemetry_enabled" value="1" <?= !empty($telemetryEnabled ?? true) ? 'checked' : '' ?> onchange="this.form.submit()" class="h-4 w-4 rounded border-gray-300 text-blue-600">
+                <input type="checkbox" name="telemetry_enabled" value="1" <?= !empty($telemetryEnabled ?? true) ? 'checked' : '' ?> data-auto-submit class="h-4 w-4 rounded border-gray-300 text-blue-600">
                 <span><?= __('Share stats') ?></span>
             </label>
         </form>
     </div>
 </div>
 
-<style>
+<style nonce="<?= h(csp_nonce()) ?>">
 #release-notes h2 { font-size: 1.1rem; font-weight: 700; margin: 0.75rem 0 0.5rem; color: #111827; }
 #release-notes h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.4rem; color: #1f2937; }
 #release-notes p { margin: 0.5rem 0; line-height: 1.5; }
@@ -195,7 +195,7 @@
 .dark #release-notes code { background: #334155; }
 .dark #release-notes pre { background: #1e293b; }
 </style>
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 let updateId = null;
 let pollTimer = null;
 let currentChannel = '<?= $channel ?>';

@@ -145,6 +145,15 @@
                  photoIds: <?= $photoIdsJson ?>,
                  mainId: <?= $mainPhotoId !== null ? (int) $mainPhotoId : 'null' ?>,
                  csrf: '<?= h(csrf_token()) ?>',
+                 endDrag() { this.draggedId = null; this.overId = null; },
+                 draggable(id) { return this.mainId === id ? 'false' : 'true'; },
+                 startDrag(id) { this.draggedId = this.mainId === id ? null : id; },
+                 tileClass(id) {
+                     return (this.mainId === id ? 'ring-2 ring-blue-500' : 'cursor-move') +
+                         (this.draggedId === id ? ' opacity-50' : (this.overId === id && this.draggedId !== id ? ' ring-2 ring-green-500' : ''));
+                 },
+                 isLastPhoto(id) { return this.photoIds.indexOf(id) === this.photoIds.length - 1; },
+                 isMoveDisabled(id) { return this.photoIds.indexOf(id) === (this.mainId === null ? 0 : 1); },
                  applyOrder(ids) {
                      this.photoIds = ids;
                      const grid = document.querySelector('[data-photo-grid]');
@@ -232,17 +241,17 @@
                      this.save(ids);
                  }
              }">
+
             <?php foreach ($photos as $photo): ?>
                 <?php $photoId = (int) $photo['id']; ?>
                 <div class="relative group border rounded-lg overflow-hidden"
                      data-testid="photo-tile" data-photo-id="<?= $photoId ?>"
-                     :draggable="mainId === <?= $photoId ?> ? 'false' : 'true'"
-                     @dragstart="draggedId = mainId === <?= $photoId ?> ? null : <?= $photoId ?>"
-                     @dragend="draggedId = null; overId = null"
+                     :draggable="draggable(<?= $photoId ?>)"
+                     @dragstart="startDrag(<?= $photoId ?>)"
+                     @dragend="endDrag()"
                      @dragover.prevent="overId = <?= $photoId ?>"
                      @drop.prevent="reorder(<?= $photoId ?>)"
-                     :class="(mainId === <?= $photoId ?> ? 'ring-2 ring-blue-500' : 'cursor-move') +
-                             (draggedId === <?= $photoId ?> ? ' opacity-50' : (overId === <?= $photoId ?> && draggedId !== <?= $photoId ?> ? ' ring-2 ring-green-500' : ''))">
+                     :class="tileClass(<?= $photoId ?>)">
                     <img src="/properties/<?= (int) $property['id'] ?>/photos/<?= $photoId ?>" alt="<?= h($photo['original_name']) ?>" class="w-full h-32 object-cover pointer-events-none">
                     <span x-show="mainId === <?= $photoId ?>" x-cloak data-testid="main-badge" class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded"><?= __('Main') ?></span>
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100">
@@ -265,13 +274,13 @@
                     </div>
                     <div x-show="mainId !== <?= $photoId ?>" x-cloak class="absolute bottom-1 left-1 z-10 flex gap-1">
                         <button type="button" @click="move(<?= $photoId ?>, -1)"
-                                :disabled="photoIds.indexOf(<?= $photoId ?>) === (mainId === null ? 0 : 1)"
+                                :disabled="isMoveDisabled(<?= $photoId ?>)"
                                 data-testid="move-photo-left" aria-label="<?= __('Move photo left') ?>" title="<?= __('Move photo left') ?>"
                                 class="bg-white/90 text-slate-800 rounded p-1 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </button>
                         <button type="button" @click="move(<?= $photoId ?>, 1)"
-                                :disabled="photoIds.indexOf(<?= $photoId ?>) === photoIds.length - 1"
+                                :disabled="isLastPhoto(<?= $photoId ?>)"
                                 data-testid="move-photo-right" aria-label="<?= __('Move photo right') ?>" title="<?= __('Move photo right') ?>"
                                 class="bg-white/90 text-slate-800 rounded p-1 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -287,7 +296,7 @@
     <div class="bg-white rounded-lg shadow p-6 max-w-2xl">
         <div class="mt-0 pt-0 border-t-0">
             <h3 class="text-lg font-medium text-red-600 mb-2"><?= __('Danger Zone') ?></h3>
-            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this property and all its associated data. This is NOT reversible. Continue?') ?>')">
+            <form method="POST" action="/properties/<?= $property['id'] ?>/delete" data-confirm="<?= __('WARNING: This will permanently delete this property and all its associated data. This is NOT reversible. Continue?') ?>">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"><?= __('Delete Property') ?></button>
             </form>
@@ -295,7 +304,7 @@
     </div>
 <?php endif; ?>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 var regions = <?= json_encode(['CA' => regions('CA'), 'US' => regions('US')], JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) ?>;
 var countrySelect = document.getElementById('property_country');
 var provinceSelect = document.getElementById('property_province');

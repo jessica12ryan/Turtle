@@ -119,16 +119,16 @@
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"><?= h($pym['recorded_by_name']) ?></td>
                         <td class="px-6 py-4 text-sm space-x-2">
                             <?php if (can('rents.payments.edit')): ?>
-                                <a href="#edit-<?= $pym['id'] ?>" onclick="document.getElementById('edit-form-<?= $pym['id'] ?>').classList.toggle('hidden')" class="text-blue-600 dark:text-blue-400 hover:underline"><?= __('Edit') ?></a>
+                                <a href="#edit-<?= $pym['id'] ?>" data-toggle-target="edit-form-<?= $pym['id'] ?>" data-toggle-mode="toggle" class="text-blue-600 dark:text-blue-400 hover:underline"><?= __('Edit') ?></a>
                             <?php endif; ?>
                             <?php if (can('rents.payments.archive')): ?>
-                                <form method="POST" action="/payments/<?= $pym['id'] ?>/archive" class="inline" onsubmit="return confirm('<?= __('Archive this payment?') ?>')">
+                                <form method="POST" action="/payments/<?= $pym['id'] ?>/archive" class="inline" data-confirm="<?= __('Archive this payment?') ?>">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-orange-600 dark:text-orange-400 hover:underline"><?= __('Archive') ?></button>
                                 </form>
                             <?php endif; ?>
                             <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
-                                <form method="POST" action="/payments/<?= $pym['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Permanently delete this payment? This cannot be undone.') ?>')">
+                                <form method="POST" action="/payments/<?= $pym['id'] ?>/delete" class="inline" data-confirm="<?= __('Permanently delete this payment? This cannot be undone.') ?>">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-red-600 dark:text-red-400 hover:underline"><?= __('Delete') ?></button>
                                 </form>
@@ -170,7 +170,7 @@
                                     </div>
                                     <div class="flex items-end space-x-2">
                                         <button type="submit" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"><?= __('Save') ?></button>
-                                        <button type="button" onclick="document.getElementById('edit-form-<?= $pym['id'] ?>').classList.add('hidden')" class="text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded border dark:border-gray-600 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"><?= __('Cancel') ?></button>
+                                        <button type="button" data-toggle-target="edit-form-<?= $pym['id'] ?>" data-toggle-mode="add" class="text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded border dark:border-gray-600 text-sm hover:bg-gray-50 dark:hover:bg-gray-700"><?= __('Cancel') ?></button>
                                     </div>
                                 </form>
                             </td>

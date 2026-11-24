@@ -30,6 +30,16 @@ The first boot presents a setup wizard. Choose **New Installation** to configure
 
 The app can be tested locally by pointing the app repository to your local clone. See the `turtle-ha/` and `turtle-ha-dev/` directories for app configurations.
 
+## Rebuilding CSS
+
+Tailwind is built ahead of time; the app ships `www/assets/css/turtle.css` and does not download styles or scripts from a CDN at runtime. After changing classes in `www/Views/` or PHP helpers:
+
+```bash
+cd tools && npm install && npm run build:css
+```
+
+Commit the regenerated `www/assets/css/turtle.css`. Vendored JavaScript lives in `www/assets/vendor/`.
+
 ## Testing
 
 All automated tests run in Docker so local runs, AI agents, and CI produce the same result:

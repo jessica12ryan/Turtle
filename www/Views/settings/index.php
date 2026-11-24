@@ -116,7 +116,7 @@
                         </label>
                     </div>
 
-                    <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium" onclick="return confirm('<?= __('Are you sure you want to reset the selected data? This cannot be undone.') ?>')"><?= __('Reset Selected Data') ?></button>
+                    <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium" data-confirm="<?= __('Are you sure you want to reset the selected data? This cannot be undone.') ?>"><?= __('Reset Selected Data') ?></button>
                 </form>
             </div>
         <?php endif; ?>

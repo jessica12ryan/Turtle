@@ -66,7 +66,7 @@ $resolverConfig = [
     </form>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function ticketRestoreResolver(config) {
     return {
         managersByProperty: config.managersByProperty,

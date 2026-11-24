@@ -23,8 +23,8 @@ $messengerStrings = [
      x-data='messenger(<?= json_encode($messengerStrings, JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'
      x-cloak
      class="fixed inset-y-0 right-0 z-50 w-full sm:w-[26rem] bg-white shadow-2xl border-l border-gray-200 dark:bg-slate-900 dark:border-slate-700 flex flex-col"
-     :class="open ? '' : 'hidden'"
-     :style="panelStyle">
+     x-show="open"
+    >
     <div class="hidden sm:block absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 hover:bg-blue-500"
          @mousedown="startResize($event)" :title="strings.resize"></div>
     <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700">
@@ -42,14 +42,10 @@ $messengerStrings = [
             <template x-for="user in users" :key="user.id">
                 <button type="button" @click="selectUser(user)"
                         class="w-full text-left px-3 py-3 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800"
-                        :class="selected && selected.id === user.id ? 'bg-blue-50 dark:bg-slate-800' : ''">
+                        :class="userClass(user)">
                     <div class="flex items-center space-x-2">
-                        <template x-if="user.avatar_url">
-                            <img :src="(window.baseUrl || '') + user.avatar_url" :alt="user.name" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200">
-                        </template>
-                        <template x-if="!user.avatar_url">
-                            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-medium flex-shrink-0" x-text="user.initials"></div>
-                        </template>
+                        <img x-show="user.avatar_url" :src="user.avatar_url" :alt="user.name" class="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-gray-200">
+                        <div x-show="!user.avatar_url" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-medium flex-shrink-0" x-text="user.initials"></div>
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm font-medium text-gray-800 dark:text-white break-words leading-tight min-w-0" x-text="user.name" :title="user.name"></span>
@@ -57,7 +53,7 @@ $messengerStrings = [
                             </div>
                             <div class="flex items-center mt-1">
                                 <span class="w-2 h-2 rounded-full mr-1" :class="user.online ? 'bg-green-500' : 'bg-gray-400'"></span>
-                                <span class="text-xs text-gray-500" x-text="user.online ? strings.online : (strings.lastSeen + ' ' + (user.last_seen || strings.never))"></span>
+                                <span class="text-xs text-gray-500" x-text="lastSeenLabel(user)"></span>
                             </div>
                         </div>
                     </div>
@@ -73,12 +69,8 @@ $messengerStrings = [
             <template x-if="selected">
                 <div class="flex-1 min-h-0 flex flex-col">
                     <div class="px-3 py-2 border-b border-gray-200 dark:border-slate-700 flex items-center space-x-2">
-                        <template x-if="selected.avatar_url">
-                            <img :src="(window.baseUrl || '') + selected.avatar_url" :alt="selected.name" class="w-7 h-7 rounded-full object-cover flex-shrink-0">
-                        </template>
-                        <template x-if="!selected.avatar_url">
-                            <div class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-medium flex-shrink-0" x-text="selected.initials"></div>
-                        </template>
+                        <img x-show="selected.avatar_url" :src="selected.avatar_url" :alt="selected.name" class="w-7 h-7 rounded-full object-cover flex-shrink-0">
+                        <div x-show="!selected.avatar_url" class="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-medium flex-shrink-0" x-text="selected.initials"></div>
                         <span class="w-2 h-2 rounded-full" :class="selected.online ? 'bg-green-500' : 'bg-gray-400'"></span>
                         <span class="text-sm font-medium text-gray-800 dark:text-white break-words min-w-0" x-text="selected.name" :title="selected.name"></span>
                     </div>
@@ -109,7 +101,7 @@ $messengerStrings = [
     </div>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function messenger(strings) {
     const url = (path) => (window.baseUrl || '') + path;
     const csrf = () => document.getElementById('messenger-csrf').value;
@@ -151,9 +143,21 @@ function messenger(strings) {
             if (isNaN(saved) || saved === 384) return 416;
             return saved;
         })(),
-        get panelStyle() {
-            if (window.innerWidth < 640) return '';
-            return 'width: ' + this.panelWidth + 'px';
+        applyPanelWidth() {
+            this.$el.style.width = window.innerWidth < 640 ? '' : this.panelWidth + 'px';
+        },
+        hasAvatar(user) { return !!(user && user.avatar_url); },
+        avatarSrc(user) { return this.assetUrl((user && user.avatar_url) || '/assets/logo-icon.svg'); },
+        onlineClass(user) { return user.online ? 'bg-green-500' : 'bg-gray-400'; },
+        selectedOnlineClass() { return this.selected && this.selected.online ? 'bg-green-500' : 'bg-gray-400'; },
+        userClass(user) {
+            return this.selected && this.selected.id === user.id ? 'bg-blue-50 dark:bg-slate-800' : '';
+        },
+        assetUrl(path) {
+            return (window.baseUrl || '') + path;
+        },
+        lastSeenLabel(user) {
+            return user.online ? this.strings.online : this.strings.lastSeen + ' ' + (user.last_seen || this.strings.never);
         },
         startResize(event) {
             event.preventDefault();
@@ -162,6 +166,7 @@ function messenger(strings) {
             const onMove = (moveEvent) => {
                 const next = startWidth + (startX - moveEvent.clientX);
                 this.panelWidth = Math.max(320, Math.min(window.innerWidth * 0.8, Math.round(next)));
+                this.applyPanelWidth();
             };
             const onUp = () => {
                 document.removeEventListener('mousemove', onMove);
@@ -172,6 +177,7 @@ function messenger(strings) {
             document.addEventListener('mouseup', onUp);
         },
         init() {
+            this.applyPanelWidth();
             // Resolve the Alpine reactive proxy at call time: init() receives
             // the raw data object, whose mutations are not rendered.
             const proxy = () => Alpine.$data(document.getElementById('messenger-panel'));

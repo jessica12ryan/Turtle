@@ -119,20 +119,18 @@ class HomeController
             $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
             $channel = $channel['value'] ?? 'stable';
 
-            $latestFromGit = \App\Controllers\UpdateController::getLatestVersion($channel);
-            if ($latestFromGit) {
-                Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$latestFromGit]);
-                Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [date('Y-m-d H:i:s')]);
-                $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
-                $current = $currentVer['value'] ?? '0.0.0';
+            // Use the result of the last explicit check. The dashboard must
+            // never make network calls (GitHub API / git fetch) on page load.
+            $latestFromGit = trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'")['value'] ?? ''));
+            $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+            $current = $currentVer['value'] ?? '0.0.0';
+            if ($latestFromGit !== '') {
                 if ($channel === 'development') {
                     if ($latestFromGit !== $current) {
                         $alerts['warning'][] = ['msg' => 'Development update (' . $latestFromGit . ') is available.', 'link' => '/settings?tab=updates'];
                     }
-                } else {
-                    if (version_compare($latestFromGit, $current, '>')) {
-                        $alerts['warning'][] = ['msg' => 'Update v' . $latestFromGit . ' is available.', 'link' => '/settings?tab=updates'];
-                    }
+                } elseif (version_compare($latestFromGit, $current, '>')) {
+                    $alerts['warning'][] = ['msg' => 'Update v' . $latestFromGit . ' is available.', 'link' => '/settings?tab=updates'];
                 }
             }
 
@@ -151,16 +149,14 @@ class HomeController
                 $alerts['warning'][] = ['msg' => $archivedProperties['cnt'] . ' archived propert' . ($archivedProperties['cnt'] > 1 ? 'ies' : 'y') . ' exist. Consider permanent cleanup.', 'link' => '/properties'];
             }
 
-            $ntp = checkNtpTime();
-            if ($ntp !== null && $ntp['drift'] > 60) {
-                $alerts['warning'][] = ['msg' => 'System time differs from NTP by ' . $ntp['drift'] . ' seconds. Consider syncing your server clock.', 'link' => '/settings?tab=general'];
-            } elseif ($ntp === null) {
-                $lastNtpFail = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_ntp_check'");
-                $lastFailTs = $lastNtpFail['value'] ?? '';
-                // Only show the NTP warning on first failure, not every page load
-                if (!$lastFailTs || (strtotime('now') - strtotime($lastFailTs)) < 60) {
-                    $alerts['warning'][] = ['msg' => 'Cannot reach NTP server for time sync. Check your NTP server setting or network connectivity.', 'link' => '/settings?tab=general'];
-                }
+            // Read the cached NTP result; the dashboard never performs the
+            // network check itself (that happens from Settings -> General).
+            $ntpStatus = trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_ntp_status'")['value'] ?? ''));
+            $ntpCheck = trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_ntp_check'")['value'] ?? ''));
+            if ($ntpStatus !== '' && $ntpStatus !== 'unreachable' && (int)$ntpStatus > 60) {
+                $alerts['warning'][] = ['msg' => 'System time differs from NTP by ' . (int)$ntpStatus . ' seconds. Consider syncing your server clock.', 'link' => '/settings?tab=general'];
+            } elseif ($ntpStatus === 'unreachable' && $ntpCheck !== '' && (time() - strtotime($ntpCheck)) < 86400) {
+                $alerts['warning'][] = ['msg' => 'Cannot reach NTP server for time sync. Check your NTP server setting or network connectivity.', 'link' => '/settings?tab=general'];
             }
         }
 

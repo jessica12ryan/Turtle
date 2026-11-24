@@ -2,7 +2,7 @@
     <h1 class="text-2xl font-bold text-gray-800"><?= __('Invite Staff Member') ?></h1>
 </div>
 <div class="bg-white rounded-lg shadow p-6 max-w-lg">
-    <script>
+    <script nonce="<?= h(csp_nonce()) ?>">
     var staffCreateData = function() {
         return {
             role: '<?= old('role') ?>',
@@ -20,7 +20,7 @@
         };
     };
     </script>
-    <form method="POST" action="/staff" x-data="staffCreateData()">
+    <form method="POST" action="/staff" x-data='staffCreateData()'>
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>
@@ -72,4 +72,4 @@
         </div>
     </form>
 </div>
-<style>[x-cloak] { display: none !important; }</style>
+<style nonce="<?= h(csp_nonce()) ?>">[x-cloak] { display: none !important; }</style>

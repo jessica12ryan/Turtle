@@ -70,7 +70,7 @@
                             <a href="/applications/<?= $app['id'] ?>" class="text-blue-600 dark:text-blue-400 hover:underline text-sm" data-tooltip="<?= __('View this item') ?>"><?= __('View') ?></a>
                             <?php if (!$app['archived_at']): ?>
                                 <?php if (can('applications.archive')): ?>
-                                    <form method="POST" action="/applications/<?= $app['id'] ?>/archive" class="inline" onsubmit="return confirm('<?= __('Archive this application?') ?>')">
+                                    <form method="POST" action="/applications/<?= $app['id'] ?>/archive" class="inline" data-confirm="<?= __('Archive this application?') ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-orange-600 hover:underline text-sm" data-tooltip="<?= __('Archive this item') ?>"><?= __('Archive') ?></button>
                                     </form>
@@ -83,7 +83,7 @@
                                     </form>
                                 <?php endif; ?>
                                 <?php if (can('applications.delete')): ?>
-                                    <form method="POST" action="/applications/<?= $app['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Permanently delete this application? This cannot be undone.') ?>')">
+                                    <form method="POST" action="/applications/<?= $app['id'] ?>/delete" class="inline" data-confirm="<?= __('Permanently delete this application? This cannot be undone.') ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" class="text-red-600 hover:underline text-sm" data-tooltip="<?= __('Delete this item permanently') ?>"><?= __('Delete') ?></button>
                                     </form>

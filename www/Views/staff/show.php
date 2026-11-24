@@ -17,7 +17,7 @@
                 </form>
             <?php endif; ?>
             <?php if (can('staff.delete')): ?>
-                <form method="POST" action="/staff/<?= $staff['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this staff member. This action cannot be undone. Continue?') ?>')">
+                <form method="POST" action="/staff/<?= $staff['id'] ?>/hard-delete" class="inline" data-confirm="<?= __('WARNING: This will permanently delete this staff member. This action cannot be undone. Continue?') ?>">
                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                     <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"><?= __('Delete') ?></button>
                 </form>
@@ -27,7 +27,7 @@
                 <a href="/staff/<?= $staff['id'] ?>/edit" data-tooltip="<?= __('Edit this item') ?>" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"><?= __('Edit') ?></a>
             <?php endif; ?>
             <?php if (can('staff.archive')): ?>
-                <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Archive this staff member? They will no longer be able to log in.') ?>')">
+                <form method="POST" action="/staff/<?= $staff['id'] ?>/delete" class="inline" data-confirm="<?= __('Archive this staff member? They will no longer be able to log in.') ?>">
                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                     <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
                 </form>

@@ -34,13 +34,13 @@
                 </form>
             <?php endif; ?>
         <?php elseif (can('leases.archive')): ?>
-            <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('Archive this lease?') ?>')">
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/delete" class="inline" data-confirm="<?= __('Archive this lease?') ?>">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="text-orange-600 hover:underline text-sm"><?= __('Archive') ?></button>
             </form>
         <?php endif; ?>
         <?php if (can('leases.delete')): ?>
-            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('WARNING: This will permanently delete this lease and all associated documents. This is NOT reversible. Continue?')">
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" data-confirm="WARNING: This will permanently delete this lease and all associated documents. This is NOT reversible. Continue?">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-800 hover:underline text-sm font-bold">Delete</button>
             </form>

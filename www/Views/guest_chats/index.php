@@ -56,7 +56,7 @@
                             <div class="flex items-center gap-2 pr-4" data-testid="guest-chat-row-actions">
                                 <?php if (empty($chat['archived_at']) && can('guest_chats.archive')): ?>
                                     <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/archive"
-                                          onsubmit="return confirm('<?= h(__('Archive this conversation? The guest will no longer be able to access it.')) ?>')">
+                                          data-confirm="<?= h(__('Archive this conversation? The guest will no longer be able to access it.')) ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" data-testid="guest-chat-list-archive" class="text-xs border border-orange-500 text-orange-600 px-2 py-1 rounded hover:bg-orange-50 dark:hover:bg-slate-700"><?= __('Archive') ?></button>
                                     </form>
@@ -69,7 +69,7 @@
                                 <?php endif; ?>
                                 <?php if (can('guest_chats.delete')): ?>
                                     <form method="POST" action="/guest-chats/<?= (int) $chat['id'] ?>/delete"
-                                          onsubmit="return confirm('<?= h(__('Permanently delete this conversation and all its messages? This cannot be undone.')) ?>')">
+                                          data-confirm="<?= h(__('Permanently delete this conversation and all its messages? This cannot be undone.')) ?>">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <button type="submit" data-testid="guest-chat-list-delete" class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"><?= __('Delete') ?></button>
                                     </form>

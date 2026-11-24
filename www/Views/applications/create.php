@@ -8,7 +8,7 @@
         </div>
     <?php endif; ?>
 
-    <form method="POST" action="/applications" class="space-y-8" x-data="applicationForm()" enctype="multipart/form-data">
+    <form method="POST" action="/applications" class="space-y-8" x-data='applicationForm()' enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
         <!-- Honeypot: hidden from people, irresistible to bots. -->
         <div class="absolute left-[-9999px]" aria-hidden="true">
@@ -474,7 +474,7 @@
     </form>
 </div>
 
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 function applicationForm() {
     return {
         otherTenants: [],

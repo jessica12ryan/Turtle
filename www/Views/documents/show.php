@@ -18,14 +18,14 @@
             <?php endif; ?>
         <?php else: ?>
             <?php if (can('leases.archive')): ?>
-                <form method="POST" action="/documents/<?= $document['id'] ?>/delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will archive this document. Continue?') ?>')">
+                <form method="POST" action="/documents/<?= $document['id'] ?>/delete" class="inline" data-confirm="<?= __('WARNING: This will archive this document. Continue?') ?>">
                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                     <button type="submit" data-tooltip="<?= __('Archive this item') ?>" class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 text-sm"><?= __('Archive') ?></button>
                 </form>
             <?php endif; ?>
         <?php endif; ?>
         <?php if (can('documents.delete')): ?>
-            <form method="POST" action="/documents/<?= $document['id'] ?>/hard-delete" class="inline" onsubmit="return confirm('<?= __('WARNING: This will permanently delete this document. This action cannot be undone. Continue?') ?>')">
+            <form method="POST" action="/documents/<?= $document['id'] ?>/hard-delete" class="inline" data-confirm="<?= __('WARNING: This will permanently delete this document. This action cannot be undone. Continue?') ?>">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"><?= __('Delete') ?></button>
             </form>

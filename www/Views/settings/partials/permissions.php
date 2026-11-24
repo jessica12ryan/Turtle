@@ -7,12 +7,12 @@
 
         <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
             <label class="flex items-center space-x-3">
-                <input type="radio" name="permissions_mode" value="default" <?= ($permissionsMode ?? 'default') === 'default' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="permissions_mode" value="default" <?= ($permissionsMode ?? 'default') === 'default' ? 'checked' : '' ?> data-auto-submit class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Use default permissions</span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use the default permissions designed for Turtle.') ?></p>
             <label class="flex items-center space-x-3 mt-2">
-                <input type="radio" name="permissions_mode" value="custom" <?= ($permissionsMode ?? 'default') === 'custom' ? 'checked' : '' ?> onchange="this.form.submit()" class="text-blue-600 focus:ring-blue-500">
+                <input type="radio" name="permissions_mode" value="custom" <?= ($permissionsMode ?? 'default') === 'custom' ? 'checked' : '' ?> data-auto-submit class="text-blue-600 focus:ring-blue-500">
                 <span class="text-sm font-medium text-gray-700">Custom permissions</span>
             </label>
             <p class="text-xs text-gray-500 ml-7 mt-1"><?= __('Use a custom set of permissions. This is for advanced users and could have adverse effects.') ?></p>
@@ -200,7 +200,7 @@
                                                value="<?= h($perm) ?>"
                                                <?= $checked ? 'checked' : '' ?>
                                                <?= $isDefault ? 'disabled' : '' ?>
-                                               onchange="this.form.submit()"
+                                               data-auto-submit
                                                class="rounded border-gray-300 <?= permCheckboxColor($perm) ?> <?= $isDefault ? 'opacity-50 cursor-not-allowed' : '' ?>">
                                         <?php endif; ?>
                                     </td>

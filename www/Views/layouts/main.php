@@ -10,9 +10,10 @@ $themePref = $themeUser['theme'] ?? 'system';
     <base href="<?= h(base_url()) ?>/">
     <link rel="icon" type="image/svg+xml" href="/assets/logo-icon.svg">
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" sizes="any">
-    <script>window.baseUrl = '<?= h(base_url()) ?>';</script>
+    <script nonce="<?= h(csp_nonce()) ?>">window.baseUrl = '<?= h(base_url()) ?>';</script>
+    <link rel="stylesheet" href="/assets/css/turtle.css">
     <title><?= h($title ?? 'Home') ?> - <?= h(site_name()) ?></title>
-    <script>
+    <script nonce="<?= h(csp_nonce()) ?>">
         (function() {
             var theme = document.documentElement.getAttribute('data-theme') || 'light';
             function apply() {
@@ -28,7 +29,7 @@ $themePref = $themeUser['theme'] ?? 'system';
             }
         })();
     </script>
-    <script>
+    <script nonce="<?= h(csp_nonce()) ?>">
         // Restore the sidebar state before first paint so it doesn't flash open.
         (function() {
             try {
@@ -38,14 +39,11 @@ $themePref = $themeUser['theme'] ?? 'system';
             } catch (e) {}
         })();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" integrity="sha384-X9kJyAubVxnP0hcA+AMMs21U445qsnqhnUF8EBlEpP3a42Kh/JwWjlv2ZcvGfphb" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js" integrity="sha384-QsSpx6a0USazT7nK7w8qXDgpSAPhFsb2XtpoLFQ5+X2yFN6hvCKnwEzN8M5FWaJb" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous"></script>
-    <style>
+    <script defer src="/assets/vendor/alpine.min.js"></script>
+    <script defer src="/assets/js/actions.js"></script>
+    <script src="/assets/vendor/marked.min.js"></script>
+    <script src="/assets/vendor/purify.min.js"></script>
+    <style nonce="<?= h(csp_nonce()) ?>">
         :root { color-scheme: light; }
         html[data-theme="dark"] { color-scheme: dark; }
         html[data-theme="light"] { color-scheme: light; }
@@ -167,6 +165,7 @@ $themePref = $themeUser['theme'] ?? 'system';
         .dark #tooltip-el.tooltip-top .tooltip-arrow { border-top-color: #e2e8f0; }
         .dark #tooltip-el.tooltip-bottom .tooltip-arrow { border-bottom-color: #e2e8f0; }
     </style>
+
 </head>
 <body class="bg-gray-50 min-h-screen"
       x-data="{
@@ -220,7 +219,7 @@ $themePref = $themeUser['theme'] ?? 'system';
 <?php require base_path('www/Views/partials/messenger.php'); ?>
 <?php endif; ?>
 <?php require base_path('www/Views/partials/notifications_panel.php'); ?>
-<script>
+<script nonce="<?= h(csp_nonce()) ?>">
 (function(){
     var ttp = document.getElementById('tooltip-el');
     var ttpText = document.getElementById('tooltip-text');

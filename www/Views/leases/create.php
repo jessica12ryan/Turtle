@@ -124,4 +124,4 @@
     <?php endif; ?>
 </div>
 
-<style>[x-cloak] { display: none !important; }</style>
+<style nonce="<?= h(csp_nonce()) ?>">[x-cloak] { display: none !important; }</style>
