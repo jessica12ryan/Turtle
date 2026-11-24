@@ -395,26 +395,21 @@ class SettingsController
                 []
             );
         } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-            $allowed = ['image/png', 'image/jpeg', 'image/gif'];
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
-            finfo_close($finfo);
-            if (!in_array($type, $allowed, true)) {
-                flash('error', __('Logo must be PNG, JPEG, or GIF (SVG blocked for XSS).'));
+            $prepared = prepare_image_upload($_FILES['logo']);
+            if ($prepared === null) {
+                flash('error', __('Logo must be PNG, JPEG, GIF, WebP, or HEIC (SVG blocked for XSS).'));
                 redirect('/settings?tab=general');
             }
 
-            // Derive extension from verified mime, not original filename
-            $extMap = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/gif' => 'gif'];
-            $ext = $extMap[$type];
-            $filename = 'logo.' . $ext;
+            // Derive extension from verified/converted mime, not original filename
+            $filename = 'logo.' . $prepared['ext'];
             $uploadDir = base_path('www/assets/uploads/logo/');
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
             $dest = $uploadDir . $filename;
 
-            if (move_uploaded_file($_FILES['logo']['tmp_name'], $dest)) {
+            if (store_image_upload($prepared, $dest)) {
                 Database::execute(
                     "INSERT INTO settings (`key`, `value`) VALUES ('logo_path', ?) ON DUPLICATE KEY UPDATE `value` = ?",
                     ['assets/uploads/logo/' . $filename, 'assets/uploads/logo/' . $filename]

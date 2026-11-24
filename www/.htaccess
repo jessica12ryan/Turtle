@@ -1,3 +1,18 @@
+Options -Indexes
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # PHP responses set these already; only add them for static files so the
+    # values are not duplicated on pages served through index.php.
+    Header set X-Content-Type-Options "nosniff" "expr=-z %{resp:X-Content-Type-Options}"
+    Header set X-Frame-Options "SAMEORIGIN" "expr=-z %{resp:X-Frame-Options}"
+    Header set Referrer-Policy "strict-origin-when-cross-origin" "expr=-z %{resp:Referrer-Policy}"
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()" "expr=-z %{resp:Permissions-Policy}"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{REQUEST_FILENAME} !-f

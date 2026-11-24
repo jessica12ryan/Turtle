@@ -425,20 +425,13 @@ class PropertyController
             return;
         }
 
-        $extByMime = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            'image/webp' => 'webp',
-        ];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $type = finfo_file($finfo, $_FILES['photo']['tmp_name']);
-        finfo_close($finfo);
-        if (!isset($extByMime[$type])) {
+        $prepared = prepare_image_upload($_FILES['photo']);
+        if ($prepared === null) {
             http_response_code(400);
-            echo json_encode(['error' => 'Only JPG, PNG, GIF, and WebP images are allowed.']);
+            echo json_encode(['error' => 'Only JPG, PNG, GIF, WebP, and HEIC images are allowed.']);
             return;
         }
+        $type = $prepared['mime'];
 
         $loc = $this->getPhotoUploadDir($id);
         if (!$loc['dir']) {
@@ -449,10 +442,10 @@ class PropertyController
 
         // Extension comes from the detected MIME type, never from the client's
         // filename (a polyglot named "photo.php" must not be stored as PHP).
-        $storedName = uniqid() . '.' . $extByMime[$type];
+        $storedName = uniqid() . '.' . $prepared['ext'];
         $destPath = $loc['dir'] . '/' . $storedName;
 
-        if (!move_uploaded_file($_FILES['photo']['tmp_name'], $destPath)) {
+        if (!store_image_upload($prepared, $destPath)) {
             http_response_code(500);
             echo json_encode(['error' => 'Failed to save photo.']);
             return;

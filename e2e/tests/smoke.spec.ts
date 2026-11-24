@@ -551,3 +551,61 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
 
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });
+
+test('settings backup and restore round-trip', async ({ page }) => {
+  await page.goto('/login');
+  await page.locator('#email').fill(admin.email);
+  await page.locator('#password').fill(admin.password);
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/home$/);
+
+  await page.goto('/settings?tab=backup');
+  const csrf = await page.locator('#backup-form input[name="_csrf"]').inputValue();
+
+  const backupResponse = await page.request.post('/settings/backup', { form: { _csrf: csrf } });
+  expect(backupResponse.ok()).toBeTruthy();
+  const backup = await backupResponse.body();
+  expect(backup.length).toBeGreaterThan(1000);
+
+  // Create a marker that only exists after the backup was taken.
+  await page.request.post('/resources', {
+    form: { _csrf: csrf, title: 'RESTORE_MARKER', url: 'https://example.com', description: '', type: 'general' },
+  });
+  await page.goto('/resources');
+  await expect(page.getByText('RESTORE_MARKER')).toBeVisible();
+
+  const restoreResponse = await page.request.post('/settings/restore', {
+    multipart: {
+      _csrf: csrf,
+      backup_file: { name: 'backup.turtle', mimeType: 'application/zip', buffer: backup },
+    },
+  });
+  expect(restoreResponse.ok()).toBeTruthy();
+
+  // Restore intentionally logs the user out.
+  await page.goto('/login');
+  await page.locator('#email').fill(admin.email);
+  await page.locator('#password').fill(admin.password);
+  await page.locator('button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/home$/);
+
+  await page.goto('/resources');
+  await expect(page.getByText('RESTORE_MARKER')).toHaveCount(0);
+
+  // Restored data is still present, not just the absence of the marker.
+  await page.goto('/properties');
+  await expect(page.getByText('The Wellington')).toBeVisible();
+});
+
+test('security headers apply to static files and dotfiles are blocked', async ({ page }) => {
+  const pageResponse = await page.goto('/');
+  expect(pageResponse?.headers()['x-content-type-options']).toBe('nosniff');
+
+  const assetResponse = await page.request.get('/assets/favicon.ico');
+  expect(assetResponse.ok()).toBeTruthy();
+  expect(assetResponse.headers()['x-content-type-options']).toBe('nosniff');
+  expect(assetResponse.headers()['x-frame-options']).toBe('SAMEORIGIN');
+
+  const dotfileResponse = await page.request.get('/.env');
+  expect([403, 404]).toContain(dotfileResponse.status());
+});

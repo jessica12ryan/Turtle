@@ -63,8 +63,19 @@ class DocumentController
             return;
         }
 
-        header('Content-Type: ' . ($document['mime_type'] ?? 'application/octet-stream'));
-        header('Content-Disposition: inline; filename="' . sanitize_filename($document['original_name']) . '"');
+        // Never trust the stored MIME for inline delivery: a forged row could
+        // otherwise serve HTML/SVG same-origin. Verify the actual file type.
+        $inlineMimes = [
+            'application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'image/heic', 'image/heif',
+        ];
+        $actualMime = strtolower((string)((new \finfo(FILEINFO_MIME_TYPE))->file($fullPath)));
+        $isInline = in_array($actualMime, $inlineMimes, true);
+        $filename = sanitize_filename($document['original_name']);
+
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Type: ' . ($isInline ? $actualMime : 'application/octet-stream'));
+        header('Content-Disposition: ' . ($isInline ? 'inline' : 'attachment') . '; filename="' . $filename . '"');
         header('Content-Length: ' . filesize($fullPath));
         readfile($fullPath);
         exit;

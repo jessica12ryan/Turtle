@@ -70,25 +70,16 @@ class SetupController
             $logoPath = '';
             $keepDefault = !empty($_POST['logo_default']);
             if (!$keepDefault && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                $allowed = ['image/png', 'image/jpeg', 'image/gif'];
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $type = finfo_file($finfo, $_FILES['logo']['tmp_name']);
-                finfo_close($finfo);
-                if (in_array($type, $allowed)) {
-                    // Never trust the client-supplied extension: this file is
-                    // written inside the web root and a polyglot uploaded as
-                    // "logo.php" would be executed by Apache.
-                    $extByMime = [
-                        'image/png' => 'png',
-                        'image/jpeg' => 'jpg',
-                        'image/gif' => 'gif',
-                    ];
-                    $filename = 'logo.' . $extByMime[$type];
+                $prepared = prepare_image_upload($_FILES['logo']);
+                if ($prepared !== null) {
+                    // Extension comes from the detected/converted MIME: this
+                    // file is written inside the web root.
+                    $filename = 'logo.' . $prepared['ext'];
                     $uploadDir = base_path('www/assets/uploads/logo/');
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0755, true);
                     }
-                    if (move_uploaded_file($_FILES['logo']['tmp_name'], $uploadDir . $filename)) {
+                    if (store_image_upload($prepared, $uploadDir . $filename)) {
                         $logoPath = 'assets/uploads/logo/' . $filename;
                     }
                 }

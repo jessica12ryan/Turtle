@@ -413,6 +413,8 @@ class Mailer
                 'png' => 'image/png',
                 'jpg', 'jpeg' => 'image/jpeg',
                 'gif' => 'image/gif',
+                'heic' => 'image/heic',
+                'heif' => 'image/heif',
                 'txt' => 'text/plain',
                 default => 'application/octet-stream',
             };

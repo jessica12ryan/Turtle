@@ -124,6 +124,76 @@ function sanitize_filename(string $name): string
     return $name;
 }
 
+/** MIME types the app accepts for image uploads. HEIC/HEIF are converted to JPEG. */
+function image_upload_mimes(): array
+{
+    return [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/gif' => 'gif',
+        'image/webp' => 'webp',
+        'image/heic' => 'heic',
+        'image/heif' => 'heif',
+    ];
+}
+
+function is_heic_mime(string $mime): bool
+{
+    return in_array(strtolower($mime), ['image/heic', 'image/heif'], true);
+}
+
+/**
+ * Validate an uploaded image and convert HEIC/HEIF to JPEG.
+ *
+ * @return array{tmp_name:string,mime:string,ext:string,converted:bool}|null
+ */
+function prepare_image_upload(array $file): ?array
+{
+    $tmp = (string)($file['tmp_name'] ?? '');
+    if ($tmp === '' || !is_file($tmp)) {
+        return null;
+    }
+    $mime = strtolower((string)((new \finfo(FILEINFO_MIME_TYPE))->file($tmp)));
+    $map = image_upload_mimes();
+    if (!isset($map[$mime])) {
+        return null;
+    }
+    if (!is_heic_mime($mime)) {
+        return ['tmp_name' => $tmp, 'mime' => $mime, 'ext' => $map[$mime], 'converted' => false];
+    }
+
+    $converter = trim((string)(@shell_exec('command -v heif-convert 2>/dev/null') ?? ''));
+    if ($converter === '') {
+        \App\Core\Logger::error('HEIC upload rejected: heif-convert is not installed.');
+        return null;
+    }
+    $destination = tempnam(sys_get_temp_dir(), 'turtle_heic_');
+    if ($destination === false) {
+        return null;
+    }
+    unlink($destination);
+    $destination .= '.jpg';
+    exec(escapeshellarg($converter) . ' ' . escapeshellarg($tmp) . ' ' . escapeshellarg($destination) . ' 2>&1', $output, $exitCode);
+    if ($exitCode !== 0 || !is_file($destination) || filesize($destination) === 0) {
+        @unlink($destination);
+        \App\Core\Logger::error('HEIC to JPEG conversion failed: ' . implode(' ', $output));
+        return null;
+    }
+    return ['tmp_name' => $destination, 'mime' => 'image/jpeg', 'ext' => 'jpg', 'converted' => true];
+}
+
+/** Move a prepared upload to its final path. */
+function store_image_upload(array $prepared, string $destination): bool
+{
+    if (!empty($prepared['converted'])) {
+        if (@rename($prepared['tmp_name'], $destination)) {
+            return true;
+        }
+        return @copy($prepared['tmp_name'], $destination) && @unlink($prepared['tmp_name']);
+    }
+    return @move_uploaded_file($prepared['tmp_name'], $destination);
+}
+
 function old(string $key, string $default = ''): string
 {
     if (isset($_SESSION['_old'][$key])) {

@@ -85,17 +85,11 @@ final class SchemaMigrationTest extends TestCase
                  VALUES (1, 'Admin', 'admin@migration.test', 'x', 'admin', NOW(), NOW())"
             );
             $seed = (string) file_get_contents(base_path('database/seed.sql'));
-            $seed = preg_replace('/^-- .*/m', '', $seed) ?? $seed;
-            foreach (explode(';', $seed) as $statement) {
-                $statement = trim($statement);
-                if ($statement === '') {
-                    continue;
-                }
+            foreach (\App\Core\Database::splitSql($seed) as $index => $statement) {
                 try {
                     $pdo->exec($statement);
-                } catch (\Throwable $e) {
-                    // seed.sql is best-effort and includes statements whose
-                    // columns are added by migrations on some installations.
+                } catch (\PDOException $e) {
+                    self::fail("seed.sql statement #{$index} failed: " . $e->getMessage());
                 }
             }
 

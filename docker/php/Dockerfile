@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libonig-dev \
     libicu-dev \
+    libheif-examples \
     libcurl4-openssl-dev \
     unzip \
     curl \
@@ -30,7 +31,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY php.ini /usr/local/etc/php/conf.d/turtle.ini
 
-RUN a2enmod rewrite
+RUN a2enmod rewrite headers
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/www
 

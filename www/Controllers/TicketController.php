@@ -609,22 +609,26 @@ class TicketController
                 continue;
             }
 
-            $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt'];
+            $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt', 'heic', 'heif'];
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             if (!in_array($ext, $allowedExts)) {
                 continue;
             }
-            $filename = uniqid() . '.' . $ext;
+
+            $prepared = prepare_image_upload(['tmp_name' => $tmpName]);
+            if ($prepared === null) {
+                $detectedType = strtolower((string)((new \finfo(FILEINFO_MIME_TYPE))->file($tmpName)));
+                $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+                if (!in_array($detectedType, $allowedMimes, true)) {
+                    continue;
+                }
+                $prepared = ['tmp_name' => $tmpName, 'mime' => $detectedType, 'ext' => $ext, 'converted' => false];
+            }
+            $detectedType = $prepared['mime'];
+            $filename = uniqid() . '.' . $prepared['ext'];
             $destPath = $uploadDir . '/' . $filename;
 
-            $finfo = new \finfo(FILEINFO_MIME_TYPE);
-            $detectedType = $finfo->file($tmpName);
-            $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'text/plain'];
-            if (!in_array($detectedType, $allowedMimes, true)) {
-                continue;
-            }
-
-            if (move_uploaded_file($tmpName, $destPath)) {
+            if (store_image_upload($prepared, $destPath)) {
                 Database::insert(
                     "INSERT INTO ticket_files (ticket_id, comment_id, file_path, original_name, size, mime_type, uploaded_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
                     [$ticketId, $commentId, 'storage/uploads/ticket_files/' . $ticketId . '/' . $filename, $name, $size, $detectedType, $userId]

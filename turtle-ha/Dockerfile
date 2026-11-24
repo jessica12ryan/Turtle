@@ -35,7 +35,8 @@ RUN apk add --no-cache \
     git \
     curl \
     bash \
-    openssl
+    openssl \
+    libheif-tools
 
 # Install Mailpit (multi-arch) — pinned to v1.30.2
 ARG BUILD_ARCH

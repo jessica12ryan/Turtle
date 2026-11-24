@@ -116,16 +116,9 @@ class ProfileController
             return __('Profile picture must be smaller than 5 MB.');
         }
 
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($file['tmp_name']);
-        $allowed = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            'image/webp' => 'webp',
-        ];
-        if (!isset($allowed[$mime])) {
-            return __('Only JPG, PNG, GIF, and WebP images are allowed.');
+        $prepared = prepare_image_upload($file);
+        if ($prepared === null) {
+            return __('Only JPG, PNG, GIF, WebP, and HEIC images are allowed.');
         }
 
         $dir = base_path('storage/uploads/avatars/' . $userId);
@@ -133,9 +126,9 @@ class ProfileController
             return __('Unable to upload profile picture.');
         }
 
-        $filename = 'avatar_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+        $filename = 'avatar_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $prepared['ext'];
         $destination = $dir . '/' . $filename;
-        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+        if (!store_image_upload($prepared, $destination)) {
             return __('Unable to upload profile picture.');
         }
 

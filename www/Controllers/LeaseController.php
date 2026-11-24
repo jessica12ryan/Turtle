@@ -226,22 +226,26 @@ class LeaseController
                         break;
                     }
 
-                    $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    $allowedExts = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
                     $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
                     if (!in_array($ext, $allowedExts)) {
                         continue;
                     }
-                    $storedName = uniqid() . '.' . $ext;
+
+                    $prepared = prepare_image_upload(['tmp_name' => $_FILES['documents']['tmp_name'][$i]]);
+                    if ($prepared === null) {
+                        $detectedType = strtolower((string)((new \finfo(FILEINFO_MIME_TYPE))->file($_FILES['documents']['tmp_name'][$i])));
+                        $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                        if (!in_array($detectedType, $allowedMimes, true)) {
+                            continue;
+                        }
+                        $prepared = ['tmp_name' => $_FILES['documents']['tmp_name'][$i], 'mime' => $detectedType, 'ext' => $ext, 'converted' => false];
+                    }
+                    $detectedType = $prepared['mime'];
+                    $storedName = uniqid() . '.' . $prepared['ext'];
                     $destPath = $leaseDir . '/' . $storedName;
 
-                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
-                    $detectedType = $finfo->file($_FILES['documents']['tmp_name'][$i]);
-                    $allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                    if (!in_array($detectedType, $allowedMimes, true)) {
-                        continue;
-                    }
-
-                    if (!move_uploaded_file($_FILES['documents']['tmp_name'][$i], $destPath)) {
+                    if (!store_image_upload($prepared, $destPath)) {
                         $allOk = false;
                         break;
                     }

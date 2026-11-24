@@ -990,24 +990,20 @@ class ApplicationController
             return null;
         }
 
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
-        $extByMime = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            'image/webp' => 'webp',
-            'application/pdf' => 'pdf',
-        ];
-        if (!isset($extByMime[$mime])) {
-            return null;
+        $prepared = prepare_image_upload($file);
+        if ($prepared === null) {
+            // Application photos may also be PDFs.
+            $mime = strtolower((string)((new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name'])));
+            if ($mime !== 'application/pdf') {
+                return null;
+            }
+            $prepared = ['tmp_name' => $file['tmp_name'], 'mime' => 'application/pdf', 'ext' => 'pdf', 'converted' => false];
         }
 
-        $filename = uniqid('app_photo_') . '.' . $extByMime[$mime];
+        $filename = uniqid('app_photo_') . '.' . $prepared['ext'];
         $destPath = $uploadDir . '/' . $filename;
 
-        if (move_uploaded_file($file['tmp_name'], $destPath)) {
+        if (store_image_upload($prepared, $destPath)) {
             return 'storage/uploads/application_photos/' . $filename;
         }
 
