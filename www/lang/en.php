@@ -982,6 +982,7 @@
     'Archive this conversation? The guest will no longer be able to access it.' => 'Archive this conversation? The guest will no longer be able to access it.',
     'Permanently delete this conversation and all its messages? This cannot be undone.' => 'Permanently delete this conversation and all its messages? This cannot be undone.',
     'Too many messages. Please wait a few minutes.' => 'Too many messages. Please wait a few minutes.',
+    'You already have a conversation about this property. Use the private link we emailed you, or request a new link below.' => 'You already have a conversation about this property. Use the private link we emailed you, or request a new link below.',
     'View conversation' => 'View conversation',
     'View all :count photos' => 'View all :count photos',
     'View all your conversations' => 'View all your conversations',

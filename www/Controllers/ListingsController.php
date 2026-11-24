@@ -123,31 +123,33 @@ class ListingsController
             redirect('/listings');
         }
 
-        // One conversation per guest and property: a later message is added
-        // to the existing thread instead of creating a duplicate.
-        $existing = GuestChat::findChatForVisitorProperty($guestId, $id);
-        if ($existing !== null) {
-            $chatId = (int) $existing['id'];
-            $token = GuestChat::chatTokenFromCookie($chatId) ?? GuestChat::issueToken($chatId);
-            GuestChat::appendMessage($chatId, $body);
-        } else {
-            $token = GuestChat::generateToken();
-            $chatId = Database::insert(
-                "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
-                 VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
-                [$id, $name, $email, GuestChat::hashToken($token)]
-            );
-            GuestChat::registerToken((int) $chatId, $token);
-            GuestChat::appendMessage((int) $chatId, $body);
+        // An email address alone is not proof of ownership of an existing
+        // conversation. Direct the visitor to their private link instead.
+        if (GuestChat::findChatForVisitorProperty($guestId, $id) !== null) {
+            flash('error', __('You already have a conversation about this property. Use the private link we emailed you, or request a new link below.'));
+            redirect('/listings');
         }
 
-        $hubToken = GuestChat::hubTokenFor($guestId) ?? GuestChat::issueHubToken($guestId);
-        GuestChat::setCookie($chatId, $token);
-        GuestChat::setHubCookie($guestId, $hubToken);
-        log_activity(
-            $existing !== null ? 'guest_chat.message_added' : 'guest_chat.started',
-            "Visitor chat #{$chatId} for property #{$id}"
+        $hadOtherChats = GuestChat::chatsForVisitor($guestId) !== [];
+        $knownHubToken = GuestChat::hubTokenFor($guestId);
+
+        $token = GuestChat::generateToken();
+        $chatId = Database::insert(
+            "INSERT INTO guest_chats (property_id, guest_name, guest_email, token_hash, created_at, updated_at, last_activity)
+             VALUES (?, ?, ?, ?, NOW(), NOW(), NOW())",
+            [$id, $name, $email, GuestChat::hashToken($token)]
         );
+        GuestChat::registerToken((int) $chatId, $token);
+        GuestChat::appendMessage((int) $chatId, $body);
+
+        // Email a hub link, but only keep it in this browser when it was already
+        // trusted or this is the visitor's first conversation.
+        $hubToken = $knownHubToken ?? GuestChat::issueHubToken($guestId);
+        GuestChat::setCookie($chatId, $token);
+        if ($knownHubToken !== null || !$hadOtherChats) {
+            GuestChat::setHubCookie($guestId, $hubToken);
+        }
+        log_activity('guest_chat.started', "Visitor chat #{$chatId} for property #{$id}");
 
         $emailSent = false;
         $chat = GuestChat::findById($chatId);
@@ -177,14 +179,9 @@ class ListingsController
             return;
         }
 
-        // Opening a valid link proves possession of the bearer token, so the
-        // browser can keep convenience shortcuts to this chat and its hub.
+        // A chat token authorises this conversation only. Hub access requires
+        // the separate hub link from the visitor's email, not this token.
         GuestChat::setCookie((int) $chat['id'], $token);
-        $visitor = GuestChat::findVisitorByEmail((string) $chat['guest_email']);
-        if ($visitor !== null && GuestChat::hubTokenFor((int) $visitor['id']) === null) {
-            $hubToken = GuestChat::issueHubToken((int) $visitor['id']);
-            GuestChat::setHubCookie((int) $visitor['id'], $hubToken);
-        }
 
         $view = new View();
         $view->layout('layouts/public', ['title' => __('Conversation')]);

@@ -1079,6 +1079,7 @@ return [
     'Archive this conversation? The guest will no longer be able to access it.' => '¿Archivar esta conversación? El visitante ya no podrá acceder a ella.',
     'Permanently delete this conversation and all its messages? This cannot be undone.' => '¿Eliminar permanentemente esta conversación y todos sus mensajes? Esta acción no se puede deshacer.',
     'Too many messages. Please wait a few minutes.' => 'Demasiados mensajes. Espere unos minutos.',
+    'You already have a conversation about this property. Use the private link we emailed you, or request a new link below.' => 'Ya tiene una conversación sobre esta propiedad. Use el enlace privado que le enviamos o solicite uno nuevo abajo.',
     'View conversation' => 'Ver conversación',
     'View all :count photos' => 'Ver las :count fotos',
     'View all your conversations' => 'Ver todas sus conversaciones',

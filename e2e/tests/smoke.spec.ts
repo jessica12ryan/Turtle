@@ -93,7 +93,7 @@ async function completeSetup(page: Page): Promise<void> {
   await page.locator('#finish-btn').click();
 }
 
-test('fresh install: setup, navigation, ticket, email and re-login', async ({ page, request }) => {
+test('fresh install: setup, navigation, ticket, email and re-login', async ({ page, request, browser }) => {
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
 
@@ -523,6 +523,31 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await secondRow.getByTestId('guest-chat-list-delete').click();
   await expect(page).toHaveURL(/\/guest-chats$/);
   expect((await request.get(secondChatUrl)).status(), 'a deleted chat must be gone').toBe(404);
+
+  // Knowing a guest's email must not grant their existing threads to a new device.
+  const attackerContext = await browser.newContext();
+  const attacker = await attackerContext.newPage();
+  await attacker.goto('/listings');
+
+  const harbourfrontCard = attacker.getByTestId('listing-card').filter({ hasText: 'Harbourfront Condos' });
+  await harbourfrontCard.getByTestId('message-button').click();
+  await harbourfrontCard.locator('input[name="guest_name"]').fill('Impostor');
+  await harbourfrontCard.locator('input[name="guest_email"]').fill('guest@example.com');
+  await harbourfrontCard.locator('textarea[name="body"]').fill('Let me in');
+  await harbourfrontCard.getByTestId('send-message').click();
+  await expect(attacker).toHaveURL(/\/listings$/);
+  await expect(attacker.getByText('You already have a conversation about this property', { exact: false })).toBeVisible();
+
+  const mapleCard = attacker.getByTestId('listing-card').filter({ hasText: 'Maple Ridge Townhomes' });
+  await mapleCard.getByTestId('message-button').click();
+  await mapleCard.locator('input[name="guest_name"]').fill('Impostor');
+  await mapleCard.locator('input[name="guest_email"]').fill('guest@example.com');
+  await mapleCard.locator('textarea[name="body"]').fill('Hello on another property');
+  await mapleCard.getByTestId('send-message').click();
+  await expect(attacker).toHaveURL(/\/listings\/chat\/[a-f0-9]{64}$/);
+  await attacker.goto('/listings');
+  await expect(attacker.getByTestId('hub-link')).toHaveCount(0);
+  await attackerContext.close();
 
   expect(pageErrors, `uncaught browser errors: ${pageErrors.join('; ')}`).toEqual([]);
 });
