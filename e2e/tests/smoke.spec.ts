@@ -354,6 +354,8 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page.getByTestId('message-button').first()).toHaveAttribute('aria-expanded', 'true');
 
   // A visitor starts a two-way chat from a listing.
+  const firstPropertyName = (await page.locator('input[name="guest_name"]').first()
+    .locator('xpath=ancestor::article').locator('h2').first().textContent())!.trim();
   await page.locator('input[name="guest_name"]').first().fill('Guest Visitor');
   await page.locator('input[name="guest_email"]').first().fill('guest@example.com');
   await page.locator('textarea[name="body"]').first().fill('Hello, is this available?');
@@ -375,6 +377,7 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.getByRole('link', { name: 'Back to listings' }).click();
   await expect(page).toHaveURL(/\/listings$/);
   const secondCard = page.getByTestId('listing-card').nth(1);
+  const secondPropertyName = (await secondCard.locator('h2').first().textContent())!.trim();
   await secondCard.getByTestId('message-button').click();
   await secondCard.locator('input[name="guest_name"]').fill('Guest Visitor');
   await secondCard.locator('input[name="guest_email"]').fill('guest@example.com');
@@ -475,14 +478,20 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await page.goto(`/${recoveredHubPath!}`);
   await expect(page.getByRole('heading', { name: 'Your conversations' })).toBeVisible();
   await expect(page.getByTestId('hub-conversation-link')).toHaveCount(2);
-  // The replied-to conversation is the most recently active one.
-  await page.getByTestId('hub-conversation-link').first().click();
+  // Select by property name rather than list position: last_activity has only
+  // second precision, so two chats active in the same second can sort either
+  // way (the tie-breaker is id DESC).
+  await page.locator('div.flex.flex-wrap')
+    .filter({ hasText: firstPropertyName })
+    .getByTestId('hub-conversation-link').click();
   await expect(page).toHaveURL(/\/listings\/chat\/[a-f0-9]{64}$/);
   await expect(page.getByTestId('chat-messages')).toContainText('Hello, is this available?');
   await expect(page.getByTestId('chat-messages')).toContainText('Yes, it is available.');
 
   await page.goto(`/${recoveredHubPath!}`);
-  await page.getByTestId('hub-conversation-link').nth(1).click();
+  await page.locator('div.flex.flex-wrap')
+    .filter({ hasText: secondPropertyName })
+    .getByTestId('hub-conversation-link').click();
   await expect(page.getByTestId('chat-messages')).toContainText('Do you have parking?');
 
   // A hub link must not open an arbitrary conversation id.
@@ -559,10 +568,18 @@ test('AI assistant can be enabled and a chat created', async ({ page }) => {
   await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/home$/);
 
-  await page.goto('/settings?tab=general');
+  await page.goto('/settings?tab=ai_assistant');
+  await expect(page.getByRole('link', { name: 'AI Assistant' })).toBeVisible();
+  const tabLabels = (await page.locator('a[href^="/settings?tab="]').allTextContents()).map(s => s.trim());
+  expect(tabLabels.indexOf('AI Assistant')).toBe(tabLabels.indexOf('Permissions') + 1);
+  expect(tabLabels.indexOf('Logging')).toBe(tabLabels.indexOf('AI Assistant') + 1);
   await page.locator('input[name="ai_assistant_enabled"]').check();
+  await page.locator('select[name="ai_provider"]').selectOption('claude');
   await page.locator('form:has(input[name="ai_assistant_enabled"]) button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/settings/);
+  await expect(page).toHaveURL(/tab=ai_assistant/);
+
+  await page.goto('/settings?tab=ai_assistant');
+  await expect(page.locator('select[name="ai_provider"]')).toHaveValue('claude');
 
   await page.goto('/ai-assistant');
   await expect(page.getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
@@ -601,7 +618,9 @@ test('settings backup and restore round-trip', async ({ page }) => {
   });
   expect(restoreResponse.ok()).toBeTruthy();
 
-  // Restore intentionally logs the user out.
+  // Restore intentionally logs the user out. Clear cookies so the login page
+  // cannot be skipped by a session cookie that survived the redirect.
+  await page.context().clearCookies();
   await page.goto('/login');
   await page.locator('#email').fill(admin.email);
   await page.locator('#password').fill(admin.password);

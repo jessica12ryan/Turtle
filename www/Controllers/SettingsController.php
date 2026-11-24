@@ -12,7 +12,7 @@ class SettingsController
     public function index(): void
     {
         $tab = $_GET['tab'] ?? 'general';
-        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications', 'messenger', 'guest_chats'])) {
+        if (!in_array($tab, ['general', 'updates', 'permissions', 'backup', 'logging', 'reset', 'applications', 'notifications', 'messenger', 'guest_chats', 'ai_assistant'])) {
             $tab = 'general';
         }
 
@@ -47,6 +47,25 @@ class SettingsController
             }
             $tzByCountry['generic'] = \DateTimeZone::listIdentifiers(\DateTimeZone::UTC);
             $data['tzByCountry'] = $tzByCountry;
+        } elseif ($tab === 'ai_assistant') {
+            $keys = ['ai_assistant_enabled', 'ai_provider', 'ai_model', 'openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url'];
+            $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
+            $data['ai'] = [];
+            foreach ($rows as $row) {
+                $data['ai'][$row['key']] = $row['value'];
+            }
+            foreach ($keys as $k) {
+                if (!isset($data['ai'][$k])) {
+                    $data['ai'][$k] = '';
+                }
+            }
+            $data['ai']['ai_provider'] = \App\Core\AiProviders::isValid((string)$data['ai']['ai_provider'])
+                ? (string)$data['ai']['ai_provider']
+                : 'openai';
+            $data['aiProviders'] = \App\Core\AiProviders::all();
+            if ($data['ai']['ai_model'] === '') {
+                $data['ai']['ai_model'] = \App\Core\AiProviders::defaultModel((string)$data['ai']['ai_provider']);
+            }
         } elseif ($tab === 'updates') {
             $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $latestVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'");
@@ -459,6 +478,101 @@ class SettingsController
         redirect('/settings?tab=general');
     }
 
+    public function saveAiAssistant(): void
+    {
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            flash('error', __('Invalid security token.'));
+            redirect('/settings?tab=ai_assistant');
+        }
+
+        $provider = trim((string)($_POST['ai_provider'] ?? 'openai'));
+        if (!\App\Core\AiProviders::isValid($provider)) {
+            $provider = 'openai';
+        }
+
+        $values = [
+            'ai_assistant_enabled' => !empty($_POST['ai_assistant_enabled']) ? '1' : '0',
+            'ai_provider' => $provider,
+            'ai_model' => trim((string)($_POST['ai_model'] ?? '')) ?: \App\Core\AiProviders::defaultModel($provider),
+            'opencode_base_url' => rtrim(trim((string)($_POST['opencode_base_url'] ?? '')), '/'),
+        ];
+        foreach (['openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key'] as $key) {
+            if (array_key_exists($key, $_POST)) {
+                $values[$key] = trim((string)$_POST[$key]);
+            }
+        }
+
+        foreach ($values as $key => $value) {
+            Database::execute(
+                "INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
+                [$key, $value, $value]
+            );
+        }
+        clearSettingCache('ai_assistant_enabled');
+        clearSettingCache('ai_provider');
+        clearSettingCache('ai_model');
+
+        log_activity('settings.ai_assistant_saved', 'AI Assistant settings saved');
+        flash('success', __('AI Assistant settings saved successfully.'));
+        redirect('/settings?tab=ai_assistant');
+    }
+
+    /** Fetch the model list for the configured (or posted) provider. */
+    public function aiModels(): void
+    {
+        header('Content-Type: application/json');
+        if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
+            http_response_code(400);
+            echo json_encode(['error' => __('Invalid security token.')]);
+            return;
+        }
+
+        $providerId = trim((string)($_POST['ai_provider'] ?? 'openai'));
+        if (!\App\Core\AiProviders::isValid($providerId)) {
+            http_response_code(400);
+            echo json_encode(['error' => __('Unknown AI provider.')]);
+            return;
+        }
+        $provider = \App\Core\AiProviders::get($providerId);
+        $keyRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$provider['key_setting']]);
+        $apiKey = trim((string)($keyRow['value'] ?? ''));
+        if ($apiKey === '') {
+            echo json_encode(['models' => \App\Core\AiProviders::fallbackModels($providerId), 'warning' => __('Add an API key to load models.')]);
+            return;
+        }
+        $base = $providerId === 'opencode'
+            ? trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'opencode_base_url'")['value'] ?? ''))
+            : '';
+
+        $url = \App\Core\AiProviders::modelsGetUrl($providerId, $base, $apiKey);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPGET => true,
+            CURLOPT_HTTPHEADER => \App\Core\AiProviders::modelHeaders($providerId, $apiKey),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_CONNECTTIMEOUT => 8,
+        ]);
+        $response = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error !== '' || $status < 200 || $status >= 300) {
+            echo json_encode([
+                'models' => \App\Core\AiProviders::fallbackModels($providerId),
+                'warning' => __('Could not load models from the provider.'),
+            ]);
+            return;
+        }
+
+        $models = \App\Core\AiProviders::parseModels($providerId, (string)$response);
+        echo json_encode([
+            'models' => $models !== [] ? $models : \App\Core\AiProviders::fallbackModels($providerId),
+            'warning' => $models === [] ? __('Could not load models from the provider.') : '',
+        ]);
+    }
+
     public function saveMail(): void
     {
         if (!isset($_POST['_csrf']) || !verify_csrf($_POST['_csrf'])) {
@@ -562,7 +676,7 @@ class SettingsController
             Database::execute("DELETE FROM property_photos WHERE 1=1", []);
             Database::execute("DELETE FROM activity_logs WHERE 1=1", []);
             // Reset all user-configurable settings (setup re-creates what it needs)
-            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'ai_provider', 'ai_model', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($settingsKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $settingsKeys);
             // Reset permissions to "Use defaults"

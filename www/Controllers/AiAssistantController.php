@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\AiProviders;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\Logger;
@@ -213,11 +214,18 @@ class AiAssistantController
     /** Append a user message, call OpenAI, append the reply, and cap history. */
     private function exchange(array $user, array $prior, string $message): array
     {
-        $apiKeyRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'openai_api_key'");
-        $apiKey = trim((string)($apiKeyRow['value'] ?? ''));
-        if ($apiKey === '') {
-            throw new \RuntimeException((string)__('AI Assistant is not configured. Ask an administrator to add an OpenAI API key.'));
+        $providerId = self::setting('ai_provider') ?: 'openai';
+        if (!AiProviders::isValid($providerId)) {
+            $providerId = 'openai';
         }
+        $provider = AiProviders::get($providerId);
+        $apiKey = self::setting((string)$provider['key_setting']);
+        if ($apiKey === '') {
+            throw new \RuntimeException((string)__('AI Assistant is not configured. Ask an administrator to add an API key.'));
+        }
+
+        $model = self::setting('ai_model') ?: AiProviders::defaultModel($providerId);
+        $base = $providerId === 'opencode' ? self::setting('opencode_base_url') : '';
 
         $systemPrompt = $this->buildSystemPrompt($user, self::redactContext($this->buildContext($user)));
 
@@ -229,7 +237,7 @@ class AiAssistantController
         }
         $messages[] = ['role' => 'user', 'content' => $message];
 
-        $response = $this->callOpenAI($apiKey, $messages);
+        $response = $this->callProvider($providerId, $apiKey, $model, $base, $messages);
 
         $prior[] = ['role' => 'user', 'content' => $message];
         $prior[] = ['role' => 'assistant', 'content' => $response];
@@ -374,21 +382,22 @@ class AiAssistantController
         return $context;
     }
 
-    private function callOpenAI(string $apiKey, array $messages): string
+    private static function setting(string $key): string
     {
-        $url = 'https://api.openai.com/v1/chat/completions';
-        $payload = [
-            'model' => 'gpt-4o-mini',
-            'messages' => $messages,
-            'max_tokens' => 1500,
-            'temperature' => 0.7,
-        ];
+        $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$key]);
+        return trim((string)($row['value'] ?? ''));
+    }
 
-        $ch = curl_init($url);
+    /** @param array<int, array<string, string>> $messages */
+    private function callProvider(string $providerId, string $apiKey, string $model, string $base, array $messages): string
+    {
+        $request = AiProviders::chatRequest($providerId, $apiKey, $model, $base, $messages);
+
+        $ch = curl_init($request['url']);
         curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey],
-            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => $request['headers'],
+            CURLOPT_POSTFIELDS => $request['body'],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
@@ -400,13 +409,14 @@ class AiAssistantController
         curl_close($ch);
 
         if ($error) {
-            throw new \RuntimeException('OpenAI API request failed: ' . $error);
+            throw new \RuntimeException('AI provider request failed: ' . $error);
         }
-        $data = json_decode((string)$response, true);
-        if ($httpCode !== 200) {
-            $errMsg = is_array($data) ? ($data['error']['message'] ?? 'Unknown error') : 'Unknown error';
-            throw new \RuntimeException('OpenAI API error (' . $httpCode . '): ' . $errMsg);
+        if ($httpCode < 200 || $httpCode >= 300) {
+            $data = json_decode((string)$response, true);
+            $errMsg = is_array($data) ? (string)($data['error']['message'] ?? 'Unknown error') : 'Unknown error';
+            throw new \RuntimeException('AI provider error (' . $httpCode . '): ' . $errMsg);
         }
-        return is_array($data) ? (string)($data['choices'][0]['message']['content'] ?? '') : '';
+
+        return AiProviders::parseChatResponse($providerId, (string)$response);
     }
 }

@@ -433,6 +433,8 @@ $router->post('/profile', 'ProfileController@update', ['auth']);
 $router->get('/settings', 'SettingsController@index', ['auth', 'role:admin']);
 $router->post('/settings/reset', 'SettingsController@reset', ['auth', 'role:admin']);
 $router->post('/settings/general', 'SettingsController@saveGeneral', ['auth', 'role:admin']);
+$router->post('/settings/ai-assistant', 'SettingsController@saveAiAssistant', ['auth', 'role:admin']);
+$router->post('/settings/ai-assistant/models', 'SettingsController@aiModels', ['auth', 'role:admin']);
 $router->post('/settings/mail', 'SettingsController@saveMail', ['auth', 'role:admin']);
 $router->post('/settings/test-mail', 'SettingsController@testMail', ['auth', 'role:admin']);
 
