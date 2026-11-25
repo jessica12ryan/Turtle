@@ -474,6 +474,8 @@ return [
     'AI Assistant is not configured. Ask an administrator to add an API key.' => 'El Asistente de IA no está configurado. Pida a un administrador que añada una clave API.',
     'Anthropic API Key' => 'Clave API de Anthropic',
     'Gemini API Key' => 'Clave API de Gemini',
+    'OpenRouter' => 'OpenRouter',
+    'OpenRouter API Key' => 'Clave API de OpenRouter',
     'OpenCode API Key' => 'Clave API de OpenCode',
     'OpenAI' => 'OpenAI',
     'Claude' => 'Claude',

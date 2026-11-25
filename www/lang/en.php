@@ -448,6 +448,8 @@
     'AI Assistant is not configured. Ask an administrator to add an API key.' => 'AI Assistant is not configured. Ask an administrator to add an API key.',
     'Anthropic API Key' => 'Anthropic API Key',
     'Gemini API Key' => 'Gemini API Key',
+    'OpenRouter' => 'OpenRouter',
+    'OpenRouter API Key' => 'OpenRouter API Key',
     'OpenCode API Key' => 'OpenCode API Key',
     'OpenAI' => 'OpenAI',
     'Claude' => 'Claude',

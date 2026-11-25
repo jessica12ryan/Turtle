@@ -574,7 +574,7 @@ test('AI assistant can be enabled and a chat created', async ({ page }) => {
   expect(tabLabels.indexOf('AI Assistant')).toBe(tabLabels.indexOf('Permissions') + 1);
   expect(tabLabels.indexOf('Logging')).toBe(tabLabels.indexOf('AI Assistant') + 1);
   await page.locator('input[name="ai_assistant_enabled"]').check();
-  expect(await page.locator('select[name="ai_provider"] option').count()).toBe(5);
+  expect(await page.locator('select[name="ai_provider"] option').count()).toBe(6);
   await page.locator('select[name="ai_provider"]').selectOption('claude');
   await page.locator('form:has(input[name="ai_assistant_enabled"]) button[type="submit"]').click();
   await expect(page).toHaveURL(/tab=ai_assistant/);

@@ -48,7 +48,7 @@ class SettingsController
             $tzByCountry['generic'] = \DateTimeZone::listIdentifiers(\DateTimeZone::UTC);
             $data['tzByCountry'] = $tzByCountry;
         } elseif ($tab === 'ai_assistant') {
-            $keys = ['ai_assistant_enabled', 'ai_provider', 'ai_model', 'openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url', 'opencode_server_password', 'opencode_server_base_url'];
+            $keys = ['ai_assistant_enabled', 'ai_provider', 'ai_model', 'openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'openrouter_api_key', 'opencode_api_key', 'opencode_base_url', 'opencode_server_password', 'opencode_server_base_url'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['ai'] = [];
             foreach ($rows as $row) {
@@ -500,7 +500,7 @@ class SettingsController
             'opencode_base_url' => rtrim(trim((string)($_POST['opencode_base_url'] ?? '')), '/'),
             'opencode_server_base_url' => rtrim(trim((string)($_POST['opencode_server_base_url'] ?? '')), '/'),
         ];
-        foreach (['openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_server_password'] as $key) {
+        foreach (['openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'openrouter_api_key', 'opencode_api_key', 'opencode_server_password'] as $key) {
             if (array_key_exists($key, $_POST) && trim((string)$_POST[$key]) !== '') {
                 $values[$key] = trim((string)$_POST[$key]);
             }
@@ -705,7 +705,7 @@ class SettingsController
             Database::execute("DELETE FROM property_photos WHERE 1=1", []);
             Database::execute("DELETE FROM activity_logs WHERE 1=1", []);
             // Reset all user-configurable settings (setup re-creates what it needs)
-            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'ai_provider', 'ai_model', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url', 'opencode_server_password', 'opencode_server_base_url', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'ai_provider', 'ai_model', 'anthropic_api_key', 'gemini_api_key', 'openrouter_api_key', 'opencode_api_key', 'opencode_base_url', 'opencode_server_password', 'opencode_server_base_url', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($settingsKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $settingsKeys);
             // Reset permissions to "Use defaults"

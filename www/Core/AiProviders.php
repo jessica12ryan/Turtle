@@ -19,6 +19,13 @@ final class AiProviders
                 'default_model' => 'gpt-4o-mini',
                 'format' => 'openai',
             ],
+            'openrouter' => [
+                'label' => 'OpenRouter',
+                'key_setting' => 'openrouter_api_key',
+                'base' => 'https://openrouter.ai/api/v1',
+                'default_model' => 'openai/gpt-4o-mini',
+                'format' => 'openai',
+            ],
             'opencode' => [
                 'label' => 'OpenCode',
                 'key_setting' => 'opencode_api_key',
@@ -171,10 +178,10 @@ final class AiProviders
         // OpenAI-compatible (OpenAI / OpenCode Zen or self-hosted).
         return [
             'url' => $base . '/chat/completions',
-            'headers' => [
+            'headers' => array_merge([
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $apiKey,
-            ],
+            ], self::attributionHeaders($id)),
             'body' => (string)json_encode([
                 'model' => $model,
                 'messages' => $messages,
@@ -182,6 +189,25 @@ final class AiProviders
                 'temperature' => 0.7,
             ]),
         ];
+    }
+
+    /** Optional app attribution headers recommended by OpenRouter. */
+    public static function attributionHeaders(string $id): array
+    {
+        if ($id !== 'openrouter') {
+            return [];
+        }
+        $clean = static fn(string $value): string => trim(str_replace(["\r", "\n", "\0"], '', $value));
+        $headers = [];
+        $siteUrl = $clean((string)\site_url());
+        $siteName = $clean((string)\site_name());
+        if ($siteUrl !== '') {
+            $headers[] = 'HTTP-Referer: ' . $siteUrl;
+        }
+        if ($siteName !== '') {
+            $headers[] = 'X-Title: ' . $siteName;
+        }
+        return $headers;
     }
 
     /** Basic auth header used by OpenCode Server. */
@@ -235,7 +261,7 @@ final class AiProviders
         if ($format === 'opencode_server') {
             return [self::basicHeader($apiKey)];
         }
-        return ['Authorization: Bearer ' . $apiKey];
+        return array_merge(['Authorization: Bearer ' . $apiKey], self::attributionHeaders($id));
     }
 
     /** Gemini takes the key as a query parameter instead of a header. */

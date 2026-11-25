@@ -10,7 +10,7 @@ final class AiProvidersTest extends TestCase
     public function testAllProvidersAreRegistered(): void
     {
         $providers = AiProviders::all();
-        self::assertSame(['openai', 'opencode', 'opencode_server', 'claude', 'gemini'], array_keys($providers));
+        self::assertSame(['openai', 'openrouter', 'opencode', 'opencode_server', 'claude', 'gemini'], array_keys($providers));
         foreach ($providers as $id => $provider) {
             self::assertSame($id, AiProviders::isValid($id) ? $id : 'invalid');
             self::assertNotSame('', AiProviders::defaultModel($id));
@@ -28,6 +28,27 @@ final class AiProvidersTest extends TestCase
         self::assertContains('Authorization: Bearer sk-test', $request['headers']);
         self::assertStringContainsString('gpt-4o-mini', $request['body']);
         self::assertStringContainsString('Hello', $request['body']);
+    }
+
+    public function testOpenRouterRequestCarriesAttributionHeaders(): void
+    {
+        $request = AiProviders::chatRequest('openrouter', 'sk-or-test', 'openai/gpt-4o-mini', '', [
+            ['role' => 'user', 'content' => 'Hello'],
+        ]);
+        self::assertSame('https://openrouter.ai/api/v1/chat/completions', $request['url']);
+        self::assertContains('Authorization: Bearer sk-or-test', $request['headers']);
+        self::assertSame('https://openrouter.ai/api/v1/models', AiProviders::modelsUrl('openrouter', ''));
+
+        $attribution = array_values(array_filter(
+            $request['headers'],
+            static fn(string $header): bool => str_starts_with($header, 'HTTP-Referer: ') || str_starts_with($header, 'X-Title: ')
+        ));
+        self::assertCount(2, $attribution);
+        self::assertContains('X-Title: Turtle', $attribution);
+        self::assertSame(
+            ['openai/gpt-4o-mini'],
+            AiProviders::parseModels('openrouter', '{"data":[{"id":"openai/gpt-4o-mini"}]}')
+        );
     }
 
     public function testOpenCodeSupportsZenAndSelfHostedBase(): void

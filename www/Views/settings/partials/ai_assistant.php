@@ -41,6 +41,7 @@
             'openai' => ['openai_api_key', 'OpenAI API Key'],
             'claude' => ['anthropic_api_key', 'Anthropic API Key'],
             'gemini' => ['gemini_api_key', 'Gemini API Key'],
+            'openrouter' => ['openrouter_api_key', 'OpenRouter API Key'],
             'opencode' => ['opencode_api_key', 'OpenCode API Key'],
             'opencode_server' => ['opencode_server_password', 'OpenCode Server Password'],
         ];
