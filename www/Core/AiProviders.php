@@ -26,6 +26,13 @@ final class AiProviders
                 'default_model' => 'gpt-4o-mini',
                 'format' => 'openai',
             ],
+            'opencode_server' => [
+                'label' => 'OpenCode Server',
+                'key_setting' => 'opencode_server_password',
+                'base' => 'http://localhost:4096',
+                'default_model' => 'gpt-4o-mini',
+                'format' => 'opencode_server',
+            ],
             'claude' => [
                 'label' => 'Claude',
                 'key_setting' => 'anthropic_api_key',
@@ -70,7 +77,10 @@ final class AiProviders
     /** Endpoint used to list available models. */
     public static function modelsUrl(string $id, string $configuredBase): string
     {
-        return self::baseUrl($id, $configuredBase) . '/models';
+        $base = self::baseUrl($id, $configuredBase);
+        return (string)(self::get($id)['format'] ?? 'openai') === 'opencode_server'
+            ? $base . '/api/model'
+            : $base . '/models';
     }
 
     /**
@@ -83,6 +93,28 @@ final class AiProviders
     {
         $format = (string)(self::get($id)['format'] ?? 'openai');
         $base = self::baseUrl($id, $base);
+
+        if ($format === 'opencode_server') {
+            // The self-hosted HttpApi is stateless: flatten the conversation
+            // into one prompt and let the server use its configured provider.
+            $parts = [];
+            foreach ($messages as $message) {
+                $role = (string)($message['role'] ?? 'user');
+                $label = $role === 'system' ? 'System' : ($role === 'assistant' ? 'Assistant' : 'User');
+                $parts[] = $label . ': ' . (string)($message['content'] ?? '');
+            }
+            return [
+                'url' => $base . '/api/experimental/generate/text',
+                'headers' => [
+                    'Content-Type: application/json',
+                    'Authorization: Basic ' . base64_encode(':' . $apiKey),
+                ],
+                'body' => (string)json_encode([
+                    'prompt' => implode("\n\n", $parts),
+                    'model' => $model,
+                ]),
+            ];
+        }
 
         if ($format === 'anthropic') {
             $system = '';
@@ -155,8 +187,12 @@ final class AiProviders
     /** Headers required for the model-list request. */
     public static function modelHeaders(string $id, string $apiKey): array
     {
-        if ((string)(self::get($id)['format'] ?? 'openai') === 'anthropic') {
+        $format = (string)(self::get($id)['format'] ?? 'openai');
+        if ($format === 'anthropic') {
             return ['x-api-key: ' . $apiKey, 'anthropic-version: 2023-06-01'];
+        }
+        if ($format === 'opencode_server') {
+            return ['Authorization: Basic ' . base64_encode(':' . $apiKey)];
         }
         return ['Authorization: Bearer ' . $apiKey];
     }
@@ -191,7 +227,7 @@ final class AiProviders
         foreach ($items as $item) {
             $name = '';
             if (is_array($item)) {
-                $name = (string)($item['id'] ?? $item['name'] ?? '');
+                $name = (string)($item['id'] ?? $item['modelID'] ?? $item['name'] ?? '');
             } elseif (is_string($item)) {
                 $name = $item;
             }
@@ -212,6 +248,10 @@ final class AiProviders
             return '';
         }
         $format = (string)(self::get($id)['format'] ?? 'openai');
+
+        if ($format === 'opencode_server') {
+            return (string)($data['data']['text'] ?? '');
+        }
 
         if ($format === 'anthropic') {
             $text = '';

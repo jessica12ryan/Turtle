@@ -36,10 +36,19 @@
             </div>
         </div>
 
-        <?php foreach (['openai' => 'OpenAI API Key', 'claude' => 'Anthropic API Key', 'gemini' => 'Gemini API Key', 'opencode' => 'OpenCode API Key'] as $id => $label): ?>
+        <?php
+        $keyFields = [
+            'openai' => ['openai_api_key', 'OpenAI API Key'],
+            'claude' => ['anthropic_api_key', 'Anthropic API Key'],
+            'gemini' => ['gemini_api_key', 'Gemini API Key'],
+            'opencode' => ['opencode_api_key', 'OpenCode API Key'],
+            'opencode_server' => ['opencode_server_password', 'OpenCode Server Password'],
+        ];
+        foreach ($keyFields as $id => [$field, $label]):
+            ?>
             <div class="mb-4" x-show="provider === '<?= h($id) ?>'" x-cloak>
                 <label class="block text-sm font-medium text-gray-700 mb-1"><?= __($label) ?></label>
-                <input type="password" name="<?= h($id === 'claude' ? 'anthropic' : $id) ?>_api_key" value="<?= h($ai[($id === 'claude' ? 'anthropic' : $id) . '_api_key'] ?? '') ?>" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" autocomplete="off" :disabled="provider !== '<?= h($id) ?>'">
+                <input type="password" name="<?= h($field) ?>" value="<?= h($ai[$field] ?? '') ?>" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" autocomplete="off" :disabled="provider !== '<?= h($id) ?>'">
             </div>
         <?php endforeach; ?>
 
@@ -47,6 +56,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('Base URL') ?></label>
             <input type="text" name="opencode_base_url" value="<?= h($ai['opencode_base_url'] ?? '') ?>" placeholder="https://opencode.ai/zen/v1" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" :disabled="provider !== 'opencode'">
             <p class="text-xs text-gray-400 mt-1"><?= __('Use the OpenCode Zen gateway URL or your self-hosted server URL.') ?></p>
+        </div>
+
+        <div class="mb-4" x-show="provider === 'opencode_server'" x-cloak>
+            <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('OpenCode Server URL') ?></label>
+            <input type="text" name="opencode_server_base_url" value="<?= h($ai['opencode_server_base_url'] ?? '') ?>" placeholder="http://localhost:4096" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" :disabled="provider !== 'opencode_server'">
+            <p class="text-xs text-gray-400 mt-1"><?= __('The password above is sent as HTTP Basic authentication with an empty username.') ?></p>
         </div>
 
         <p class="text-xs text-gray-400 mb-4"><?= __('Your API keys are stored in the database and used only for AI Assistant requests.') ?></p>
@@ -73,6 +88,16 @@ function aiSettings() {
             const form = new FormData();
             form.append('_csrf', turtleAiSettings.csrf);
             form.append('ai_provider', this.provider);
+            const keyField = this.provider === 'claude' ? 'anthropic_api_key'
+                : this.provider === 'opencode_server' ? 'opencode_server_password'
+                : this.provider + '_api_key';
+            const keyInput = document.querySelector('input[name="' + keyField + '"]');
+            form.append('api_key', keyInput ? keyInput.value : '');
+            const baseField = this.provider === 'opencode' ? 'opencode_base_url'
+                : this.provider === 'opencode_server' ? 'opencode_server_base_url'
+                : '';
+            const baseInput = baseField ? document.querySelector('input[name="' + baseField + '"]') : null;
+            form.append('base_url', baseInput ? baseInput.value : '');
             fetch((window.baseUrl || '') + '/settings/ai-assistant/models', {
                 method: 'POST', body: form, headers: { 'Accept': 'application/json' }
             })

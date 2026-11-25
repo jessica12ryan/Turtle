@@ -48,7 +48,7 @@ class SettingsController
             $tzByCountry['generic'] = \DateTimeZone::listIdentifiers(\DateTimeZone::UTC);
             $data['tzByCountry'] = $tzByCountry;
         } elseif ($tab === 'ai_assistant') {
-            $keys = ['ai_assistant_enabled', 'ai_provider', 'ai_model', 'openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url'];
+            $keys = ['ai_assistant_enabled', 'ai_provider', 'ai_model', 'openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url', 'opencode_server_password', 'opencode_server_base_url'];
             $rows = Database::fetchAll("SELECT `key`, `value` FROM settings WHERE `key` IN ('" . implode("','", $keys) . "')");
             $data['ai'] = [];
             foreach ($rows as $row) {
@@ -65,6 +65,9 @@ class SettingsController
             $data['aiProviders'] = \App\Core\AiProviders::all();
             if ($data['ai']['ai_model'] === '') {
                 $data['ai']['ai_model'] = \App\Core\AiProviders::defaultModel((string)$data['ai']['ai_provider']);
+            }
+            if ($data['ai']['opencode_server_base_url'] === '') {
+                $data['ai']['opencode_server_base_url'] = \App\Core\AiProviders::baseUrl('opencode_server', '');
             }
         } elseif ($tab === 'updates') {
             $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
@@ -495,9 +498,10 @@ class SettingsController
             'ai_provider' => $provider,
             'ai_model' => trim((string)($_POST['ai_model'] ?? '')) ?: \App\Core\AiProviders::defaultModel($provider),
             'opencode_base_url' => rtrim(trim((string)($_POST['opencode_base_url'] ?? '')), '/'),
+            'opencode_server_base_url' => rtrim(trim((string)($_POST['opencode_server_base_url'] ?? '')), '/'),
         ];
-        foreach (['openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key'] as $key) {
-            if (array_key_exists($key, $_POST)) {
+        foreach (['openai_api_key', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_server_password'] as $key) {
+            if (array_key_exists($key, $_POST) && trim((string)$_POST[$key]) !== '') {
                 $values[$key] = trim((string)$_POST[$key]);
             }
         }
@@ -534,15 +538,24 @@ class SettingsController
             return;
         }
         $provider = \App\Core\AiProviders::get($providerId);
-        $keyRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$provider['key_setting']]);
-        $apiKey = trim((string)($keyRow['value'] ?? ''));
+        // Prefer the values currently typed in the form so Refresh works
+        // before the settings have been saved.
+        $apiKey = trim((string)($_POST['api_key'] ?? ''));
+        if ($apiKey === '') {
+            $keyRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$provider['key_setting']]);
+            $apiKey = trim((string)($keyRow['value'] ?? ''));
+        }
         if ($apiKey === '') {
             echo json_encode(['models' => \App\Core\AiProviders::fallbackModels($providerId), 'warning' => __('Add an API key to load models.')]);
             return;
         }
-        $base = $providerId === 'opencode'
-            ? trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'opencode_base_url'")['value'] ?? ''))
-            : '';
+        $baseSetting = $providerId === 'opencode' ? 'opencode_base_url'
+            : ($providerId === 'opencode_server' ? 'opencode_server_base_url' : '');
+        $base = trim((string)($_POST['base_url'] ?? ''));
+        if ($base === '' && $baseSetting !== '') {
+            $baseRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = ?", [$baseSetting]);
+            $base = trim((string)($baseRow['value'] ?? ''));
+        }
 
         $url = \App\Core\AiProviders::modelsGetUrl($providerId, $base, $apiKey);
         $ch = curl_init($url);
@@ -676,7 +689,7 @@ class SettingsController
             Database::execute("DELETE FROM property_photos WHERE 1=1", []);
             Database::execute("DELETE FROM activity_logs WHERE 1=1", []);
             // Reset all user-configurable settings (setup re-creates what it needs)
-            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'ai_provider', 'ai_model', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
+            $settingsKeys = ['site_name', 'site_url', 'logo_path', 'timezone', 'ntp_server', 'default_country', 'default_language', 'openai_api_key', 'ai_assistant_enabled', 'ai_provider', 'ai_model', 'anthropic_api_key', 'gemini_api_key', 'opencode_api_key', 'opencode_base_url', 'opencode_server_password', 'opencode_server_base_url', 'log_level', 'mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_from_address', 'mail_from_name'];
             $placeholders = implode(',', array_fill(0, count($settingsKeys), '?'));
             Database::execute("DELETE FROM settings WHERE `key` IN ({$placeholders})", $settingsKeys);
             // Reset permissions to "Use defaults"

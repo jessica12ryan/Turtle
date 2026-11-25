@@ -10,7 +10,7 @@ final class AiProvidersTest extends TestCase
     public function testAllProvidersAreRegistered(): void
     {
         $providers = AiProviders::all();
-        self::assertSame(['openai', 'opencode', 'claude', 'gemini'], array_keys($providers));
+        self::assertSame(['openai', 'opencode', 'opencode_server', 'claude', 'gemini'], array_keys($providers));
         foreach ($providers as $id => $provider) {
             self::assertSame($id, AiProviders::isValid($id) ? $id : 'invalid');
             self::assertNotSame('', AiProviders::defaultModel($id));
@@ -36,6 +36,24 @@ final class AiProvidersTest extends TestCase
         self::assertSame('https://opencode.ai/zen/v1/chat/completions', $zen['url']);
         $selfHosted = AiProviders::chatRequest('opencode', 'key', 'model', 'http://localhost:4000/v1/', []);
         self::assertSame('http://localhost:4000/v1/chat/completions', $selfHosted['url']);
+    }
+
+    public function testOpenCodeServerUsesHttpApiAndBasicAuth(): void
+    {
+        $request = AiProviders::chatRequest('opencode_server', 'secret', 'model-a', 'http://192.168.2.4:4096', [
+            ['role' => 'system', 'content' => 'System text'],
+            ['role' => 'user', 'content' => 'Question'],
+        ]);
+        self::assertSame('http://192.168.2.4:4096/api/experimental/generate/text', $request['url']);
+        self::assertContains('Authorization: Basic ' . base64_encode(':secret'), $request['headers']);
+        self::assertStringContainsString('System: System text', $request['body']);
+        self::assertStringContainsString('User: Question', $request['body']);
+        self::assertSame('http://192.168.2.4:4096/api/model', AiProviders::modelsUrl('opencode_server', 'http://192.168.2.4:4096'));
+        self::assertSame(
+            ['model-a'],
+            AiProviders::parseModels('opencode_server', '{"data":[{"modelID":"model-a"}]}')
+        );
+        self::assertSame('answer', AiProviders::parseChatResponse('opencode_server', '{"data":{"text":"answer"}}'));
     }
 
     public function testClaudeRequestSeparatesSystemPrompt(): void
