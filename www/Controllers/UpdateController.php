@@ -17,40 +17,60 @@ class UpdateController
         return $path;
     }
 
-    public function check(): void
+    public const UPDATE_CHECK_TTL = 21600; // six hours
+
+    /** Pure staleness test so the throttle can be unit tested. */
+    public static function shouldCheckUpdates(string $last, int $now, int $ttl = self::UPDATE_CHECK_TTL): bool
     {
-        header('Content-Type: application/json');
+        if (trim($last) === '') {
+            return true;
+        }
+        $timestamp = strtotime(trim($last) . ' UTC');
+        return $timestamp === false || ($now - $timestamp) >= $ttl;
+    }
 
-        $csrf = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if (!verify_csrf($csrf)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid security token.']);
-            return;
+    /**
+     * Atomically claim the periodic update check. Only the request that moves
+     * last_update_check forward performs the network call.
+     */
+    public static function claimUpdateCheck(int $now, int $ttl = self::UPDATE_CHECK_TTL): bool
+    {
+        $row = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'last_update_check'");
+        $last = (string)($row['value'] ?? '');
+        if (!self::shouldCheckUpdates($last, $now, $ttl)) {
+            return false;
         }
 
-        $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
-        $channel = $channel['value'] ?? 'stable';
-
-        $currentVersion = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
-        $currentVersion = $currentVersion['value'] ?? '0.0.0';
-
-        if ($channel === 'development') {
-            $result = $this->checkDevChannel($currentVersion);
-        } else {
-            $result = $this->checkStableChannel($currentVersion);
+        $stamp = gmdate('Y-m-d H:i:s', $now);
+        $threshold = gmdate('Y-m-d H:i:s', $now - $ttl);
+        $changed = Database::execute(
+            "UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'
+             AND (`value` = '' OR `value` < ?)",
+            [$stamp, $threshold]
+        );
+        if ($changed > 0) {
+            return true;
         }
 
-        // Contract: last_update_check is stored in UTC (display_time() reads UTC).
-        Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'", [gmdate('Y-m-d H:i:s')]);
-
-        // Opportunistic telemetry: admin is online + network is known-good.
-        // Still gated to 1 ping/day and opt-out inside Telemetry::maybeSend().
+        // Row may not exist yet on older installs.
         try {
-            \App\Core\Telemetry::maybeSend();
+            Database::execute(
+                "INSERT IGNORE INTO settings (`key`, `value`) VALUES ('last_update_check', ?)",
+                [$stamp]
+            );
         } catch (\Throwable $e) {
-            \App\Core\Logger::error('Telemetry hook (update check) failed: ' . $e->getMessage());
+            \App\Core\Logger::warning('Could not claim update check: ' . $e->getMessage());
         }
+        return true;
+    }
 
+    /** Persist a check result; shared by manual and periodic checks. */
+    public static function persistCheckResult(array $result, ?string $checkedAt = null): void
+    {
+        Database::execute(
+            "UPDATE settings SET `value` = ? WHERE `key` = 'last_update_check'",
+            [$checkedAt ?? gmdate('Y-m-d H:i:s')]
+        );
         if (isset($result['latest_version'])) {
             Database::execute("UPDATE settings SET `value` = ? WHERE `key` = 'latest_version'", [$result['latest_version']]);
         }
@@ -67,6 +87,49 @@ class UpdateController
                  ON DUPLICATE KEY UPDATE `value` = ?",
                 [(string)$result['behind_count'], (string)$result['behind_count']]
             );
+        }
+    }
+
+    /** Perform the actual channel check and persist the result. */
+    public function refresh(): array
+    {
+        $channelRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+        $channel = (string)($channelRow['value'] ?? 'stable');
+        $currentRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+        $currentVersion = (string)($currentRow['value'] ?? '0.0.0');
+
+        $result = $channel === 'development'
+            ? $this->checkDevChannel($currentVersion)
+            : $this->checkStableChannel($currentVersion);
+
+        self::persistCheckResult($result);
+        return $result;
+    }
+
+    public function check(): void
+    {
+        header('Content-Type: application/json');
+
+        $csrf = $_POST['_csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        if (!verify_csrf($csrf)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid security token.']);
+            return;
+        }
+
+        $channelRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
+        $channel = (string)($channelRow['value'] ?? 'stable');
+        $currentRow = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
+        $currentVersion = (string)($currentRow['value'] ?? '0.0.0');
+
+        $result = $this->refresh();
+
+        // Opportunistic telemetry: admin is online + network is known-good.
+        // Still gated to 1 ping/day and opt-out inside Telemetry::maybeSend().
+        try {
+            \App\Core\Telemetry::maybeSend();
+        } catch (\Throwable $e) {
+            \App\Core\Logger::error('Telemetry hook (update check) failed: ' . $e->getMessage());
         }
 
         echo json_encode(array_merge([

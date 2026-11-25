@@ -104,7 +104,7 @@ update.sh             Update script (git pull + docker compose up)
 
 ## Updating
 
-**In-app** (admin): Settings → Updates → Apply Update (runs `git pull` + migrations).
+**In-app** (admin): Settings → Updates → Apply Update (runs `git pull` + migrations). The admin dashboard checks for available updates automatically at most every six hours; Settings → Updates → Check for Updates runs an immediate check.
 
 **Manual**:
 ```bash

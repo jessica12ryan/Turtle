@@ -119,8 +119,17 @@ class HomeController
             $channel = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'update_channel'");
             $channel = $channel['value'] ?? 'stable';
 
-            // Use the result of the last explicit check. The dashboard must
-            // never make network calls (GitHub API / git fetch) on page load.
+            // Refresh at most every few hours when an admin views the
+            // dashboard; ordinary page loads only read the stored result.
+            if (\App\Controllers\UpdateController::claimUpdateCheck(time())) {
+                try {
+                    (new \App\Controllers\UpdateController())->refresh();
+                } catch (\Throwable $e) {
+                    \App\Core\Logger::warning('Automatic update check failed: ' . $e->getMessage());
+                }
+            }
+
+            // Use the result of the last check (manual or periodic).
             $latestFromGit = trim((string)(Database::fetch("SELECT `value` FROM settings WHERE `key` = 'latest_version'")['value'] ?? ''));
             $currentVer = Database::fetch("SELECT `value` FROM settings WHERE `key` = 'app_version'");
             $current = $currentVer['value'] ?? '0.0.0';

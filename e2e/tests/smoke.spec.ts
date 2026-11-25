@@ -617,6 +617,7 @@ test('settings backup and restore round-trip', async ({ page }) => {
     },
   });
   expect(restoreResponse.ok()).toBeTruthy();
+  expect(await restoreResponse.text(), 'restore must report success').toContain('Backup restored successfully');
 
   // Restore intentionally logs the user out. Clear cookies so the login page
   // cannot be skipped by a session cookie that survived the redirect.
