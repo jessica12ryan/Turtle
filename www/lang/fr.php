@@ -492,6 +492,8 @@ return [
     'Start a new chat' => 'Démarrer une nouvelle discussion',
     'Delete chat' => 'Supprimer la discussion',
     'Delete this chat?' => 'Supprimer cette discussion ?',
+    'Rename chat' => 'Renommer la discussion',
+    'Enter a name for this chat' => 'Saisissez un nom pour cette discussion',
     'Enable AI Assistant' => 'Activer l\'assistant IA',
     'Staff with the AI Assistant permission can use it when enabled. Tenants never have access.' => 'Le personnel disposant de l\'autorisation peut l\'utiliser une fois activé. Les locataires n\'y ont jamais accès.',
     'Message is required.' => 'Un message est requis.',

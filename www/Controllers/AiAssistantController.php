@@ -152,6 +152,33 @@ class AiAssistantController
         echo json_encode(['response' => $response]);
     }
 
+    public function renameConversation(int $id): void
+    {
+        header('Content-Type: application/json');
+        $user = $this->guard(true);
+        if ($user === null) {
+            return;
+        }
+        if (!verify_csrf($_POST['_csrf'] ?? '')) {
+            http_response_code(400);
+            echo json_encode(['error' => __('Invalid security token.')]);
+            return;
+        }
+
+        $title = self::conversationTitle((string)($_POST['title'] ?? ''));
+        $updated = Database::execute(
+            "UPDATE ai_conversations SET title = ?, updated_at = NOW() WHERE id = ? AND user_id = ?",
+            [$title, $id, $user['id']]
+        );
+        if ($updated === 0) {
+            http_response_code(404);
+            echo json_encode(['error' => __('Chat not found.')]);
+            return;
+        }
+
+        echo json_encode(['id' => $id, 'title' => $title]);
+    }
+
     public function deleteConversation(int $id): void
     {
         header('Content-Type: application/json');
@@ -225,7 +252,9 @@ class AiAssistantController
         }
 
         $model = self::setting('ai_model') ?: AiProviders::defaultModel($providerId);
-        $base = $providerId === 'opencode' ? self::setting('opencode_base_url') : '';
+        $baseSetting = $providerId === 'opencode' ? 'opencode_base_url'
+            : ($providerId === 'opencode_server' ? 'opencode_server_base_url' : '');
+        $base = $baseSetting !== '' ? self::setting($baseSetting) : '';
 
         $systemPrompt = $this->buildSystemPrompt($user, self::redactContext($this->buildContext($user)));
 
@@ -239,8 +268,8 @@ class AiAssistantController
 
         $response = $this->callProvider($providerId, $apiKey, $model, $base, $messages);
 
-        $prior[] = ['role' => 'user', 'content' => $message];
-        $prior[] = ['role' => 'assistant', 'content' => $response];
+        $prior[] = self::stampMessage('user', $message);
+        $prior[] = self::stampMessage('assistant', $response);
         return [self::capMessages($prior), $response];
     }
 
@@ -248,6 +277,17 @@ class AiAssistantController
     public static function capMessages(array $messages): array
     {
         return array_values(array_slice($messages, -self::MAX_MESSAGES));
+    }
+
+    /** Store a message with a server-side timestamp for display. */
+    public static function stampMessage(string $role, string $content): array
+    {
+        return [
+            'role' => $role,
+            'content' => $content,
+            'at' => gmdate('c'),
+            'at_label' => gmdate('M j, Y g:i A') . ' UTC',
+        ];
     }
 
     /** Short, safe title derived from the first message or a supplied name. */

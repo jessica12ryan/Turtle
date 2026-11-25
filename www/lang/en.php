@@ -466,6 +466,8 @@
     'Start a new chat' => 'Start a new chat',
     'Delete chat' => 'Delete chat',
     'Delete this chat?' => 'Delete this chat?',
+    'Rename chat' => 'Rename chat',
+    'Enter a name for this chat' => 'Enter a name for this chat',
     'Enable AI Assistant' => 'Enable AI Assistant',
     'Staff with the AI Assistant permission can use it when enabled. Tenants never have access.' => 'Staff with the AI Assistant permission can use it when enabled. Tenants never have access.',
     'Message is required.' => 'Message is required.',

@@ -587,6 +587,10 @@ test('AI assistant can be enabled and a chat created', async ({ page }) => {
   await page.getByRole('button', { name: 'New chat', exact: true }).click();
   await expect(page.locator('button.flex-1.text-left')).toHaveCount(1);
   await expect(page.locator('input[placeholder="Ask the AI Assistant..."]')).toBeEnabled();
+
+  page.once('dialog', dialog => dialog.accept('Renamed chat'));
+  await page.locator('[data-testid="rename-chat"]').click();
+  await expect(page.locator('button.flex-1.text-left')).toHaveText('Renamed chat');
 });
 
 test('settings backup and restore round-trip', async ({ page }) => {

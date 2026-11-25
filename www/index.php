@@ -405,6 +405,7 @@ $router->post('/ai-assistant/chat', 'AiAssistantController@chat', ['auth', 'perm
 $router->get('/ai-assistant/conversations/{id}', 'AiAssistantController@getConversation', ['auth', 'perm:ai_assistant.access']);
 $router->post('/ai-assistant/conversations', 'AiAssistantController@createConversation', ['auth', 'perm:ai_assistant.access']);
 $router->post('/ai-assistant/conversations/{id}/chat', 'AiAssistantController@conversationChat', ['auth', 'perm:ai_assistant.access']);
+$router->post('/ai-assistant/conversations/{id}/rename', 'AiAssistantController@renameConversation', ['auth', 'perm:ai_assistant.access']);
 $router->post('/ai-assistant/conversations/{id}/delete', 'AiAssistantController@deleteConversation', ['auth', 'perm:ai_assistant.access']);
 
 // Tenancy Applications (public)

@@ -54,6 +54,15 @@ final class AiAssistantTest extends TestCase
         self::assertSame('30', $capped[count($capped) - 1]['content']);
     }
 
+    public function testMessagesAreStampedForDisplay(): void
+    {
+        $message = \App\Controllers\AiAssistantController::stampMessage('user', 'Hello');
+        self::assertSame('user', $message['role']);
+        self::assertSame('Hello', $message['content']);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T/', (string)$message['at']);
+        self::assertMatchesRegularExpression('/UTC$/', (string)$message['at_label']);
+    }
+
     public function testConversationTitleIsSafeAndBounded(): void
     {
         self::assertSame('New chat', AiAssistantController::conversationTitle('   '));
