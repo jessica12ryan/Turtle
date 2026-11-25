@@ -558,31 +558,47 @@ class SettingsController
         }
 
         $url = \App\Core\AiProviders::modelsGetUrl($providerId, $base, $apiKey);
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_HTTPGET => true,
-            CURLOPT_HTTPHEADER => \App\Core\AiProviders::modelHeaders($providerId, $apiKey),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 15,
-            CURLOPT_CONNECTTIMEOUT => 8,
-        ]);
-        $response = curl_exec($ch);
-        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
+        $headers = \App\Core\AiProviders::modelHeaders($providerId, $apiKey);
+        $request = \App\Core\AiProviders::httpRequest($url, $headers);
+        if ($request['status'] === 401 && $providerId === 'opencode_server') {
+            // Some builds expect an empty username instead of "opencode".
+            $headers = \App\Core\AiProviders::fallbackAuthHeaders($headers, $apiKey);
+            $request = \App\Core\AiProviders::httpRequest($url, $headers);
+        }
+        $status = $request['status'];
+        $error = $request['error'];
+        $response = $request['body'];
 
-        if ($error !== '' || $status < 200 || $status >= 300) {
+        $warning = '';
+        if ($error !== '') {
+            $warning = (string)__('Could not connect to the provider.');
+        } elseif ($status === 401) {
+            $warning = (string)__('Provider authentication failed (HTTP 401).');
+        } elseif ($status === 404) {
+            $warning = (string)__('Provider returned HTTP 404 — check the server URL.');
+        } elseif ($status < 200 || $status >= 300) {
+            $warning = (string)__('Provider returned HTTP :code.', [':code' => (string)$status]);
+        }
+        if ($warning !== '') {
+            \App\Core\Logger::warning(sprintf(
+                'AI model list failed for %s at %s: status=%d error=%s body=%s',
+                $providerId,
+                $url,
+                $status,
+                $error,
+                mb_substr($response, 0, 300)
+            ));
             echo json_encode([
                 'models' => \App\Core\AiProviders::fallbackModels($providerId),
-                'warning' => __('Could not load models from the provider.'),
+                'warning' => $warning,
             ]);
             return;
         }
 
-        $models = \App\Core\AiProviders::parseModels($providerId, (string)$response);
+        $models = \App\Core\AiProviders::parseModels($providerId, $response);
         echo json_encode([
             'models' => $models !== [] ? $models : \App\Core\AiProviders::fallbackModels($providerId),
-            'warning' => $models === [] ? __('Could not load models from the provider.') : '',
+            'warning' => $models === [] ? (string)__('Provider returned an unrecognised response.') : '',
         ]);
     }
 

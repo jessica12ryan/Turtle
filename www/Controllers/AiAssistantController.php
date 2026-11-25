@@ -393,30 +393,21 @@ class AiAssistantController
     {
         $request = AiProviders::chatRequest($providerId, $apiKey, $model, $base, $messages);
 
-        $ch = curl_init($request['url']);
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_HTTPHEADER => $request['headers'],
-            CURLOPT_POSTFIELDS => $request['body'],
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            throw new \RuntimeException('AI provider request failed: ' . $error);
+        $result = AiProviders::httpRequest($request['url'], $request['headers'], 'POST', $request['body']);
+        if ($result['status'] === 401 && $providerId === 'opencode_server') {
+            $headers = AiProviders::fallbackAuthHeaders($request['headers'], $apiKey);
+            $result = AiProviders::httpRequest($request['url'], $headers, 'POST', $request['body']);
         }
-        if ($httpCode < 200 || $httpCode >= 300) {
-            $data = json_decode((string)$response, true);
+
+        if ($result['error'] !== '') {
+            throw new \RuntimeException('AI provider request failed: ' . $result['error']);
+        }
+        if ($result['status'] < 200 || $result['status'] >= 300) {
+            $data = json_decode($result['body'], true);
             $errMsg = is_array($data) ? (string)($data['error']['message'] ?? 'Unknown error') : 'Unknown error';
-            throw new \RuntimeException('AI provider error (' . $httpCode . '): ' . $errMsg);
+            throw new \RuntimeException('AI provider error (' . $result['status'] . '): ' . $errMsg);
         }
 
-        return AiProviders::parseChatResponse($providerId, (string)$response);
+        return AiProviders::parseChatResponse($providerId, $result['body']);
     }
 }

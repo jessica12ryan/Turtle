@@ -107,7 +107,7 @@ final class AiProviders
                 'url' => $base . '/api/experimental/generate/text',
                 'headers' => [
                     'Content-Type: application/json',
-                    'Authorization: Basic ' . base64_encode(':' . $apiKey),
+                    self::basicHeader($apiKey),
                 ],
                 'body' => (string)json_encode([
                     'prompt' => implode("\n\n", $parts),
@@ -184,6 +184,47 @@ final class AiProviders
         ];
     }
 
+    /** Basic auth header used by OpenCode Server. */
+    public static function basicHeader(string $password, string $username = 'opencode'): string
+    {
+        return 'Authorization: Basic ' . base64_encode($username . ':' . $password);
+    }
+
+    /** Some servers expect an empty username instead of "opencode". */
+    public static function fallbackAuthHeaders(array $headers, string $password): array
+    {
+        $fallback = self::basicHeader($password, '');
+        return array_map(
+            static fn(string $header): string => str_starts_with($header, 'Authorization: Basic ') ? $fallback : $header,
+            $headers
+        );
+    }
+
+    /** Small shared cURL wrapper; returns status, body and error separately. */
+    public static function httpRequest(string $url, array $headers, string $method = 'GET', string $body = ''): array
+    {
+        $ch = curl_init($url);
+        $options = [
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 10,
+        ];
+        if ($method === 'POST') {
+            $options[CURLOPT_POST] = true;
+            $options[CURLOPT_POSTFIELDS] = $body;
+        } else {
+            $options[CURLOPT_HTTPGET] = true;
+        }
+        curl_setopt_array($ch, $options);
+        $response = curl_exec($ch);
+        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = (string)curl_error($ch);
+        curl_close($ch);
+
+        return ['status' => $status, 'body' => (string)$response, 'error' => $error];
+    }
+
     /** Headers required for the model-list request. */
     public static function modelHeaders(string $id, string $apiKey): array
     {
@@ -192,7 +233,7 @@ final class AiProviders
             return ['x-api-key: ' . $apiKey, 'anthropic-version: 2023-06-01'];
         }
         if ($format === 'opencode_server') {
-            return ['Authorization: Basic ' . base64_encode(':' . $apiKey)];
+            return [self::basicHeader($apiKey)];
         }
         return ['Authorization: Bearer ' . $apiKey];
     }

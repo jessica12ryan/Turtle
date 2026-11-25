@@ -45,7 +45,11 @@ final class AiProvidersTest extends TestCase
             ['role' => 'user', 'content' => 'Question'],
         ]);
         self::assertSame('http://192.168.2.4:4096/api/experimental/generate/text', $request['url']);
-        self::assertContains('Authorization: Basic ' . base64_encode(':secret'), $request['headers']);
+        self::assertContains('Authorization: Basic ' . base64_encode('opencode:secret'), $request['headers']);
+        self::assertContains(
+            AiProviders::basicHeader('secret', ''),
+            AiProviders::fallbackAuthHeaders($request['headers'], 'secret')
+        );
         self::assertStringContainsString('System: System text', $request['body']);
         self::assertStringContainsString('User: Question', $request['body']);
         self::assertSame('http://192.168.2.4:4096/api/model', AiProviders::modelsUrl('opencode_server', 'http://192.168.2.4:4096'));

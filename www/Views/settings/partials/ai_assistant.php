@@ -61,7 +61,7 @@
         <div class="mb-4" x-show="provider === 'opencode_server'" x-cloak>
             <label class="block text-sm font-medium text-gray-700 mb-1"><?= __('OpenCode Server URL') ?></label>
             <input type="text" name="opencode_server_base_url" value="<?= h($ai['opencode_server_base_url'] ?? '') ?>" placeholder="http://localhost:4096" class="w-full max-w-lg border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500" :disabled="provider !== 'opencode_server'">
-            <p class="text-xs text-gray-400 mt-1"><?= __('The password above is sent as HTTP Basic authentication with an empty username.') ?></p>
+            <p class="text-xs text-gray-400 mt-1"><?= __('The password above is sent as HTTP Basic authentication with the username "opencode".') ?></p>
         </div>
 
         <p class="text-xs text-gray-400 mb-4"><?= __('Your API keys are stored in the database and used only for AI Assistant requests.') ?></p>
