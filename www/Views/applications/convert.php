@@ -145,15 +145,15 @@ $otherTenants = $data['other_tenants'] ?? [];
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Full Name') ?> <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="<?= h(old('name') ?: $fullName) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off" required>
+                    <input type="text" name="name" value="<?= old('name') ?: h($fullName) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" autocomplete="off" required>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Email') ?> <span class="text-red-500">*</span></label>
-                    <input type="email" name="email" value="<?= h(old('email') ?: ($applicant['email'] ?? '')) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                    <input type="email" name="email" value="<?= old('email') ?: h($applicant['email'] ?? '') ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Phone Number') ?> <span class="text-red-500">*</span></label>
-                    <input type="text" name="phone" value="<?= h(old('phone') ?: ($applicant['phone'] ?? '')) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required placeholder="(555) 555-5555">
+                    <input type="text" name="phone" value="<?= old('phone') ?: h($applicant['phone'] ?? '') ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required placeholder="(555) 555-5555">
                 </div>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Property') ?> <span class="text-red-500">*</span></label>
@@ -167,16 +167,16 @@ $otherTenants = $data['other_tenants'] ?? [];
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Lease Start') ?> <span class="text-red-500">*</span></label>
-                        <input type="date" name="lease_start" value="<?= h(old('lease_start') ?: ($data['expected_move_in_date'] ?? '')) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+                        <input type="date" name="lease_start" value="<?= old('lease_start') ?: h($data['expected_move_in_date'] ?? '') ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Lease End') ?></label>
-                        <input type="date" name="lease_end" value="<?= h(old('lease_end')) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <input type="date" name="lease_end" value="<?= old('lease_end') ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         <p class="text-xs text-gray-400 mt-1"><?= __('Optional — leave blank for month-to-month') ?></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Scheduled Move Out') ?></label>
-                        <input type="date" name="move_out_date" value="<?= h(old('move_out_date')) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <input type="date" name="move_out_date" value="<?= old('move_out_date') ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                         <p class="text-xs text-gray-400 mt-1"><?= __('Optional — tenant auto-archives on this date.') ?></p>
                     </div>
                 </div>
@@ -194,11 +194,11 @@ $otherTenants = $data['other_tenants'] ?? [];
                 <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Emergency Contact Name') ?></label>
-                        <input type="text" name="emergency_contact_name" value="<?= h(old('emergency_contact_name') ?: $emergencyName) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                        <input type="text" name="emergency_contact_name" value="<?= old('emergency_contact_name') ?: h($emergencyName) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Emergency Contact Phone') ?></label>
-                        <input type="text" name="emergency_contact_phone" value="<?= h(old('emergency_contact_phone') ?: ($applicant['emergency_contact']['phone'] ?? '')) ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
+                        <input type="text" name="emergency_contact_phone" value="<?= old('emergency_contact_phone') ?: h($applicant['emergency_contact']['phone'] ?? '') ?>" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="(555) 555-5555">
                     </div>
                 </div>
                 <div class="mb-4">

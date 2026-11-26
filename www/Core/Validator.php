@@ -40,6 +40,7 @@ class Validator
         return match ($rule) {
             'required' => ($value === null || $value === '') ? "{$label} is required." : null,
             'email' => (!filter_var($value, FILTER_VALIDATE_EMAIL)) ? "{$label} must be a valid email." : null,
+            'date' => !$this->isCalendarDate($value) ? "{$label} must be a valid date." : null,
             // Integer limits measure string length. Comparing numeric-looking
             // strings by value let a 7-digit password pass min:8 and rejected
             // a 5-digit postal code under max:20. Decimal limits remain
@@ -53,6 +54,15 @@ class Validator
             'in' => (!in_array((string)$value, $params)) ? "{$label} is invalid." : null,
             default => null,
         };
+    }
+
+    /** Strict YYYY-MM-DD calendar date (also used for DATE columns). */
+    private function isCalendarDate(mixed $value): bool
+    {
+        if (!is_string($value) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) {
+            return false;
+        }
+        return checkdate((int)$m[2], (int)$m[3], (int)$m[1]);
     }
 
     private function isDecimalLimit(mixed $limit): bool

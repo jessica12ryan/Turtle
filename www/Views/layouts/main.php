@@ -3,7 +3,7 @@
 $themeUser = \App\Core\Auth::instance()->user();
 $themePref = $themeUser['theme'] ?? 'system';
 ?>
-<html lang="en" data-theme="<?= h($themePref) ?>">
+<html lang="<?= h(current_language()) ?>" data-theme="<?= h($themePref) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

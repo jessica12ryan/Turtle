@@ -224,13 +224,7 @@ try {
 }
 
 // Boot check: redirect to setup if no admin or landlord user exists
-$needsSetup = false;
-try {
-    $userExists = \App\Core\Database::fetch("SELECT id FROM users WHERE role IN ('admin','landlord') AND archived_at IS NULL LIMIT 1");
-    $needsSetup = !$userExists;
-} catch (\Throwable $e) {
-    $needsSetup = true;
-}
+$needsSetup = !setup_is_complete();
 if ($needsSetup && !str_starts_with($requestUri, '/setup')) {
     redirect('/setup');
 }

@@ -1136,4 +1136,10 @@ return [
     'Your message has been sent. Save this page link to return to the conversation.' => 'Votre message a été envoyé. Enregistrez ce lien pour revenir à la conversation.',
     'Your message has been sent. We emailed your private link to the address you provided. Save that email or bookmark this page to return to this conversation.' => 'Votre message a été envoyé. Nous avons envoyé votre lien privé à l\'adresse indiquée. Enregistrez cet e-mail ou ajoutez cette page aux favoris pour revenir à la conversation.',
     'and :count more' => 'et :count de plus',
+    'Logo must be PNG, JPEG, GIF, WebP, or HEIC (SVG blocked for XSS).' => 'Le logo doit être au format PNG, JPEG, GIF, WebP ou HEIC (SVG bloqué pour raisons de sécurité).',
+    'Logo must be smaller than 5 MB.' => 'Le logo doit être plus petit que 5 Mo.',
+    'Invalid backup file: required table :table is missing.' => 'Fichier de sauvegarde invalide : la table requise :table est manquante.',
+    'Invalid backup file: archives must not contain .env.' => 'Fichier de sauvegarde invalide : les archives ne doivent pas contenir .env.',
+    'Database restore failed. The previous database was restored; check the error logs for details.' => 'La restauration de la base de données a échoué. La base précédente a été restaurée ; consultez les journaux d’erreurs pour plus de détails.',
+    'Too many requests. Please wait a few minutes.' => 'Trop de demandes. Veuillez patienter quelques minutes.',
 ];

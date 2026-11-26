@@ -50,7 +50,7 @@
                         <p class="text-xs text-gray-400 mt-1" x-show="msg.at_label" x-text="msg.at_label"></p>
                     </div>
                     <template x-if="msg.role === 'user'">
-                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"><?= strtoupper(substr(\App\Core\Auth::instance()->user()['name'], 0, 1)) ?></div>
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"><?= h(strtoupper(substr((string)(\App\Core\Auth::instance()->user()['name'] ?? ''), 0, 1))) ?></div>
                     </template>
                 </div>
             </template>

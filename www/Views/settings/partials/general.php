@@ -199,8 +199,8 @@ function toggleMailAuth() {
 }
 toggleMailAuth();
 
-function testMail() {
-    const btn = event.target;
+function testMail(e) {
+    const btn = e.currentTarget || e.target;
     const result = document.getElementById('mail-test-result');
     btn.disabled = true;
     result.className = 'mt-3 p-3 rounded-lg text-sm hidden';

@@ -417,6 +417,12 @@ class SettingsController
                 []
             );
         } elseif (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+            $logoSize = (int) ($_FILES['logo']['size'] ?? 0);
+            $actualLogoSize = @filesize($_FILES['logo']['tmp_name']);
+            if ($logoSize > 5 * 1024 * 1024 || $actualLogoSize === false || $actualLogoSize > 5 * 1024 * 1024) {
+                flash('error', __('Logo must be smaller than 5 MB.'));
+                redirect('/settings?tab=general');
+            }
             $prepared = prepare_image_upload($_FILES['logo']);
             if ($prepared === null) {
                 flash('error', __('Logo must be PNG, JPEG, GIF, WebP, or HEIC (SVG blocked for XSS).'));

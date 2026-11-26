@@ -50,12 +50,20 @@ done
 if [ -f database/schema.sql ]; then
     if [ ! -f storage/.db_initialized ] || [ "${TURTLE_FORCE_MIGRATIONS:-0}" = "1" ]; then
         echo ">>> Setting up database (first boot)..."
-        bash database/migrate.sh
+        # Do not mark the database as initialised when migrations fail — the
+        # next boot must retry instead of running against a partial schema.
+        if ! bash database/migrate.sh; then
+            echo ">>> ERROR: database setup failed; startup aborted (see logs)." >&2
+            exit 1
+        fi
         touch storage/.db_initialized
         echo ">>> Database tables created!"
     else
         echo ">>> Running incremental migrations..."
-        bash database/migrate.sh || echo ">>> Migrations completed with warnings (see logs)"
+        if ! bash database/migrate.sh; then
+            echo ">>> ERROR: incremental migrations failed; startup aborted (see logs)." >&2
+            exit 1
+        fi
     fi
 fi
 

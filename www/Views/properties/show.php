@@ -61,7 +61,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
             <?php if ($mainTenantLeaseType): ?>
             <div>
                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400"><?= __('Lease Type') ?></dt>
-                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= __(ucwords(str_replace('_', ' ', $mainTenantLeaseType))) ?></dd>
+                <dd class="text-sm text-gray-900 dark:text-gray-100"><?= h(__(ucwords(str_replace('_', ' ', $mainTenantLeaseType)))) ?></dd>
             </div>
             <?php endif; ?>
         </dl>
@@ -202,7 +202,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                                         <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded ml-2"><?= __('Main') ?></span>
                                     <?php endif; ?>
                                     <?php if (!empty($t['lease_type'])): ?>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400 ml-2"><?= __(ucwords(str_replace('_', ' ', $t['lease_type']))) ?></span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 ml-2"><?= h(__(ucwords(str_replace('_', ' ', $t['lease_type'])))) ?></span>
                                     <?php endif; ?>
                                 </div>
                             </li>

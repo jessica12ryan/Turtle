@@ -59,6 +59,28 @@ function getCachedSetting(string $key, int $ttl = 300): ?string
     return $value;
 }
 
+/** Whether an active admin or landlord exists — shared by boot and setup guards. */
+function setup_is_complete(): bool
+{
+    try {
+        return (bool) \App\Core\Database::fetch(
+            "SELECT id FROM users WHERE role IN ('admin','landlord') AND archived_at IS NULL LIMIT 1"
+        );
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+/** True only for a fresh install with no active accounts (safe for /setup/restore). */
+function setup_is_fresh(): bool
+{
+    try {
+        return \App\Core\Database::fetch("SELECT id FROM users WHERE archived_at IS NULL LIMIT 1") === null;
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
 /** Drop cached settings, optionally just one key (useful after a settings write). */
 function clearSettingCache(?string $key = null): void
 {
@@ -251,6 +273,13 @@ function old_raw(string $key, mixed $default = null): mixed
     return $_SESSION['_old'][$key] ?? $default;
 }
 
+/** Unescaped form input as a scalar string, for JSON/JS contexts. */
+function old_raw_text(string $key, string $default = ''): string
+{
+    $value = $_SESSION['_old'][$key] ?? $default;
+    return is_scalar($value) ? (string) $value : $default;
+}
+
 /**
  * Sanitized reverse-proxy path prefix.
  *
@@ -276,29 +305,37 @@ function base_url(): string
     return ingress_prefix();
 }
 
-function redirect(string $url): never
+/** Normalise a redirect target: no CRLF, no external or protocol-relative URL. */
+function sanitize_redirect_url(string $url): string
 {
-    // Prevent CRLF injection and open-redirect via // or \/
+    // Browsers normalise backslashes to forward slashes, so /\evil.com is an
+    // open redirect just like //evil.com.
     $url = str_replace(["\r", "\n", "\0"], '', $url);
+    $url = str_replace('\\', '/', $url);
     $url = trim($url);
-    // Block protocol-relative and absolute external URLs
-    if (str_starts_with($url, '//') || str_starts_with($url, '\\') || preg_match('#^[a-z][a-z0-9+\-.]*:#i', $url)) {
+    if (str_starts_with($url, '//') || preg_match('#^[a-z][a-z0-9+\-.]*:#i', $url)) {
         $url = '/';
     }
     if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
         $url = base_url() . $url;
     }
-    header('Location: ' . $url);
+    return $url;
+}
+
+function redirect(string $url): never
+{
+    header('Location: ' . sanitize_redirect_url($url));
     exit;
 }
 
 function redirectBack(): void
 {
     $referer = $_SERVER['HTTP_REFERER'] ?? '/';
-    // Block CRLF and null bytes
+    // Block CRLF, null bytes and backslash-normalised protocol-relative URLs.
     $referer = str_replace(["\r", "\n", "\0"], '', $referer);
+    $referer = str_replace('\\', '/', $referer);
     // Block protocol-relative URLs like //evil.com
-    if (str_starts_with($referer, '//') || str_starts_with($referer, '\\')) {
+    if (str_starts_with($referer, '//')) {
         $referer = '/';
     }
     $parsed = parse_url($referer);

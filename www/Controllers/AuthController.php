@@ -214,6 +214,18 @@ class AuthController
             redirect('/onboarding');
         }
 
+        // Email alone can reset a pending tenant's password. Throttle by both
+        // source and address so this cannot be used to lock accounts or flood
+        // inboxes.
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (
+            !auth_rate_limit('onboarding:ip:' . $ip, 5, 900)
+            || !auth_rate_limit('onboarding:email:' . strtolower(trim($_POST['email'])), 3, 3600)
+        ) {
+            flash('error', __('Too many requests. Please wait a few minutes.'));
+            redirect('/login');
+        }
+
         $user = Database::fetch(
             "SELECT id, name, must_change_password FROM users WHERE email = ? AND role = 'tenant' AND archived_at IS NULL",
             [$_POST['email']]
@@ -245,7 +257,9 @@ class AuthController
         notifyInApp((int)$user['id'], 'onboarding', 'Your Turtle account is ready. Please log in to complete onboarding.');
 
         log_activity('auth.welcome_sent', "Welcome email sent to '{$_POST['email']}'");
-        flash('success', __('Welcome email sent! Please check your inbox for your temporary password.'));
+        // Same message as the no-invitation branch: the endpoint must not
+        // disclose whether an account exists.
+        flash('success', __('If an invitation is pending, a welcome email has been sent.'));
         redirect('/login');
     }
 

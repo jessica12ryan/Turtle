@@ -90,7 +90,7 @@ foreach ($files ?? [] as $f) {
                                                     if ($sr) $roles[] = ucwords(str_replace('_', ' ', $sr));
                                                 }
                                             }
-                                            echo implode(', ', $roles);
+                                            echo h(implode(', ', $roles));
                                         ?></span>
                                         <?php if ($comment['is_internal']): ?>
                                             <span class="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded ml-1"><?= __('Internal') ?></span>

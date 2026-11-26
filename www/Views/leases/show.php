@@ -40,9 +40,9 @@
             </form>
         <?php endif; ?>
         <?php if (can('leases.delete')): ?>
-            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" data-confirm="WARNING: This will permanently delete this lease and all associated documents. This is NOT reversible. Continue?">
+            <form method="POST" action="/leases/<?= $lease['id'] ?>/hard-delete" class="inline" data-confirm="<?= __('WARNING: This will permanently delete this lease and all associated documents. This action cannot be undone. Continue?') ?>">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
-                <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-800 hover:underline text-sm font-bold">Delete</button>
+                <button type="submit" data-tooltip="<?= __('Delete this item permanently') ?>" class="text-red-800 hover:underline text-sm font-bold"><?= __('Delete') ?></button>
             </form>
         <?php endif; ?>
     </div>

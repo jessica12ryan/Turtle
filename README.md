@@ -113,6 +113,16 @@ git checkout stable && git pull && docker compose up -d --build
 
 **HA add-on**: Rebuild the add-on or use the in-app updater inside the container.
 
+`update.sh` (from a git checkout) is another option. Its temporary backup excludes `.env`, is deleted if the update fails, and a failed migration now aborts startup instead of being reported as a warning. Optional supply-chain checks can be enabled with environment variables:
+
+| Variable | Effect |
+| --- | --- |
+| `UPDATE_EXPECTED_REMOTE` | Require `origin` to match this URL before fetching. |
+| `UPDATE_EXPECTED_SHA` | Require the fetched branch tip to begin with this commit SHA. |
+| `UPDATE_VERIFY_SIGNATURES=1` | Require the updated HEAD commit to have a verifiable Git signature. |
+
+These checks are off by default so existing installations continue to update normally. The unauthenticated restore wizard at `/setup/restore` is only available on a fresh install with no active accounts; after that, use Settings → Backup & Restore.
+
 ## Persistent Data
 
 - MySQL database → `mysql-data` Docker volume

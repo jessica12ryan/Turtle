@@ -37,7 +37,7 @@
 </div>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Details</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4"><?= __('Details') ?></h2>
         <dl class="space-y-3">
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500"><?= __('Role') ?></dt>
@@ -54,22 +54,22 @@
             </div>
             <?php endif; ?>
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Email</dt>
+                <dt class="text-sm text-gray-500"><?= __('Email') ?></dt>
                 <dd class="text-sm text-gray-600"><?= h($staff['email']) ?></dd>
             </div>
             <div class="flex justify-between">
-                <dt class="text-sm text-gray-500">Joined</dt>
+                <dt class="text-sm text-gray-500"><?= __('Joined') ?></dt>
                 <dd class="text-sm text-gray-600"><?= display_time($staff['created_at'], 'M j, Y') ?></dd>
             </div>
         </dl>
     </div>
     <div class="bg-white rounded-lg shadow">
         <div class="px-6 py-4 border-b">
-            <h2 class="text-lg font-semibold text-gray-800">Assigned Tickets</h2>
+            <h2 class="text-lg font-semibold text-gray-800"><?= __('Assigned Tickets') ?></h2>
         </div>
         <div class="p-6">
             <?php if (empty($assignedTickets)): ?>
-                <p class="text-gray-500 text-sm">No assigned tickets.</p>
+                <p class="text-gray-500 text-sm"><?= __('No assigned tickets.') ?></p>
             <?php else: ?>
                 <ul class="divide-y">
                     <?php foreach ($assignedTickets as $t): ?>

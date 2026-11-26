@@ -11,8 +11,7 @@ class SetupController
 {
     public function create(): void
     {
-        $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
-        if ($admin) {
+        if (setup_is_complete()) {
             if (Auth::instance()->check()) {
                 redirect('/home');
             }
@@ -40,8 +39,7 @@ class SetupController
             redirect('/setup');
         }
         try {
-            $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
-            if ($admin) {
+            if (setup_is_complete()) {
                 if (Auth::instance()->check()) {
                     redirect('/home');
                 }
@@ -70,6 +68,12 @@ class SetupController
             $logoPath = '';
             $keepDefault = !empty($_POST['logo_default']);
             if (!$keepDefault && isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                $logoSize = (int) ($_FILES['logo']['size'] ?? 0);
+                $actualLogoSize = @filesize($_FILES['logo']['tmp_name']);
+                if ($logoSize > 5 * 1024 * 1024 || $actualLogoSize === false || $actualLogoSize > 5 * 1024 * 1024) {
+                    flash('error', __('Logo must be smaller than 5 MB.'));
+                    redirect('/setup');
+                }
                 $prepared = prepare_image_upload($_FILES['logo']);
                 if ($prepared !== null) {
                     // Extension comes from the detected/converted MIME: this
@@ -196,12 +200,12 @@ class SetupController
     public function restore(): void
     {
         // This endpoint exists for restoring a backup on a fresh install,
-        // where there is no account to log in with yet. Once an admin exists it
-        // must be disabled entirely: the restore drops every table and executes
-        // SQL from the archive. It never writes .env — archives containing one
-        // are rejected. Admins use Settings restore for the same reason.
-        $admin = Database::fetch("SELECT id FROM users WHERE role = 'admin' AND archived_at IS NULL LIMIT 1");
-        if ($admin) {
+        // where there is no account to log in with yet. Once *any* active user
+        // exists it must be disabled entirely: the restore drops every table
+        // and executes SQL from the archive, so a landlord-only install must
+        // not leave it anonymous either. Archive files containing .env are
+        // rejected. Admins use Settings restore for the same reason.
+        if (!setup_is_fresh()) {
             http_response_code(403);
             require base_path('www/Views/errors/403.php');
             return;

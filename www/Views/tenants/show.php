@@ -33,7 +33,7 @@
             </div>
             <div class="flex justify-between">
                 <dt class="text-sm text-gray-500"><?= __('Assigned') ?></dt>
-                <dd class="text-sm text-gray-600"><?= $tenant['assigned_at'] ?></dd>
+                <dd class="text-sm text-gray-600"><?= display_time($tenant['assigned_at']) ?></dd>
             </div>
             <?php if ($tenant['is_main_tenant'] && !empty($tenant['emergency_contact_name'])): ?>
                 <div class="flex justify-between">
@@ -48,7 +48,7 @@
             <?php if ($tenant['moved_out_at']): ?>
                 <div class="flex justify-between">
                     <dt class="text-sm text-gray-500"><?= __('Moved Out') ?></dt>
-                    <dd class="text-sm text-red-600 font-medium"><?= $tenant['moved_out_at'] ?></dd>
+                    <dd class="text-sm text-red-600 font-medium"><?= display_time($tenant['moved_out_at']) ?></dd>
                 </div>
             <?php endif; ?>
         </dl>

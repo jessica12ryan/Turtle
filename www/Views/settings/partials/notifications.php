@@ -28,19 +28,19 @@ $hideNotifCell = function (string $event, string $role): bool {
 
         <?php
         $notifLabels = [
-            'ticket_assigned' => 'Ticket Assigned',
-            'ticket_created' => 'Ticket Created',
-            'ticket_comment' => 'Ticket Comment',
-            'new_message' => 'New Message',
-            'ticket_status_updated' => 'Ticket Status Updated',
-            'document_uploaded' => 'Document Uploaded',
-            'staff_welcome' => 'Staff Welcome Email',
-            'tenant_welcome' => 'Tenant Welcome Email',
-            'password_reset' => 'Password Reset',
-            'onboarding' => 'Onboarding Email',
-            'new_application' => 'New Application',
-            'new_guest_chat' => 'New Guest Chat',
-            'guest_chat_reply' => 'Guest Chat Reply',
+            'ticket_assigned' => __('Ticket Assigned'),
+            'ticket_created' => __('Ticket Created'),
+            'ticket_comment' => __('Ticket Comment'),
+            'new_message' => __('New Message'),
+            'ticket_status_updated' => __('Ticket Status Updated'),
+            'document_uploaded' => __('Document Uploaded'),
+            'staff_welcome' => __('Staff Welcome Email'),
+            'tenant_welcome' => __('Tenant Welcome Email'),
+            'password_reset' => __('Password Reset'),
+            'onboarding' => __('Onboarding Email'),
+            'new_application' => __('New Application'),
+            'new_guest_chat' => __('New Guest Chat'),
+            'guest_chat_reply' => __('Guest Chat Reply'),
         ];
 
         $isDefault = ($notificationMode ?? 'default') === 'default';

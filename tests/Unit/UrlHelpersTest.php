@@ -23,4 +23,13 @@ final class UrlHelpersTest extends TestCase
         self::assertNull(httpsOnlyUrl('ftp://example.com'));
         self::assertNull(httpsOnlyUrl('example.com'));
     }
+
+    public function testRedirectTargetsAreSanitised(): void
+    {
+        self::assertSame('/home', sanitize_redirect_url('/home'));
+        self::assertSame('/', sanitize_redirect_url('//evil.com'));
+        self::assertSame('/', sanitize_redirect_url('/\\evil.com'));
+        self::assertSame('/', sanitize_redirect_url('https://evil.com/path'));
+        self::assertSame('/homeX-Injected: 1', sanitize_redirect_url("/home\r\nX-Injected: 1"));
+    }
 }
