@@ -12,6 +12,8 @@
     <file>www/functions.php</file>
     <file>www/index.php</file>
     <file>www/autoload.php</file>
+    <file>turtle-ha/rootfs</file>
+    <file>turtle-ha-dev/rootfs</file>
     <file>tests</file>
 
     <exclude-pattern>*/www/Views/*</exclude-pattern>

@@ -235,6 +235,23 @@ if ($needsSetup && !str_starts_with($requestUri, '/setup')) {
     redirect('/setup');
 }
 
+// Accounts created with a temporary password must rotate it before using the
+// app. The login redirect alone is not enough: users can navigate directly to
+// any other route and keep using the temporary credentials indefinitely.
+$forceChangePath = $requestUri;
+$prefix = ingress_prefix();
+if ($prefix !== '' && str_starts_with($forceChangePath, $prefix)) {
+    $forceChangePath = substr($forceChangePath, strlen($prefix)) ?: '/';
+}
+$forceChangePath = rtrim($forceChangePath, '/') ?: '/';
+if (
+    \App\Core\Auth::instance()->check()
+    && \App\Core\Auth::instance()->mustChangePassword()
+    && !in_array($forceChangePath, ['/password/change', '/logout'], true)
+) {
+    redirect('/password/change');
+}
+
 // Anonymous usage telemetry (opt-out, default ON): at most 1 ping/day to
 // PostHog Cloud capture API (public write-only key). Fail-silent, short
 // timeout — never breaks requests.

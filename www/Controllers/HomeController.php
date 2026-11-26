@@ -65,7 +65,7 @@ class HomeController
             $currentMonth = date('Y-m');
             foreach ($tenantProperties as $tp) {
                 $paid = Database::fetch(
-                    "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE property_tenant_id = ? AND payment_date LIKE ? AND archived_at IS NULL",
+                    "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE property_tenant_id = ? AND payment_date LIKE ? AND archived_at IS NULL AND is_security_deposit = 0",
                     [$tp['property_tenant_id'], $currentMonth . '%']
                 );
                 $paidAmount = (float)($paid['total'] ?? 0);

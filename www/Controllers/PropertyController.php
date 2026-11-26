@@ -238,6 +238,10 @@ class PropertyController
         $totalRent = $property['rent_amount'] ?? 0;
         $paidThisMonth = 0;
         foreach ($payments as $pym) {
+            // Deposits are held separately and must not make a unit look paid.
+            if (!empty($pym['is_security_deposit'])) {
+                continue;
+            }
             if (str_starts_with($pym['payment_date'], $currentMonth)) {
                 $paidThisMonth += $pym['amount'];
             }

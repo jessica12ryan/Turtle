@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable PSR1.Files.SideEffects
 
 /**
  * Sync Home Assistant add-on mail options into the Turtle settings table.

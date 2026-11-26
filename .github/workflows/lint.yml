@@ -17,7 +17,7 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.5'
           coverage: none
           tools: none
 
@@ -26,9 +26,7 @@ jobs:
 
       - name: PHP syntax
         run: |
-          find www tests -name '*.php' -print0 | xargs -0 -n1 php -l
-          php -l turtle-ha/rootfs/usr/bin/sync-mail-settings.php
-          php -l turtle-ha-dev/rootfs/usr/bin/sync-mail-settings.php
+          find www tests turtle-ha turtle-ha-dev -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: PHPStan
         run: composer analyse

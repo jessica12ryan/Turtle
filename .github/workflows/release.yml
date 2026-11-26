@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      ha_bases: ${{ steps.ha_bases.outputs.bases }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -23,10 +24,15 @@ jobs:
 
       - name: Determine version
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            VER="${{ inputs.version }}"
-            VER="${VER#v}"
+          if [ -n "${INPUT_VERSION}" ]; then
+            VER="${INPUT_VERSION#v}"
+            if [[ "${VER}" == *$'\n'* || "${VER}" == *$'\r'* ]] || ! [[ "${VER}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Invalid version — expected e.g. 1.2.3" >&2
+              exit 1
+            fi
             echo "version=${VER}" >> "$GITHUB_OUTPUT"
           else
             LATEST=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
@@ -36,13 +42,30 @@ jobs:
             echo "version=${MAJOR}.${MINOR}.$((PATCH + 1))" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Update turtle-ha/config.yaml version
+      - name: Resolve HA base images
+        id: ha_bases
         run: |
-          sed -i "s/^version:.*/version: \"${{ steps.version.outputs.version }}\"/" turtle-ha/config.yaml
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re
+          with open('turtle-ha/build.yaml', encoding='utf-8') as fh:
+              bases = dict(
+                  (m.group(1), m.group(2))
+                  for m in re.finditer(r'^\s*(aarch64|amd64|armv7):\s*(\S+)', fh.read(), re.M)
+              )
+          if set(bases) != {'aarch64', 'amd64', 'armv7'}:
+              raise SystemExit('build.yaml must define all three HA base images')
+          print('bases=' + json.dumps(bases))
+          PY
+
+      - name: Update turtle-ha/config.yaml version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sed -i "s/^version:.*/version: \"${VERSION}\"/" turtle-ha/config.yaml
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add turtle-ha/config.yaml
-          git diff --staged --quiet || git commit -m "chore: bump HA add-on version to ${{ steps.version.outputs.version }}"
+          git diff --staged --quiet || git commit -m "chore: bump HA add-on version to ${VERSION}"
           git push origin HEAD
 
       - name: Get Commits Since Last Tag
@@ -65,9 +88,11 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
 
       - name: Update stable branch
         run: |
@@ -96,13 +121,10 @@ jobs:
         include:
           - arch: aarch64
             platform: linux/arm64
-            base: ghcr.io/home-assistant/aarch64-base:3.19
           - arch: amd64
             platform: linux/amd64
-            base: ghcr.io/home-assistant/amd64-base:3.19
           - arch: armv7
             platform: linux/arm/v7
-            base: ghcr.io/home-assistant/armv7-base:3.19
 
     steps:
       - uses: actions/checkout@v7
@@ -129,7 +151,7 @@ jobs:
           push: true
           platforms: ${{ matrix.platform }}
           build-args: |
-            BUILD_FROM=${{ matrix.base }}
+            BUILD_FROM=${{ fromJSON(needs.release.outputs.ha_bases)[matrix.arch] }}
             BUILD_ARCH=${{ matrix.arch }}
           tags: |
             ghcr.io/jessica12ryan/turtle/${{ matrix.arch }}:${{ needs.release.outputs.version }}

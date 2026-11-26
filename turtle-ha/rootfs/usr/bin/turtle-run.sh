@@ -8,21 +8,30 @@ TURTLE_DIR=/var/www/turtle
 DATA_DIR=/data
 WEB_GROUP=$(id -gn apache 2>/dev/null || echo www-data)
 
+# Operator options are data, never shell code. Strip CR/LF so a value cannot
+# inject extra KEY= lines into the generated .env or break its parsing.
+env_safe() {
+    local value="$1"
+    value="${value//$'\r'/}"
+    value="${value//$'\n'/}"
+    printf '%s' "${value}"
+}
+
 # ── Read HA options ────────────────────────────────────────────────────────────
-DB_PASSWORD=$(bashio::config 'db_password')
-APP_URL=$(bashio::config 'app_url')
-MAIL_HOST=$(bashio::config 'mail_host')
-MAIL_PORT=$(bashio::config 'mail_port')
-MAIL_USER=$(bashio::config 'mail_username')
-MAIL_PASS=$(bashio::config 'mail_password')
-MAIL_FROM=$(bashio::config 'mail_from_address')
-MAIL_AUTH_MODE=$(bashio::config 'mail_auth_mode')
-MAIL_OAUTH_CLIENT_ID=$(bashio::config 'mail_oauth_client_id')
-MAIL_OAUTH_CLIENT_SECRET=$(bashio::config 'mail_oauth_client_secret')
-MAIL_OAUTH_REFRESH_TOKEN=$(bashio::config 'mail_oauth_refresh_token')
-MAIL_OAUTH_EMAIL=$(bashio::config 'mail_oauth_email')
-MAILPIT_PORT=$(bashio::config 'mailpit_port')
-MAILPIT_UI_PORT=$(bashio::config 'mailpit_ui_port')
+DB_PASSWORD=$(env_safe "$(bashio::config 'db_password')")
+APP_URL=$(env_safe "$(bashio::config 'app_url')")
+MAIL_HOST=$(env_safe "$(bashio::config 'mail_host')")
+MAIL_PORT=$(env_safe "$(bashio::config 'mail_port')")
+MAIL_USER=$(env_safe "$(bashio::config 'mail_username')")
+MAIL_PASS=$(env_safe "$(bashio::config 'mail_password')")
+MAIL_FROM=$(env_safe "$(bashio::config 'mail_from_address')")
+MAIL_AUTH_MODE=$(env_safe "$(bashio::config 'mail_auth_mode')")
+MAIL_OAUTH_CLIENT_ID=$(env_safe "$(bashio::config 'mail_oauth_client_id')")
+MAIL_OAUTH_CLIENT_SECRET=$(env_safe "$(bashio::config 'mail_oauth_client_secret')")
+MAIL_OAUTH_REFRESH_TOKEN=$(env_safe "$(bashio::config 'mail_oauth_refresh_token')")
+MAIL_OAUTH_EMAIL=$(env_safe "$(bashio::config 'mail_oauth_email')")
+MAILPIT_PORT=$(env_safe "$(bashio::config 'mailpit_port')")
+MAILPIT_UI_PORT=$(env_safe "$(bashio::config 'mailpit_ui_port')")
 
 # Track whether a value came from the operator or from the add-on default. The
 # sync script only overwrites UI-configured mail settings for explicit values.
@@ -79,15 +88,17 @@ fi
 # server so the Settings -> Logging page can show the error log.
 chmod 644 "${DATA_DIR}/mysql/mariadb-error.log" 2>/dev/null || true
 
-# Create DB + user if missing (socket + TCP user for PHP compatibility)
-mysql --socket=/tmp/mysql.sock <<SQL
-CREATE DATABASE IF NOT EXISTS turtle CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'turtle'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
-CREATE USER IF NOT EXISTS 'turtle'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
-GRANT ALL PRIVILEGES ON turtle.* TO 'turtle'@'localhost';
-GRANT ALL PRIVILEGES ON turtle.* TO 'turtle'@'127.0.0.1';
-FLUSH PRIVILEGES;
-SQL
+# Create DB + user and apply the configured password. The password travels via
+# the environment and is escaped as a SQL literal by the PHP helper; embedding
+# it in a shell heredoc broke on quotes and allowed SQL injection.
+bashio::log.info "Configuring MariaDB database and user..."
+export DB_PASSWORD DB_SOCKET=/tmp/mysql.sock
+if php /usr/bin/setup-db.php; then
+    bashio::log.info "Database and user ready."
+else
+    bashio::log.error "Database setup failed — aborting boot."
+    exit 1
+fi
 
 # ── Start Mailpit ──────────────────────────────────────────────────────────────
 # A backgrounded mailpit is not supervised by s6, so a previous crashed boot
@@ -204,43 +215,48 @@ fi
 # Build the add-on-managed keys separately, then merge them into the existing
 # .env. Keys added by an operator (or by a restore) are preserved, and empty
 # add-on options are written explicitly so cleared credentials do not linger.
+# Emit key/value pairs as data. Values are never evaluated by the shell.
+write_env_pair() {
+    printf '%s=%s\n' "$1" "$2"
+}
 MANAGED_ENV=$(mktemp)
-cat > "${MANAGED_ENV}" <<ENV
-APP_NAME=Turtle
-APP_ENV=production
-APP_KEY=${GENERATED_KEY}
-APP_DEBUG=false
-APP_URL=${APP_URL}
+{
+    write_env_pair APP_NAME Turtle
+    write_env_pair APP_ENV production
+    write_env_pair APP_KEY "${GENERATED_KEY}"
+    write_env_pair APP_DEBUG false
+    write_env_pair APP_URL "${APP_URL}"
 
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=turtle
-DB_USERNAME=turtle
-DB_PASSWORD=${DB_PASSWORD}
-DB_SOCKET=/tmp/mysql.sock
+    write_env_pair DB_CONNECTION mysql
+    write_env_pair DB_HOST 127.0.0.1
+    write_env_pair DB_PORT 3306
+    write_env_pair DB_DATABASE turtle
+    write_env_pair DB_USERNAME turtle
+    write_env_pair DB_PASSWORD "${DB_PASSWORD}"
+    write_env_pair DB_SOCKET /tmp/mysql.sock
 
-SESSION_DRIVER=database
-SESSION_LIFETIME=120
+    write_env_pair SESSION_DRIVER database
+    write_env_pair SESSION_LIFETIME 120
 
-MAIL_MAILER=smtp
-MAIL_HOST=${MAIL_HOST}
-MAIL_PORT=${MAIL_PORT}
-MAIL_USERNAME=${MAIL_USER}
-MAIL_PASSWORD=${MAIL_PASS}
-MAIL_FROM_ADDRESS=${MAIL_FROM}
-MAIL_FROM_NAME=Turtle
-MAIL_AUTH_MODE=${MAIL_AUTH_MODE}
-MAIL_OAUTH_CLIENT_ID=${MAIL_OAUTH_CLIENT_ID}
-MAIL_OAUTH_CLIENT_SECRET=${MAIL_OAUTH_CLIENT_SECRET}
-MAIL_OAUTH_REFRESH_TOKEN=${MAIL_OAUTH_REFRESH_TOKEN}
-MAIL_OAUTH_EMAIL=${MAIL_OAUTH_EMAIL}
-ENV
+    write_env_pair MAIL_MAILER smtp
+    write_env_pair MAIL_HOST "${MAIL_HOST}"
+    write_env_pair MAIL_PORT "${MAIL_PORT}"
+    write_env_pair MAIL_USERNAME "${MAIL_USER}"
+    write_env_pair MAIL_PASSWORD "${MAIL_PASS}"
+    write_env_pair MAIL_FROM_ADDRESS "${MAIL_FROM}"
+    write_env_pair MAIL_FROM_NAME Turtle
+    write_env_pair MAIL_AUTH_MODE "${MAIL_AUTH_MODE}"
+    write_env_pair MAIL_OAUTH_CLIENT_ID "${MAIL_OAUTH_CLIENT_ID}"
+    write_env_pair MAIL_OAUTH_CLIENT_SECRET "${MAIL_OAUTH_CLIENT_SECRET}"
+    write_env_pair MAIL_OAUTH_REFRESH_TOKEN "${MAIL_OAUTH_REFRESH_TOKEN}"
+    write_env_pair MAIL_OAUTH_EMAIL "${MAIL_OAUTH_EMAIL}"
+} > "${MANAGED_ENV}"
 
 MERGED_ENV=$(mktemp)
 if [ -f "${TURTLE_DIR}/.env" ]; then
-    while IFS='=' read -r env_key env_value; do
+    while IFS='=' read -r env_key env_value || [ -n "${env_key:-}" ]; do
         case "${env_key}" in ''|\#*) continue ;; esac
+        [[ "${env_key}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
         if ! grep -q "^${env_key}=" "${MANAGED_ENV}"; then
             printf '%s=%s\n' "${env_key}" "${env_value}" >> "${MERGED_ENV}"
         fi
@@ -252,10 +268,26 @@ rm -f "${MANAGED_ENV}"
 unset env_key env_value
 
 # Export env vars for Apache/PHP. The file holds secrets: owner-only with
-# group read for the web server, never world-readable.
-set -a
-. "${TURTLE_DIR}/.env"
-set +a
+# group read for the web server, never world-readable. Parse it as data —
+# sourcing it would re-evaluate operator values as shell code (command
+# substitution, backticks, `;`) with root privileges.
+while IFS='=' read -r env_key env_value || [ -n "${env_key:-}" ]; do
+    case "${env_key}" in
+        ''|\#*) continue ;;
+        export\ *) env_key="${env_key#export }" ;;
+    esac
+    # Only valid shell identifiers can be exported.
+    [[ "${env_key}" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    # Match functions.php's loadEnvFile(): strip one matching quote pair.
+    if [[ ${#env_value} -ge 2 ]]; then
+        if [[ "${env_value:0:1}" == '"' && "${env_value: -1}" == '"' ]] ||
+           [[ "${env_value:0:1}" == "'" && "${env_value: -1}" == "'" ]]; then
+            env_value="${env_value:1:${#env_value}-2}"
+        fi
+    fi
+    export "${env_key}=${env_value}"
+done < "${TURTLE_DIR}/.env"
+unset env_key env_value
 chown "root:${WEB_GROUP}" "${TURTLE_DIR}/.env" 2>/dev/null || true
 chmod 640 "${TURTLE_DIR}/.env"
 

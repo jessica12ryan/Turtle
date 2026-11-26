@@ -6,6 +6,8 @@ parameters:
         - www/functions.php
         - www/index.php
         - www/autoload.php
+        - turtle-ha/rootfs
+        - turtle-ha-dev/rootfs
         - tests
     bootstrapFiles:
         - www/functions.php

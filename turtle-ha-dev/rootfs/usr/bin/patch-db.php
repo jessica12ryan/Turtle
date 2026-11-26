@@ -1,4 +1,5 @@
 <?php
+
 $file = '/var/www/turtle/www/Core/Database.php';
 $src = file_get_contents($file);
 

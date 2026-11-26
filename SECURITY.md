@@ -14,7 +14,7 @@ Only the latest release receives security patches. Older versions are not suppor
 
 If you discover a security issue in this repo, please open a private issue or
 contact the maintainer via the GitHub repository at
-https://github.com/jessica12ryan/fpp-os/security/advisories
+https://github.com/jessica12ryan/Turtle/security/advisories
 
 You can expect:
 

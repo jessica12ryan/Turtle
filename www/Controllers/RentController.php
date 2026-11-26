@@ -39,7 +39,8 @@ class RentController
                 "SELECT COALESCE(SUM(p.amount), 0) as total
                  FROM payments p
                  JOIN property_tenant pt ON pt.id = p.property_tenant_id
-                 WHERE pt.property_id = ? AND p.payment_date LIKE ? AND p.archived_at IS NULL",
+                 WHERE pt.property_id = ? AND p.payment_date LIKE ? AND p.archived_at IS NULL
+                    AND p.is_security_deposit = 0",
                 [$prop['id'], $currentMonth . '%']
             );
             $paidAmount = (float)($paid['total'] ?? 0);
@@ -106,6 +107,10 @@ class RentController
         $totalRent = $property['rent_amount'] ?? 0;
         $paidThisMonth = 0;
         foreach ($payments as $pym) {
+            // Deposits are held separately and must not make a unit look paid.
+            if (!empty($pym['is_security_deposit'])) {
+                continue;
+            }
             if (str_starts_with($pym['payment_date'], $currentMonth)) {
                 $paidThisMonth += $pym['amount'];
             }
