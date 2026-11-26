@@ -1144,4 +1144,5 @@ return [
     'Too many requests. Please wait a few minutes.' => 'Trop de demandes. Veuillez patienter quelques minutes.',
     'Invalid ticket status.' => 'Statut du ticket invalide.',
     'Selected assignee is not a staff member with access to this property.' => 'Le responsable sélectionné n’est pas un membre du personnel ayant accès à cette propriété.',
+    'Selected property is not vacant or is unavailable.' => 'La propriété sélectionnée n’est pas vacante ou n’est pas disponible.',
 ];

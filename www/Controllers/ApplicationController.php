@@ -298,6 +298,52 @@ class ApplicationController
         redirect('/applications/' . $id);
     }
 
+    /**
+     * Vacant properties the current user may convert an application into.
+     * Listing status is deliberately ignored: properties are often delisted
+     * before an application is accepted.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function convertibleProperties(array $user): array
+    {
+        $ids = accessible_property_ids($user);
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        return Database::fetchAll(
+            "SELECT p.id, p.name, u.name AS landlord_name
+             FROM properties p
+             LEFT JOIN users u ON u.id = p.landlord_id
+             WHERE p.id IN ({$placeholders}) AND p.archived_at IS NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM property_tenant pt
+                   WHERE pt.property_id = p.id AND pt.moved_out_at IS NULL
+               )
+             ORDER BY p.name",
+            $ids
+        );
+    }
+
+    /** Server-side counterpart of the conversion dropdown's filters. */
+    public static function propertyIsConvertible(int $propertyId, array $user): bool
+    {
+        if (!in_array($propertyId, accessible_property_ids($user), true)) {
+            return false;
+        }
+        $property = Database::fetch(
+            "SELECT p.id FROM properties p
+             WHERE p.id = ? AND p.archived_at IS NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM property_tenant pt
+                   WHERE pt.property_id = ? AND pt.moved_out_at IS NULL
+               )",
+            [$propertyId, $propertyId]
+        );
+        return $property !== null;
+    }
+
     public function convert(int $id): void
     {
         $this->ensureTable();
@@ -323,32 +369,7 @@ class ApplicationController
 
         $data = json_decode($application['data'], true);
 
-        $user = Auth::instance()->user();
-        if ($user['role'] === 'admin') {
-            $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name FROM properties p
-                 JOIN users u ON u.id = p.landlord_id
-                 WHERE p.archived_at IS NULL AND p.listed = 1
-                 ORDER BY p.name"
-            );
-        } else {
-            $companyIds = Database::fetchAll(
-                "SELECT company_id FROM company_user WHERE user_id = ?",
-                [$user['id']]
-            );
-            $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
-            $pmClause = $user['role'] === 'property_manager' ? ' AND p.property_manager_id = ?' : '';
-            $params = $pmClause ? [$user['id']] : [];
-
-            $properties = Database::fetchAll(
-                "SELECT p.*, u.name as landlord_name FROM properties p
-                 JOIN users u ON u.id = p.landlord_id
-                 WHERE p.company_id IN ({$companyIdList}) AND p.archived_at IS NULL{$pmClause}
-                 AND p.listed = 1
-                 ORDER BY p.name",
-                $params
-            );
-        }
+        $properties = self::convertibleProperties(Auth::instance()->user() ?? []);
 
         $view = new View();
         $view->layout('layouts/main', ['title' => __('Convert Application') . ' #' . $id]);
@@ -413,6 +434,17 @@ class ApplicationController
                 redirect('/applications/' . $id . '/convert');
             }
             Access::require(Access::property((int)$_POST['property_id']));
+
+            // The dropdown is only a UI filter — never let a crafted POST
+            // convert an application into an occupied, archived or out-of-scope
+            // property.
+            if (!self::propertyIsConvertible((int)$_POST['property_id'], Auth::instance()->user() ?? [])) {
+                flash('error', __('Selected property is not vacant or is unavailable.'));
+                $_SESSION['_old'] = $_POST;
+                $_SESSION['_old_app_id'] = $id;
+                Database::rollback();
+                redirect('/applications/' . $id . '/convert');
+            }
 
             $tenantId = Database::insert(
                 "INSERT INTO users (name, email, phone, password, role, theme, timezone, language, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, 'tenant', 'system', ?, ?, 1, NOW(), NOW())",

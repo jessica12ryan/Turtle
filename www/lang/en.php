@@ -1050,5 +1050,6 @@
     'Permission' => 'Permission',
     'Invalid ticket status.' => 'Invalid ticket status.',
     'Selected assignee is not a staff member with access to this property.' => 'Selected assignee is not a staff member with access to this property.',
+    'Selected property is not vacant or is unavailable.' => 'Selected property is not vacant or is unavailable.',
     'Too many requests. Please wait a few minutes.' => 'Too many requests. Please wait a few minutes.',
 ];

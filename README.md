@@ -37,7 +37,7 @@ Both support **ingress** (embedded in HA UI) and **direct access** via port.
 - **Leases & Documents** — upload with auto-titling, document types, email with attachments
 - **Maintenance Tickets** — create, assign, comment, status tracking, file attachments, archive/restore with conflict resolution
 - **Rent Dashboard** — per-property payment tracking, status badges (paid/partial/unpaid)
-- **Tenancy Applications** — public submission form, review workflow, convert to tenant
+- **Tenancy Applications** — public submission form, review workflow, convert to tenant. The conversion dropdown offers vacant properties in your scope whether or not they are currently listed.
 - **AI Assistant** — natural-language queries about properties, tenants, tickets. Admin-enabled per install; tenants never have access. Choose one provider in Settings → AI Assistant: OpenAI, Claude (Anthropic), Gemini (Google), OpenRouter, OpenCode (Zen gateway), or OpenCode Server (self-hosted HttpApi at e.g. `http://192.168.2.4:4096`, authenticated with HTTP Basic using username `opencode` and the configured password (a fallback to an empty username is attempted on 401)). Each provider keeps its own API key, and the model list can be refreshed from the provider before saving. Property and tenant identifiers are pseudonymized before any data leaves the installation; responses may be inaccurate.
 - **Calendar** — move-in, lease end, and scheduled move-out dates
 - **Resources** — shared links page, general and staff-only categories
