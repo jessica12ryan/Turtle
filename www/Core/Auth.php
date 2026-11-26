@@ -64,6 +64,11 @@ class Auth
         $_SESSION['user_id'] = (int) $user['id'];
         session_regenerate_id(true);
 
+        // A token issued before authentication must not survive the privilege
+        // change; issue a fresh one for the logged-in session.
+        unset($_SESSION['_csrf_token']);
+        \csrf_token();
+
         if (!empty($user['language'])) {
             $_SESSION['_language'] = $user['language'];
         }
@@ -93,7 +98,7 @@ class Auth
 
     public function logout(): void
     {
-        unset($_SESSION['user_id']);
+        unset($_SESSION['user_id'], $_SESSION['_csrf_token']);
         session_regenerate_id(true);
     }
 

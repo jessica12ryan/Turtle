@@ -123,10 +123,13 @@ git checkout stable && git pull && docker compose up -d --build
 
 These checks are off by default so existing installations continue to update normally. The unauthenticated restore wizard at `/setup/restore` is only available on a fresh install with no active accounts; after that, use Settings → Backup & Restore.
 
+Outbound fetches (update checks and NTP time) are restricted to public HTTPS endpoints: plain HTTP, embedded credentials, and private/loopback/link-local addresses are refused, including after redirects.
+
 ## Persistent Data
 
 - MySQL database → `mysql-data` Docker volume
 - Uploaded files (leases, photos, tickets) → `turtle-storage` Docker volume
+- MySQL/MariaDB error logs are readable only by the web group (`0640`); the Settings → Logging page uses that group access, so no world-readable log file is needed.
 
 ## License
 

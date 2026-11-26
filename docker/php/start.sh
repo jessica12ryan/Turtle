@@ -79,9 +79,10 @@ chmod -R 775 storage storage/logs storage/framework 2>/dev/null || true
 # Allow git to update tracked files without world-writable code
 chown -R www-data:www-data storage www/assets/uploads 2>/dev/null || true
 chmod 775 .git 2>/dev/null || true
-# MySQL writes its error log as uid 999; make it readable by the web server so
-# the logging settings page can display it.
-chmod 644 /var/lib/mysql/mysql-error.log 2>/dev/null || true
+# MySQL writes its error log as uid 999; grant the web group read access so
+# the logging settings page can display it without making it world-readable.
+chgrp www-data /var/lib/mysql/mysql-error.log 2>/dev/null || true
+chmod 640 /var/lib/mysql/mysql-error.log 2>/dev/null || true
 
 # Start queue worker in background
 php -r "

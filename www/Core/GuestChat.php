@@ -70,17 +70,28 @@ class GuestChat
     {
         $where = 'p.archived_at IS NULL';
         $params = [];
-        if (($user['role'] ?? '') !== 'admin') {
-            if (($user['role'] ?? '') === 'property_manager') {
+        $roles = \effective_roles($user);
+        if (!in_array('admin', $roles, true)) {
+            if (in_array('property_manager', $roles, true)) {
                 $where .= ' AND p.property_manager_id = ?';
-                $params[] = $user['id'];
+                $params[] = (int)($user['id'] ?? 0);
             } else {
-                $companyIds = Database::fetchAll(
+                // Company IDs come from the database, but never interpolate
+                // them into SQL: bind integers as parameters instead.
+                $companyRows = Database::fetchAll(
                     "SELECT company_id FROM company_user WHERE user_id = ?",
                     [$user['id']]
                 );
-                $companyIdList = implode(',', array_column($companyIds, 'company_id')) ?: '0';
-                $where .= " AND p.company_id IN ({$companyIdList})";
+                $companyIds = array_values(array_filter(
+                    array_map('intval', array_column($companyRows, 'company_id'))
+                ));
+                if ($companyIds === []) {
+                    $where .= ' AND 1=0';
+                } else {
+                    $placeholders = implode(',', array_fill(0, count($companyIds), '?'));
+                    $where .= " AND p.company_id IN ({$placeholders})";
+                    $params = array_merge($params, $companyIds);
+                }
             }
         }
         return [$where, $params];

@@ -1142,4 +1142,6 @@ return [
     'Invalid backup file: archives must not contain .env.' => 'Archivo de copia de seguridad no válido: los archivos no deben contener .env.',
     'Database restore failed. The previous database was restored; check the error logs for details.' => 'Error al restaurar la base de datos. Se restauró la base anterior; consulte los registros de errores para más detalles.',
     'Too many requests. Please wait a few minutes.' => 'Demasiadas solicitudes. Espere unos minutos.',
+    'Invalid ticket status.' => 'Estado del ticket no válido.',
+    'Selected assignee is not a staff member with access to this property.' => 'El responsable seleccionado no es un miembro del personal con acceso a esta propiedad.',
 ];

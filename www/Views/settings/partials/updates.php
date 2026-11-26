@@ -244,7 +244,7 @@ function toggleChannel() {
             }
 
             document.getElementById('latest-version').textContent = '—';
-            document.getElementById('last-check').textContent = '<?= __('Never') ?>';
+            document.getElementById('last-check').textContent = <?= json_encode(__('Never'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
             document.getElementById('update-section').classList.add('hidden');
             document.getElementById('up-to-date-section').classList.add('hidden');
             document.getElementById('checking-section').classList.remove('hidden');
@@ -345,7 +345,7 @@ function applyUpdate() {
             pollProgress();
         })
         .catch(err => {
-            document.getElementById('progress-text').textContent = '<?= __('Error:') ?> ' + err.message;
+            document.getElementById('progress-text').textContent = <?= json_encode(__('Error:'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?> + ' ' + err.message;
         });
 }
 
@@ -382,7 +382,7 @@ function pollProgress() {
 
             if (data.done) {
                 document.getElementById('progress-bar').style.width = '100%';
-                document.getElementById('progress-text').textContent = '<?= __('Complete!') ?>';
+                document.getElementById('progress-text').textContent = <?= json_encode(__('Complete!'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
 
                 if (data.error) {
                     document.getElementById('error-output').classList.remove('hidden');
@@ -400,7 +400,7 @@ function pollProgress() {
             pendingInv = setTimeout(pollProgress, 1500);
         })
         .catch(err => {
-            document.getElementById('progress-text').textContent = '<?= __('Error polling progress:') ?> ' + err.message;
+            document.getElementById('progress-text').textContent = <?= json_encode(__('Error polling progress:'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?> + ' ' + err.message;
         });
 }
 

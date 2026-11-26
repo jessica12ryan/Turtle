@@ -84,9 +84,10 @@ if ! mysqladmin ping --socket=/tmp/mysql.sock --silent 2>/dev/null; then
 else
     bashio::log.info "MariaDB already running, skipping start."
 fi
-# MariaDB creates this as uid mysql (mode 640); make it readable by the web
-# server so the Settings -> Logging page can show the error log.
-chmod 644 "${DATA_DIR}/mysql/mariadb-error.log" 2>/dev/null || true
+# MariaDB creates this as uid mysql; grant the web group read access so the
+# Settings -> Logging page can show the error log without world access.
+chgrp "${WEB_GROUP}" "${DATA_DIR}/mysql/mariadb-error.log" 2>/dev/null || true
+chmod 640 "${DATA_DIR}/mysql/mariadb-error.log" 2>/dev/null || true
 
 # Create DB + user and apply the configured password. The password travels via
 # the environment and is escaped as a SQL literal by the PHP helper; embedding

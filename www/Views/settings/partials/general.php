@@ -214,15 +214,15 @@ function testMail(e) {
     .then(data => {
         if (data.success) {
             result.className = 'mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700';
-            result.textContent = '<?= __('Test email sent! Check your inbox.') ?>';
+            result.textContent = <?= json_encode(__('Test email sent! Check your inbox.'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
         } else {
             result.className = 'mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
-            result.textContent = data.error || '<?= __('Failed to send test email.') ?>';
+            result.textContent = data.error || <?= json_encode(__('Failed to send test email.'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
         }
     })
     .catch(err => {
         result.className = 'mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700';
-        result.textContent = '<?= __('Connection error:') ?> ' + err.message;
+        result.textContent = <?= json_encode(__('Connection error:'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?> + ' ' + err.message;
     })
     .finally(() => {
         btn.disabled = false;

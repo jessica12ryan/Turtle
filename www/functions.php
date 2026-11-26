@@ -424,7 +424,10 @@ function csrf_token(): string
 
 function verify_csrf(string $token): bool
 {
-    return hash_equals($_SESSION['_csrf_token'] ?? '', $token);
+    $expected = $_SESSION['_csrf_token'] ?? '';
+    // hash_equals('', '') succeeds — an empty token must never authenticate
+    // a state-changing request on a session that has no CSRF token yet.
+    return $expected !== '' && $token !== '' && hash_equals($expected, $token);
 }
 
 function loadEnvFile(string $path): void
@@ -462,40 +465,171 @@ function base_path(string $path = ''): string
     return __DIR__ . '/../' . ltrim($path, '/');
 }
 
-function httpGet(string $url, int $timeout = 5): ?string
+/** Reject private/reserved IPv4 ranges (SSRF protection). */
+function isPrivateIpv4(string $ip): bool
 {
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) === false) {
+        return true;
+    }
+    $value = ip2long($ip);
+    $ranges = [
+        ['0.0.0.0', '0.255.255.255'],
+        ['10.0.0.0', '10.255.255.255'],
+        ['100.64.0.0', '100.127.255.255'],
+        ['127.0.0.0', '127.255.255.255'],
+        ['169.254.0.0', '169.254.255.255'],
+        ['172.16.0.0', '172.31.255.255'],
+        ['192.0.0.0', '192.0.0.255'],
+        ['192.168.0.0', '192.168.255.255'],
+        ['198.18.0.0', '198.19.255.255'],
+        ['224.0.0.0', '255.255.255.255'],
+    ];
+    foreach ($ranges as [$from, $to]) {
+        if ($value >= ip2long($from) && $value <= ip2long($to)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Only public IPv6 literals are accepted. */
+function isPublicIpv6(string $ip): bool
+{
+    $packed = @inet_pton($ip);
+    if ($packed === false || strlen($packed) !== 16) {
+        return false;
+    }
+    if ($packed === str_repeat("\0", 15) . "\1") {
+        return false; // ::1
+    }
+    if ((ord($packed[0]) & 0xfe) === 0xfc) {
+        return false; // fc00::/7 unique local
+    }
+    if (ord($packed[0]) === 0xfe && (ord($packed[1]) & 0xc0) === 0x80) {
+        return false; // fe80::/10 link local
+    }
+    if (substr($packed, 0, 12) === str_repeat("\0", 10) . "\xff\xff") {
+        $mapped = @inet_ntop(substr($packed, 12, 4));
+        return $mapped !== false && !isPrivateIpv4($mapped);
+    }
+    return true;
+}
+
+/** SSRF guard: HTTPS only, no credentials, no private/loopback/link-local hosts. */
+function isPublicHttpsUrl(string $url): bool
+{
+    $parts = parse_url($url);
+    if ($parts === false || strtolower((string)($parts['scheme'] ?? '')) !== 'https' || empty($parts['host'])) {
+        return false;
+    }
+    if (isset($parts['user']) || isset($parts['pass'])) {
+        return false;
+    }
+    $host = trim((string)$parts['host'], '[]');
+    if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return !isPrivateIpv4($host);
+    }
+    if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        return isPublicIpv6($host);
+    }
+    // Fail closed if DNS cannot be verified: every address must be public.
+    $addresses = gethostbynamel($host) ?: [];
+    if ($addresses === []) {
+        return false;
+    }
+    foreach ($addresses as $address) {
+        if (isPrivateIpv4($address)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** Resolve a relative Location header against the URL that produced it. */
+function resolveHttpUrl(string $base, string $location): string
+{
+    if (preg_match('#^[a-z][a-z0-9+\-.]*:#i', $location) === 1) {
+        return $location;
+    }
+    $parts = parse_url($base);
+    if ($parts === false || empty($parts['scheme']) || empty($parts['host'])) {
+        return '';
+    }
+    $scheme = (string)$parts['scheme'];
+    $authority = $scheme . '://' . (string)$parts['host'];
+    if (isset($parts['port'])) {
+        $authority .= ':' . $parts['port'];
+    }
+    if (str_starts_with($location, '//')) {
+        return $scheme . ':' . $location;
+    }
+    if (str_starts_with($location, '/')) {
+        return $authority . $location;
+    }
+    $path = (string)($parts['path'] ?? '');
+    $slash = strrpos($path, '/');
+    $dir = $slash === false ? '/' : substr($path, 0, $slash + 1);
+    return $authority . $dir . $location;
+}
+
+/** Follow redirects manually so every hop is validated before it is fetched. */
+function httpRedirectTarget(string $url, int $httpCode, string $location, int $redirects): ?string
+{
+    if ($redirects <= 0 || $httpCode < 300 || $httpCode >= 400 || $location === '') {
+        return null;
+    }
+    $next = resolveHttpUrl($url, $location);
+    return isPublicHttpsUrl($next) ? $next : null;
+}
+
+function httpGet(string $url, int $timeout = 5, int $redirects = 3): ?string
+{
+    if (!isPublicHttpsUrl($url)) {
+        \App\Core\Logger::warning('httpGet refused a non-public URL.');
+        return null;
+    }
+
     if (function_exists('curl_init')) {
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => 'Turtle/1.0',
             CURLOPT_HEADER => false,
         ]);
         $body = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $location = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
         $curlError = curl_error($ch);
         curl_close($ch);
+
+        $next = httpRedirectTarget($url, $httpCode, $location, $redirects);
+        if ($next !== null) {
+            return httpGet($next, $timeout, $redirects - 1);
+        }
         if ($httpCode >= 200 && $httpCode < 400 && $body !== false) {
-            return $body;
+            return (string) $body;
         }
-        if ($body === false || $httpCode < 200 || $httpCode >= 400) {
-            \App\Core\Logger::error("httpGet failed for {$url}: HTTP {$httpCode} " . ($curlError ?: ''));
-        }
+        \App\Core\Logger::error("httpGet failed for {$url}: HTTP {$httpCode} " . ($curlError ?: ''));
         return null;
     }
 
     if (ini_get('allow_url_fopen')) {
         $ctx = stream_context_create([
-            'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0'],
+            'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0', 'follow_location' => 0],
             'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
         ]);
         $body = @file_get_contents($url, false, $ctx);
+        $responseHeaders = http_get_last_response_headers() ?: [];
+        [$code, $location] = httpParseResponseHeaders($responseHeaders);
+        $next = httpRedirectTarget($url, $code, $location, $redirects);
+        if ($next !== null) {
+            return httpGet($next, $timeout, $redirects - 1);
+        }
         if ($body !== false) {
             return $body;
         }
@@ -504,45 +638,75 @@ function httpGet(string $url, int $timeout = 5): ?string
     return null;
 }
 
-function httpGetWithHeaders(string $url, int $timeout = 5): ?array
+/** Extract the status code and Location from a stream-wrapper header list. */
+function httpParseResponseHeaders(array $headers): array
 {
+    $code = 0;
+    $location = '';
+    foreach ($headers as $header) {
+        if (preg_match('#^HTTP/\S+\s+(\d+)#', $header, $m)) {
+            $code = (int) $m[1];
+        }
+        if (preg_match('#^Location:\s*(.+)$#i', $header, $m)) {
+            $location = trim($m[1]);
+        }
+    }
+    return [$code, $location];
+}
+
+function httpGetWithHeaders(string $url, int $timeout = 5, int $redirects = 3): ?array
+{
+    if (!isPublicHttpsUrl($url)) {
+        \App\Core\Logger::warning('httpGetWithHeaders refused a non-public URL.');
+        return null;
+    }
+
     if (function_exists('curl_init')) {
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => $timeout,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => 3,
+            CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_USERAGENT => 'Turtle/1.0',
             CURLOPT_HEADER => true,
         ]);
         $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $location = (string) curl_getinfo($ch, CURLINFO_REDIRECT_URL);
         curl_close($ch);
         if ($response === false) {
             return null;
         }
-        $headerStr = substr($response, 0, $headerSize);
-        $body = substr($response, $headerSize);
+
+        $next = httpRedirectTarget($url, $httpCode, $location, $redirects);
+        if ($next !== null) {
+            return httpGetWithHeaders($next, $timeout, $redirects - 1);
+        }
         return [
             'http_code' => $httpCode,
-            'headers' => $headerStr,
-            'body' => $body,
+            'headers' => substr($response, 0, $headerSize),
+            'body' => substr($response, $headerSize),
         ];
     }
 
     if (ini_get('allow_url_fopen')) {
         $ctx = stream_context_create([
-            'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0'],
+            'http' => ['timeout' => $timeout, 'user_agent' => 'Turtle/1.0', 'follow_location' => 0],
             'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
         ]);
         $body = @file_get_contents($url, false, $ctx);
+        $responseHeaders = http_get_last_response_headers() ?: [];
+        [$code, $location] = httpParseResponseHeaders($responseHeaders);
+        $next = httpRedirectTarget($url, $code, $location, $redirects);
+        if ($next !== null) {
+            return httpGetWithHeaders($next, $timeout, $redirects - 1);
+        }
         if ($body !== false) {
-            return ['http_code' => 200, 'headers' => '', 'body' => $body];
+            return ['http_code' => $code, 'headers' => implode("\r\n", $responseHeaders), 'body' => $body];
         }
     }
 

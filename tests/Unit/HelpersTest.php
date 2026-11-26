@@ -31,6 +31,11 @@ final class HelpersTest extends TestCase
         self::assertTrue(verify_csrf($token));
         self::assertFalse(verify_csrf('wrong-token'));
         self::assertFalse(verify_csrf(''));
+
+        // A session with no token must never accept an empty/missing token.
+        unset($_SESSION['_csrf_token']);
+        self::assertFalse(verify_csrf(''));
+        self::assertFalse(verify_csrf($token));
     }
 
     public function testFlashMessageIsConsumedOnRead(): void

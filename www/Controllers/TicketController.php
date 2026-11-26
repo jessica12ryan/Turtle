@@ -535,7 +535,7 @@ class TicketController
         if ($user['role'] === 'tenant') {
             if ((int)$ticket['tenant_id'] !== (int)$user['id']) {
                 http_response_code(403);
-                require base_path('www/Views/errors/404.php');
+                require base_path('www/Views/errors/403.php');
                 return;
             }
         } elseif (!in_array($user['role'], ['admin', 'landlord', 'property_manager', 'maintenance'])) {

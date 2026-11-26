@@ -1048,5 +1048,7 @@
     'Database restore failed. The previous database was restored; check the error logs for details.' => 'Database restore failed. The previous database was restored; check the error logs for details.',
     'No assigned tickets.' => 'No assigned tickets.',
     'Permission' => 'Permission',
+    'Invalid ticket status.' => 'Invalid ticket status.',
+    'Selected assignee is not a staff member with access to this property.' => 'Selected assignee is not a staff member with access to this property.',
     'Too many requests. Please wait a few minutes.' => 'Too many requests. Please wait a few minutes.',
 ];

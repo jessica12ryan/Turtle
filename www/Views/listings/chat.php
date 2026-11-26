@@ -46,14 +46,14 @@
 </div>
 <script nonce="<?= h(csp_nonce()) ?>">
 (function () {
-    const token = <?= json_encode($chatToken) ?>;
+    const token = <?= json_encode($chatToken, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS) ?>;
     const url = (path) => (window.baseUrl || '') + path;
     const list = document.getElementById('guest-chat-messages');
     const form = document.getElementById('guest-chat-form');
     const body = document.getElementById('guest-chat-body');
     const errorEl = document.getElementById('guest-chat-error');
     const csrf = document.getElementById('guest-chat-csrf').value;
-    const sendError = <?= json_encode(__('Unable to send message.')) ?>;
+    const sendError = <?= json_encode(__('Unable to send message.'), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS) ?>;
     let lastId = 0;
 
     function scrollToBottom() {
@@ -126,8 +126,8 @@
 
     const copyButton = document.getElementById('copy-chat-link');
     const copyStatus = document.getElementById('copy-link-status');
-    const copiedText = <?= json_encode(__('Link copied')) ?>;
-    const copyManuallyText = <?= json_encode(__('Select the address bar to copy the link.')) ?>;
+    const copiedText = <?= json_encode(__('Link copied'), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS) ?>;
+    const copyManuallyText = <?= json_encode(__('Select the address bar to copy the link.'), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS) ?>;
 
     async function copyLink() {
         try {

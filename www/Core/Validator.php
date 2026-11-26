@@ -86,10 +86,19 @@ class Validator
         return strlen((string) $value) > (int) $limit;
     }
 
+    /** SQL identifiers in rule parameters are developer-controlled, not input. */
+    private static function sqlIdentifier(string $value): string
+    {
+        if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $value)) {
+            throw new \InvalidArgumentException('Unsafe SQL identifier in validation rule.');
+        }
+        return $value;
+    }
+
     private function validateUnique(string $field, mixed $value, array $params): ?string
     {
-        $table = $params[0] ?? $field;
-        $column = $params[1] ?? $field;
+        $table = self::sqlIdentifier((string)($params[0] ?? $field));
+        $column = self::sqlIdentifier((string)($params[1] ?? $field));
         $except = $params[2] ?? null;
 
         $sql = "SELECT id FROM {$table} WHERE {$column} = ?";
@@ -117,8 +126,8 @@ class Validator
 
     private function validateExists(string $field, mixed $value, array $params): ?string
     {
-        $table = $params[0] ?? $field;
-        $column = $params[1] ?? $field;
+        $table = self::sqlIdentifier((string)($params[0] ?? $field));
+        $column = self::sqlIdentifier((string)($params[1] ?? $field));
 
         $exists = Database::fetch(
             "SELECT id FROM {$table} WHERE {$column} = ?",

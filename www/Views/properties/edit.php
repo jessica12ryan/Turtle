@@ -364,7 +364,7 @@ document.getElementById('photo-upload-form').addEventListener('submit', function
         }
     })
     .catch(err => {
-        errorEl.textContent = '<?= __('Upload failed.') ?>';
+        errorEl.textContent = <?= json_encode(__('Upload failed.'), JSON_HEX_APOS|JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
         errorEl.classList.remove('hidden');
     });
 });

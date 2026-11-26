@@ -124,4 +124,22 @@ final class ValidatorTest extends TestCase
 
         self::assertTrue($validator->validate(['field' => 'anything'], ['field' => 'not_a_real_rule']));
     }
+
+    public function testDateRuleRequiresARealCalendarDate(): void
+    {
+        $validator = new Validator();
+
+        self::assertTrue($validator->validate(['payment_date' => '2026-02-28'], ['payment_date' => 'date']));
+        self::assertFalse($validator->validate(['payment_date' => '2026-02-30'], ['payment_date' => 'date']));
+        self::assertFalse($validator->validate(['payment_date' => 'not-a-date'], ['payment_date' => 'date']));
+        self::assertFalse($validator->validate(['payment_date' => ''], ['payment_date' => 'date']));
+    }
+
+    public function testUnsafeRuleIdentifiersAreRejected(): void
+    {
+        $validator = new Validator();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $validator->validate(['email' => 'a@b.com'], ['email' => 'unique:users; DROP TABLE users,email']);
+    }
 }
