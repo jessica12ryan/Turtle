@@ -62,7 +62,9 @@
                         </button>
                     </form>
                 <?php else: ?>
-                    <a href="/applications/create" class="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"><?= __('Application for Tenancy') ?></a>
+                    <?php if ($hasListedProperties ?? true): ?>
+                        <a href="/applications/create" class="text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"><?= __('Application for Tenancy') ?></a>
+                    <?php endif; ?>
                     <a href="/login" data-testid="login-link" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700"><?= __('Sign In') ?></a>
                 <?php endif; ?>
             </nav>

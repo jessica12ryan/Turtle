@@ -3,6 +3,7 @@
     <p class="text-gray-600 mt-2 dark:text-slate-300"><?= __('Browse our listed properties and message the team directly through this site.') ?></p>
 </div>
 
+<?php if (!empty($properties)): ?>
 <section class="bg-white rounded-xl shadow p-5 mb-8 dark:bg-slate-800" data-testid="return-conversation">
     <h2 class="text-lg font-semibold text-gray-800 dark:text-slate-100"><?= __('Return to a conversation') ?></h2>
     <?php if (!empty($conversations)): ?>
@@ -45,6 +46,7 @@
         </p>
     <?php endif; ?>
 </section>
+<?php endif; ?>
 
 <?php if (empty($properties)): ?>
     <div class="bg-white rounded-xl shadow p-10 text-center dark:bg-slate-800">

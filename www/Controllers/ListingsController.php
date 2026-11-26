@@ -59,7 +59,10 @@ class ListingsController
         $hub = GuestChat::hubVisitor();
 
         $view = new View();
-        $view->layout('layouts/public', ['title' => __('Properties Available')]);
+        $view->layout('layouts/public', [
+            'title' => __('Properties Available'),
+            'hasListedProperties' => !empty($properties),
+        ]);
         $view->render('listings/index', [
             'properties' => $properties,
             'photos' => $photosByProperty,
