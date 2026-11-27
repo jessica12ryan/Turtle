@@ -328,25 +328,54 @@ function redirect(string $url): never
     exit;
 }
 
-function redirectBack(): void
+/**
+ * Resolve a Referer to a safe, unprefixed path. Browsers send absolute URLs,
+ * and redirect() re-adds the ingress prefix, so any existing prefix is removed.
+ */
+function safe_referer_path(string $referer, string $host, string $basePath = ''): string
 {
-    $referer = $_SERVER['HTTP_REFERER'] ?? '/';
-    // Block CRLF, null bytes and backslash-normalised protocol-relative URLs.
     $referer = str_replace(["\r", "\n", "\0"], '', $referer);
     $referer = str_replace('\\', '/', $referer);
-    // Block protocol-relative URLs like //evil.com
-    if (str_starts_with($referer, '//')) {
-        $referer = '/';
+    $referer = trim($referer);
+    if ($referer === '' || str_starts_with($referer, '//')) {
+        return '/';
     }
+
     $parsed = parse_url($referer);
-    if (!empty($parsed['host']) && $parsed['host'] !== ($_SERVER['HTTP_HOST'] ?? '')) {
-        $referer = '/';
+    if ($parsed === false) {
+        return '/';
     }
-    // Only allow relative or same-host URLs
-    if (!str_starts_with($referer, '/') && !str_starts_with($referer, base_url() . '/')) {
-        $referer = '/';
+    if (isset($parsed['scheme']) && !in_array(strtolower((string) $parsed['scheme']), ['http', 'https'], true)) {
+        return '/';
     }
-    redirect($referer);
+    if (!empty($parsed['host'])) {
+        $currentHost = preg_replace('/:\d+$/', '', $host) ?: $host;
+        $refererHost = preg_replace('/:\d+$/', '', (string) $parsed['host']) ?: (string) $parsed['host'];
+        if (strcasecmp($refererHost, $currentHost) !== 0) {
+            return '/';
+        }
+    }
+
+    $path = (string) ($parsed['path'] ?? '');
+    if (!str_starts_with($path, '/')) {
+        return '/';
+    }
+    if ($basePath !== '' && ($path === $basePath || str_starts_with($path, $basePath . '/'))) {
+        $path = substr($path, strlen($basePath)) ?: '/';
+    }
+    if (!empty($parsed['query'])) {
+        $path .= '?' . $parsed['query'];
+    }
+    return $path;
+}
+
+function redirectBack(): void
+{
+    redirect(safe_referer_path(
+        (string) ($_SERVER['HTTP_REFERER'] ?? '/'),
+        (string) ($_SERVER['HTTP_HOST'] ?? ''),
+        base_url()
+    ));
 }
 
 function error(string $key, string $default = ''): string

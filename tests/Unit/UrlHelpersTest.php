@@ -33,6 +33,24 @@ final class UrlHelpersTest extends TestCase
         self::assertSame('/homeX-Injected: 1', sanitize_redirect_url("/home\r\nX-Injected: 1"));
     }
 
+    public function testRefererPathsAreKeptOnlyForTheSameHost(): void
+    {
+        self::assertSame(
+            '/properties/1/rent',
+            safe_referer_path('http://localhost:8080/properties/1/rent', 'localhost:8080')
+        );
+        self::assertSame(
+            '/properties/1/rent?x=1',
+            safe_referer_path('https://example.test/properties/1/rent?x=1', 'example.test')
+        );
+        self::assertSame('/properties/1/rent', safe_referer_path('/properties/1/rent', 'example.test'));
+        self::assertSame('/x', safe_referer_path('https://example.test/turtle/x', 'example.test', '/turtle'));
+        self::assertSame('/', safe_referer_path('https://evil.test/x', 'example.test'));
+        self::assertSame('/', safe_referer_path('//evil.test/x', 'example.test'));
+        self::assertSame('/', safe_referer_path('', 'example.test'));
+        self::assertSame('/', safe_referer_path('javascript:alert(1)', 'example.test'));
+    }
+
     public function testPublicHttpsUrlGuard(): void
     {
         self::assertTrue(isPublicHttpsUrl('https://1.1.1.1/actualtime.cgi'));

@@ -125,6 +125,16 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(page.getByRole('button', { name: 'Remove Exemption' }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Remove Exemption' }).first().click();
 
+  // Editing a payment stays on the rent page instead of bouncing to /home.
+  await page.getByRole('button', { name: 'Edit' }).first().click();
+  await expect(page).toHaveURL(/\/properties\/1\/rent$/);
+  const editRow = page.locator('tr[id^="edit-form-"]:not(.hidden)');
+  await expect(editRow).toHaveCount(1);
+  await editRow.locator('input[name="amount"]').fill('2200.01');
+  await editRow.getByRole('button', { name: 'Save' }).click();
+  await expect(page).toHaveURL(/\/properties\/1\/rent$/);
+  await expect(page.getByText('Payment updated successfully.')).toBeVisible();
+
   // Create a ticket against seeded sample data.
   await page.goto('/tickets/create');
   await page.locator('select[name="property_id"]').selectOption({ label: 'The Wellington' });

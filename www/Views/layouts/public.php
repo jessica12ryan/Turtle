@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Visitor chat URLs carry a bearer token: never leak them via Referer. -->
     <meta name="referrer" content="no-referrer">
-    <base href="<?= h(base_url()) ?>/">
+    <base href="/">
     <link rel="icon" type="image/svg+xml" href="/assets/logo-icon.svg">
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" sizes="any">
     <script nonce="<?= h(csp_nonce()) ?>">window.baseUrl = '<?= h(base_url()) ?>';</script>

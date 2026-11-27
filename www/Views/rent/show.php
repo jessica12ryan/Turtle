@@ -151,7 +151,7 @@
                         <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"><?= h($pym['recorded_by_name']) ?></td>
                         <td class="px-6 py-4 text-sm space-x-2">
                             <?php if (can('rents.payments.edit')): ?>
-                                <a href="#edit-<?= $pym['id'] ?>" data-toggle-target="edit-form-<?= $pym['id'] ?>" data-toggle-mode="toggle" class="text-blue-600 dark:text-blue-400 hover:underline"><?= __('Edit') ?></a>
+                                <button type="button" data-toggle-target="edit-form-<?= $pym['id'] ?>" data-toggle-mode="toggle" class="text-blue-600 dark:text-blue-400 hover:underline"><?= __('Edit') ?></button>
                             <?php endif; ?>
                             <?php if (can('rents.payments.archive')): ?>
                                 <form method="POST" action="/payments/<?= $pym['id'] ?>/archive" class="inline" data-confirm="<?= __('Archive this payment?') ?>">
