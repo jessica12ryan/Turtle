@@ -130,7 +130,7 @@ class RentController
             'defaultPeriod',
             'mainTenantId',
             'hasActiveTenant'
-        ), ['canExempt' => $hasActiveTenant && RentLedger::canExempt(Auth::instance()->user())]));
+        ), ['canExempt' => RentLedger::canExempt(Auth::instance()->user())]));
     }
 
     public function store(int $propertyId): void
@@ -269,6 +269,17 @@ class RentController
         redirect('/properties/' . $payment['property_id'] . '/rent');
     }
 
+    /** Exemptions may predate a due-day change, so accept any real date. */
+    private function validPeriodDate(string $start): bool
+    {
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) === 1
+            && checkdate(
+                (int) substr($start, 5, 2),
+                (int) substr($start, 8, 2),
+                (int) substr($start, 0, 4)
+            );
+    }
+
     public function exempt(int $propertyId): void
     {
         if (!verify_csrf($_POST['_csrf'] ?? '')) {
@@ -278,22 +289,19 @@ class RentController
         Access::require(Access::property($propertyId));
         Access::require(RentLedger::canExempt(Auth::instance()->user()));
 
-        $property = Database::fetch("SELECT * FROM properties WHERE id = ?", [$propertyId]);
-        $active = RentLedger::activeTenancy($propertyId);
+        $property = Database::fetch("SELECT id FROM properties WHERE id = ?", [$propertyId]);
         $periodStart = trim((string) ($_POST['period_start'] ?? ''));
-        if (
-            !$property
-            || $active === null
-            || !RentLedger::validPeriodStart($periodStart, RentLedger::dueDay($property))
-            || RentPeriod::end($periodStart, RentLedger::dueDay($property)) < substr((string) $active['starts_on'], 0, 10)
-        ) {
-            flash('error', __('No active tenant found for this pay period.'));
+        if (!$property || !$this->validPeriodDate($periodStart)) {
+            flash('error', __('Select a valid pay period.'));
             redirect('/properties/' . $propertyId . '/rent');
         }
 
+        // Exemptions belong to the property/period, not to a current tenancy:
+        // historical and vacant periods can be exempted too.
+        $active = RentLedger::activeTenancy($propertyId);
         RentLedger::exempt(
             $propertyId,
-            (int) $active['id'],
+            $active === null ? null : (int) $active['id'],
             $periodStart,
             (int) Auth::instance()->id(),
             trim((string) ($_POST['reason'] ?? ''))
@@ -313,16 +321,8 @@ class RentController
         Access::require(RentLedger::canExempt(Auth::instance()->user()));
 
         $periodStart = trim((string) ($_POST['period_start'] ?? ''));
-        // Accept any real calendar date here: an exemption may predate a change
-        // to the property's due day and must still be removable.
-        $validDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $periodStart) === 1
-            && checkdate(
-                (int) substr($periodStart, 5, 2),
-                (int) substr($periodStart, 8, 2),
-                (int) substr($periodStart, 0, 4)
-            );
-        if (!$validDate || RentLedger::activeTenancy($propertyId) === null) {
-            flash('error', __('No active tenant found for this pay period.'));
+        if (!$this->validPeriodDate($periodStart)) {
+            flash('error', __('Select a valid pay period.'));
             redirect('/properties/' . $propertyId . '/rent');
         }
 

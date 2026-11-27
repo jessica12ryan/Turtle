@@ -207,6 +207,44 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
         self::fail('Payment history was detached from the property.');
     }
 
+    public function testDepositOnlyPaymentDoesNotMakeAVacantPeriodOwed(): void
+    {
+        $f = $this->fixture('deposit-rent@test.local');
+        Database::execute(
+            'UPDATE property_tenant SET lease_start = ? WHERE id = ?',
+            ['2026-11-03', $f['property_tenant_id']]
+        );
+        Database::insert(
+            "INSERT INTO payments (property_id, property_tenant_id, tenant_name_snapshot, amount,
+                payment_date, period_start, is_security_deposit, recorded_by, created_at, updated_at)
+             VALUES (?, ?, 'Future Tenant', 500.00, '2026-10-02', '2026-10-02', 1, ?, NOW(), NOW())",
+            [$f['property_id'], $f['property_tenant_id'], $f['landlord']]
+        );
+
+        foreach (RentLedger::periods($f['property_id'], $f['property']) as $row) {
+            if ($row['start'] === '2026-10-02') {
+                self::assertSame('vacant', $row['status']);
+                self::assertFalse($row['expected']);
+                self::assertSame(0, $row['payment_count']);
+                return;
+            }
+        }
+        self::fail('Deposit-only period missing from the ledger.');
+    }
+
+    public function testExemptionWorksWithoutAnActiveTenancy(): void
+    {
+        $f = $this->fixture('exempt-vacant@test.local');
+        Database::execute('UPDATE users SET archived_at = NOW() WHERE id = ?', [$f['tenant']]);
+        self::assertNull(RentLedger::activeTenancy($f['property_id']));
+
+        RentLedger::exempt($f['property_id'], null, '2026-01-02', $f['landlord'], 'Unit vacant');
+        self::assertTrue(RentLedger::isExempt($f['property_id'], '2026-01-02'));
+
+        RentLedger::unexempt($f['property_id'], '2026-01-02');
+        self::assertFalse(RentLedger::isExempt($f['property_id'], '2026-01-02'));
+    }
+
     public function testValidPeriodStartIsCheckedAgainstTheDueDay(): void
     {
         self::assertTrue(RentLedger::validPeriodStart('2026-01-02', 2));

@@ -7,7 +7,23 @@ use Tests\TestCase;
 
 final class VacantRentViewTest extends TestCase
 {
-    public function testVacantPropertyKeepsHistoryButOffersNoPaymentOrExemption(): void
+    public function testVacantPropertyKeepsHistoryButOffersNoPaymentForm(): void
+    {
+        $output = $this->renderView(false);
+
+        self::assertStringContainsString('Vacant', $output);
+        self::assertStringContainsString('No rent is expected while this property has no tenant.', $output);
+        self::assertStringContainsString('Payment History', $output);
+        self::assertStringNotContainsString('name="amount"', $output);
+        self::assertStringNotContainsString('Mark Exempt', $output);
+    }
+
+    public function testAdminCanExemptAHistoricalPeriodWithoutAnActiveTenant(): void
+    {
+        self::assertStringContainsString('Mark Exempt', $this->renderView(true));
+    }
+
+    private function renderView(bool $canExempt): string
     {
         $view = new View();
 
@@ -56,14 +72,8 @@ final class VacantRentViewTest extends TestCase
             'defaultPeriod' => '2026-11-01',
             'mainTenantId' => 0,
             'hasActiveTenant' => false,
-            'canExempt' => false,
+            'canExempt' => $canExempt,
         ]);
-        $output = (string) ob_get_clean();
-
-        self::assertStringContainsString('Vacant', $output);
-        self::assertStringContainsString('No rent is expected while this property has no tenant.', $output);
-        self::assertStringContainsString('Payment History', $output);
-        self::assertStringNotContainsString('name="amount"', $output);
-        self::assertStringNotContainsString('Mark Exempt', $output);
+        return (string) ob_get_clean();
     }
 }

@@ -264,7 +264,7 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-sm">
-                            <?php if ($canExempt && !empty($period['expected'])): ?>
+                            <?php if ($canExempt): ?>
                                 <?php if ($period['exempt']): ?>
                                     <form method="POST" action="/properties/<?= $property['id'] ?>/rent/periods/unexempt" class="inline">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">

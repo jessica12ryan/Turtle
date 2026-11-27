@@ -98,13 +98,12 @@ class RentLedger
     }
 
     /**
-     * Whether a tenancy covered this period. Deleted tenancies leave no link,
-     * so their historical payments are treated as occupied history.
+     * Whether a tenancy actually covered this period. Payments, deposits and
+     * archived rows are history only; they never make a vacant period owed.
      *
      * @param list<array<string, mixed>> $tenancies
-     * @param list<array<string, mixed>> $payments
      */
-    private static function periodIsOccupied(string $start, string $end, array $tenancies, array $payments, int $dueDay): bool
+    private static function periodIsOccupied(string $start, string $end, array $tenancies): bool
     {
         foreach ($tenancies as $tenancy) {
             $startsOn = !empty($tenancy['lease_start'])
@@ -116,11 +115,6 @@ class RentLedger
                     ? substr((string) $tenancy['tenant_archived_at'], 0, 10)
                     : date('Y-m-d'));
             if ($end >= $startsOn && $start <= $endsOn) {
-                return true;
-            }
-        }
-        foreach ($payments as $payment) {
-            if (self::periodOf($payment, $dueDay) === $start) {
                 return true;
             }
         }
@@ -231,7 +225,7 @@ class RentLedger
 
             $end = RentPeriod::end($start, $dueDay);
             $occupied = $active !== null || $start < $currentStart
-                ? self::periodIsOccupied($start, $end, $tenancies, $payments, $dueDay)
+                ? self::periodIsOccupied($start, $end, $tenancies)
                 : false;
             if ($rent <= 0) {
                 $status = 'not_set';
