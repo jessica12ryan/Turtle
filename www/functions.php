@@ -1366,6 +1366,16 @@ function messaging_enabled(): bool
     }
 }
 
+function applications_enabled(): bool
+{
+    try {
+        $row = \App\Core\Database::fetch("SELECT `value` FROM settings WHERE `key` = 'applications_enabled'");
+        return ($row['value'] ?? '0') === '1';
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
 /** Property-scoped events whose recipients are the manager (or landlord fallback). */
 function propertyNotificationEvents(): array
 {

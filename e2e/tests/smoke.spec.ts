@@ -284,12 +284,30 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
   await expect(logoutButton).toContainText(admin.name);
   expect((await logoutButton.boundingBox())?.width ?? 0, 'logout button stays compact').toBeLessThanOrEqual(176);
 
+  // The public apply link is hidden while tenancy applications are disabled.
+  const anonymousContext = await browser.newContext();
+  const anonymousPage = await anonymousContext.newPage();
+  await anonymousPage.goto('/listings');
+  await expect(anonymousPage.getByRole('link', { name: 'Application for Tenancy' })).toHaveCount(0);
+  await anonymousContext.close();
+
+  // Enable applications, so listed properties can offer the public form.
+  await page.goto('/settings?tab=applications');
+  const applicationsCsrf = await page.locator('form[action="/settings/applications"] input[name="_csrf"]').inputValue();
+  const applicationsResponse = await page.request.post('/settings/applications', {
+    form: { _csrf: applicationsCsrf, applications_enabled: '1' },
+  });
+  expect(applicationsResponse.status(), 'application settings should save').toBe(200);
+
   // Anonymous visitors land on the public listings page, not the login form.
   await page.context().clearCookies();
   await page.goto('/');
   await expect(page).toHaveURL(/\/listings$/);
   await expect(page.getByTestId('login-link')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Application for Tenancy' })).toBeVisible();
+  await page.goto('/login');
+  await expect(page.getByRole('link', { name: 'Application for Tenancy' })).toBeVisible();
+  await page.goto('/listings');
   await expect(page.getByTestId('dashboard-link')).toHaveCount(0);
   await expect(page.getByTestId('logout-button')).toHaveCount(0);
   await expect(page.getByRole('banner').locator('span')).toHaveCount(0);

@@ -55,16 +55,22 @@ final class PublicListingsVisibilityTest extends TestCase
 
     public function testApplicationLinkFollowsTheListedPropertiesFlag(): void
     {
-        self::assertStringContainsString('Application for Tenancy', $this->renderPublicLayout(true));
-        self::assertStringNotContainsString('Application for Tenancy', $this->renderPublicLayout(false));
+        self::assertStringContainsString('Application for Tenancy', $this->renderPublicLayout(true, true));
+        self::assertStringNotContainsString('Application for Tenancy', $this->renderPublicLayout(false, true));
     }
 
-    private function renderPublicLayout(bool $hasListedProperties): string
+    public function testApplicationLinkRequiresEnabledApplications(): void
+    {
+        self::assertStringNotContainsString('Application for Tenancy', $this->renderPublicLayout(true, false));
+    }
+
+    private function renderPublicLayout(bool $hasListedProperties, bool $applicationsEnabled = true): string
     {
         $view = new View();
         $view->layout('layouts/public', [
             'title' => 'Listings',
             'hasListedProperties' => $hasListedProperties,
+            'applicationsEnabled' => $applicationsEnabled,
         ]);
 
         ob_start();

@@ -59,10 +59,7 @@ class ListingsController
         $hub = GuestChat::hubVisitor();
 
         $view = new View();
-        $view->layout('layouts/public', [
-            'title' => __('Properties Available'),
-            'hasListedProperties' => !empty($properties),
-        ]);
+        $view->layout('layouts/public', $this->publicLayoutData(__('Properties Available'), !empty($properties)));
         $view->render('listings/index', [
             'properties' => $properties,
             'photos' => $photosByProperty,
@@ -177,7 +174,7 @@ class ListingsController
         if ($chat === null) {
             http_response_code(404);
             $view = new View();
-            $view->layout('layouts/public', ['title' => __('Conversation Not Found')]);
+            $view->layout('layouts/public', $this->publicLayoutData(__('Conversation Not Found')));
             $view->render('listings/chat-missing');
             return;
         }
@@ -187,7 +184,7 @@ class ListingsController
         GuestChat::setCookie((int) $chat['id'], $token);
 
         $view = new View();
-        $view->layout('layouts/public', ['title' => __('Conversation')]);
+        $view->layout('layouts/public', $this->publicLayoutData(__('Conversation')));
         $view->render('listings/chat', [
             'chat' => $chat,
             'messages' => $this->messagesFor((int) $chat['id']),
@@ -311,13 +308,13 @@ class ListingsController
         if ($visitor === null) {
             http_response_code(404);
             $view = new View();
-            $view->layout('layouts/public', ['title' => __('Conversation Links Not Found')]);
+            $view->layout('layouts/public', $this->publicLayoutData(__('Conversation Links Not Found')));
             $view->render('listings/hub-missing');
             return;
         }
 
         $view = new View();
-        $view->layout('layouts/public', ['title' => __('Your conversations')]);
+        $view->layout('layouts/public', $this->publicLayoutData(__('Your conversations')));
         $view->render('listings/conversations', [
             'visitor' => $visitor,
             'chats' => GuestChat::chatsForVisitor((int) $visitor['id']),
@@ -341,7 +338,7 @@ class ListingsController
         if ($visitor === null || $chat === null) {
             http_response_code(404);
             $view = new View();
-            $view->layout('layouts/public', ['title' => __('Conversation Links Not Found')]);
+            $view->layout('layouts/public', $this->publicLayoutData(__('Conversation Links Not Found')));
             $view->render('listings/hub-missing');
             return;
         }
@@ -389,6 +386,16 @@ class ListingsController
         header('Cache-Control: public, max-age=86400');
         readfile($realPath);
         exit;
+    }
+
+    /** Shared layout data for every page using the public header. */
+    private function publicLayoutData(string $title, bool $hasListedProperties = true): array
+    {
+        return [
+            'title' => $title,
+            'hasListedProperties' => $hasListedProperties,
+            'applicationsEnabled' => applications_enabled(),
+        ];
     }
 
     /** @return array<int, array<string, mixed>> */

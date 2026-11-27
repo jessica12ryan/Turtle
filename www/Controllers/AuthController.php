@@ -12,9 +12,21 @@ class AuthController
 {
     public function login(): void
     {
+        $hasListedProperties = false;
+        try {
+            $hasListedProperties = (bool) Database::fetch(
+                "SELECT 1 FROM properties WHERE listed = 1 AND archived_at IS NULL LIMIT 1"
+            );
+        } catch (\Throwable $e) {
+            $hasListedProperties = false;
+        }
+
         $view = new View();
         $view->layout('layouts/guest', ['title' => 'Login']);
-        $view->render('auth/login');
+        $view->render('auth/login', [
+            'hasListedProperties' => $hasListedProperties,
+            'applicationsEnabled' => applications_enabled(),
+        ]);
     }
 
     public function loginPost(): void
