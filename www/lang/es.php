@@ -1158,4 +1158,8 @@ return [
     'Select a valid pay period.' => 'Seleccione un período de pago válido.',
     'Pay period marked as exempt.' => 'Período de pago marcado como exento.',
     'Pay period exemption removed.' => 'Exención del período de pago eliminada.',
+    'Vacant' => 'Vacante',
+    'No rent is expected while this property has no tenant. Payment history is kept below.' => 'No se espera renta mientras esta propiedad no tenga inquilino. El historial de pagos se conserva a continuación.',
+    'Rent periods with recorded activity, plus occupied periods. Vacant periods keep their history but do not expect a payment.' => 'Períodos de renta con actividad registrada, además de los períodos ocupados. Los períodos vacantes conservan su historial pero no esperan pago.',
+    'No active tenant found for this pay period.' => 'No se encontró un inquilino activo para este período de pago.',
 ];

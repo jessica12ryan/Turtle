@@ -182,8 +182,8 @@ try {
                     [$batch, $pt['tenant_id']]
                 );
                 \App\Core\Database::execute(
-                    "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL",
-                    [$batch, $pt['id']]
+                    "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_id = ? AND property_tenant_id = ? AND archived_at IS NULL",
+                    [$batch, $pt['property_id'], $pt['id']]
                 );
                 // If main tenant, cascade to secondary tenants
                 if (!empty($pt['is_main_tenant'])) {
@@ -196,7 +196,7 @@ try {
                         \App\Core\Database::execute("UPDATE property_tenant SET moved_out_at = NOW(), archived_batch = ?, updated_at = NOW() WHERE id = ? AND moved_out_at IS NULL", [$batch, $s['id']]);
                         \App\Core\Database::execute("UPDATE users SET archived_at = NOW() WHERE id = ? AND archived_at IS NULL", [$s['tenant_id']]);
                         \App\Core\Database::execute("UPDATE leases SET archived_at = NOW(), archived_batch = ? WHERE tenant_id = ? AND archived_at IS NULL", [$batch, $s['tenant_id']]);
-                        \App\Core\Database::execute("UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL", [$batch, $s['id']]);
+                        \App\Core\Database::execute("UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_id = ? AND property_tenant_id = ? AND archived_at IS NULL", [$batch, $pt['property_id'], $s['id']]);
                     }
                 }
             }

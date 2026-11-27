@@ -1065,4 +1065,8 @@
     'Select a valid pay period.' => 'Select a valid pay period.',
     'Pay period marked as exempt.' => 'Pay period marked as exempt.',
     'Pay period exemption removed.' => 'Pay period exemption removed.',
+    'Vacant' => 'Vacant',
+    'No rent is expected while this property has no tenant. Payment history is kept below.' => 'No rent is expected while this property has no tenant. Payment history is kept below.',
+    'Rent periods with recorded activity, plus occupied periods. Vacant periods keep their history but do not expect a payment.' => 'Rent periods with recorded activity, plus occupied periods. Vacant periods keep their history but do not expect a payment.',
+    'No active tenant found for this pay period.' => 'No active tenant found for this pay period.',
 ];

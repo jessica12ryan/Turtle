@@ -26,6 +26,7 @@ class RentController
              FROM properties p
              JOIN users u ON u.id = p.landlord_id
              WHERE p.id IN ({$propertyIdList}) AND p.archived_at IS NULL
+               AND " . Tenancy::hasTenantSql('p') . "
              ORDER BY p.name"
         );
 
@@ -41,8 +42,7 @@ class RentController
             $lastPayment = Database::fetch(
                 "SELECT p.payment_date, p.amount
                  FROM payments p
-                 JOIN property_tenant pt ON pt.id = p.property_tenant_id
-                 WHERE pt.property_id = ?
+                 WHERE p.property_id = ?
                  ORDER BY p.payment_date DESC LIMIT 1",
                 [$prop['id']]
             );
@@ -89,12 +89,12 @@ class RentController
         // Payment history includes archived rows: a scheduled move-out archives
         // every payment of that tenancy, but that history must stay accessible.
         $payments = Database::fetchAll(
-            "SELECT p.*, u.name as tenant_name, r.name as recorded_by_name
+            "SELECT p.*, COALESCE(p.tenant_name_snapshot, u.name) as tenant_name, r.name as recorded_by_name
              FROM payments p
-             JOIN property_tenant pt ON pt.id = p.property_tenant_id
-             JOIN users u ON u.id = pt.tenant_id
+             LEFT JOIN property_tenant pt ON pt.id = p.property_tenant_id
+             LEFT JOIN users u ON u.id = pt.tenant_id
              JOIN users r ON r.id = p.recorded_by
-             WHERE pt.property_id = ?
+             WHERE p.property_id = ?
              ORDER BY p.payment_date DESC",
             [$propertyId]
         );
@@ -102,6 +102,7 @@ class RentController
         $status = RentLedger::status($propertyId, $property);
         $periods = RentLedger::periods($propertyId, $property);
         $dueDay = RentLedger::dueDay($property);
+        $hasActiveTenant = RentLedger::activeTenancy($propertyId) !== null;
 
         $mainTenantId = 0;
         foreach ($tenants as $tenant) {
@@ -127,8 +128,9 @@ class RentController
             'periods',
             'dueDay',
             'defaultPeriod',
-            'mainTenantId'
-        ), ['canExempt' => RentLedger::canExempt(Auth::instance()->user())]));
+            'mainTenantId',
+            'hasActiveTenant'
+        ), ['canExempt' => $hasActiveTenant && RentLedger::canExempt(Auth::instance()->user())]));
     }
 
     public function store(int $propertyId): void
@@ -140,7 +142,7 @@ class RentController
         Access::require(Access::property($propertyId));
         // Auto-detect main tenant for this property
         $mainTenant = Database::fetch(
-            "SELECT pt.id FROM property_tenant pt
+            "SELECT pt.id, u.name as tenant_name FROM property_tenant pt
              JOIN users u ON u.id = pt.tenant_id
              WHERE pt.property_id = ? AND pt.is_main_tenant = 1
                AND " . Tenancy::activeLinkCondition('pt', 'u'),
@@ -178,12 +180,24 @@ class RentController
             redirect('/properties/' . $propertyId . '/rent');
         }
 
+        $active = RentLedger::activeTenancy($propertyId);
+        if (
+            $active !== null
+            && RentPeriod::end($periodStart, $dueDay) < substr((string) $active['starts_on'], 0, 10)
+        ) {
+            $_SESSION['_errors'] = ['period_start' => __('No active tenant found for this pay period.')];
+            $_SESSION['_old'] = $_POST;
+            redirect('/properties/' . $propertyId . '/rent');
+        }
+
         $isDeposit = !empty($_POST['is_security_deposit']) ? 1 : 0;
 
         Database::insert(
-            "INSERT INTO payments (property_tenant_id, amount, payment_date, period_start, payment_method, reference, notes, is_security_deposit, recorded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+            "INSERT INTO payments (property_id, property_tenant_id, tenant_name_snapshot, amount, payment_date, period_start, payment_method, reference, notes, is_security_deposit, recorded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
             [
+                $propertyId,
                 $mainTenant['id'],
+                $mainTenant['tenant_name'] ?? null,
                 $_POST['amount'],
                 $_POST['payment_date'],
                 $periodStart,
@@ -206,7 +220,7 @@ class RentController
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
         }
-        $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
+        $payment = Database::fetch("SELECT p.* FROM payments p WHERE p.id = ?", [$paymentId]);
         if (!$payment) {
             http_response_code(404);
             require base_path('www/Views/errors/404.php');
@@ -265,19 +279,21 @@ class RentController
         Access::require(RentLedger::canExempt(Auth::instance()->user()));
 
         $property = Database::fetch("SELECT * FROM properties WHERE id = ?", [$propertyId]);
+        $active = RentLedger::activeTenancy($propertyId);
         $periodStart = trim((string) ($_POST['period_start'] ?? ''));
-        $propertyTenantId = (int) ($_POST['property_tenant_id'] ?? 0);
         if (
             !$property
+            || $active === null
             || !RentLedger::validPeriodStart($periodStart, RentLedger::dueDay($property))
-            || !$this->tenancyBelongsTo($propertyTenantId, $propertyId)
+            || RentPeriod::end($periodStart, RentLedger::dueDay($property)) < substr((string) $active['starts_on'], 0, 10)
         ) {
-            flash('error', __('Select a valid pay period.'));
+            flash('error', __('No active tenant found for this pay period.'));
             redirect('/properties/' . $propertyId . '/rent');
         }
 
         RentLedger::exempt(
-            $propertyTenantId,
+            $propertyId,
+            (int) $active['id'],
             $periodStart,
             (int) Auth::instance()->id(),
             trim((string) ($_POST['reason'] ?? ''))
@@ -297,7 +313,6 @@ class RentController
         Access::require(RentLedger::canExempt(Auth::instance()->user()));
 
         $periodStart = trim((string) ($_POST['period_start'] ?? ''));
-        $propertyTenantId = (int) ($_POST['property_tenant_id'] ?? 0);
         // Accept any real calendar date here: an exemption may predate a change
         // to the property's due day and must still be removable.
         $validDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $periodStart) === 1
@@ -306,26 +321,15 @@ class RentController
                 (int) substr($periodStart, 8, 2),
                 (int) substr($periodStart, 0, 4)
             );
-        if (!$validDate || !$this->tenancyBelongsTo($propertyTenantId, $propertyId)) {
-            flash('error', __('Select a valid pay period.'));
+        if (!$validDate || RentLedger::activeTenancy($propertyId) === null) {
+            flash('error', __('No active tenant found for this pay period.'));
             redirect('/properties/' . $propertyId . '/rent');
         }
 
-        RentLedger::unexempt($propertyTenantId, $periodStart);
+        RentLedger::unexempt($propertyId, $periodStart);
         log_activity('rent.period_unexempted', "Rent period {$periodStart} exemption removed for property #{$propertyId}");
         flash('success', __('Pay period exemption removed.'));
         redirect('/properties/' . $propertyId . '/rent');
-    }
-
-    private function tenancyBelongsTo(int $propertyTenantId, int $propertyId): bool
-    {
-        if ($propertyTenantId <= 0) {
-            return false;
-        }
-        return Database::fetch(
-            "SELECT 1 FROM property_tenant WHERE id = ? AND property_id = ?",
-            [$propertyTenantId, $propertyId]
-        ) !== null;
     }
 
     public function archive(int $paymentId): void
@@ -334,7 +338,7 @@ class RentController
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
         }
-        $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
+        $payment = Database::fetch("SELECT p.* FROM payments p WHERE p.id = ?", [$paymentId]);
         if (!$payment) {
             http_response_code(404);
             require base_path('www/Views/errors/404.php');
@@ -354,7 +358,7 @@ class RentController
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
         }
-        $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
+        $payment = Database::fetch("SELECT p.* FROM payments p WHERE p.id = ?", [$paymentId]);
         if (!$payment) {
             http_response_code(404);
             require base_path('www/Views/errors/404.php');
@@ -374,7 +378,7 @@ class RentController
             flash('error', __('Invalid form token. Please try again.'));
             redirectBack();
         }
-        $payment = Database::fetch("SELECT p.*, pt.property_id FROM payments p JOIN property_tenant pt ON pt.id = p.property_tenant_id WHERE p.id = ?", [$paymentId]);
+        $payment = Database::fetch("SELECT p.* FROM payments p WHERE p.id = ?", [$paymentId]);
         if (!$payment) {
             http_response_code(404);
             require base_path('www/Views/errors/404.php');

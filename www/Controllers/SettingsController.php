@@ -1342,7 +1342,7 @@ class SettingsController
         $restoreSql = (string)file_get_contents($sqlFile);
 
         // Pre-flight: a truncated or foreign dump must never reach DROP TABLE.
-        $requiredTables = ['settings', 'users', 'properties'];
+        $requiredTables = ['settings', 'users', 'properties', 'payments'];
         foreach ($requiredTables as $table) {
             if (!preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?' . preg_quote($table, '/') . '`?/i', $restoreSql)) {
                 self::rrmdir($tmpDir);
@@ -1378,6 +1378,10 @@ class SettingsController
             flash('error', __('Database restore failed. The previous database was restored; check the error logs for details.'));
             redirect('/settings?tab=backup');
         }
+
+        // An older backup restores its old schema verbatim; upgrade it in
+        // place so the current code can read every table and column.
+        run_database_migrations();
 
         // Never overwrite .env from an uploaded archive. Exported backups do
         // not contain it, so its presence means the archive was crafted; a

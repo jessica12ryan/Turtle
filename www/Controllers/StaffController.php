@@ -713,6 +713,7 @@ class StaffController
             Database::execute("UPDATE properties SET landlord_id = ? WHERE landlord_id = ?", [$replacementId, $id]);
             Database::execute("UPDATE tickets SET tenant_id = ? WHERE tenant_id = ?", [$replacementId, $id]);
             Database::execute("UPDATE payments SET recorded_by = ? WHERE recorded_by = ?", [$replacementId, $id]);
+            Database::execute("UPDATE rent_period_exemptions SET marked_by = ? WHERE marked_by = ?", [$replacementId, $id]);
             Database::execute("UPDATE leases SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $id]);
             Database::execute("UPDATE ticket_comments SET user_id = ? WHERE user_id = ?", [$replacementId, $id]);
             Database::execute("UPDATE ticket_files SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $id]);

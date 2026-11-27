@@ -84,11 +84,12 @@ class CalendarController
 
         // Rent payments (filtered by property access)
         $payments = Database::fetchAll(
-            "SELECT p.amount, p.payment_date, u.name as tenant_name, prop.name as property_name, p.id, pt.id as pt_id
+            "SELECT p.amount, p.payment_date, COALESCE(p.tenant_name_snapshot, u.name) as tenant_name,
+                    prop.name as property_name, p.id
              FROM payments p
-             JOIN property_tenant pt ON pt.id = p.property_tenant_id
-             JOIN users u ON u.id = pt.tenant_id
-             JOIN properties prop ON prop.id = pt.property_id
+             JOIN properties prop ON prop.id = p.property_id
+             LEFT JOIN property_tenant pt ON pt.id = p.property_tenant_id
+             LEFT JOIN users u ON u.id = pt.tenant_id
              WHERE p.archived_at IS NULL AND p.is_security_deposit = 0 AND prop.id IN ({$accessibleIdList})"
         );
         foreach ($payments as $pmt) {
@@ -104,11 +105,12 @@ class CalendarController
 
         // Security deposit payments (filtered by property access)
         $deposits = Database::fetchAll(
-            "SELECT p.amount, p.payment_date, u.name as tenant_name, prop.name as property_name, p.id, pt.id as pt_id
+            "SELECT p.amount, p.payment_date, COALESCE(p.tenant_name_snapshot, u.name) as tenant_name,
+                    prop.name as property_name, p.id
              FROM payments p
-             JOIN property_tenant pt ON pt.id = p.property_tenant_id
-             JOIN users u ON u.id = pt.tenant_id
-             JOIN properties prop ON prop.id = pt.property_id
+             JOIN properties prop ON prop.id = p.property_id
+             LEFT JOIN property_tenant pt ON pt.id = p.property_tenant_id
+             LEFT JOIN users u ON u.id = pt.tenant_id
              WHERE p.archived_at IS NULL AND p.is_security_deposit = 1 AND prop.id IN ({$accessibleIdList})"
         );
         foreach ($deposits as $d) {

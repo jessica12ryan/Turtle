@@ -8,7 +8,7 @@ use App\Core\RentPeriod;
 
 final class RentLedgerIntegrationTest extends IntegrationTestCase
 {
-    /** @return array{property:array<string,mixed>,property_tenant_id:int,landlord:int} */
+    /** @return array{property:array<string,mixed>,property_id:int,property_tenant_id:int,landlord:int,tenant:int} */
     private function fixture(string $email = 'rent-ledger@test.local', int $dueDay = 2): array
     {
         $company = $this->insertCompany('Rent Ledger Company ' . $email);
@@ -28,15 +28,35 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
 
         $property = Database::fetch("SELECT * FROM properties WHERE id = ?", [$propertyId]);
 
-        return ['property' => $property ?? [], 'property_tenant_id' => $propertyTenantId, 'landlord' => $landlord];
+        return [
+            'property' => $property ?? [],
+            'property_id' => $propertyId,
+            'property_tenant_id' => $propertyTenantId,
+            'landlord' => $landlord,
+            'tenant' => $tenant,
+        ];
     }
 
-    private function addPayment(int $propertyTenantId, int $recordedBy, string $periodStart, float $amount, bool $archived = false): void
-    {
+    private function addPayment(
+        int $propertyId,
+        int $propertyTenantId,
+        int $recordedBy,
+        string $periodStart,
+        float $amount,
+        bool $archived = false
+    ): void {
         Database::insert(
-            "INSERT INTO payments (property_tenant_id, amount, payment_date, period_start, recorded_by, archived_at, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
-            [$propertyTenantId, $amount, $periodStart, $periodStart, $recordedBy, $archived ? date('Y-m-d') : null]
+            "INSERT INTO payments (property_id, property_tenant_id, tenant_name_snapshot, amount, payment_date, period_start, recorded_by, archived_at, created_at, updated_at)
+             VALUES (?, ?, 'Ledger Tenant', ?, ?, ?, ?, ?, NOW(), NOW())",
+            [
+                $propertyId,
+                $propertyTenantId,
+                $amount,
+                $periodStart,
+                $periodStart,
+                $recordedBy,
+                $archived ? date('Y-m-d') : null,
+            ]
         );
     }
 
@@ -53,9 +73,9 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
     {
         $f = $this->fixture();
         $property = $f['property'];
-        $this->addPayment($f['property_tenant_id'], $f['landlord'], '2026-01-02', 1000.00);
+        $this->addPayment($f['property_id'], $f['property_tenant_id'], $f['landlord'], '2026-01-02', 1000.00);
 
-        $rows = RentLedger::periods((int) $property['id'], $property);
+        $rows = RentLedger::periods($f['property_id'], $property);
         $january = null;
         foreach ($rows as $row) {
             if ($row['start'] === '2026-01-02') {
@@ -68,8 +88,8 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
         self::assertSame('paid', $january['status']);
         self::assertSame(1000.0, $january['paid_amount']);
 
-        RentLedger::exempt($f['property_tenant_id'], '2026-01-02', $f['landlord'], 'Unit vacant');
-        $rows = RentLedger::periods((int) $property['id'], $property);
+        RentLedger::exempt($f['property_id'], $f['property_tenant_id'], '2026-01-02', $f['landlord'], 'Not rented');
+        $rows = RentLedger::periods($f['property_id'], $property);
         foreach ($rows as $row) {
             if ($row['start'] === '2026-01-02') {
                 self::assertSame('exempt', $row['status']);
@@ -78,17 +98,17 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
         }
 
         // Re-marking is idempotent thanks to the unique key.
-        RentLedger::exempt($f['property_tenant_id'], '2026-01-02', $f['landlord'], 'Different reason');
+        RentLedger::exempt($f['property_id'], $f['property_tenant_id'], '2026-01-02', $f['landlord'], 'Different reason');
         self::assertSame(
             1,
             (int) Database::fetch(
-                "SELECT COUNT(*) AS cnt FROM rent_period_exemptions WHERE property_tenant_id = ? AND period_start = '2026-01-02'",
-                [$f['property_tenant_id']]
+                "SELECT COUNT(*) AS cnt FROM rent_period_exemptions WHERE property_id = ? AND period_start = '2026-01-02'",
+                [$f['property_id']]
             )['cnt']
         );
 
-        RentLedger::unexempt($f['property_tenant_id'], '2026-01-02');
-        self::assertFalse(RentLedger::isExempt($f['property_tenant_id'], '2026-01-02'));
+        RentLedger::unexempt($f['property_id'], '2026-01-02');
+        self::assertFalse(RentLedger::isExempt($f['property_id'], '2026-01-02'));
     }
 
     public function testDefaultPeriodSkipsPaidAndExemptPeriods(): void
@@ -104,15 +124,21 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
             [RentPeriod::offset($target, -1, 2), $f['property_tenant_id']]
         );
         foreach ([-2, -1, 0] as $offset) {
-            $this->addPayment($f['property_tenant_id'], $f['landlord'], RentPeriod::offset($current, $offset, 2), 1000.00);
+            $this->addPayment(
+                $f['property_id'],
+                $f['property_tenant_id'],
+                $f['landlord'],
+                RentPeriod::offset($current, $offset, 2),
+                1000.00
+            );
         }
 
-        self::assertSame($target, RentLedger::defaultPeriod((int) $property['id'], $property, $f['property_tenant_id']));
+        self::assertSame($target, RentLedger::defaultPeriod($f['property_id'], $property, $f['property_tenant_id']));
 
-        RentLedger::exempt($f['property_tenant_id'], $target, $f['landlord'], 'Not rented');
+        RentLedger::exempt($f['property_id'], $f['property_tenant_id'], $target, $f['landlord'], 'Not rented');
         self::assertSame(
             RentPeriod::offset($target, -1, 2),
-            RentLedger::defaultPeriod((int) $property['id'], $property, $f['property_tenant_id'])
+            RentLedger::defaultPeriod($f['property_id'], $property, $f['property_tenant_id'])
         );
     }
 
@@ -120,13 +146,13 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
     {
         $f = $this->fixture('archived-rent@test.local');
         $property = $f['property'];
-        $this->addPayment($f['property_tenant_id'], $f['landlord'], '2026-01-02', 1000.00, true);
+        $this->addPayment($f['property_id'], $f['property_tenant_id'], $f['landlord'], '2026-01-02', 1000.00, true);
         Database::execute(
             'UPDATE property_tenant SET moved_out_at = NOW() WHERE id = ?',
             [$f['property_tenant_id']]
         );
 
-        $rows = RentLedger::periods((int) $property['id'], $property);
+        $rows = RentLedger::periods($f['property_id'], $property);
         foreach ($rows as $row) {
             if ($row['start'] === '2026-01-02') {
                 self::assertSame(1, $row['payment_count']);
@@ -136,6 +162,49 @@ final class RentLedgerIntegrationTest extends IntegrationTestCase
             }
         }
         self::fail('Historical pay period missing from the ledger.');
+    }
+
+    public function testVacantPropertiesExpectNoRent(): void
+    {
+        $f = $this->fixture('vacant-rent@test.local');
+        Database::execute('UPDATE users SET archived_at = NOW() WHERE id = ?', [$f['tenant']]);
+
+        self::assertNull(RentLedger::activeTenancy($f['property_id']));
+        $status = RentLedger::status($f['property_id'], $f['property']);
+        self::assertSame('vacant', $status['status']);
+
+        $current = RentPeriod::forDate(date('Y-m-d'), 2);
+        foreach (RentLedger::periods($f['property_id'], $f['property']) as $row) {
+            if ($row['start'] === $current) {
+                self::assertSame('vacant', $row['status']);
+                self::assertFalse($row['expected']);
+            }
+        }
+    }
+
+    public function testPaymentHistorySurvivesTenantDeletion(): void
+    {
+        $f = $this->fixture('deleted-tenant@test.local');
+        $this->addPayment($f['property_id'], $f['property_tenant_id'], $f['landlord'], '2026-01-02', 1000.00, true);
+        RentLedger::exempt($f['property_id'], $f['property_tenant_id'], '2026-01-02', $f['landlord'], 'Vacant');
+
+        // Mirrors the FK behaviour of a hard tenant delete.
+        Database::execute('DELETE FROM property_tenant WHERE id = ?', [$f['property_tenant_id']]);
+
+        $payment = Database::fetch("SELECT * FROM payments WHERE property_id = ? AND period_start = '2026-01-02'", [$f['property_id']]);
+        self::assertNotNull($payment);
+        self::assertNull($payment['property_tenant_id']);
+        self::assertSame('Ledger Tenant', $payment['tenant_name_snapshot']);
+
+        $rows = RentLedger::periods($f['property_id'], $f['property']);
+        foreach ($rows as $row) {
+            if ($row['start'] === '2026-01-02') {
+                self::assertSame(1000.0, $row['paid_amount']);
+                self::assertSame(1, $row['payment_count']);
+                return;
+            }
+        }
+        self::fail('Payment history was detached from the property.');
     }
 
     public function testValidPeriodStartIsCheckedAgainstTheDueDay(): void

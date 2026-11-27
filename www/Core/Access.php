@@ -235,9 +235,7 @@ class Access
     public static function payment(int $paymentId, ?array $user = null): bool
     {
         $row = Database::fetch(
-            "SELECT pt.property_id FROM payments p
-             JOIN property_tenant pt ON pt.id = p.property_tenant_id
-             WHERE p.id = ?",
+            "SELECT property_id FROM payments WHERE id = ?",
             [$paymentId]
         );
         return $row ? self::property((int)$row['property_id'], $user) : false;

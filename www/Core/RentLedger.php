@@ -4,7 +4,8 @@ namespace App\Core;
 
 /**
  * Shared reads and writes for rent payment periods. Every status display goes
- * through here so "this period" means the same thing on all screens.
+ * through here so "this period" means the same thing on all screens. Payments
+ * are attached to the property; the tenancy link is only historical detail.
  */
 class RentLedger
 {
@@ -26,11 +27,11 @@ class RentLedger
     private static function paymentRows(int $propertyId): array
     {
         return Database::fetchAll(
-            "SELECT p.id, p.property_tenant_id, p.amount, p.payment_date, p.period_start,
-                    p.is_security_deposit, p.archived_at, pt.moved_out_at
+            "SELECT p.id, p.property_id, p.property_tenant_id, p.tenant_name_snapshot, p.amount,
+                    p.payment_date, p.period_start, p.is_security_deposit, p.archived_at, pt.moved_out_at
              FROM payments p
-             JOIN property_tenant pt ON pt.id = p.property_tenant_id
-             WHERE pt.property_id = ?",
+             LEFT JOIN property_tenant pt ON pt.id = p.property_tenant_id
+             WHERE p.property_id = ?",
             [$propertyId]
         );
     }
@@ -39,10 +40,9 @@ class RentLedger
     private static function exemptionRows(int $propertyId): array
     {
         return Database::fetchAll(
-            "SELECT e.property_tenant_id, e.period_start, e.reason
+            "SELECT e.property_id, e.property_tenant_id, e.period_start, e.reason
              FROM rent_period_exemptions e
-             JOIN property_tenant pt ON pt.id = e.property_tenant_id
-             WHERE pt.property_id = ?",
+             WHERE e.property_id = ?",
             [$propertyId]
         );
     }
@@ -60,6 +60,24 @@ class RentLedger
         );
     }
 
+    /**
+     * The current, active tenancy (if any), using the app's single definition
+     * of an active link: not moved out and the tenant account not archived.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function activeTenancy(int $propertyId): ?array
+    {
+        return Database::fetch(
+            "SELECT pt.id, pt.tenant_id, pt.is_main_tenant,
+                    COALESCE(DATE(pt.lease_start), DATE(pt.assigned_at)) AS starts_on
+             FROM property_tenant pt JOIN users u ON u.id = pt.tenant_id
+             WHERE pt.property_id = ? AND " . Tenancy::activeLinkCondition('pt', 'u') . "
+             ORDER BY pt.is_main_tenant DESC, pt.id LIMIT 1",
+            [$propertyId]
+        );
+    }
+
     /** @param array<string, mixed> $payment */
     private static function periodOf(array $payment, int $dueDay): string
     {
@@ -72,28 +90,41 @@ class RentLedger
     /** @param array<string, mixed> $payment */
     private static function countsForPayment(array $payment): bool
     {
-        // A scheduled move-out archives every payment of that tenancy. Those
-        // rows are history, not reversals, so they still count for their period.
-        return empty($payment['archived_at']) || !empty($payment['moved_out_at']);
+        // A scheduled move-out archives every payment of that tenancy, and a
+        // hard delete clears the tenancy link. Both are history, not reversals.
+        return empty($payment['archived_at'])
+            || !empty($payment['moved_out_at'])
+            || empty($payment['property_tenant_id']);
     }
 
-    /** @param list<array<string, mixed>> $tenancies */
-    private static function activeTenancyId(array $tenancies): int
+    /**
+     * Whether a tenancy covered this period. Deleted tenancies leave no link,
+     * so their historical payments are treated as occupied history.
+     *
+     * @param list<array<string, mixed>> $tenancies
+     * @param list<array<string, mixed>> $payments
+     */
+    private static function periodIsOccupied(string $start, string $end, array $tenancies, array $payments, int $dueDay): bool
     {
         foreach ($tenancies as $tenancy) {
-            if (
-                empty($tenancy['moved_out_at']) && empty($tenancy['tenant_archived_at'])
-                && !empty($tenancy['is_main_tenant'])
-            ) {
-                return (int) $tenancy['id'];
+            $startsOn = !empty($tenancy['lease_start'])
+                ? substr((string) $tenancy['lease_start'], 0, 10)
+                : substr((string) $tenancy['assigned_at'], 0, 10);
+            $endsOn = !empty($tenancy['moved_out_at'])
+                ? substr((string) $tenancy['moved_out_at'], 0, 10)
+                : (!empty($tenancy['tenant_archived_at'])
+                    ? substr((string) $tenancy['tenant_archived_at'], 0, 10)
+                    : date('Y-m-d'));
+            if ($end >= $startsOn && $start <= $endsOn) {
+                return true;
             }
         }
-        foreach ($tenancies as $tenancy) {
-            if (empty($tenancy['moved_out_at']) && empty($tenancy['tenant_archived_at'])) {
-                return (int) $tenancy['id'];
+        foreach ($payments as $payment) {
+            if (self::periodOf($payment, $dueDay) === $start) {
+                return true;
             }
         }
-        return $tenancies !== [] ? (int) $tenancies[0]['id'] : 0;
+        return false;
     }
 
     private static function nextMonthDate(string $date): string
@@ -108,38 +139,37 @@ class RentLedger
             && $start === RentPeriod::forDate($start, $dueDay);
     }
 
-    public static function isExempt(int $propertyTenantId, string $start): bool
+    public static function isExempt(int $propertyId, string $start): bool
     {
-        if ($propertyTenantId <= 0) {
-            return false;
-        }
         return Database::fetch(
-            "SELECT 1 FROM rent_period_exemptions WHERE property_tenant_id = ? AND period_start = ?",
-            [$propertyTenantId, $start]
+            "SELECT 1 FROM rent_period_exemptions WHERE property_id = ? AND period_start = ?",
+            [$propertyId, $start]
         ) !== null;
     }
 
-    public static function exempt(int $propertyTenantId, string $start, int $userId, string $reason): void
+    public static function exempt(int $propertyId, ?int $propertyTenantId, string $start, int $userId, string $reason): void
     {
         Database::execute(
-            "INSERT INTO rent_period_exemptions (property_tenant_id, period_start, reason, marked_by, created_at, updated_at)
-             VALUES (?, ?, ?, ?, NOW(), NOW())
-             ON DUPLICATE KEY UPDATE reason = VALUES(reason), marked_by = VALUES(marked_by), updated_at = NOW()",
-            [$propertyTenantId, $start, $reason !== '' ? $reason : null, $userId]
+            "INSERT INTO rent_period_exemptions (property_id, property_tenant_id, period_start, reason, marked_by, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE reason = VALUES(reason), marked_by = VALUES(marked_by),
+                property_tenant_id = VALUES(property_tenant_id), updated_at = NOW()",
+            [$propertyId, $propertyTenantId, $start, $reason !== '' ? $reason : null, $userId]
         );
     }
 
-    public static function unexempt(int $propertyTenantId, string $start): void
+    public static function unexempt(int $propertyId, string $start): void
     {
         Database::execute(
-            "DELETE FROM rent_period_exemptions WHERE property_tenant_id = ? AND period_start = ?",
-            [$propertyTenantId, $start]
+            "DELETE FROM rent_period_exemptions WHERE property_id = ? AND period_start = ?",
+            [$propertyId, $start]
         );
     }
 
     /**
      * Every period with rent data, plus the current and next one. Rows for
-     * archived tenancies stay in the list so no payment history is lost.
+     * past tenancies stay in the list so no payment history is lost. Vacant
+     * periods keep their history but are never marked as expected.
      *
      * @param array<string, mixed> $property
      * @return list<array<string, mixed>>
@@ -151,6 +181,7 @@ class RentLedger
         $tenancies = self::tenancyRows($propertyId);
         $payments = self::paymentRows($propertyId);
         $exemptions = self::exemptionRows($propertyId);
+        $active = self::activeTenancy($propertyId);
 
         $dates = [date('Y-m-d')];
         foreach ($tenancies as $tenancy) {
@@ -175,21 +206,19 @@ class RentLedger
         $first = RentPeriod::forDate($dates[0], $dueDay);
         $last = RentPeriod::forDate(self::nextMonthDate($dates[count($dates) - 1]), $dueDay);
 
+        $currentStart = RentPeriod::forDate(date('Y-m-d'), $dueDay);
         $rows = [];
         foreach (RentPeriod::starts($first, $last, $dueDay) as $start) {
             $paid = 0.0;
             $paymentCount = 0;
-            $tenancyIds = [];
             foreach ($payments as $payment) {
                 if (!empty($payment['is_security_deposit']) || !self::countsForPayment($payment)) {
                     continue;
                 }
-                if (self::periodOf($payment, $dueDay) !== $start) {
-                    continue;
+                if (self::periodOf($payment, $dueDay) === $start) {
+                    $paid += (float) $payment['amount'];
+                    $paymentCount++;
                 }
-                $paid += (float) $payment['amount'];
-                $paymentCount++;
-                $tenancyIds[(int) $payment['property_tenant_id']] = true;
             }
 
             $exemption = null;
@@ -200,8 +229,14 @@ class RentLedger
                 }
             }
 
+            $end = RentPeriod::end($start, $dueDay);
+            $occupied = $active !== null || $start < $currentStart
+                ? self::periodIsOccupied($start, $end, $tenancies, $payments, $dueDay)
+                : false;
             if ($rent <= 0) {
                 $status = 'not_set';
+            } elseif (!$occupied) {
+                $status = 'vacant';
             } elseif ($exemption !== null) {
                 $status = 'exempt';
             } elseif ($paid >= $rent) {
@@ -212,27 +247,25 @@ class RentLedger
                 $status = 'unpaid';
             }
 
-            $tenancyId = $exemption !== null
-                ? (int) $exemption['property_tenant_id']
-                : (array_key_first($tenancyIds) ?: self::activeTenancyId($tenancies));
-
             $rows[] = [
                 'start' => $start,
-                'end' => RentPeriod::end($start, $dueDay),
+                'end' => $end,
                 'label' => RentPeriod::label($start, $dueDay),
                 'paid_amount' => $paid,
                 'payment_count' => $paymentCount,
                 'status' => $status,
+                'expected' => $occupied && $rent > 0,
                 'exempt' => $exemption !== null,
                 'exempt_reason' => $exemption['reason'] ?? null,
-                'property_tenant_id' => $tenancyId,
+                'property_tenant_id' => (int) ($active['id'] ?? 0),
             ];
         }
         return $rows;
     }
 
     /**
-     * Status of the period containing today.
+     * Status of the period containing today. A property with no active tenant
+     * expects no rent and reports 'vacant'.
      *
      * @param array<string, mixed> $property
      * @return array<string, mixed>
@@ -240,19 +273,27 @@ class RentLedger
     public static function status(int $propertyId, array $property): array
     {
         $start = RentPeriod::forDate(date('Y-m-d'), self::dueDay($property));
+        $fallback = [
+            'start' => $start,
+            'end' => RentPeriod::end($start, self::dueDay($property)),
+            'label' => RentPeriod::label($start, self::dueDay($property)),
+            'paid_amount' => 0.0,
+            'payment_count' => 0,
+            'status' => self::activeTenancy($propertyId) === null ? 'vacant' : 'unpaid',
+            'expected' => false,
+            'exempt' => false,
+        ];
+        $active = self::activeTenancy($propertyId);
+        if ($active === null) {
+            $fallback['status'] = (float) ($property['rent_amount'] ?? 0) > 0 ? 'vacant' : 'not_set';
+            return $fallback;
+        }
         foreach (self::periods($propertyId, $property) as $row) {
             if ($row['start'] === $start) {
                 return $row;
             }
         }
-        return [
-            'start' => $start,
-            'end' => RentPeriod::end($start, self::dueDay($property)),
-            'label' => RentPeriod::label($start, self::dueDay($property)),
-            'paid_amount' => 0.0,
-            'status' => (float) ($property['rent_amount'] ?? 0) > 0 ? 'unpaid' : 'not_set',
-            'exempt' => false,
-        ];
+        return $fallback;
     }
 
     /**
@@ -290,10 +331,7 @@ class RentLedger
             }
             $isExempt = false;
             foreach ($exemptions as $exemption) {
-                if (
-                    (int) $exemption['property_tenant_id'] === $propertyTenantId
-                    && (string) $exemption['period_start'] === $start
-                ) {
+                if ((string) $exemption['period_start'] === $start) {
                     $isExempt = true;
                     break;
                 }
@@ -303,7 +341,7 @@ class RentLedger
             }
             $paid = 0.0;
             foreach ($payments as $payment) {
-                if ((int) $payment['property_tenant_id'] !== $propertyTenantId) {
+                if ((int) ($payment['property_tenant_id'] ?? 0) !== $propertyTenantId) {
                     continue;
                 }
                 if (!empty($payment['is_security_deposit']) || !empty($payment['archived_at'])) {

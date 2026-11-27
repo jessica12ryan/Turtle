@@ -215,12 +215,12 @@ class PropertyController
         );
 
         $payments = Database::fetchAll(
-            "SELECT p.*, u.name as tenant_name, r.name as recorded_by_name
+            "SELECT p.*, COALESCE(p.tenant_name_snapshot, u.name) as tenant_name, r.name as recorded_by_name
              FROM payments p
-             JOIN property_tenant pt ON pt.id = p.property_tenant_id
-             JOIN users u ON u.id = pt.tenant_id
+             LEFT JOIN property_tenant pt ON pt.id = p.property_tenant_id
+             LEFT JOIN users u ON u.id = pt.tenant_id
              JOIN users r ON r.id = p.recorded_by
-             WHERE pt.property_id = ?
+             WHERE p.property_id = ?
              ORDER BY p.payment_date DESC",
             [$id]
         );
@@ -254,7 +254,8 @@ class PropertyController
         $view = new View();
         $view->layout('layouts/main', ['title' => $property['name']]);
         $periods = RentLedger::periods($id, $property);
-        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'status', 'periods', 'dueDay', 'defaultPeriod', 'mainTenantId', 'mainTenantLeaseType'));
+        $hasActiveTenant = RentLedger::activeTenancy($id) !== null;
+        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'status', 'periods', 'dueDay', 'defaultPeriod', 'mainTenantId', 'mainTenantLeaseType', 'hasActiveTenant'));
     }
 
     public function edit(int $id): void
@@ -806,7 +807,7 @@ class PropertyController
         );
         Database::execute(
             "UPDATE payments SET archived_at = NOW(), archived_batch = ?
-             WHERE property_tenant_id IN (SELECT id FROM property_tenant WHERE property_id = ?) AND archived_at IS NULL",
+             WHERE property_id = ? AND archived_at IS NULL",
             [$batch, $id]
         );
 

@@ -284,6 +284,8 @@ class SetupController
 
         $zip->close();
         unlink($destPath);
+        // Older archives restore older schemas; migrate them to the current one.
+        run_database_migrations();
         flash('success', __('Backup restored successfully. Please log in with your restored credentials.'));
         redirect('/login');
     }

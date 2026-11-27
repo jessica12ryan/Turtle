@@ -68,7 +68,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
     </div>
 </div>
 
-<?php if (can('rents.access') && ($property['rent_amount'] ?? 0) > 0 && !empty($tenants)): ?>
+<?php if (can('rents.access') && ($property['rent_amount'] ?? 0) > 0): ?>
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6">
     <div class="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200"><?= __('Rent') ?></h2>
@@ -96,6 +96,9 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                 <?php elseif ($status['status'] === 'exempt'): ?>
                     <p class="text-xl font-bold text-gray-500">—</p>
                     <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded"><?= __('Exempt') ?></span>
+                <?php elseif ($status['status'] === 'vacant'): ?>
+                    <p class="text-xl font-bold text-gray-500">—</p>
+                    <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded"><?= __('Vacant') ?></span>
                 <?php elseif ($status['status'] === 'unpaid'): ?>
                     <p class="text-xl font-bold text-red-600">$0.00</p>
                     <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-0.5 rounded"><?= __('Unpaid') ?></span>
@@ -104,6 +107,9 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                 <?php endif; ?>
             </div>
         </div>
+        <?php if (!$hasActiveTenant): ?>
+            <p class="mt-4 text-sm text-gray-600 dark:text-gray-300"><?= __('No rent is expected while this property has no tenant. Payment history is kept below.') ?></p>
+        <?php endif; ?>
         <?php if (!empty($payments)): ?>
             <details class="mt-4">
                 <summary class="text-sm text-blue-600 hover:underline cursor-pointer"><?= __('Payment History') ?> (<?= count($payments) ?>)</summary>
@@ -137,7 +143,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                 </div>
             </details>
         <?php endif; ?>
-        <?php if (can('rents.payments.create')): ?>
+        <?php if (can('rents.payments.create') && $hasActiveTenant): ?>
             <form method="POST" action="/properties/<?= $property['id'] ?>/rent" class="mt-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3"><?= __('Record Payment') ?></h4>
@@ -166,7 +172,9 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Pay Period') ?></label>
                         <select name="period_start" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
                             <?php foreach ($periods as $period): ?>
-                                <option value="<?= h($period['start']) ?>" <?= $period['start'] === $defaultPeriod ? 'selected' : '' ?>><?= h($period['label']) ?></option>
+                                <?php if (!empty($period['expected'])): ?>
+                                    <option value="<?= h($period['start']) ?>" <?= $period['start'] === $defaultPeriod ? 'selected' : '' ?>><?= h($period['label']) ?></option>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </select>
                     </div>

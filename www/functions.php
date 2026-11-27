@@ -465,6 +465,23 @@ function base_path(string $path = ''): string
     return __DIR__ . '/../' . ltrim($path, '/');
 }
 
+/** Bring a restored (possibly older) database up to the current schema. */
+function run_database_migrations(): bool
+{
+    $root = dirname(__DIR__);
+    if (!is_file($root . '/database/migrate.sh')) {
+        return false;
+    }
+    $output = [];
+    $command = 'cd ' . escapeshellarg($root) . ' && bash database/migrate.sh 2>&1';
+    exec($command, $output, $exitCode);
+    if ($exitCode !== 0) {
+        \App\Core\Logger::error('Post-restore migration failed: ' . implode("\n", $output));
+        return false;
+    }
+    return true;
+}
+
 /** Reject private/reserved IPv4 ranges (SSRF protection). */
 function isPrivateIpv4(string $ip): bool
 {

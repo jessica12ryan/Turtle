@@ -53,8 +53,8 @@ class TenantController
                 [$batch, $s['tenant_id']]
             );
             Database::execute(
-                "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL",
-                [$batch, $s['id']]
+                "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_id = ? AND property_tenant_id = ? AND archived_at IS NULL",
+                [$batch, $propertyId, $s['id']]
             );
         }
     }
@@ -86,8 +86,8 @@ class TenantController
                 [$tenantId, $batch]
             );
             Database::execute(
-                "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE property_tenant_id = ? AND archived_batch = ?",
-                [$s['id'], $batch]
+                "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE property_id = ? AND property_tenant_id = ? AND archived_batch = ?",
+                [$propertyId, $s['id'], $batch]
             );
             $active = Database::fetch(
                 "SELECT 1 FROM property_tenant WHERE tenant_id = ? AND moved_out_at IS NULL",
@@ -566,8 +566,8 @@ class TenantController
                 [$id, $batch]
             );
             Database::execute(
-                "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE property_tenant_id = ? AND archived_batch = ?",
-                [$link['id'], $batch]
+                "UPDATE payments SET archived_at = NULL, archived_batch = NULL WHERE property_id = ? AND property_tenant_id = ? AND archived_batch = ?",
+                [$link['property_id'], $link['id'], $batch]
             );
 
             $batches[] = $batch;
@@ -636,8 +636,8 @@ class TenantController
                 [$batch, $id]
             );
             Database::execute(
-                "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_tenant_id = ? AND archived_at IS NULL",
-                [$batch, $pt['id']]
+                "UPDATE payments SET archived_at = NOW(), archived_batch = ? WHERE property_id = ? AND property_tenant_id = ? AND archived_at IS NULL",
+                [$batch, $pt['property_id'], $pt['id']]
             );
 
             // Cascade archive to secondary tenants if this is a main tenant
@@ -692,6 +692,7 @@ class TenantController
                 // Required references are reassigned to a surviving admin.
                 Database::execute("UPDATE properties SET landlord_id = ? WHERE landlord_id = ?", [$replacementId, $userId]);
                 Database::execute("UPDATE payments SET recorded_by = ? WHERE recorded_by = ?", [$replacementId, $userId]);
+                Database::execute("UPDATE rent_period_exemptions SET marked_by = ? WHERE marked_by = ?", [$replacementId, $userId]);
                 Database::execute("UPDATE leases SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $userId]);
                 Database::execute("UPDATE ticket_comments SET user_id = ? WHERE user_id = ?", [$replacementId, $userId]);
                 Database::execute("UPDATE ticket_files SET uploaded_by = ? WHERE uploaded_by = ?", [$replacementId, $userId]);

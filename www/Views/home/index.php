@@ -134,6 +134,8 @@
                         <?php elseif ($r['status'] === 'partial'): ?>
                             <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Partial') ?></span>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">$<?= number_format($r['paid_amount'], 2) ?> <?= __('paid') ?></p>
+                        <?php elseif ($r['status'] === 'vacant'): ?>
+                            <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Vacant') ?></span>
                         <?php elseif ($r['status'] === 'exempt'): ?>
                             <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Exempt') ?></span>
                         <?php elseif ($r['status'] === 'unpaid'): ?>

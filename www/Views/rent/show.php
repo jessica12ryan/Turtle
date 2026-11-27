@@ -27,6 +27,9 @@
         <?php elseif ($status['status'] === 'exempt'): ?>
             <p class="text-2xl font-bold text-gray-500">—</p>
             <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded"><?= __('Exempt') ?></span>
+        <?php elseif ($status['status'] === 'vacant'): ?>
+            <p class="text-2xl font-bold text-gray-500">—</p>
+            <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded"><?= __('Vacant') ?></span>
         <?php elseif ($status['status'] === 'unpaid'): ?>
             <p class="text-2xl font-bold text-red-600">$0.00</p>
             <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-0.5 rounded"><?= __('Unpaid') ?></span>
@@ -41,7 +44,12 @@
     </div>
 </div>
 
-<?php if (can('rents.payments.create')): ?>
+<?php if (!$hasActiveTenant): ?>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6 text-sm text-gray-600 dark:text-gray-300">
+        <?= __('No rent is expected while this property has no tenant. Payment history is kept below.') ?>
+    </div>
+<?php endif; ?>
+<?php if (can('rents.payments.create') && $hasActiveTenant): ?>
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4"><?= __('Record Payment') ?></h2>
         <form method="POST" action="/properties/<?= $property['id'] ?>/rent">
@@ -71,7 +79,9 @@
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Pay Period') ?></label>
                     <select name="period_start" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <?php foreach ($periods as $period): ?>
-                            <option value="<?= h($period['start']) ?>" <?= $period['start'] === $defaultPeriod ? 'selected' : '' ?>><?= h($period['label']) ?></option>
+                            <?php if (!empty($period['expected'])): ?>
+                                <option value="<?= h($period['start']) ?>" <?= $period['start'] === $defaultPeriod ? 'selected' : '' ?>><?= h($period['label']) ?></option>
+                            <?php endif; ?>
                         <?php endforeach; ?>
                     </select>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><?= __('Defaults to the last unpaid period.') ?></p>
@@ -149,7 +159,7 @@
                                     <button type="submit" class="text-orange-600 dark:text-orange-400 hover:underline"><?= __('Archive') ?></button>
                                 </form>
                             <?php endif; ?>
-                            <?php if (\App\Core\Auth::instance()->user()['role'] === 'admin'): ?>
+                            <?php if ((\App\Core\Auth::instance()->user()['role'] ?? '') === 'admin'): ?>
                                 <form method="POST" action="/payments/<?= $pym['id'] ?>/delete" class="inline" data-confirm="<?= __('Permanently delete this payment? This cannot be undone.') ?>">
                                     <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                     <button type="submit" class="text-red-600 dark:text-red-400 hover:underline"><?= __('Delete') ?></button>
@@ -216,7 +226,7 @@
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden mt-6">
     <div class="px-6 py-4 border-b dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200"><?= __('Pay Periods') ?></h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400"><?= __('Every rent period with recorded activity, plus the current and next period. Exempt periods do not expect a payment.') ?></p>
+        <p class="text-sm text-gray-500 dark:text-gray-400"><?= __('Rent periods with recorded activity, plus occupied periods. Vacant periods keep their history but do not expect a payment.') ?></p>
     </div>
     <div class="overflow-x-auto">
         <table class="w-full">
@@ -231,6 +241,9 @@
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                 <?php foreach ($periods as $period): ?>
+                    <?php if (empty($period['expected']) && (int) $period['payment_count'] === 0 && empty($period['exempt'])): ?>
+                        <?php continue; ?>
+                    <?php endif; ?>
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-200"><?= h($period['label']) ?></td>
                         <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300"><?= (int) $period['payment_count'] ?></td>
@@ -242,6 +255,8 @@
                                 <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full font-medium"><?= __('Partial') ?></span>
                             <?php elseif ($period['status'] === 'exempt'): ?>
                                 <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-2 py-1 rounded-full font-medium"><?= __('Exempt') ?></span>
+                            <?php elseif ($period['status'] === 'vacant'): ?>
+                                <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full font-medium"><?= __('Vacant') ?></span>
                             <?php elseif ($period['status'] === 'not_set'): ?>
                                 <span class="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full font-medium"><?= __('Not Set') ?></span>
                             <?php else: ?>
@@ -249,19 +264,17 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-sm">
-                            <?php if ($canExempt && $period['property_tenant_id'] > 0): ?>
+                            <?php if ($canExempt && !empty($period['expected'])): ?>
                                 <?php if ($period['exempt']): ?>
                                     <form method="POST" action="/properties/<?= $property['id'] ?>/rent/periods/unexempt" class="inline">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <input type="hidden" name="period_start" value="<?= h($period['start']) ?>">
-                                        <input type="hidden" name="property_tenant_id" value="<?= (int) $period['property_tenant_id'] ?>">
                                         <button type="submit" class="text-blue-600 dark:text-blue-400 hover:underline"><?= __('Remove Exemption') ?></button>
                                     </form>
                                 <?php else: ?>
                                     <form method="POST" action="/properties/<?= $property['id'] ?>/rent/periods/exempt" class="inline flex items-center space-x-2">
                                         <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                                         <input type="hidden" name="period_start" value="<?= h($period['start']) ?>">
-                                        <input type="hidden" name="property_tenant_id" value="<?= (int) $period['property_tenant_id'] ?>">
                                         <input type="text" name="reason" maxlength="255" placeholder="<?= __('Reason (optional)') ?>" class="w-40 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1 text-sm">
                                         <button type="submit" class="text-indigo-600 dark:text-indigo-400 hover:underline"><?= __('Mark Exempt') ?></button>
                                     </form>

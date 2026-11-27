@@ -91,7 +91,9 @@ CREATE TABLE IF NOT EXISTS property_tenant (
 
 CREATE TABLE IF NOT EXISTS payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    property_tenant_id INT NOT NULL,
+    property_id INT DEFAULT NULL,
+    property_tenant_id INT DEFAULT NULL,
+    tenant_name_snapshot VARCHAR(255) DEFAULT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_date DATE NOT NULL,
     period_start DATE DEFAULT NULL,
@@ -104,24 +106,28 @@ CREATE TABLE IF NOT EXISTS payments (
     archived_batch VARCHAR(32) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE CASCADE,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE SET NULL,
     FOREIGN KEY (recorded_by) REFERENCES users(id),
     INDEX idx_property_tenant (property_tenant_id),
     INDEX idx_payment_date (payment_date),
-    INDEX idx_payment_period (property_tenant_id, period_start)
+    INDEX idx_payment_period (property_tenant_id, period_start),
+    INDEX idx_payment_property_period (property_id, period_start)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS rent_period_exemptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    property_tenant_id INT NOT NULL,
+    property_id INT DEFAULT NULL,
+    property_tenant_id INT DEFAULT NULL,
     period_start DATE NOT NULL,
     reason VARCHAR(255) DEFAULT NULL,
     marked_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE CASCADE,
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE SET NULL,
     FOREIGN KEY (marked_by) REFERENCES users(id),
-    UNIQUE KEY uniq_rent_period_exemption (property_tenant_id, period_start),
+    UNIQUE KEY uniq_rent_period_exemption (property_id, period_start),
     INDEX idx_rent_period_exemption_period (period_start)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
