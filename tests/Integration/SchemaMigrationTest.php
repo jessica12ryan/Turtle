@@ -146,6 +146,9 @@ final class SchemaMigrationTest extends TestCase
             $root->exec('ALTER TABLE rent_period_exemptions ADD INDEX tmp_property_idx (property_id)');
             $root->exec('ALTER TABLE rent_period_exemptions DROP INDEX uniq_rent_period_exemption');
             $root->exec('ALTER TABLE rent_period_exemptions ADD UNIQUE KEY uniq_rent_period_exemption (property_tenant_id, period_start)');
+            // The upgraded install has no dedicated tenancy index: the legacy
+            // unique key itself is the only index backing the foreign key.
+            $root->exec('ALTER TABLE rent_period_exemptions DROP INDEX idx_rent_exemptions_tenant');
             $legacyFk = $root->query(
                 "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rent_period_exemptions'
@@ -168,6 +171,21 @@ final class SchemaMigrationTest extends TestCase
                 "SELECT DELETE_RULE FROM information_schema.REFERENTIAL_CONSTRAINTS
                  WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'rent_period_exemptions'
                    AND CONSTRAINT_NAME = 'fk_rent_exemptions_property_tenant'"
+            )->fetchColumn());
+
+            // A failed update leaves the FK already switched to SET NULL while
+            // the legacy unique key remains. A re-run must also succeed.
+            $root->exec('ALTER TABLE rent_period_exemptions DROP INDEX uniq_rent_period_exemption');
+            $root->exec('ALTER TABLE rent_period_exemptions ADD UNIQUE KEY uniq_rent_period_exemption (property_tenant_id, period_start)');
+            $root->exec('ALTER TABLE rent_period_exemptions DROP INDEX idx_rent_exemptions_tenant');
+
+            $thirdOutput = [];
+            exec($command, $thirdOutput, $thirdExit);
+            self::assertSame(0, $thirdExit, implode("\n", $thirdOutput));
+            self::assertSame(1, (int) $root->query(
+                "SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rent_period_exemptions'
+                   AND CONSTRAINT_NAME = 'uniq_rent_period_exemption' AND COLUMN_NAME = 'property_id'"
             )->fetchColumn());
         } finally {
             $root->exec("DROP DATABASE IF EXISTS `{$database}`");
