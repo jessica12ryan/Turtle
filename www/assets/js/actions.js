@@ -29,7 +29,10 @@
     document.addEventListener('click', function (event) {
         var element = event.target.closest('[data-navigate]');
         if (element) {
-            window.location.href = element.getAttribute('data-navigate');
+            var navigateUrl = getSafeNavigateUrl(element.getAttribute('data-navigate'));
+            if (navigateUrl) {
+                window.location.href = navigateUrl;
+            }
             return;
         }
         element = event.target.closest('[data-dispatch]');
@@ -52,6 +55,22 @@
         }
         runAction(event);
     });
+
+    function getSafeNavigateUrl(rawUrl) {
+        if (!rawUrl) {
+            return null;
+        }
+        try {
+            var parsed = new URL(rawUrl, window.location.origin);
+            if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+                parsed.origin === window.location.origin) {
+                return parsed.href;
+            }
+        } catch (e) {
+            return null;
+        }
+        return null;
+    }
 
     function runAction(event) {
         var element = event.target.closest('[data-action]');
