@@ -37,15 +37,15 @@ INSERT IGNORE INTO property_tenant (property_id, tenant_id, is_main_tenant, assi
 (4, 9, 0, NOW(), '2025-06-01', '2026-05-31', '2026-07-15', NULL, NULL, NULL);
 
 -- Sample payments
-INSERT IGNORE INTO payments (property_tenant_id, amount, payment_date, payment_method, reference, notes, recorded_by, created_at) VALUES
-(1, 2200.00, '2025-01-01', 'e-transfer', '2025-01-wellington', 'January rent', 6, NOW()),
-(1, 2200.00, '2025-02-01', 'e-transfer', '2025-02-wellington', 'February rent', 6, NOW()),
-(1, 2200.00, '2025-03-01', 'e-transfer', '2025-03-wellington', 'March rent', 6, NOW()),
-(2, 1850.00, '2025-03-01', 'cheque', 'CHQ-1024', 'March rent', 6, NOW()),
-(2, 1850.00, '2025-04-01', 'e-transfer', '2025-04-king', 'April rent', 6, NOW()),
-(3, 2500.00, '2025-02-15', 'cash', '', 'February rent - paid in person', 6, NOW()),
-(3, 2500.00, '2025-03-15', 'e-transfer', '2025-03-harbour', 'March rent', 6, NOW()),
-(4, 2100.00, '2025-06-01', 'e-transfer', '2025-06-maple', 'June rent', 6, NOW());
+INSERT IGNORE INTO payments (property_tenant_id, amount, payment_date, period_start, payment_method, reference, notes, recorded_by, created_at) VALUES
+(1, 2200.00, '2025-01-01', '2025-01-01', 'e-transfer', '2025-01-wellington', 'January rent', 6, NOW()),
+(1, 2200.00, '2025-02-01', '2025-02-01', 'e-transfer', '2025-02-wellington', 'February rent', 6, NOW()),
+(1, 2200.00, '2025-03-01', '2025-03-01', 'e-transfer', '2025-03-wellington', 'March rent', 6, NOW()),
+(2, 1850.00, '2025-03-01', '2025-03-01', 'cheque', 'CHQ-1024', 'March rent', 6, NOW()),
+(2, 1850.00, '2025-04-01', '2025-04-01', 'e-transfer', '2025-04-king', 'April rent', 6, NOW()),
+(3, 2500.00, '2025-02-15', '2025-02-01', 'cash', '', 'February rent - paid in person', 6, NOW()),
+(3, 2500.00, '2025-03-15', '2025-03-01', 'e-transfer', '2025-03-harbour', 'March rent', 6, NOW()),
+(4, 2100.00, '2025-06-01', '2025-06-01', 'e-transfer', '2025-06-maple', 'June rent', 6, NOW());
 
 -- Leases
 -- Lease dates live in property_tenant; leases store the document metadata.

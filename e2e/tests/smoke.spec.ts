@@ -117,6 +117,14 @@ test('fresh install: setup, navigation, ticket, email and re-login', async ({ pa
     await expectPageOk(page, path);
   }
 
+  // Rent is tracked in defined pay periods; admins can exempt a period.
+  await page.goto('/properties/1/rent');
+  await expect(page.getByRole('heading', { name: 'Pay Periods' })).toBeVisible();
+  await expect(page.locator('select[name="period_start"]').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Mark Exempt' }).first().click();
+  await expect(page.getByRole('button', { name: 'Remove Exemption' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Remove Exemption' }).first().click();
+
   // Create a ticket against seeded sample data.
   await page.goto('/tickets/create');
   await page.locator('select[name="property_id"]').selectOption({ label: 'The Wellington' });

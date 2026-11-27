@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\View;
 use App\Core\Validator;
 use App\Core\Tenancy;
+use App\Core\RentLedger;
 
 class PropertyController
 {
@@ -219,7 +220,7 @@ class PropertyController
              JOIN property_tenant pt ON pt.id = p.property_tenant_id
              JOIN users u ON u.id = pt.tenant_id
              JOIN users r ON r.id = p.recorded_by
-             WHERE pt.property_id = ? AND p.archived_at IS NULL
+             WHERE pt.property_id = ?
              ORDER BY p.payment_date DESC",
             [$id]
         );
@@ -233,26 +234,27 @@ class PropertyController
             }
         }
 
-        // Calculate current month status
-        $currentMonth = date('Y-m');
-        $totalRent = $property['rent_amount'] ?? 0;
-        $paidThisMonth = 0;
-        foreach ($payments as $pym) {
-            // Deposits are held separately and must not make a unit look paid.
-            if (!empty($pym['is_security_deposit'])) {
-                continue;
-            }
-            if (str_starts_with($pym['payment_date'], $currentMonth)) {
-                $paidThisMonth += $pym['amount'];
+        // Status and the payment form's default both use defined pay periods.
+        $status = RentLedger::status($id, $property);
+        $dueDay = RentLedger::dueDay($property);
+        $mainTenantId = 0;
+        foreach ($tenants as $tenant) {
+            if (!empty($tenant['is_main_tenant'])) {
+                $mainTenantId = (int) $tenant['property_tenant_id'];
+                break;
             }
         }
-        $rentStatus = $totalRent > 0
-            ? ($paidThisMonth >= $totalRent ? 'paid' : ($paidThisMonth > 0 ? 'partial' : 'unpaid'))
-            : 'not_set';
+        if ($mainTenantId === 0 && $tenants !== []) {
+            $mainTenantId = (int) $tenants[0]['property_tenant_id'];
+        }
+        $defaultPeriod = $mainTenantId > 0
+            ? RentLedger::defaultPeriod($id, $property, $mainTenantId)
+            : \App\Core\RentPeriod::forDate(date('Y-m-d'), $dueDay);
 
         $view = new View();
         $view->layout('layouts/main', ['title' => $property['name']]);
-        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'rentStatus', 'paidThisMonth', 'mainTenantLeaseType'));
+        $periods = RentLedger::periods($id, $property);
+        $view->render('properties/show', compact('property', 'tenants', 'leases', 'tickets', 'photos', 'payments', 'status', 'periods', 'dueDay', 'defaultPeriod', 'mainTenantId', 'mainTenantLeaseType'));
     }
 
     public function edit(int $id): void

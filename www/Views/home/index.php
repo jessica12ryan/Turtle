@@ -122,6 +122,7 @@
                         <p class="font-medium text-gray-800 dark:text-gray-200"><?= h($r['name']) ?></p>
                         <?php if ($r['rent_amount'] > 0): ?>
                             <p class="text-sm text-gray-500 dark:text-gray-400">$<?= number_format($r['rent_amount'], 2) ?> <?= __('per month') ?> — <?= __('Due') ?>: <?php $d = (int)($r['rent_due_day'] ?? 0); if ($d) { $s = 'th'; if (!in_array($d % 100, [11,12,13])) { switch ($d % 10) { case 1: $s='st'; break; case 2: $s='nd'; break; case 3: $s='rd'; break; } } echo $d . $s; } else { echo '—'; } ?> <?= __('day of the month') ?></p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1"><?= __('Pay Period') ?>: <?= h($r['period_label'] ?? '') ?></p>
                         <?php endif; ?>
                     </div>
                     <div class="text-right">
@@ -133,6 +134,8 @@
                         <?php elseif ($r['status'] === 'partial'): ?>
                             <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Partial') ?></span>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">$<?= number_format($r['paid_amount'], 2) ?> <?= __('paid') ?></p>
+                        <?php elseif ($r['status'] === 'exempt'): ?>
+                            <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Exempt') ?></span>
                         <?php elseif ($r['status'] === 'unpaid'): ?>
                             <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-3 py-1 rounded-full font-medium" data-tooltip="<?= __('Rent payment status') ?>"><?= __('Unpaid') ?></span>
                         <?php endif; ?>

@@ -34,7 +34,7 @@ Les deux prennent en charge l'**ingress** (intégré dans l'interface HA) et l'*
 - **Locataires** — locataires principal/secondaire, dates de bail, départ planifié, archivage automatique
 - **Baux et documents** — téléversement avec auto-titrage, types de documents, courriel avec pièces jointes
 - **Tickets de maintenance** — créer, assigner, commenter, suivi des statuts, pièces jointes, archivage/restauration avec résolution des conflits
-- **Tableau de bord des loyers** — suivi des paiements par propriété, indicateurs de statut (payé/partiel/impayé)
+- **Tableau de bord des loyers** — suivi des paiements par propriété et période de paiement définie (jour d’échéance jusqu’à la veille de l’échéance suivante), indicateurs de statut (payé/partiel/impayé/exonéré) et exonérations de périodes réservées aux administrateurs et aux propriétaires
 - **Demandes de location** — formulaire de soumission public, flux de révision, conversion en locataire
 - **Assistant IA** — requêtes en langage naturel sur les propriétés, locataires, tickets
 - **Calendrier** — dates d'emménagement, de fin de bail et de départ planifié

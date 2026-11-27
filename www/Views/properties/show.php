@@ -85,14 +85,18 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                 <p class="text-xl font-bold text-gray-800 dark:text-gray-100"><?= h($property['rent_due_day'] ?? '—') ?></p>
             </div>
             <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase"><?= __('This Month') ?></p>
-                <?php if ($rentStatus === 'paid'): ?>
-                    <p class="text-xl font-bold text-green-600">$<?= number_format($paidThisMonth, 2) ?></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase"><?= __('This Period') ?></p>
+                <p class="text-xs text-gray-500 dark:text-gray-400"><?= h($status['label']) ?></p>
+                <?php if ($status['status'] === 'paid'): ?>
+                    <p class="text-xl font-bold text-green-600">$<?= number_format($status['paid_amount'], 2) ?></p>
                     <span class="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-0.5 rounded"><?= __('Paid') ?></span>
-                <?php elseif ($rentStatus === 'partial'): ?>
-                    <p class="text-xl font-bold text-yellow-600">$<?= number_format($paidThisMonth, 2) ?></p>
+                <?php elseif ($status['status'] === 'partial'): ?>
+                    <p class="text-xl font-bold text-yellow-600">$<?= number_format($status['paid_amount'], 2) ?></p>
                     <span class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded"><?= __('Partial') ?></span>
-                <?php elseif ($rentStatus === 'unpaid'): ?>
+                <?php elseif ($status['status'] === 'exempt'): ?>
+                    <p class="text-xl font-bold text-gray-500">—</p>
+                    <span class="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded"><?= __('Exempt') ?></span>
+                <?php elseif ($status['status'] === 'unpaid'): ?>
                     <p class="text-xl font-bold text-red-600">$0.00</p>
                     <span class="text-xs bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 px-2 py-0.5 rounded"><?= __('Unpaid') ?></span>
                 <?php else: ?>
@@ -107,6 +111,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b dark:border-gray-700 text-left">
+                                <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Pay Period') ?></th>
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Date') ?></th>
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Tenant') ?></th>
                                 <th class="py-2 pr-3 font-medium text-gray-500 dark:text-gray-400"><?= __('Amount') ?></th>
@@ -118,7 +123,8 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                         <tbody>
                             <?php foreach (array_slice($payments, 0, 10) as $pym): ?>
                                 <tr class="border-b border-gray-100 dark:border-gray-700">
-                                    <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= h($pym['payment_date']) ?></td>
+                                    <td class="py-2 pr-3 text-gray-600 dark:text-gray-300"><?= h(!empty($pym['period_start']) ? $pym['period_start'] : \App\Core\RentPeriod::forDate($pym['payment_date'], $dueDay)) ?></td>
+                                    <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= h($pym['payment_date']) ?><?php if (!empty($pym['archived_at'])): ?> <span class="text-xs text-orange-600"><?= __('Archived') ?></span><?php endif; ?></td>
                                     <td class="py-2 pr-3 text-gray-900 dark:text-gray-200"><?= h($pym['tenant_name']) ?></td>
                                     <td class="py-2 pr-3 font-medium text-gray-900 dark:text-gray-200">$<?= number_format($pym['amount'], 2) ?></td>
                                     <td class="py-2 pr-3 capitalize text-gray-900 dark:text-gray-200"><?= h(str_replace('_', ' ', $pym['payment_method'] ?? '—')) ?></td>
@@ -135,7 +141,7 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
             <form method="POST" action="/properties/<?= $property['id'] ?>/rent" class="mt-4 p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
                 <input type="hidden" name="_csrf" value="<?= csrf_token() ?>">
                 <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3"><?= __('Record Payment') ?></h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Amount') ?> <span class="text-red-500">*</span></label>
                         <input type="number" name="amount" step="0.01" min="0.01" required class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="0.00">
@@ -154,6 +160,14 @@ foreach ($photos as $ph) { if ($ph['is_main']) { $hasMainPhoto = true; $mainPhot
                             <option value="credit_card"><?= __('Credit Card') ?></option>
                             <option value="debit"><?= __('Debit') ?></option>
                             <option value="other"><?= __('Other') ?></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1"><?= __('Pay Period') ?></label>
+                        <select name="period_start" class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500">
+                            <?php foreach ($periods as $period): ?>
+                                <option value="<?= h($period['start']) ?>" <?= $period['start'] === $defaultPeriod ? 'selected' : '' ?>><?= h($period['label']) ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>

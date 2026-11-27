@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS payments (
     property_tenant_id INT NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_date DATE NOT NULL,
+    period_start DATE DEFAULT NULL,
     payment_method VARCHAR(50) DEFAULT NULL,
     reference VARCHAR(100) DEFAULT NULL,
     notes TEXT,
@@ -106,7 +107,22 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE CASCADE,
     FOREIGN KEY (recorded_by) REFERENCES users(id),
     INDEX idx_property_tenant (property_tenant_id),
-    INDEX idx_payment_date (payment_date)
+    INDEX idx_payment_date (payment_date),
+    INDEX idx_payment_period (property_tenant_id, period_start)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS rent_period_exemptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    property_tenant_id INT NOT NULL,
+    period_start DATE NOT NULL,
+    reason VARCHAR(255) DEFAULT NULL,
+    marked_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE CASCADE,
+    FOREIGN KEY (marked_by) REFERENCES users(id),
+    UNIQUE KEY uniq_rent_period_exemption (property_tenant_id, period_start),
+    INDEX idx_rent_period_exemption_period (period_start)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS leases (

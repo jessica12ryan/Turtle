@@ -34,7 +34,7 @@ Ambos soportan **ingress** (integrado en la interfaz de HA) y **acceso directo**
 - **Inquilinos** — inquilinos principal/secundario, fechas de contrato, mudanza programada, archivado automático
 - **Contratos y documentos** — carga con título automático, tipos de documento, correo electrónico con archivos adjuntos
 - **Tickets de mantenimiento** — crear, asignar, comentar, seguimiento de estado, archivos adjuntos, archivado/restauración con resolución de conflictos
-- **Panel de renta** — seguimiento de pagos por propiedad, indicadores de estado (pagado/parcial/no pagado)
+- **Panel de renta** — seguimiento de pagos por propiedad y período de pago definido (día de vencimiento hasta el día anterior al siguiente vencimiento), indicadores de estado (pagado/parcial/no pagado/exento) y exenciones de períodos que solo pueden marcar los administradores y propietarios
 - **Solicitudes de alquiler** — formulario de envío público, flujo de revisión, conversión a inquilino
 - **Asistente de IA** — consultas en lenguaje natural sobre propiedades, inquilinos, tickets
 - **Calendario** — fechas de mudanza, fin de contrato y mudanza programada

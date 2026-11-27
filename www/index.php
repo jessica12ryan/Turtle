@@ -334,6 +334,8 @@ $router->post('/payments/{id}/edit', 'RentController@update', ['auth', 'perm:ren
 $router->post('/payments/{id}/archive', 'RentController@archive', ['auth', 'perm:rents.payments.archive']);
 $router->post('/payments/{id}/restore', 'RentController@restore', ['auth', 'perm:rents.payments.restore']);
 $router->post('/payments/{id}/delete', 'RentController@destroy', ['auth', 'role:admin']);
+$router->post('/properties/{id}/rent/periods/exempt', 'RentController@exempt', ['auth', 'perm:rents.access']);
+$router->post('/properties/{id}/rent/periods/unexempt', 'RentController@unexempt', ['auth', 'perm:rents.access']);
 
 // Properties
 $router->get('/properties', 'PropertyController@index', ['auth', 'perm:properties.access']);

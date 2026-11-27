@@ -63,7 +63,7 @@ final class SchemaMigrationTest extends TestCase
                 [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
             );
 
-            foreach (['users', 'properties', 'tickets', 'settings', 'role_permissions', 'notifications'] as $table) {
+            foreach (['users', 'properties', 'tickets', 'settings', 'role_permissions', 'notifications', 'payments', 'rent_period_exemptions'] as $table) {
                 self::assertSame(
                     1,
                     (int) $pdo->query(

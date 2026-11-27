@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Database;
 use App\Core\View;
 use App\Core\Tenancy;
+use App\Core\RentLedger;
 
 class HomeController
 {
@@ -62,23 +63,15 @@ class HomeController
                 [$auth->id()]
             );
             $rentInfo = [];
-            $currentMonth = date('Y-m');
             foreach ($tenantProperties as $tp) {
-                $paid = Database::fetch(
-                    "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE property_tenant_id = ? AND payment_date LIKE ? AND archived_at IS NULL AND is_security_deposit = 0",
-                    [$tp['property_tenant_id'], $currentMonth . '%']
-                );
-                $paidAmount = (float)($paid['total'] ?? 0);
-                $totalRent = $tp['rent_amount'] ?? 0;
-                $status = $totalRent > 0
-                    ? ($paidAmount >= $totalRent ? 'paid' : ($paidAmount > 0 ? 'partial' : 'unpaid'))
-                    : 'not_set';
+                $periodStatus = RentLedger::status((int) $tp['id'], $tp);
                 $lastPayment = Database::fetch(
-                    "SELECT payment_date, amount FROM payments WHERE property_tenant_id = ? AND archived_at IS NULL ORDER BY payment_date DESC LIMIT 1",
+                    "SELECT payment_date, amount FROM payments WHERE property_tenant_id = ? ORDER BY payment_date DESC LIMIT 1",
                     [$tp['property_tenant_id']]
                 );
-                $tp['paid_amount'] = $paidAmount;
-                $tp['status'] = $status;
+                $tp['paid_amount'] = $periodStatus['paid_amount'];
+                $tp['status'] = $periodStatus['status'];
+                $tp['period_label'] = $periodStatus['label'];
                 $tp['last_payment_date'] = $lastPayment['payment_date'] ?? null;
                 $tp['last_payment_amount'] = $lastPayment['amount'] ?? null;
                 $rentInfo[] = $tp;
