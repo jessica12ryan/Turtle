@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS rent_period_exemptions (
     FOREIGN KEY (property_tenant_id) REFERENCES property_tenant(id) ON DELETE SET NULL,
     FOREIGN KEY (marked_by) REFERENCES users(id),
     UNIQUE KEY uniq_rent_period_exemption (property_id, period_start),
+    INDEX idx_rent_exemptions_tenant (property_tenant_id),
     INDEX idx_rent_period_exemption_period (period_start)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
